@@ -86,7 +86,8 @@ export async function POST(req: Request) {
       reasonMetadata: { from: sender.name },
     });
 
-    const tipMessage = message?.trim() || 'ナイスプレイ！';
+    // Discord の埋め込みは説明文が4,096文字までで、超えると通知だけ失敗する（送金は成立）ため短く切る（2026-10-19）
+    const tipMessage = (typeof message === 'string' ? message.trim().slice(0, 200) : '') || 'ナイスプレイ！';
 
     // 📣 Discord (#ショップ通知 / 1545806575770276061) へチップ贈呈アナウンス送信
     try {

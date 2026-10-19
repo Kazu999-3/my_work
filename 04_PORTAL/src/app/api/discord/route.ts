@@ -288,42 +288,8 @@ export async function POST(request: Request) {
       throw new Error(`Discord API Error: ${res.status} ${res.statusText}`);
     }
 
-    // --- ここから待機PITY(spectator_pity)の自動更新処理 ---
-    try {
-      // 1. 出場者の spectator_pity を 0 にリセット
-      const playingNames = [...teamBlue, ...teamRed].map((p: any) => p.name);
-      if (playingNames.length > 0) {
-        await supabase
-          .from('ktm_players')
-          .update({ spectator_pity: 0 })
-          .in('name', playingNames);
-      }
-
-      // 2. 観戦者の spectator_pity を +10（見学固定および非アクティブなメンバーは除外）
-      if (spectators && spectators.length > 0) {
-        const rawSpecNames = Array.from(new Set(spectators.map((s: any) => typeof s === 'string' ? s : s?.name).filter(Boolean)));
-        const { data: specPlayers } = await supabase
-          .from('ktm_players')
-          .select('name, is_spectator_fixed, is_active')
-          .in('name', rawSpecNames);
-
-        const eligibleSpecs = (specPlayers || [])
-          .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
-          .map((p: any) => p.name);
-
-        if (eligibleSpecs.length > 0) {
-          const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', {
-            p_names: eligibleSpecs,
-            p_amount: 10,
-          });
-          if (pityError) console.warn('[discord] spectator_pity加算に失敗（続行）:', pityError);
-        }
-      }
-    } catch (dbError) {
-      console.error('Spectator Pity Update Error:', dbError);
-      // Pity更新エラーはDiscord通知自体には影響させないため握りつぶす
-    }
-    // --- ここまで ---
+    // 待機者の Pity（spectator_pity）は試合の記録時（/api/match/record）に1回だけ付ける。以前はここでも +10 しており、
+    // 投稿のたびに加算され、無認証なので誰でも自分を待機者にして加算できた（2026-10-19）
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

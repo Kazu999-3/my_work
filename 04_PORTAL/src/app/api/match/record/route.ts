@@ -327,6 +327,44 @@ export async function POST(request: Request) {
     // 試合を記録したら、それまでに作られたチーム分けの承認待ちはまとめて消す（2026-10-17 ユーザー判断）。
     // 記録画面は使った1件しか消さないため、作り直したチーム分けが溜まり続けていた（10/16 夜だけで11件）。
     {
+      // 観戦・待機メンバーの Pity +10 は、この試合のチーム分け（顔ぶれが一致する承認待ち）の待機者に、試合の記録時に1回だけ付ける。
+      // 2026-10-19: 以前はチーム分けを出すたび（自動保存）と Discord 投稿のたびに +10 しており、やり直すほど加算され、
+      // やり直しの途中で待機の順番も入れ替わっていた。Discord 投稿は認証が無く、誰でも自分を待機者にして加算できた。
+      try {
+        const names = new Set(results.map((r: any) => r.name));
+        const nameOf = (p: any) => (typeof p === 'string' ? p : p?.name);
+        const { data: pendings } = await supabase
+          .from('edge_tasks')
+          .select('payload')
+          .eq('task_type', 'balancer_pending')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(30);
+        const used = (pendings || []).find((t: any) => {
+          const br = t.payload?.balanceResult || {};
+          const team = [...(br.teamBlue || []), ...(br.teamRed || [])].map(nameOf).filter(Boolean);
+          return team.length === names.size && team.every((n: string) => names.has(n));
+        });
+        const specNames = Array.from(new Set(
+          ((used?.payload?.balanceResult?.spectators || []) as any[]).map(nameOf).filter((n: any) => n && !names.has(n))
+        )) as string[];
+        if (specNames.length > 0) {
+          const { data: specPlayers } = await supabase
+            .from('ktm_players')
+            .select('name, is_spectator_fixed, is_active')
+            .in('name', specNames);
+          const eligible = (specPlayers || [])
+            .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
+            .map((p: any) => p.name);
+          if (eligible.length > 0) {
+            const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', { p_names: eligible, p_amount: 10 });
+            if (pityError) console.warn('[match/record] 待機者の Pity 加算に失敗（続行）:', pityError.message);
+          }
+        }
+      } catch (e) {
+        console.warn('[match/record] 待機者の Pity 加算に失敗（続行）:', e);
+      }
+
       const { error: pendErr } = await supabase
         .from('edge_tasks')
         .delete()

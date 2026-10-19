@@ -47,6 +47,10 @@ export async function POST(req: Request) {
     if (!item) {
       return NextResponse.json({ error: '無効なアイテムIDです。' }, { status: 400 });
     }
+    // スクラッチくじは購入と同時に引く専用の API（/api/bet/scratch）で扱う。ここで買うと持ち物に入るだけで使い道が無い
+    if (item.id === 'scratch_card') {
+      return NextResponse.json({ error: 'スクラッチくじはカジノ画面の「スクラッチ」から購入してください。' }, { status: 400 });
+    }
 
     if (!discordId && !playerName) {
       return NextResponse.json({ error: 'Discordログインが必要です。' }, { status: 401 });

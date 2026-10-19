@@ -71,36 +71,8 @@ export async function POST(request: Request) {
       console.warn('[balancer/pending] 予測勝率の保存に失敗（続行）:', e);
     }
 
-    // ★ 修正: 待機プレイヤー（spectators）のPityを一括更新 (+10)
-    // チーム確定（結果入力ページへの遷移）の瞬間に即時付与することで、次のゲームの選出で優先される。
-    // 以前はSELECT→計算→UPDATEの非アトミック処理で、同時リクエスト時に加算が
-    // 失われる競合状態があったため、DB側で加算するRPC(increment_ktm_pity)に置き換えた。
-    //
-    // spectatorsはリクエストボディの値をそのまま使っていたため、実在しない名前や同名の重複を含む配列を
-    // 送りつけて任意にpityを水増しできた(2026-08-13、監査#23)。実在するktm_players.nameとの照合と重複排除を行う。
-    // （2026-10-07 からはこのAPI自体もログイン中のメンバー限定。保存者は payload.submittedBy に残る）
-    if (balanceResult.spectators && balanceResult.spectators.length > 0) {
-      const uniqueSpectators = Array.from(new Set(
-        (balanceResult.spectators as any[]).map((s) => String(s).trim()).filter(Boolean)
-      ));
-      const { data: validPlayers } = await supabase
-        .from('ktm_players')
-        .select('name, is_spectator_fixed, is_active')
-        .in('name', uniqueSpectators);
-
-      // 見学固定（試合に出ない人）および非アクティブな待機者はPity加算対象から除外
-      const eligibleNames = (validPlayers || [])
-        .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
-        .map((p: any) => p.name);
-
-      if (eligibleNames.length > 0) {
-        const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', {
-          p_names: eligibleNames,
-          p_amount: 10,
-        });
-        if (pityError) console.warn('[balancer/pending] spectator_pity加算に失敗（続行）:', pityError);
-      }
-    }
+    // 待機プレイヤーの Pity +10 は試合の記録時（/api/match/record）に、実際に行われたチーム分けの待機者へ1回だけ付ける。
+    // 以前はここ（チーム分けを出すたびに自動保存される）で付けており、やり直すほど加算されていた（2026-10-19）
 
     // 🔊 Discord VCチャンネル名を「〇戦目進行中・交代歓迎」に自動更新
     try {
