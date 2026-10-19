@@ -4,13 +4,12 @@ name: Production Smoke Test
 # 中身は scripts/smoke_test.mjs を参照。失敗時は #エラーログ へ通知し、毎朝の健康診断でも拾う。
 #
 # いつ動くか:
-#   - Vercel の本番デプロイが成功した直後（04・05 どちらのデプロイでも。push ごとに2回届くため、
-#     concurrency で前の実行を取り消し、最後の1回だけ走らせる）
 #   - 毎日 JST 06:10（健康診断 06:30 の前。デプロイが無い日でも、Supabase 停止など外部要因の故障を拾う）
 #   - 手動実行
+# 2026-10-19: 以前は本番デプロイのたびにも走っていたが、ページを何十枚も開くため Vercel 無料枠の
+#   Fluid Active CPU（月4時間）を圧迫していた（10/18 に使い切りの通知）。デプロイごとの実行はやめた。
 
 on:
-  deployment_status:
   schedule:
     - cron: '10 21 * * *'   # 毎日 UTC21:10 = JST 06:10
   workflow_dispatch:

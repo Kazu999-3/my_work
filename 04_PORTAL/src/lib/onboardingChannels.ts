@@ -4,7 +4,7 @@
  * Bot は応答専用（Cloudflare Workers）で Discord のメッセージイベントを受け取れないため、
  * チャンネル一覧の last_message_id の変化から新着を見つける。変化したチャンネルだけ最新1件を取りに行くので、
  * 70チャンネルあっても普段の Discord API 呼び出しは一覧の1回だけ。
- * 呼び出し元: pg_cron（5分おき /api/onboarding/channels/poll）と、管理画面の一覧表示。
+ * 呼び出し元: pg_cron（1時間おき /api/onboarding/channels/poll、migration 107）と、管理画面の一覧表示。
  */
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';

@@ -9,7 +9,8 @@ name: SoloQ Coach Poll
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # 2026-10-19: 15分おき→1時間おき（Vercel 無料枠の Fluid Active CPU を使い切ったため）
+    - cron: '40 * * * *'
   workflow_dispatch:
 
 jobs:

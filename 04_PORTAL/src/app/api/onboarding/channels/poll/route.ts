@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { syncOnboardingChannels } from '../../../../../lib/onboardingChannels';
 
-// 個別案内チャンネルの新着チェック。pg_cron（migration 100）から5分おきに呼ばれ、
+// 個別案内チャンネルの新着チェック。pg_cron から1時間おき（migration 107）に呼ばれ、
 // 本人からの新着があれば管理者へ通知する（2026-10-17）。
 export const dynamic = 'force-dynamic';
 

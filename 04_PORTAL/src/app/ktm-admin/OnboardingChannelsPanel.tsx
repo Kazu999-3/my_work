@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Send, ExternalLink } from "lucide-react";
 
 // 管理画面「個別案内」タブ: 各メンバーの個別案内チャンネルの発言状況と、一斉連絡（2026-10-17）。
-// 本人からの新着は pg_cron の5分おきチェックで管理者のアプリ（ポータルのプッシュ）にも通知される。
+// 本人からの新着は pg_cron の1時間おきチェック（migration 107）で管理者のアプリ（ポータルのプッシュ）にも通知される。
 
 interface Row {
   channelId: string;
@@ -169,7 +169,7 @@ export default function OnboardingChannelsPanel() {
         <div>
           <h2 className="text-lg font-bold text-foreground">🤝 個別案内（{rows.length}件）</h2>
           <p className="text-xs text-muted-strong mt-0.5">
-            未読 <span className="font-bold text-danger-700">{unreadCount}件</span> ／ 既読・未返信 <span className="font-bold text-primary-700">{readNoReplyCount}件</span>。「開く」で既読になります。本人からの新着は5分おきに確認し、アプリにも通知します
+            未読 <span className="font-bold text-danger-700">{unreadCount}件</span> ／ 既読・未返信 <span className="font-bold text-primary-700">{readNoReplyCount}件</span>。「開く」で既読になります。本人からの新着は1時間おきに確認し、アプリにも通知します（タブを開いた時点でも最新に更新します）
           </p>
         </div>
         <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-border bg-black/5 text-foreground hover:bg-black/5 disabled:opacity-50">
