@@ -50,10 +50,17 @@
       - コーチ（試合前/後）・辞典・テンポ/ヒートマップ・マッチアップ設計図・VS比較を全量点検。`riot.ts`のマッピング、`compile_champions`の実測ビルド/時間帯勝率RPC、`champion_fact_claims`の出典追跡（knowledge-sources.md準拠）が実測データと完全に一致し、推定値捏造のない健全性を確認。
     - **【テーマ13: コイン台帳と残高のずれ調査】(`scripts/audit_coin_ledger.py`, `04_PORTAL/supabase/migrations/106_atomic_coin_delta.sql`)**:
       - 全10,989件の台帳と77名の残高を機械監査。連鎖断絶（Lost Delta）+24,842コインの内訳は過去のAPI（migration 106以前）の同時実行によるLost Update（特にプリンコ連打407回が主因）と特定。migration 106（DB行ロック原子更新）適用後の断絶は0件で再発防止が完全に機能していることを確認。該当プレイヤー24名の大半が既にカジノ等で残高変動しており、過去分の遡及改変はマイナス残高を招くため据え置き（不問）として処理完了。
+    - **【テーマ14: 05全体の寒色を暖色パレット(zinc/amber)へ統一】(`scripts/unify_05_palette.py`, `05_PILOT/src/`)**:
+      - 33ファイル708箇所の `slate-*` ➔ `zinc-*`、`indigo-*` ➔ `amber-*` 置換を一括適用。AI知見等の意図的な紫は保持し、04ポータルと揃った統一感のある暖色UIを実現。
+    - **【テーマ15: 05_PILOT 主要エンドポイントのEgress削減】(`05_PILOT/src/app/api/...`)**:
+      - `jg-predict`, `lane-diff`, `habit-radar`, `champions/roles`, `rank-benchmark` に適切な `Cache-Control` ヘッダー（`private/public, max-age=300〜3600`）を配備。ブラウザからの不要な再リクエストとSupabaseへの通信負荷を大幅に削減。
+    - **【テーマ16: 知識の実戦検証スコア新設】(`05_PILOT/src/lib/tacticVerifier.ts`, `api/lol/tactic-verify/route.ts`, `TacticScoreCard.tsx`, `PostGameTab.tsx`)**:
+      - 攻略記事・動画バイブルの定石（序盤被キル回避・初手防壁ワード・CSペース・連続デス抑制）をMatch Timeline実測ログと自動照合し、実戦遵守スコア（0〜100点）を算出する `tacticVerifier.ts` エンジンを開発。
+      - 単体テスト `tacticVerifier.test.ts` 配備（全件PASS）。10分キャッシュ付きAPI `/api/lol/tactic-verify` を新設し、試合後レビュー画面に `TacticScoreCard.tsx` をマウント。
 3. **機械的実値検証**:
    - `04_PORTAL` 単体テスト (`npm test`): **全142件 PASS (100%)**
    - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
-   - `05_PILOT` 単体テスト (`npm test`): **全40件 PASS (100%)**
+   - `05_PILOT` 単体テスト (`npm test`): **全43件 PASS (100%)**
    - `05_PILOT` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
    - `05_PILOT` Turbopack 本番ビルド (`npm run build`): **全25ルート 0 errors PASS**
    - `ktm_bot` ドライフラン (`dry_run_recruitment_status.mjs`): **Exit Code 0 PASS**

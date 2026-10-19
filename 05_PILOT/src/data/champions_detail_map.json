@@ -8981,16 +8981,6 @@
         "createdAt": "2026-08-23T06:28:30.903043+00:00",
         "channel": "Sawyer Jungle",
         "charCount": 2428
-      },
-      {
-        "id": 36769,
-        "title": "【Season 16完全版】Amumuジャングル究極攻略バイブル：初心者からチャレンジャーへ至る思考プロセス",
-        "snippet": "> 📺 元動画情報 > - 動画タイトル: 【Season 16完全版】Amumuジャングル究極攻略バイブル：初心者からチャレンジャーへ至る思考プロセス > - チャンネル: Sawyer Jungle > - 動画リンク: [https://www.youtube.com/watch?v=ZD5DU0HXHw4](https://www.youtube.com/watch?v=ZD5DU0HXH",
-        "tags": [],
-        "sourceUrl": "https://www.youtube.com/watch?v=ZD5DU0HXHw4",
-        "createdAt": "2026-08-23T06:18:42.840649+00:00",
-        "channel": "Sawyer Jungle",
-        "charCount": 2012
       }
     ],
     "matchups": [
@@ -9822,16 +9812,6 @@
         "createdAt": "2026-08-23T06:28:30.903043+00:00",
         "channel": "Sawyer Jungle",
         "charCount": 2428
-      },
-      {
-        "id": 36769,
-        "title": "【Season 16完全版】Amumuジャングル究極攻略バイブル：初心者からチャレンジャーへ至る思考プロセス",
-        "snippet": "> 📺 元動画情報 > - 動画タイトル: 【Season 16完全版】Amumuジャングル究極攻略バイブル：初心者からチャレンジャーへ至る思考プロセス > - チャンネル: Sawyer Jungle > - 動画リンク: [https://www.youtube.com/watch?v=ZD5DU0HXHw4](https://www.youtube.com/watch?v=ZD5DU0HXH",
-        "tags": [],
-        "sourceUrl": "https://www.youtube.com/watch?v=ZD5DU0HXHw4",
-        "createdAt": "2026-08-23T06:18:42.840649+00:00",
-        "channel": "Sawyer Jungle",
-        "charCount": 2012
       }
     ],
     "matchups": [
@@ -72310,6 +72290,22 @@
     ],
     "libraryKnowledge": [
       {
+        "id": 37868,
+        "title": "レベル1でのインベード対応とレベル2ガンクの判断ルール",
+        "snippet": "> 📺 元動画情報 > - 動画タイトル: レベル1でのインベード対応とレベル2ガンクの判断ルール > - チャンネル: Agurin > - 動画リンク: [https://www.youtube.com/watch?v=at73SjRflo](https://www.youtube.com/watch?v=at73SjRflo) --- > ⏱️ 実演チャプター・キーシーン > - [▶ 00",
+        "tags": [
+          "マクロ",
+          "ジャングル",
+          "レーン",
+          "レベル1",
+          "レベル2"
+        ],
+        "sourceUrl": "https://www.youtube.com/watch?v=at73_SjRflo",
+        "createdAt": "2026-10-19T13:30:50.114031+00:00",
+        "channel": "Agurin",
+        "charCount": 2196
+      },
+      {
         "id": 37779,
         "title": "【究極攻略】Lillia Jungle S+ チャレンジャー到達への思考プロセスと完全マクロバイブル",
         "snippet": "> 📺 元動画情報 > - 動画タイトル: 【究極攻略】Lillia Jungle S+ チャレンジャー到達への思考プロセスと完全マクロバイブル > - チャンネル: Coach Kirei > - 動画リンク: [https://www.youtube.com/watch?v=89VHUJT-p2Q](https://www.youtube.com/watch?v=89VHUJT-p2Q) --",
@@ -73331,6 +73327,22 @@
       }
     ],
     "libraryKnowledge": [
+      {
+        "id": 37868,
+        "title": "レベル1でのインベード対応とレベル2ガンクの判断ルール",
+        "snippet": "> 📺 元動画情報 > - 動画タイトル: レベル1でのインベード対応とレベル2ガンクの判断ルール > - チャンネル: Agurin > - 動画リンク: [https://www.youtube.com/watch?v=at73SjRflo](https://www.youtube.com/watch?v=at73SjRflo) --- > ⏱️ 実演チャプター・キーシーン > - [▶ 00",
+        "tags": [
+          "マクロ",
+          "ジャングル",
+          "レーン",
+          "レベル1",
+          "レベル2"
+        ],
+        "sourceUrl": "https://www.youtube.com/watch?v=at73_SjRflo",
+        "createdAt": "2026-10-19T13:30:50.114031+00:00",
+        "channel": "Agurin",
+        "charCount": 2196
+      },
       {
         "id": 37779,
         "title": "【究極攻略】Lillia Jungle S+ チャレンジャー到達への思考プロセスと完全マクロバイブル",
@@ -95884,14 +95896,14 @@
         "charCount": 0
       },
       {
-        "id": 36957,
-        "title": "Critlafのビルドコンセプト",
-        "snippet": "オラフのパッシブ（低HPでの攻撃速度上昇）を最大限に活かすため、クリティカルアイテムとシールドアイテムを組み合わせます。特に『Fiendhunter Bolts』による確定クリティカルとCC無効化が、オラフをアサシン級の火力を持つキャリーへと変貌させます。",
+        "id": 36960,
+        "title": "集団戦におけるR（ラグナロク）の運用",
+        "snippet": "Rは敵の強力なCCを無効化するために温存するのが鉄則です。先に使ってしまうとCCチェインで何もできずに倒されるため、敵がCCを撃つ瞬間を見極める忍耐力が求められます。",
         "tags": [],
         "sourceUrl": "https://x.com/huncho1v9/status/2095557710771077311?s=20",
         "createdAt": "2026-09-06T11:51:53.979084+00:00",
         "channel": "その他・一般",
-        "charCount": 128
+        "charCount": 83
       },
       {
         "id": 36958,
@@ -95902,6 +95914,16 @@
         "createdAt": "2026-09-06T11:51:53.979084+00:00",
         "channel": "その他・一般",
         "charCount": 101
+      },
+      {
+        "id": 36957,
+        "title": "Critlafのビルドコンセプト",
+        "snippet": "オラフのパッシブ（低HPでの攻撃速度上昇）を最大限に活かすため、クリティカルアイテムとシールドアイテムを組み合わせます。特に『Fiendhunter Bolts』による確定クリティカルとCC無効化が、オラフをアサシン級の火力を持つキャリーへと変貌させます。",
+        "tags": [],
+        "sourceUrl": "https://x.com/huncho1v9/status/2095557710771077311?s=20",
+        "createdAt": "2026-09-06T11:51:53.979084+00:00",
+        "channel": "その他・一般",
+        "charCount": 128
       },
       {
         "id": 36961,
@@ -95922,16 +95944,6 @@
         "createdAt": "2026-09-06T11:51:53.979084+00:00",
         "channel": "その他・一般",
         "charCount": 104
-      },
-      {
-        "id": 36960,
-        "title": "集団戦におけるR（ラグナロク）の運用",
-        "snippet": "Rは敵の強力なCCを無効化するために温存するのが鉄則です。先に使ってしまうとCCチェインで何もできずに倒されるため、敵がCCを撃つ瞬間を見極める忍耐力が求められます。",
-        "tags": [],
-        "sourceUrl": "https://x.com/huncho1v9/status/2095557710771077311?s=20",
-        "createdAt": "2026-09-06T11:51:53.979084+00:00",
-        "channel": "その他・一般",
-        "charCount": 83
       },
       {
         "id": 36956,
@@ -96390,14 +96402,14 @@
         "charCount": 0
       },
       {
-        "id": 36957,
-        "title": "Critlafのビルドコンセプト",
-        "snippet": "オラフのパッシブ（低HPでの攻撃速度上昇）を最大限に活かすため、クリティカルアイテムとシールドアイテムを組み合わせます。特に『Fiendhunter Bolts』による確定クリティカルとCC無効化が、オラフをアサシン級の火力を持つキャリーへと変貌させます。",
+        "id": 36960,
+        "title": "集団戦におけるR（ラグナロク）の運用",
+        "snippet": "Rは敵の強力なCCを無効化するために温存するのが鉄則です。先に使ってしまうとCCチェインで何もできずに倒されるため、敵がCCを撃つ瞬間を見極める忍耐力が求められます。",
         "tags": [],
         "sourceUrl": "https://x.com/huncho1v9/status/2095557710771077311?s=20",
         "createdAt": "2026-09-06T11:51:53.979084+00:00",
         "channel": "その他・一般",
-        "charCount": 128
+        "charCount": 83
       },
       {
         "id": 36958,
@@ -96408,6 +96420,16 @@
         "createdAt": "2026-09-06T11:51:53.979084+00:00",
         "channel": "その他・一般",
         "charCount": 101
+      },
+      {
+        "id": 36957,
+        "title": "Critlafのビルドコンセプト",
+        "snippet": "オラフのパッシブ（低HPでの攻撃速度上昇）を最大限に活かすため、クリティカルアイテムとシールドアイテムを組み合わせます。特に『Fiendhunter Bolts』による確定クリティカルとCC無効化が、オラフをアサシン級の火力を持つキャリーへと変貌させます。",
+        "tags": [],
+        "sourceUrl": "https://x.com/huncho1v9/status/2095557710771077311?s=20",
+        "createdAt": "2026-09-06T11:51:53.979084+00:00",
+        "channel": "その他・一般",
+        "charCount": 128
       },
       {
         "id": 36961,
@@ -96428,16 +96450,6 @@
         "createdAt": "2026-09-06T11:51:53.979084+00:00",
         "channel": "その他・一般",
         "charCount": 104
-      },
-      {
-        "id": 36960,
-        "title": "集団戦におけるR（ラグナロク）の運用",
-        "snippet": "Rは敵の強力なCCを無効化するために温存するのが鉄則です。先に使ってしまうとCCチェインで何もできずに倒されるため、敵がCCを撃つ瞬間を見極める忍耐力が求められます。",
-        "tags": [],
-        "sourceUrl": "https://x.com/huncho1v9/status/2095557710771077311?s=20",
-        "createdAt": "2026-09-06T11:51:53.979084+00:00",
-        "channel": "その他・一般",
-        "charCount": 83
       },
       {
         "id": 36956,
@@ -115502,14 +115514,14 @@
         "charCount": 2284
       },
       {
-        "id": 36965,
-        "title": "スキルヘイストとAAの連携",
-        "snippet": "Spear of ShojinやNavori Quickbladesを採用している場合、Qのクールダウンが大幅に短縮されます。スキルを連打するだけでなく、AAを適切に挟むことでスキルの回転率を最大化し、DPSを向上させることが可能です。",
+        "id": 36964,
+        "title": "ドラゴン形態（R）の管理とファーム",
+        "snippet": "シヴァナはRがない状態では戦闘能力が著しく低下するため、Rが上がるまでの時間をいかに効率よくファームに充てるかが重要です。Rのクールダウン中は無理な戦闘を避け、オブジェクト管理に注力してください。",
         "tags": [],
         "sourceUrl": "https://x.com/Citriclol/status/2095161580359213209?s=20",
         "createdAt": "2026-09-06T11:52:43.374502+00:00",
         "channel": "その他・一般",
-        "charCount": 118
+        "charCount": 98
       },
       {
         "id": 36963,
@@ -115522,14 +115534,14 @@
         "charCount": 105
       },
       {
-        "id": 36964,
-        "title": "ドラゴン形態（R）の管理とファーム",
-        "snippet": "シヴァナはRがない状態では戦闘能力が著しく低下するため、Rが上がるまでの時間をいかに効率よくファームに充てるかが重要です。Rのクールダウン中は無理な戦闘を避け、オブジェクト管理に注力してください。",
+        "id": 36965,
+        "title": "スキルヘイストとAAの連携",
+        "snippet": "Spear of ShojinやNavori Quickbladesを採用している場合、Qのクールダウンが大幅に短縮されます。スキルを連打するだけでなく、AAを適切に挟むことでスキルの回転率を最大化し、DPSを向上させることが可能です。",
         "tags": [],
         "sourceUrl": "https://x.com/Citriclol/status/2095161580359213209?s=20",
         "createdAt": "2026-09-06T11:52:43.374502+00:00",
         "channel": "その他・一般",
-        "charCount": 98
+        "charCount": 118
       },
       {
         "id": 36962,
@@ -115650,16 +115662,6 @@
         "createdAt": "2026-08-23T08:18:46.510138+00:00",
         "channel": "Agurin",
         "charCount": 2351
-      },
-      {
-        "id": 36768,
-        "title": "RANK 1 EUW TRYING TO BREAK MY OWN EUW RECORD (4176 LP) 究極完全攻略バイブル",
-        "snippet": "> 📺 元動画情報 > - 動画タイトル: RANK 1 EUW TRYING TO BREAK MY OWN EUW RECORD (4176 LP) 究極完全攻略バイブル > - チャンネル: Agurin > - 動画リンク: [https://www.youtube.com/watch?v=a2L9Z3kkfdc](https://www.youtube.com/watch?v=a2L9Z",
-        "tags": [],
-        "sourceUrl": "https://www.youtube.com/watch?v=a2L9Z3kkfdc",
-        "createdAt": "2026-08-23T06:08:15.858844+00:00",
-        "channel": "Agurin",
-        "charCount": 2077
       }
     ],
     "matchups": [
@@ -117085,14 +117087,14 @@
         "charCount": 2284
       },
       {
-        "id": 36965,
-        "title": "スキルヘイストとAAの連携",
-        "snippet": "Spear of ShojinやNavori Quickbladesを採用している場合、Qのクールダウンが大幅に短縮されます。スキルを連打するだけでなく、AAを適切に挟むことでスキルの回転率を最大化し、DPSを向上させることが可能です。",
+        "id": 36964,
+        "title": "ドラゴン形態（R）の管理とファーム",
+        "snippet": "シヴァナはRがない状態では戦闘能力が著しく低下するため、Rが上がるまでの時間をいかに効率よくファームに充てるかが重要です。Rのクールダウン中は無理な戦闘を避け、オブジェクト管理に注力してください。",
         "tags": [],
         "sourceUrl": "https://x.com/Citriclol/status/2095161580359213209?s=20",
         "createdAt": "2026-09-06T11:52:43.374502+00:00",
         "channel": "その他・一般",
-        "charCount": 118
+        "charCount": 98
       },
       {
         "id": 36963,
@@ -117105,14 +117107,14 @@
         "charCount": 105
       },
       {
-        "id": 36964,
-        "title": "ドラゴン形態（R）の管理とファーム",
-        "snippet": "シヴァナはRがない状態では戦闘能力が著しく低下するため、Rが上がるまでの時間をいかに効率よくファームに充てるかが重要です。Rのクールダウン中は無理な戦闘を避け、オブジェクト管理に注力してください。",
+        "id": 36965,
+        "title": "スキルヘイストとAAの連携",
+        "snippet": "Spear of ShojinやNavori Quickbladesを採用している場合、Qのクールダウンが大幅に短縮されます。スキルを連打するだけでなく、AAを適切に挟むことでスキルの回転率を最大化し、DPSを向上させることが可能です。",
         "tags": [],
         "sourceUrl": "https://x.com/Citriclol/status/2095161580359213209?s=20",
         "createdAt": "2026-09-06T11:52:43.374502+00:00",
         "channel": "その他・一般",
-        "charCount": 98
+        "charCount": 118
       },
       {
         "id": 36962,
@@ -117233,16 +117235,6 @@
         "createdAt": "2026-08-23T08:18:46.510138+00:00",
         "channel": "Agurin",
         "charCount": 2351
-      },
-      {
-        "id": 36768,
-        "title": "RANK 1 EUW TRYING TO BREAK MY OWN EUW RECORD (4176 LP) 究極完全攻略バイブル",
-        "snippet": "> 📺 元動画情報 > - 動画タイトル: RANK 1 EUW TRYING TO BREAK MY OWN EUW RECORD (4176 LP) 究極完全攻略バイブル > - チャンネル: Agurin > - 動画リンク: [https://www.youtube.com/watch?v=a2L9Z3kkfdc](https://www.youtube.com/watch?v=a2L9Z",
-        "tags": [],
-        "sourceUrl": "https://www.youtube.com/watch?v=a2L9Z3kkfdc",
-        "createdAt": "2026-08-23T06:08:15.858844+00:00",
-        "channel": "Agurin",
-        "charCount": 2077
       }
     ],
     "matchups": [
@@ -148711,6 +148703,22 @@
     ],
     "libraryKnowledge": [
       {
+        "id": 37867,
+        "title": "シンジャオのジャングル周回と集団戦の立ち回り解説",
+        "snippet": "> 📺 元動画情報 > - 動画タイトル: シンジャオのジャングル周回と集団戦の立ち回り解説 > - チャンネル: くるみかんの解説フルクリアTV > - 動画リンク: [https://www.youtube.com/watch?v=-tHEvJp-t4s](https://www.youtube.com/watch?v=-tHEvJp-t4s) --- 🎯 この動画で分かること - シンジャオ",
+        "tags": [
+          "シンジャオ",
+          "ジャングル",
+          "解説",
+          "立ち回り",
+          "LoL"
+        ],
+        "sourceUrl": "https://www.youtube.com/watch?v=-tHEvJp-t4s",
+        "createdAt": "2026-10-19T13:30:15.311368+00:00",
+        "channel": "くるみかんの解説フルクリアTV",
+        "charCount": 961
+      },
+      {
         "id": 37481,
         "title": "【1分Tips】シン・ジャオの初手アイテム選択：タイタン・ハイドラが優勢",
         "snippet": "> 📺 元動画情報 > - 動画タイトル: 【1分Tips】シン・ジャオの初手アイテム選択：タイタン・ハイドラが優勢 > - チャンネル: watanekoLoL > - 動画リンク: [https://www.youtube.com/watch?v=HQqK7J4lyok](https://www.youtube.com/watch?v=HQqK7J4lyok) --- 💡 【1分Tips】シン",
@@ -149143,6 +149151,22 @@
       }
     ],
     "libraryKnowledge": [
+      {
+        "id": 37867,
+        "title": "シンジャオのジャングル周回と集団戦の立ち回り解説",
+        "snippet": "> 📺 元動画情報 > - 動画タイトル: シンジャオのジャングル周回と集団戦の立ち回り解説 > - チャンネル: くるみかんの解説フルクリアTV > - 動画リンク: [https://www.youtube.com/watch?v=-tHEvJp-t4s](https://www.youtube.com/watch?v=-tHEvJp-t4s) --- 🎯 この動画で分かること - シンジャオ",
+        "tags": [
+          "シンジャオ",
+          "ジャングル",
+          "解説",
+          "立ち回り",
+          "LoL"
+        ],
+        "sourceUrl": "https://www.youtube.com/watch?v=-tHEvJp-t4s",
+        "createdAt": "2026-10-19T13:30:15.311368+00:00",
+        "channel": "くるみかんの解説フルクリアTV",
+        "charCount": 961
+      },
       {
         "id": 37481,
         "title": "【1分Tips】シン・ジャオの初手アイテム選択：タイタン・ハイドラが優勢",

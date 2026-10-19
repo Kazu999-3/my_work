@@ -871,7 +871,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 5,
-    "libraryKnowledgeCount": 6,
+    "libraryKnowledgeCount": 5,
     "tier": "Tier 4",
     "winRate": 50
   },
@@ -5330,7 +5330,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 44,
+    "libraryKnowledgeCount": 43,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -6205,7 +6205,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 2,
+    "libraryKnowledgeCount": 3,
     "tier": "Tier 4",
     "winRate": 49
   },
@@ -12887,7 +12887,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 8,
-    "libraryKnowledgeCount": 23,
+    "libraryKnowledgeCount": 24,
     "tier": "Tier 1",
     "winRate": 51
   },
