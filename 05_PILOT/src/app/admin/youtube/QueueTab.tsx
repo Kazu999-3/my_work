@@ -18,6 +18,7 @@ interface QueueItem {
   /** UNIX秒（DBはbigint） */
   date_added: number | null;
   published_at?: string | null;
+  articles?: { id: number | string; title: string; archived: boolean }[];
 }
 
 const PAGE_SIZE = 50;
@@ -399,14 +400,34 @@ export default function QueueTab() {
                   </div>
                 )}
 
-                <div className="ml-6 flex flex-wrap gap-1.5">
+                <div className="ml-6 flex flex-wrap items-center gap-1.5">
                   {item.status === 'completed' && (
-                    <Link
-                      href={`/library?src=${encodeURIComponent(item.url)}`}
-                      className="px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center gap-1"
-                    >
-                      <Sparkles className="w-3 h-3" /> 記事を見る
-                    </Link>
+                    <>
+                      {item.articles && item.articles.length > 0 ? (
+                        item.articles.map((a) => (
+                          <Link
+                            key={a.id}
+                            href={`/library?article=${a.id}`}
+                            title={a.archived ? `${a.title}（辞典/ガイドへ統合済み）` : a.title}
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 border max-w-[280px] truncate transition ${
+                              a.archived
+                                ? 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200'
+                                : 'bg-amber-950/40 text-amber-300 border-amber-800/60 hover:bg-amber-900/40'
+                            }`}
+                          >
+                            <Sparkles className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{a.archived ? '統合済: ' : ''}{a.title}</span>
+                          </Link>
+                        ))
+                      ) : (
+                        <Link
+                          href={`/library?src=${encodeURIComponent(item.url)}`}
+                          className="px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center gap-1"
+                        >
+                          <Sparkles className="w-3 h-3" /> 記事を見る
+                        </Link>
+                      )}
+                    </>
                   )}
                   {(isErrorStatus(item.status) || item.status === 'manually_closed') && (
                     <button

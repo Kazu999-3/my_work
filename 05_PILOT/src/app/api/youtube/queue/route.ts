@@ -85,6 +85,55 @@ export async function GET(req: NextRequest) {
     const { data, error, count } = await query;
     if (error) throw error;
 
+    // 解析完了動画から生成された記事（personal_knowledge）を紐づける
+    const items = (data || []) as any[];
+    if (items.length > 0) {
+      try {
+        const queueIds = new Set(items.map((r: any) => String(r.id)));
+        // 対象の動画IDを含む記事を検索（直近のナレッジ記事）
+        const { data: articles } = await supabase
+          .from('personal_knowledge')
+          .select('id, title, source_url, content, raw_content, tags')
+          .order('id', { ascending: false })
+          .limit(500);
+
+        const byVideoId = new Map<string, any[]>();
+        const attach = (videoId: string, a: any) => {
+          if (!queueIds.has(videoId)) return;
+          const list = byVideoId.get(videoId) || [];
+          if (list.some((x) => String(x.id) === String(a.id))) return;
+          list.push({
+            id: a.id,
+            title: a.title,
+            archived: Array.isArray(a.tags) && a.tags.includes('__DELETED__'),
+          });
+          byVideoId.set(videoId, list);
+        };
+
+        for (const a of articles || []) {
+          const src = String(a.source_url || '');
+          const srcHits = src.match(/[A-Za-z0-9_-]{11}/g) || [];
+          let hit = false;
+          for (const id of srcHits) {
+            if (queueIds.has(id)) { attach(id, a); hit = true; }
+          }
+          if (hit) continue;
+
+          const body = `${a.title || ''}\n${String(a.content || '').slice(0, 1000)}\n${String(a.raw_content || '').slice(0, 1000)}`;
+          const bodyHits = body.match(/[A-Za-z0-9_-]{11}/g) || [];
+          for (const id of bodyHits) {
+            if (queueIds.has(id)) attach(id, a);
+          }
+        }
+
+        for (const row of items) {
+          row.articles = byVideoId.get(String(row.id)) || [];
+        }
+      } catch (linkErr) {
+        console.warn('[YouTube API 05] 記事の紐づけに失敗:', linkErr);
+      }
+    }
+
     let counts: Record<string, number> | undefined;
     let channels: string[] | undefined;
     if (withMeta) {
@@ -108,7 +157,7 @@ export async function GET(req: NextRequest) {
       channels = Array.from(names).sort((x, y) => x.localeCompare(y, 'ja'));
     }
 
-    return NextResponse.json({ success: true, items: data || [], total: count ?? 0, counts, channels });
+    return NextResponse.json({ success: true, items: items || [], total: count ?? 0, counts, channels });
   } catch (e: any) {
     console.error('Queue取得エラー:', e);
     return NextResponse.json({ error: e.message || '内部エラー' }, { status: 500 });
