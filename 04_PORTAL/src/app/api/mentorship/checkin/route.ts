@@ -125,6 +125,12 @@ export async function POST(request: Request) {
     const session = await getAuthSession();
     const hasBotSecret = request.headers.has('x-bot-secret') && verifyBotSecret(request).ok;
 
+    // ログイン中のメンバーか Bot（試合記録からの呼び出しを含む）だけ。以前は未ログインだと下の当事者チェックが丸ごと飛ばされ、
+    // 誰でもどのペアのチェックインにも師匠・弟子の両方として回答でき、継続ボーナス（各+100）を出せた（2026-10-19）
+    if (!session?.discordId && !hasBotSecret) {
+      return NextResponse.json({ ok: false, error: 'ログインが必要です。' }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { matchId, role, feedback, action } = body;
 
@@ -276,7 +282,15 @@ export async function POST(request: Request) {
     if (isCompleted) {
       currentCheckin.status = 'COMPLETED';
 
-      // 🎁 継続ボーナス付与: 師匠・弟子に各+100コイン
+      // 🎁 継続ボーナス付与: 師匠・弟子に各+100コイン。
+      // 2人がほぼ同時に回答すると両方の処理が「揃った」と判定して2回ずつ出ていたため、このチェックインの受取印を
+      // 1回の UPDATE で付けられた時だけ渡す（claim_player_once、migration 108。2026-10-19）
+      const claimCheckinBonus = async (name: string) => {
+        const { data, error } = await supabase.rpc('claim_player_once', {
+          p_name: name, p_key: `checkinBonus:${match.id}`, p_value: String(currentCheckin!.id),
+        });
+        return !error && data === true;
+      };
       const mentorDiscordId = match.mentor?.discord_id;
       const pupilDiscordId = match.pupil?.discord_id;
 
@@ -285,7 +299,7 @@ export async function POST(request: Request) {
           discordId: mentorDiscordId,
           name: match.mentor?.player_name,
         });
-        if (mPlayer) {
+        if (mPlayer && (await claimCheckinBonus(mPlayer.name))) {
           await updatePlayerCoinsAndInventory({
             player: mPlayer,
             newCoins: getPlayerCoins(mPlayer) + 100,
@@ -300,7 +314,7 @@ export async function POST(request: Request) {
           discordId: pupilDiscordId,
           name: match.pupil?.player_name,
         });
-        if (pPlayer) {
+        if (pPlayer && (await claimCheckinBonus(pPlayer.name))) {
           await updatePlayerCoinsAndInventory({
             player: pPlayer,
             newCoins: getPlayerCoins(pPlayer) + 100,

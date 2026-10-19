@@ -1057,19 +1057,22 @@ export async function POST(request: Request) {
     }
 
     // 🎒 師弟中間チェックイン自動判定: 試合終了時に条件を満たした師弟ペアを検知・Discord通知
+    // 2026-10-19: 以前は送り先が NEXT_PUBLIC_APP_URL（本番に未設定）→ localhost:3000、合言葉も未設定の BOT_SHARED_SECRET で、
+    // 本番では一度も届いていなかった（チェックインの自動案内が出ない）。今のリクエストと同じ場所へ、Bot の合言葉で送る。
+    // 待たずに返すと Vercel では応答後に処理が止まることがあるため、完了を待つ（失敗しても記録は成功扱い）
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      fetch(`${appUrl}/api/mentorship/checkin`, {
+      const chkRes = await fetch(`${new URL(request.url).origin}/api/mentorship/checkin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-bot-secret': process.env.BOT_SHARED_SECRET || '',
+          'x-bot-secret': process.env.PORTAL_BOT_SECRET || '',
         },
         body: JSON.stringify({ action: 'trigger_check' }),
-      }).catch((chkErr) => {
-        console.warn('[match/record] 師弟チェックイン判定エラー（続行）:', chkErr?.message);
       });
-    } catch (_) {}
+      if (!chkRes.ok) console.warn('[match/record] 師弟チェックイン判定が失敗（続行）:', chkRes.status);
+    } catch (chkErr: any) {
+      console.warn('[match/record] 師弟チェックイン判定エラー（続行）:', chkErr?.message);
+    }
 
     // 🔊 Discord VCチャンネル名を「インターバル・交代募集中」に自動更新
     try {
