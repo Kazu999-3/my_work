@@ -211,8 +211,9 @@ export async function sendEventUsersNotification(env, options = {}) {
  *   日曜の人数で行われる。start_at で当日のカードを直接引くよう改めた。
  */
 // 20:00 判定で人数が足りなくても「中止」の告知を出さない日（JST、YYYY-MM-DD）。主催者が個別に判断する日用。
-// 2026-10-17: プラチナ基準で第1戦が足りない見込みだが、観戦の人も含めて開催を検討するため（ユーザー指示）
-const NO_CANCEL_NOTICE_DATES = ['2026-10-17'];
+// 使った例: 2026-10-17（プラチナ基準で第1戦が足りない見込みだったが、観戦の人も含めて開催を検討したため。ユーザー指示）。
+// 過ぎた日付は消しておく（2026-10-19 に空にした）
+const NO_CANCEL_NOTICE_DATES = [];
 
 export async function checkCustomStatusAt2000(env) {
   try {
