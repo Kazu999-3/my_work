@@ -154,7 +154,7 @@ export default function PlayerReputationCard({
             }`}
           >
             <Sparkles size={14} className={canSendToday ? 'text-stone-950' : 'text-faint'} />
-            <span>{canSendToday ? '🌟 匿名で称賛を贈る (+50🪙)' : '本日送信済み（明日また送れます）'}</span>
+            <span>{canSendToday ? '🌟 匿名で称賛を贈る（+50🪙は1日1回）' : '本日送信済み（明日また送れます）'}</span>
           </button>
         )}
       </div>
@@ -207,7 +207,7 @@ export default function PlayerReputationCard({
                     {playerName} さんへ匿名評判を贈る
                   </h3>
                   <p className="text-[11px] text-muted font-medium">
-                    完全匿名で送信されます（1日1回・+50コイン獲得🎁）
+                    完全匿名で送信されます（同じ相手には1日1回。コイン +50 は1日の最初の1回だけ🎁）
                   </p>
                 </div>
               </div>
@@ -321,7 +321,7 @@ export default function PlayerReputationCard({
                       ? '送信中...'
                       : isReport
                       ? '管理者へ通報を送信'
-                      : '匿名で称賛を贈る (+50🪙)'}
+                      : '匿名で称賛を贈る（+50🪙は1日1回）'}
                   </span>
                 </button>
               </div>

@@ -325,7 +325,7 @@ export default function MentorshipHubPanel() {
     if (targetProfile.role_type === 'PUPIL') {
       if (
         !confirm(
-          `🎉 ${targetProfile.player_name} さんの指導を引き受けますか？\n（あなたの師匠登録が自動完了し、師弟ペアが即時成立します！+300🪙）`
+          `🎉 ${targetProfile.player_name} さんの指導を引き受けますか？\n（あなたの師匠登録が自動完了し、師弟ペアが即時成立します！初めて組む相手なら +300🪙）`
         )
       ) {
         return;
@@ -1143,7 +1143,7 @@ export default function MentorshipHubPanel() {
                     </button>
                     <button
                       type="button"
-                      title="このオファーを承諾してペアを結成します。双方に+300コインが付与されます"
+                      title="このオファーを承諾してペアを結成します。初めて組む相手なら双方に+300コインが付与されます"
                       disabled={Boolean(acceptingMatchId)}
                       onClick={() => handleAcceptRequest(req.id)}
                       className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 ${
@@ -1158,7 +1158,7 @@ export default function MentorshipHubPanel() {
                           <span>成立処理中...</span>
                         </>
                       ) : (
-                        <span>🤝 承諾してペア結成 (+300🪙)</span>
+                        <span>🤝 承諾してペア結成 (初回+300🪙)</span>
                       )}
                     </button>
                   </div>
@@ -1512,9 +1512,9 @@ export default function MentorshipHubPanel() {
                           type="button"
                           onClick={() => handleCompleteMatch(match.id)}
                           className="px-3 py-1.5 rounded-xl font-black text-xs bg-success-600 hover:bg-success-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
-                          title="目標達成として円満卒業し、両者に+200コインを付与します"
+                          title="目標達成として円満卒業します。成立から7日以上経っていれば両者に+200コイン"
                         >
-                          <span>🎓 卒業・完了 (+200🪙)</span>
+                          <span>🎓 卒業・完了 (7日以上で+200🪙)</span>
                         </button>
                       </div>
                     )}

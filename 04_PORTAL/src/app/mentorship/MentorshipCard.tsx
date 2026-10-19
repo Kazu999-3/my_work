@@ -511,7 +511,7 @@ export function MentorshipCard({
                 : 'bg-success-600 hover:bg-success-500 text-white shadow-success-900/20'
             }`}
           >
-            {isMentor ? '💬 相談してみる' : '🤝 相談に乗る (+300🪙)'}
+            {isMentor ? '💬 相談してみる' : '🤝 相談に乗る (初回+300🪙)'}
           </button>
         )}
       </div>

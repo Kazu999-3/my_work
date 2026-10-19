@@ -76,7 +76,7 @@ export function MentorshipRequestModal({
                 {isTargetMentor ? '先輩に相談してみる' : '相談に乗るよ！の声をかける'}
               </h2>
               <p className="text-xs text-muted-strong font-bold">
-                相手が承認するとDiscordに専用の相談スレッドが作られます (+300🪙)
+                相手が承認するとDiscordに専用の相談スレッドが作られます (初めて組む相手なら+300🪙)
               </p>
             </div>
           </div>

@@ -281,7 +281,7 @@ export default function GuidePortalTab() {
               </div>
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
-                  <span>🤝</span> ワンポチ指導引き受け (+300🪙)
+                  <span>🤝</span> ワンポチ指導引き受け (初めて組む相手なら+300🪙)
                 </div>
                 <p className="text-[11px] text-muted">
                   弟子カードの「師匠を引き受ける」ボタンを押すだけで、先輩登録がなくても即座にペア成立＆専用スレッド自動開設。
