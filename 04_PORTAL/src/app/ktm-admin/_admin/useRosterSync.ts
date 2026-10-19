@@ -283,15 +283,7 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
         console.warn('Discordロール一括同期エラー（続行）:', roleErr?.message);
       }
 
-      // 4. 昇格検知時は初期MMR自動Rebuild
-      if (riotRes.promotions && riotRes.promotions.length > 0) {
-        try {
-          setMessage({ type: "info", text: "⚡ 昇格プレイヤーを検知したため、初期MMRを再計算中..." });
-          await fetchWithTimeout('/api/mmr/rebuild', { method: 'POST', timeout: 30000 });
-        } catch (e) {
-          console.warn('自動Rebuild失敗:', e);
-        }
-      }
+
 
       const promoSummary = riotRes.promotions && riotRes.promotions.length > 0
         ? `\n🎉 最高ランク昇格 (${riotRes.promotions.length}名): ` + riotRes.promotions.map((p: any) => `${p.name} (${p.oldRank} ➔ ${p.newRank})`).join(', ')
