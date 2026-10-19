@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
+import { decodeOAuthState, OAUTH_STATE_COOKIE } from '../../../../../lib/oauthState';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,13 +10,10 @@ export async function GET(req: Request) {
   const code = searchParams.get('code');
   const state = searchParams.get('state');
 
-  let returnTo = '/casino';
-  if (state) {
-    try {
-      const parsed = JSON.parse(Buffer.from(state, 'base64').toString('utf-8'));
-      if (parsed.returnTo) returnTo = parsed.returnTo;
-    } catch {}
-  }
+  // 戻り先は自サイト内のパスだけ（decodeOAuthState が safeReturnTo を通す）
+  const { returnTo, nonce } = decodeOAuthState(state);
+  const cookieStore = await cookies();
+  const expectedNonce = cookieStore.get(OAUTH_STATE_COOKIE)?.value || null;
 
   const reqUrl = new URL(req.url);
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || reqUrl.host;
@@ -26,8 +25,14 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${baseUrl}${returnTo}?auth_error=no_code`);
   }
 
+  // ログイン開始時に置いた合言葉と一致しなければ、他人が作ったログインリンクを踏まされている（ログイン CSRF）
+  if (!nonce || !expectedNonce || nonce !== expectedNonce) {
+    return NextResponse.redirect(`${baseUrl}${returnTo}?auth_error=state_mismatch`);
+  }
+
   const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1487839977487470813';
-  const clientSecret = process.env.DISCORD_CLIENT_SECRET || '7b9BIMgFZtampwPWo1Z0QeyxxnpwcDJr';
+  // 2026-10-19: 以前はここに本物の client secret を既定値として直書きしており、公開リポジトリで誰でも読めた
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
   if (!clientSecret) {
     console.warn('[discord-callback] DISCORD_CLIENT_SECRET is not set.');
@@ -98,6 +103,8 @@ export async function GET(req: Request) {
     const sessionCookieVal = encodeUserSession(sessionData);
 
     const response = NextResponse.redirect(`${baseUrl}${returnTo}`);
+    // 合言葉は使い捨て
+    response.cookies.set(OAUTH_STATE_COOKIE, '', { path: '/api/auth/discord', maxAge: 0 });
     response.cookies.set(USER_SESSION_COOKIE, sessionCookieVal, {
       path: '/',
       // クライアントJSからこのCookieを読む箇所は無い(ユーザー情報は/api/auth/me経由)ためHttpOnlyにする
