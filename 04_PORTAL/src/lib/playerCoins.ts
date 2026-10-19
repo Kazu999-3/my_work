@@ -112,6 +112,9 @@ export async function findOrCreatePlayer(params: {
 
       if (byExactName && byExactName.length > 0) {
         const p = byExactName[0];
+        // 別の Discord ID に紐づいた人は返さない（2026-10-19）。以前は「自分の Discord ID（未登録）＋他人の名前」を送ると
+        // Discord ID で見つからず名前で他人が返り、本人確認（Discord ID で照合）を通ったまま他人のコインで賭け・購入・チップができた
+        if (cleanDiscordId && p.discord_id && p.discord_id !== cleanDiscordId) return null;
         if (cleanDiscordId && !p.discord_id) {
           await supabase
             .from('ktm_players')
@@ -135,6 +138,9 @@ export async function findOrCreatePlayer(params: {
 
       if (byIlike && byIlike.length > 0) {
         const p = byIlike[0];
+        // 別の Discord ID に紐づいた人は返さない（2026-10-19）。以前は「自分の Discord ID（未登録）＋他人の名前」を送ると
+        // Discord ID で見つからず名前で他人が返り、本人確認（Discord ID で照合）を通ったまま他人のコインで賭け・購入・チップができた
+        if (cleanDiscordId && p.discord_id && p.discord_id !== cleanDiscordId) return null;
         if (cleanDiscordId && !p.discord_id) {
           await supabase
             .from('ktm_players')

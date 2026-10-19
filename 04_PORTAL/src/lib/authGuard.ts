@@ -74,41 +74,46 @@ export async function verifyUserOrAdmin(
     return { ok: true, session };
   }
 
-  // 本人のDiscord IDと一致するか
-  if (reqDiscordId && session.discordId === reqDiscordId) {
+  // 2026-10-19: 照合は「ログイン中の本人」との完全一致だけにする。以前は
+  //   - 名前を部分一致（どちらかがもう一方を含む）で照合しており、Discord の表示名を短い文字（例: "1"）にすると
+  //     他人の Discord ID や名前に「含まれる」ため通り、誰のコインでも操作できた
+  //   - Discord ID と名前の両方が来た時、どちらか一方が合えば通しており、「他人の Discord ID ＋ 自分の名前」で通った
+  const lower = (v: unknown) => String(v ?? '').trim().toLowerCase();
+  const isObject = typeof targetIdentifier === 'object';
+
+  // Discord ID が指定されたら、本人の ID と完全一致すること
+  if (isObject && reqDiscordId && reqDiscordId !== session.discordId) {
+    return { ok: false, session, error: '他のプレイヤーになりすました操作は実行できません。' };
+  }
+  if (isObject && reqDiscordId === session.discordId) {
     return { ok: true, session };
   }
 
-  // 本人の表示名（サモナー名/名簿名）と一致するか
-  const targets = [reqDiscordId, reqPlayerName].filter(Boolean).map(t => String(t).trim().toLowerCase());
-  const userNames = [session.displayName, session.username, session.discordId].filter(Boolean).map(u => String(u).trim().toLowerCase());
-
-  for (const t of targets) {
-    for (const u of userNames) {
-      if (t === u || t.includes(u) || u.includes(t)) {
-        return { ok: true, session };
-      }
-    }
+  // 文字列1つ（Discord ID か名前のどちらか）または名前だけの指定
+  const target = lower(isObject ? reqPlayerName : targetIdentifier);
+  if (!target) {
+    return { ok: false, session, error: '他のプレイヤーになりすました操作は実行できません。' };
+  }
+  if (target === lower(session.discordId)) {
+    return { ok: true, session };
   }
 
-  // DBのktm_playersからdiscord_idとnameを照合
+  // 名前は「本人の Discord ID に紐づいた名簿の名前・IGN」と完全一致すること
   if (supabase && session.discordId) {
     const { data: player } = await supabase
       .from('ktm_players')
-      .select('discord_id, name, ign')
+      .select('name, ign')
       .eq('discord_id', session.discordId)
       .limit(1)
       .maybeSingle();
-
     if (player) {
-      const pNames = [player.name, player.ign, player.discord_id].filter(Boolean).map(n => String(n).trim().toLowerCase());
-      for (const t of targets) {
-        for (const pn of pNames) {
-          if (t === pn || t.includes(pn) || pn.includes(t)) {
-            return { ok: true, session };
-          }
-        }
+      if ([player.name, player.ign].filter(Boolean).some((n) => lower(n) === target)) {
+        return { ok: true, session };
       }
+    } else if ([session.displayName, session.username].filter(Boolean).some((n) => lower(n) === target)) {
+      // まだ名簿に居ない人（カジノを初めて使う時に自動で登録される）は、Discord の名前と完全一致すること。
+      // 同じ名前の他人が居ても、findOrCreatePlayer が別の Discord ID の人を返さない
+      return { ok: true, session };
     }
   }
 

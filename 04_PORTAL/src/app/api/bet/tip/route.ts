@@ -23,11 +23,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '送信相手情報が不足しています。' }, { status: 400 });
     }
 
-    // 他者のコインを勝手に送金しないよう本人・管理者検証
-    const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
-    const authCheck = await verifyUserOrAdmin(fromDiscordId || fromName);
-    if (!authCheck.ok) {
-      return NextResponse.json({ error: authCheck.error }, { status: 403 });
+    // 他者のコインを勝手に送金しないよう本人・管理者検証。
+    // Discord の /tip（Bot 経由）は Cookie を持たないため、/api/bet と同じく Bot の合言葉で受け付け、
+    // Discord が署名した送り主の ID（fromDiscordId）を正とする。2026-10-19: 以前は Bot 経由を受け付けておらず、/tip は毎回失敗していた
+    const { verifyBotSecretStrict } = await import('../../../../lib/botAuth');
+    const isBot = verifyBotSecretStrict(req).ok;
+    if (isBot && !fromDiscordId) {
+      return NextResponse.json({ error: '送信者の Discord ID が必要です。' }, { status: 400 });
+    }
+    if (!isBot) {
+      const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
+      const authCheck = await verifyUserOrAdmin(fromDiscordId || fromName);
+      if (!authCheck.ok) {
+        return NextResponse.json({ error: authCheck.error }, { status: 403 });
+      }
     }
 
     // 送信者の確認・取得
