@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import {
   RECRUITMENT_COLORS, getDayDef, buildDayBanner, replaceBanner,
-  computeDayStatus, computeDominantTier, parseEntryBreakdown, cleanEntryLine,
+  computeDayStatus, parseEntryBreakdown, cleanEntryLine,
   sortEntryLinesByLane,
 } from '../utils/recruitmentStatus.js';
 import { PLAYSTYLE_ROLE_NAMES } from '../utils/discordRoles.js';

@@ -35,7 +35,16 @@ export async function GET(req: Request) {
       );
     }
 
-    return NextResponse.json({ player: player || null });
+    if (player) {
+      const sanitized = { ...player };
+      if (sanitized.metadata && typeof sanitized.metadata === 'object') {
+        const { notes, admin_notes, ...safeMeta } = sanitized.metadata;
+        sanitized.metadata = safeMeta;
+      }
+      return NextResponse.json({ player: sanitized });
+    }
+
+    return NextResponse.json({ player: null });
   } catch (err: any) {
     console.error('[player/lookup] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

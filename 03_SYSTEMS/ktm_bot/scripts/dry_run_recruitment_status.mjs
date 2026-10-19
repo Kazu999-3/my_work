@@ -13,7 +13,7 @@
 // モデルを変えたらこのスクリプトも必ず追従させること。
 
 import {
-  computeDayStatus, buildDayBanner, computeDominantTier, getDayDef,
+  computeDayStatus, buildDayBanner, getDayDef,
   RECRUITMENT_COLORS, DAY_CAPACITY, resolveWeekendTargets, buildRecruitmentContent,
 } from '../src/utils/recruitmentStatus.js';
 import { buildDayRecruitEmbed, buildDayRecruitComponents } from '../src/ui/embeds.js';
@@ -90,25 +90,8 @@ for (const dayKey of ['sat', 'sun']) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. 最多ランク帯の集計ルール
-//    エメラルド以上 ➔ プラチナ合算 / アイアン・未ランク ➔ ブロンズ合算
+// 2. 最多ランク帯の集計ルール（2026-10-17 全員出場化に伴い廃止）
 // ---------------------------------------------------------------------------
-const tierCases = [
-  { label: '参加者なし', lines: [], expect: '' },
-  { label: 'シルバー多数', lines: ['【シルバー】', '【シルバー】', '【ゴールド】'], expect: 'シルバー帯(2名)' },
-  { label: 'ダイヤはプラチナへ合算', lines: ['【ダイヤ】', '【エメラルド】', '【シルバー】'], expect: 'プラチナ帯(2名)' },
-  { label: '未ランクはブロンズへ合算', lines: ['【未ランク】', '【アイアン】', '【ゴールド】'], expect: 'ブロンズ帯(2名)' },
-  { label: '同数の時は下のレート優先(シル2/ゴル2)', lines: ['【ゴールド】', '【シルバー】', '【ゴールド】', '【シルバー】'], expect: 'シルバー帯(2名)' },
-  { label: '同数の時は下のレート優先(ゴル2/プラ2)', lines: ['【プラチナ】', '【ゴールド】', '【プラチナ】', '【ゴールド】'], expect: 'ゴールド帯(2名)' },
-];
-
-console.log('\n最多ランク帯の集計:');
-for (const t of tierCases) {
-  const lines = t.lines.map((r, i) => `- <@${100 + i}> 🟢フル 👑常連 ${r}`);
-  const actual = computeDominantTier(lines);
-  if (actual !== t.expect) fail(`[${t.label}] 期待=${t.expect || '(空)'} / 実際=${actual || '(空)'}`);
-  console.log(`  ${t.label.padEnd(24)} → ${actual || '(なし)'}`);
-}
 
 // ---------------------------------------------------------------------------
 // 3. 開催日の解決（曜日ごと）

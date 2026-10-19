@@ -221,38 +221,6 @@ export function cleanEntryLine(line) {
   return s;
 }
 
-/** 最多ランク帯と対象レンジ情報を計算（観戦希望者は最多帯の判定母数から除外） */
-export function computeDominantTierInfo(lines) {
-  const entries = (lines || []).filter((l) => l && l.startsWith('- ') && !isSpectatorMatch(l));
-  if (entries.length === 0) return { key: '', text: '', rangeText: '' };
-
-  const tierCounts = {};
-  for (const line of entries) {
-    const jp = getNormalizedTier(line);
-    tierCounts[jp] = (tierCounts[jp] || 0) + 1;
-  }
-
-  let bestKey = '';
-  let maxCount = 0;
-  for (const [tier, count] of Object.entries(tierCounts)) {
-    const order = TIER_ORDER[tier] ?? 99;
-    const bestOrder = bestKey ? (TIER_ORDER[bestKey] ?? 99) : 99;
-
-    if (count > maxCount) {
-      maxCount = count;
-      bestKey = tier;
-    } else if (count === maxCount && order < bestOrder) {
-      // ★ 同数の時は下のレート（初中級側）を最優先！
-      bestKey = tier;
-    }
-  }
-
-  return {
-    key: bestKey,
-    text: bestKey ? `${bestKey}帯(${maxCount}名)` : '',
-    rangeText: TIER_RANGE_TEXT[bestKey] || '',
-  };
-}
 
 const ROLE_SORT_ORDER = {
   TOP: 1,
@@ -324,114 +292,25 @@ const styleFromMatches = (ms) => (ms.length === 2 ? 'full' : ms[0] === 1 ? 'sing
 /**
  * 🤝 対面枠（2026-10-17、ユーザー判断）: 基準の帯から2つ以上離れて観戦・2部屋目待ちになる人でも、
  * 同じ帯で同じレーン希望の2人がいれば、その2人を対面させる前提で出場対象に入れる。
- * （例: プラチナ基準の回のシルバーSUP 2人。対面同士は同じ帯なのでレーン戦の差は出ない）
- * 2人とも出られる試合だけ出場扱いにする（フル＋途中参加なら、2人とも第2戦から）。
- * 自分で観戦を選んだ人は対象外。
- */
-function promoteLanePairs(candidates) {
-  const promoted = [];
-  const rest = [];
-  const used = new Set();
-  for (let i = 0; i < candidates.length; i++) {
-    if (used.has(i)) continue;
-    const a = candidates[i];
-    let paired = false;
-    for (let j = i + 1; j < candidates.length; j++) {
-      if (used.has(j)) continue;
-      const b = candidates[j];
-      if (a.tier !== b.tier) continue;
-      const lane = commonLane(a.raw, b.raw);
-      if (!lane) continue;
-      const shared = STYLE_MATCHES[styleOf(a.raw)].filter((m) => STYLE_MATCHES[styleOf(b.raw)].includes(m));
-      const effStyle = styleFromMatches(shared);
-      if (!effStyle) continue;
-      used.add(i); used.add(j);
-      const tag = `（🤝${lane}対面枠）`;
-      promoted.push({ ...a, line: `${a.line}${tag}`, effStyle, pair: true }, { ...b, line: `${b.line}${tag}`, effStyle, pair: true });
-      paired = true;
-      break;
-    }
-    if (!paired) rest.push(a);
-  }
-  return { promoted, rest };
-}
-
 /**
  * 参加者行から「出場対象枠」と「観戦・2部屋目待ち枠」を分離し、
  * 出場対象枠の中だけで各試合の実働人数を集計する。
- * 人数に関わらず、最多MMR帯および初中級最優先ポリシー（同数時は下のレート優先）に基づき、
- * 2ランク格差が出ないよう公平に分離する。
+ * （2026-10-17以降、全員出場を基本とし、観戦希望者のみを観戦枠へ分離）
  */
-export function parseEntryBreakdown(lines, dominantTierKey = null) {
+export function parseEntryBreakdown(lines) {
   const entries = (lines || []).filter((l) => l && l.startsWith('- '));
-  const dominantOrder = dominantTierKey ? TIER_ORDER[dominantTierKey] : null;
-
   const eligible = [];
   const spectator = [];
-  let promotedPairsCount = 0;
 
-  // ① ランク不問（日曜など）の場合: 観戦希望者以外を出場対象枠へ
-  if (!dominantOrder) {
-    for (const rawLine of entries) {
-      if (isSpectatorMatch(rawLine)) {
-        spectator.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
-      } else {
-        eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
-      }
+  for (const rawLine of entries) {
+    if (isSpectatorMatch(rawLine)) {
+      spectator.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
+    } else {
+      eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
     }
-  } else {
-    // ② ランク制限あり（土曜など）: 最多層ルールに基づき出場対象・観戦枠を分離
-    const tierEntries = {
-      same: [],    // dominantOrder と同ティア（最多帯）
-      lower: [],   // dominantOrder - 1 (1ランク下、例: シルバー)
-      higher: [],  // dominantOrder + 1 (1ランク上、例: プラチナ)
-      outlier: [], // 2ランク差以上離れた外れ値
-    };
-
-    for (const rawLine of entries) {
-      const cleaned = cleanEntryLine(rawLine);
-      if (isSpectatorMatch(rawLine)) {
-        spectator.push({ raw: rawLine, line: cleaned });
-        continue;
-      }
-
-      const tier = getNormalizedTier(rawLine);
-      const tierOrder = TIER_ORDER[tier] || 2;
-      const diff = tierOrder - dominantOrder;
-
-      if (diff === 0) {
-        tierEntries.same.push({ raw: rawLine, line: cleaned, tier });
-      } else if (diff === -1) {
-        tierEntries.lower.push({ raw: rawLine, line: cleaned, tier });
-      } else if (diff === 1) {
-        tierEntries.higher.push({ raw: rawLine, line: cleaned, tier });
-      } else {
-        tierEntries.outlier.push({ raw: rawLine, line: cleaned, tier });
-      }
-    }
-
-    // 初中級最優先ポリシー:
-    // 下位側（lower: 初中級）がいれば下位側を最優先採用（同数の場合も下のレート優先）
-    // 下位側が0名の場合のみ上位側（higher）を採用
-    let acceptedAdjacent = [];
-    let rejectedAdjacent = [];
-
-    if (tierEntries.lower.length > 0) {
-      acceptedAdjacent = tierEntries.lower;
-      rejectedAdjacent = tierEntries.higher;
-    } else if (tierEntries.higher.length > 0) {
-      acceptedAdjacent = tierEntries.higher;
-    }
-
-    eligible.push(...tierEntries.same, ...acceptedAdjacent);
-    // 離れた帯の人のうち、同じ帯・同じレーン希望の2人は対面枠として出場対象へ
-    const { promoted, rest } = promoteLanePairs([...tierEntries.outlier, ...rejectedAdjacent]);
-    eligible.push(...promoted);
-    spectator.push(...rest);
-    promotedPairsCount = promoted.length / 2;
   }
 
-  // カウントは出場対象枠（eligible）で集計。対面枠は「2人とも出られる試合」の形態（effStyle）で数える
+  // カウントは出場対象枠（eligible）で集計
   const eff = (e) => e.effStyle || styleOf(e.raw);
   const eligibleFull = eligible.filter((e) => eff(e) === 'full');
   const eligibleSingle = eligible.filter((e) => eff(e) === 'single');
@@ -460,8 +339,8 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
     spectatorLines: sortEntryLinesByLane(spectator.map((e) => e.line)),
     match1Lines,
     match2LateLines,
-    dominantTierKey,
-    promotedPairsCount,
+    dominantTierKey: null,
+    promotedPairsCount: 0,
     hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
     hasSpectator: spectator.length > 0,
     match1Count,
@@ -571,9 +450,6 @@ export function replaceBanner(description, banner) {
   return parts.join('\n\n');
 }
 
-export function computeDominantTier(lines) {
-  return computeDominantTierInfo(lines).text;
-}
 
 /**
  * 埋め込みの参加者フィールドから参加者行だけを取り出す。

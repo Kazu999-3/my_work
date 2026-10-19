@@ -11,7 +11,6 @@ import assert from 'node:assert/strict';
 import {
   coreBalanceTeams,
   coreBalanceProposals,
-  selectPlayersWithPity,
   computeBalancerPredictionQuality,
   ROLES,
   type Player,
@@ -113,31 +112,6 @@ test('coreBalanceProposals: 案B(戦力均等)はMMR差が過大にならない'
   assert.ok(b.mmrDiff < 1000, `案BのMMR差が過大: ${b.mmrDiff}`);
 });
 
-test('selectPlayersWithPity: 10人以下はそのまま全員選出・観戦0', () => {
-  const players = tenPlayers();
-  const { selected, spectators } = selectPlayersWithPity(players);
-  assert.equal(selected.length, 10);
-  assert.equal(spectators.length, 0);
-});
-
-test('selectPlayersWithPity: 11人以上なら10人選出＋残りは観戦', () => {
-  const players = [...tenPlayers(), makePlayer('P11', 'TOP', 'MID', 1200), makePlayer('P12', 'MID', 'ADC', 1200)];
-  const { selected, spectators } = selectPlayersWithPity(players);
-  assert.equal(selected.length, 10);
-  assert.equal(spectators.length, 2);
-  // 選出と観戦の合計は元の人数と一致し、重複しない
-  const names = new Set([...selected, ...spectators].map(p => p.name));
-  assert.equal(names.size, 12);
-});
-
-test('selectPlayersWithPity: spectator_pityが高いプレイヤーは優先的に選出される', () => {
-  const players = tenPlayers();
-  // 11人目に高いspectator_pity（＝前回観戦した人）を持たせると、必ず選出側に入るはず
-  const eager = makePlayer('EAGER', 'TOP', 'MID', 1200, { spectator_pity: 99 });
-  players.push(eager);
-  const { selected } = selectPlayersWithPity(players);
-  assert.ok(selected.some(p => p.name === 'EAGER'), 'spectator_pityが高い人が選出されていない');
-});
 
 // ============ 制約(forbiddenPairs/requiredPairs)の実効性 ============
 // レビュー指摘: 「絶対条件」のはずのforbiddenPairsが実際に効いているかを検証する

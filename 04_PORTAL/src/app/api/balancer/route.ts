@@ -4,7 +4,6 @@ import {
   Player,
   Role,
   BalanceContext,
-  selectPlayersWithPity,
   coreBalanceProposals
 } from '../../../lib/balancer';
 import { fetchAllRows } from '../../../lib/fetchAll';

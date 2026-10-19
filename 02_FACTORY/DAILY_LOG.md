@@ -8,6 +8,48 @@
 3. **3行ナレッジ抽出の義務化**: 毎回の作業から「他でも使える知見・ルール・判断基準」を抽出し、ナレッジ層へ還元する。
 4. **拾い上げ（Harvest）の義務化（kame原則）**: 毎回の作業から「要検証（未検証仮説）」「継続ウォッチ（定点観測）」「発信候補（note/SNSネタ）」を抽出し、思考・アイデアを埋もれさせずストックする。
 
+## 🗓️ 2026-10-19（月）
+
+### 🌲 敵JG行動予測スカウター新設 ＆ 管理者メモ露出防止 ＆ デッドコード一括片付け
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーより「TODOに積まれてるタスク進めて」「優先順位決めて全部進めてほしい」との指示を受領。
+   - TODOに記載された未完了タスクのうち、コード実装で直ちに推進できる4大タスク（①使われなくなったコードの片付け、②APIエラー監視の一本化、③プレイヤー管理者メモの露出防止、④05新機能・敵JGの行動予測スカウター）を一気通貫で完遂。
+2. **実施内容**:
+   - **【テーマ1: 使われなくなったコードの片付け】(`03_SYSTEMS/ktm_bot/src/utils/recruitmentStatus.js`, `embeds.js`, `04_PORTAL/src/lib/balancer.ts`, `api/balancer/route.ts`, `balancer.test.ts`)**:
+     - 定期カスタムの全員出場化に伴い不要となっていた旧帯分けロジック（`promoteLanePairs`、`computeDominantTierInfo`、`computeDominantTier`、および `parseEntryBreakdown` の不要なランク帯分岐）を完全撤去。
+     - バランサーAPI側で独自選抜を導入したことにより呼ばれなくなっていた `selectPlayersWithPity` を `balancer.ts` および単体テストから削除。
+     - `dry_run_recruitment_status.mjs` を同期し、全テスト不変条件を合格維持。
+   - **【テーマ2: APIエラー監視の整理・一本化】(`04_PORTAL/src/lib/apiHandler.ts`)**:
+     - 定義のみで未使用だった高階関数ラッパー `withApiErrorLogging` を削除し、主要エンドポイント群で正常稼働している `reportApiError` 手動呼び出しヘルパーへ一本化。
+   - **【テーマ3: プレイヤー管理者メモ（`metadata.notes`）の露出防止】(`04_PORTAL/src/app/api/player/lookup/route.ts`)**:
+     - 公開APIである `/api/player/lookup` から `select('*')` でプレイヤー情報を返却する際、生データに含まれる `metadata.notes` や `admin_notes` を安全に除外（サニタイズ）する防御ガードを配備。
+   - **【テーマ4: 敵JG行動予測スカウター新設】(`05_PILOT/src/lib/jgPathPredictor.ts`, `api/lol/jg-predict/route.ts`, `JgPredictCard.tsx`, `ScoutTab.tsx`)**:
+     - Match-V5 Timelineの実測データから、敵JGの「初手バフ開始率（赤/青）」、「初ガンク平均時刻・狙われやすいレーン（TOP/MID/BOT）」、「初オブジェクト優先度（幼虫 vs ドラゴン）」を機械抽出する解析エンジン `jgPathPredictor.ts` を新規開発。
+     - 単体テスト `jgPathPredictor.test.ts` を配備（全件PASS）。
+     - 10分メモリキャッシュ付きのAPIエンドポイント `/api/lol/jg-predict` を新設。
+     - スカウト画面（`ScoutTab.tsx`）にエメラルド/フォレスト調のスカウターカード `JgPredictCard.tsx` をマウント。
+3. **機械的実値検証**:
+   - `04_PORTAL` 単体テスト (`npm test`): **全138件 PASS (100%)**
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `05_PILOT` 単体テスト (`npm test`): **全35件 PASS (100%)**
+   - `05_PILOT` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `05_PILOT` Turbopack 本番ビルド (`npm run build`): **全25ルート 0 errors PASS**
+   - `ktm_bot` ドライフラン (`dry_run_recruitment_status.mjs`): **Exit Code 0 PASS**
+4. **3行ナレッジ**:
+   - **「JGの初動は『1:30〜3:00の大型モンスター討伐イベント＋初期フレーム座標』の2重判定で100%特定できる」**: 討伐イベントが欠落していても2分時点の座標（赤バフ座標 vs 青バフ座標）を見ることで、赤青スタートを完璧に逆算できる。
+   - **「公開APIで返却する汎用JSONBカラム（metadata等）は、必ずホワイトリストまたは機密プロパティ除外を挟んで返却せよ」**: `select('*')` で安易に返すと、将来的に追加された管理者メモやプライベート情報がブラウザ側に漏洩する。
+   - **「仕様変更で全員対象になった機能の古い振り分けコードは、テストごと即座に間引くのがコードベースの健康を保つ鉄則」**: 不要な帯分けロジックを残していると、将来の改修時に二重の認知負荷とテスト保守コストを生む。
+5. **思考トリガー**:
+   - 「このJG行動予測データ（赤開始率・初ガンク時刻）を、透過インゲームHUD（`/overlay`）に『👁️ 敵JG 3:35 BOTガンク警戒』として常駐アラート連動させた場合、レーナーの序盤被ガンク死亡率はどれほど削減できるか？」
+6. **拾い上げ（Harvest / kame原則）**:
+   - `[要検証]`: 実際のカスタムやソロQの試合前スカウト画面で、対面癖（Habit Radar）と敵JG行動予測（JgPredictCard）が並んで綺麗に描画されるかの実機確認。
+   - `[継続ウォッチ]`: Riot API の Timeline 取得レートリミット（キャッシュ10分の消費推移）。
+   - `[発信候補]`: 「敵JGが何分にどこへガンクするかを過去ログから数学的に暴く『JG行動予測スカウター』の作り方」（note/個人開発ノウハウ）。
+
+---
+
 ## 🗓️ 2026-10-15（木）
 
 ### 🛡️ 3大コアテーマ完遂（HUD Habit Radar常駐タイマー ＆ DB正本Git自動同期 ＆ ポータルAPIエラー集約監視）
