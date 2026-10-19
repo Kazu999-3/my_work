@@ -660,7 +660,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     )
 
     # --- SSOT: champion_facts にも並行書き込み ---
-    # 日次の dict-migrate cron を待たず、トレンド取得直後に champion_facts を最新化する。
+    # トレンド取得直後に champion_facts を最新化する（以前あった日次の dict-migrate は 2026-10-19 に削除済み）。
     jg_style_data = raw_data.get("jg_style") if isinstance(raw_data.get("jg_style"), dict) else {}
     patch_meta_data = raw_data.get("patch_meta") if isinstance(raw_data.get("patch_meta"), dict) else {}
     # champion_facts 側の文章も空欄を埋めるだけ（既存の文章は、記事由来でも人の編集でも残す）
