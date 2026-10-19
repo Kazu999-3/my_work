@@ -36,7 +36,7 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 | **Sovereign Sentinel**<br>(`sentinel.yml`) | 毎日 12:00 | `0 3 * * *` | APIキー・Botトークン・秘密鍵のハードコード検知、基幹ディレクトリ構成チェック | `03_SYSTEMS/INFRA/sentinel.py` |
 | ~~Sovereign DB Sync~~<br>(`sync.yml`) | **2026-10-04 削除** | — | 鍵の未登録で毎日「同期スキップ」のまま成功扱いだった。動かすと手元のバイブル約370件をライブラリへタイトル基準で上書きし今の仕組みと衝突するため廃止（`sovereign_sync.py` は残置） | `03_SYSTEMS/v2_CORE/sovereign_sync.py` |
 | **Database Backup**<br>(`db-backup.yml`) | 毎週日 03:00 | `0 18 * * 0` | `pg_dump` による論理バックアップ（2026-10-12 Egress抑制のため日次から週1回へ変更） | Supabase → Artifact |
-| **Daily Health Report**<br>(`health-report.yml`) | 毎日 06:30 | `30 21 * * *` | 本番の健康診断（バックアップ・定期WF・PCデーモン・タスク失敗・動画解析・辞典統合・ソロQ振り返り・DB容量・RLSの穴）を実測し通知ベルへ毎朝報告、異常はIssue。変更履歴の間引きも実施（2026-10-04 新設） | `scripts/production_health_report.py` |
+| **Daily Health Report**<br>(`health-report.yml`) | 毎日 06:30 | `30 21 * * *` | 本番の健康診断（バックアップ・定期WF・PCデーモン・タスク失敗・動画解析・辞典統合・ソロQ振り返り・DB容量・RLSの穴）を実測しDiscord #エラーログへ毎朝報告（2026-10-19 通知ベルから移行、送信失敗時のみ通知ベルへ退避）、異常はIssue。変更履歴の間引きも実施（2026-10-04 新設） | `scripts/production_health_report.py` |
 | **KTM Bot Cron Backup**<br>(`ktm-bot-cron-backup.yml`) | 毎週水 12:07 | `7 3 * * 3` | Cloudflare Cronの発火漏れ（best-effort）に対する保険。`/trigger-scheduled` を冗長キック | ktm-os-worker |
 | **Riot Patch Watchdog**<br>(`patch-watchdog.yml`) | 1日2回<br>07:20 / 15:20 | `20 6,22 * * *` | DataDragon最新パッチの巡回検知、差分チャンピオン抽出、検証キュー更新（`review_needed`）、Discord速報。記録は `current_patch.json` にコミットで永続化 | `scripts/check_patch_update.py` |
 | **Champion Dictionary Bulk Update**<br>(`champ-dict-update.yml`) | 毎週月 03:00 | `0 18 * * 0` | チャンピオン辞典の一括更新 | `champ_db_bulk_updater.py` |

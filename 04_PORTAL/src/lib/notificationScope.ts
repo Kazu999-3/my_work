@@ -5,5 +5,5 @@
 // 04（内戦・ポータル）に出すもの:
 //   balancer_accuracy     チーム分けの予測精度アラート（lib/balancer.ts）
 //   portal_boundary_error ポータル画面のエラー（/api/health）
-// 05 に出すもの（それ以外すべて）: coach_review / dict_review / patch_update / system_health / edge_task など
+// 05 に出すもの（それ以外すべて）: coach_review / dict_review / patch_update / system_health（Discordへ送れなかった日だけ）/ edge_task など
 export const PORTAL_NOTIFICATION_TYPES = ['balancer_accuracy', 'portal_boundary_error'] as const;

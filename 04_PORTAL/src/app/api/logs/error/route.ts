@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyPortalError, type ErrorLogApp } from '../../../../lib/discordNotify';
+import { notifyPortalError, notifyHealthReport, type ErrorLogApp } from '../../../../lib/discordNotify';
 
-// 04のブラウザ側エラーに加え、05(KTM Pilot)のサーバー/画面エラーと毎朝の健康診断の異常もここで受けて
+// 04のブラウザ側エラーに加え、05(KTM Pilot)のサーバー/画面エラーと毎朝の健康診断の結果もここで受けて
 // #エラーログ へ集約する（05はDiscordの鍵を持たないため、04経由で送る）。
 const EXTERNAL_APPS: ErrorLogApp[] = ['05', 'health'];
 const SOURCES = ['API', 'CLIENT', 'CRON', 'SERVER_ACTION', 'TASK'] as const;
@@ -52,6 +52,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Too many reports' }, { status: 429 });
     }
     const body = JSON.parse(raw);
+
+    // 毎朝の健康診断の結果（2026-10-19: 05の通知ベルから #エラーログ へ移した）。
+    // スクリプトからしか送られないため、Origin があっても必ず x-bot-secret を求める。
+    if (body?.kind === 'health_report') {
+      const secret = (process.env.PORTAL_BOT_SECRET || '').trim();
+      if (!secret || (req.headers.get('x-bot-secret') || '').trim() !== secret) {
+        return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 });
+      }
+      const worst = ['OK', 'WARN', 'FAIL'].includes(body.worst) ? body.worst : 'WARN';
+      const sent = await notifyHealthReport({
+        worst,
+        counts: body.counts && typeof body.counts === 'object' ? body.counts : {},
+        body: String(body.body || ''),
+      });
+      // 送れなかった時は呼び出し側（健康診断）が通知ベルへ退避できるよう 502 を返す
+      return NextResponse.json({ ok: sent }, { status: sent ? 200 : 502 });
+    }
     const {
       message,
       stack,

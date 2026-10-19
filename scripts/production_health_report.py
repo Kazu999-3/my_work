@@ -14,13 +14,14 @@ production_health_report.py - 本番の毎朝の健康診断（2026-10-04 新設
 
 【方針】
 - 実測値だけで判定し、数字をそのまま出す（推測で「正常」と書かない。.claude/rules/llm-health.md）
-- 結果は毎朝必ず admin_notifications（05/04の通知ベル）へ出す。異常が無くても出すので、
+- 結果は毎朝必ず Discord の #エラーログ へ出す（04の受付API経由）。異常が無くても出すので、
   「通知が来ない＝この健康診断自体が止まった」と気づける
+  （2026-10-19 ユーザー指示で 05 の通知ベルから移した。Discord へ送れなかった日だけ通知ベルへ退避する）
 - 異常(FAIL)があれば GitHub Issue を立てる（同じIssueが開いていれば追記）
 - 保守: 変更履歴(knowledge_revisions)の間引きも同じ実行で行う（--no-maintenance で無効化）
 
 GitHub Actions(.github/workflows/health-report.yml) から毎朝実行する。
-必要な環境変数: DATABASE_URL, GITHUB_TOKEN, GITHUB_REPOSITORY
+必要な環境変数: DATABASE_URL, GITHUB_TOKEN, GITHUB_REPOSITORY, PORTAL_BOT_SECRET
 """
 import argparse
 import json
@@ -365,40 +366,48 @@ def prune_revisions(r: Report, cur, keep_per_target=5, older_than_days=90):
 
 
 # ---------------------------------------------------------------- 出力
-def notify(cur, report: Report):
+def report_title(report: Report):
     c = report.counts()
     head = {OK: "✅ 異常なし", WARN: f"⚠️ 注意 {c[WARN]}件", FAIL: f"🚨 異常 {c[FAIL]}件"}[report.worst]
-    title = f"🩺 毎朝の健康診断: {head}"
+    return f"🩺 毎朝の健康診断: {head}"
+
+
+def send_report_to_error_log(report: Report):
+    """結果を毎朝 Discord の #エラーログ へ送る（異常が無くても送る）。送れたら True。
+    このワークフローは Discord の鍵を持たないため 04 の受付API（/api/logs/error, kind=health_report）経由。
+    2026-10-19: 05 の通知ベル（admin_notifications）へ出していたのを、ユーザー指示でこちらへ移した。"""
+    secret = os.environ.get("PORTAL_BOT_SECRET", "").strip()
+    if not secret:
+        print("PORTAL_BOT_SECRET 未設定のため #エラーログ へ送れません")
+        return False
+    portal = os.environ.get("PORTAL_URL", "https://my-work-8jbd.vercel.app").rstrip("/")
+    body = json.dumps({
+        "kind": "health_report",
+        "app": "health",
+        "worst": report.worst,
+        "counts": report.counts(),
+        "body": report.markdown()[:3900],
+    }, ensure_ascii=False).encode()
+    req = urllib.request.Request(f"{portal}/api/logs/error", data=body, method="POST",
+                                 headers={"Content-Type": "application/json", "x-bot-secret": secret})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as res:
+            return 200 <= res.status < 300
+    except Exception as e:
+        print(f"#エラーログ への送信に失敗: {e}")
+        return False
+
+
+def notify_bell_fallback(cur, report: Report):
+    """Discord へ送れなかった日だけ、結果が消えないよう通知ベルへ退避する。"""
+    c = report.counts()
+    title = report_title(report) + "（Discordへ送れなかったため通知ベルに表示）"
     cur.execute(
         "insert into admin_notifications (type, title, body, url, data) values (%s, %s, %s, %s, %s)",
         ("system_health", title, report.markdown().replace("**", "")[:4000], "/admin/dashboard",
          json.dumps({"counts": c, "worst": report.worst}, ensure_ascii=False)),
     )
     return title
-
-
-def send_fail_to_error_log(report: Report):
-    """異常(FAIL)がある時だけ、04のエラー受付API経由で Discord の #エラーログ へ送る。
-    このワークフローはDiscordの鍵を持たないため04経由にしている（2026-10-08: 失敗の集約先を #エラーログ に統一）。"""
-    if report.worst != FAIL:
-        return
-    portal = os.environ.get("PORTAL_URL", "https://my-work-8jbd.vercel.app").rstrip("/")
-    body = json.dumps({
-        "app": "health",
-        "source": "CRON",
-        "message": "毎朝の健康診断で異常を検知\n" + report.markdown().replace("**", "")[:1500],
-        "path": "health-report",
-    }).encode()
-    secret = os.environ.get("PORTAL_BOT_SECRET", "").strip()
-    if not secret:
-        print("PORTAL_BOT_SECRET 未設定のため #エラーログ へは送りません")
-        return
-    req = urllib.request.Request(f"{portal}/api/logs/error", data=body, method="POST",
-                                 headers={"Content-Type": "application/json", "x-bot-secret": secret})
-    try:
-        urllib.request.urlopen(req, timeout=20)
-    except Exception as e:
-        print(f"#エラーログ への送信に失敗: {e}")
 
 
 def open_issue(report: Report):
@@ -457,9 +466,12 @@ def main():
                     conn.rollback()
                     report.add(WARN, "保守: 変更履歴の間引き", f"失敗: {e}")
             if not args.dry_run:
-                title = notify(cur, report)
-                conn.commit()
-                print(f"通知: {title}")
+                if send_report_to_error_log(report):
+                    print(f"#エラーログ へ送信: {report_title(report)}")
+                else:
+                    title = notify_bell_fallback(cur, report)
+                    conn.commit()
+                    print(f"通知ベルへ退避: {title}")
 
     md = report.markdown()
     print(md)
@@ -468,7 +480,6 @@ def main():
         with open(summary, "a", encoding="utf-8") as f:
             f.write(f"## 🩺 毎朝の健康診断\n\n{md}\n")
     if report.worst == FAIL and not args.dry_run:
-        send_fail_to_error_log(report)
         try:
             open_issue(report)
         except Exception as e:

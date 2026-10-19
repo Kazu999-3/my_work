@@ -168,6 +168,7 @@ export const DEFAULT_ERROR_LOG_CHANNEL_ID = '1550118540038774865';
 
 // エラーログ(#エラーログ)は失敗だけを集める場所（2026-10-08 ユーザー判断: 成功報告は流さない）。
 // 04・05・ワーカー・健康診断の失敗をここへ集約するため、どこで起きたかを app で示す。
+// 例外: 毎朝の健康診断は異常が無くても毎日ここへ送る（2026-10-19 ユーザー指示。notifyHealthReport）。
 export type ErrorLogApp = '04' | '05' | 'worker' | 'health';
 const ERROR_LOG_APP_LABEL: Record<ErrorLogApp, string> = {
   '04': '04 ポータル',
@@ -290,6 +291,11 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
     allowed_mentions: { parse: [] },
   };
 
+  return deliverToErrorLog(payload);
+}
+
+/** #エラーログ への送信（Webhook → Bot → 大会Webhook の順に試す）。エラー通知と毎朝の健康診断で共用する。 */
+async function deliverToErrorLog(payload: Record<string, any>): Promise<boolean> {
   const botToken = process.env.DISCORD_BOT_TOKEN;
   const channelId = process.env.DISCORD_ERROR_LOG_CHANNEL_ID || DEFAULT_ERROR_LOG_CHANNEL_ID;
   const webhookUrl = process.env.DISCORD_ERROR_LOG_WEBHOOK_URL;
@@ -343,6 +349,42 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   }
 
   return false;
+}
+
+export interface HealthReportParams {
+  worst: 'OK' | 'WARN' | 'FAIL';
+  counts: { OK?: number; WARN?: number; FAIL?: number };
+  body: string;
+}
+
+/**
+ * 🩺 毎朝の健康診断（scripts/production_health_report.py）の結果を #エラーログ へ送る。
+ * 2026-10-19 ユーザー指示: 05 の通知ベルには出さず、Discord の #エラーログ に毎朝送る。
+ * 異常が無い日も送る（届かない＝健康診断自体が止まった、と気づけるようにするため）。
+ * 結果に応じて色を変え、異常がある時だけ本文の前に目立つ一行を付ける。
+ */
+export async function notifyHealthReport(params: HealthReportParams): Promise<boolean> {
+  const { worst, counts, body } = params;
+  const fail = counts.FAIL || 0;
+  const warn = counts.WARN || 0;
+  const ok = counts.OK || 0;
+  const head = worst === 'FAIL' ? `🚨 異常 ${fail}件` : worst === 'WARN' ? `⚠️ 注意 ${warn}件` : '✅ 異常なし';
+  const color = worst === 'FAIL' ? 0xed4245 : worst === 'WARN' ? 0xfee75c : 0x57f287;
+
+  const embed = {
+    title: `🩺 毎朝の健康診断: ${head}`,
+    description: body.slice(0, 4000) || '（項目なし）',
+    color,
+    footer: { text: `異常 ${fail} / 注意 ${warn} / 正常 ${ok}` },
+    timestamp: new Date().toISOString(),
+  };
+
+  const payload = {
+    content: worst === 'FAIL' ? '🚨 **【健康診断】** 異常があります（GitHub Issue も起票済み）' : undefined,
+    embeds: [embed],
+    allowed_mentions: { parse: [] },
+  };
+  return deliverToErrorLog(payload);
 }
 
 // 互換エイリアス
