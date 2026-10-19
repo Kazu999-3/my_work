@@ -265,7 +265,7 @@ export default function FestivalPickPage() {
               type="button"
               onClick={() => setShowCaptureModal(true)}
               disabled={activeCount === 0}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition disabled:opacity-50 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-amber-600 hover:from-teal-500 hover:to-amber-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition disabled:opacity-50 cursor-pointer"
               title="最終的にピック可能なチャンピオンを1画面にまとめてキャプチャ用表示"
             >
               <Camera className="w-3.5 h-3.5" />
@@ -386,7 +386,7 @@ export default function FestivalPickPage() {
                 type="button"
                 onClick={() => handleRoulette(5)}
                 disabled={isRouletteRolling || activeCount === 0}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-black text-xs flex items-center gap-1 shadow-sm transition disabled:opacity-50 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black text-xs flex items-center gap-1 shadow-sm transition disabled:opacity-50 cursor-pointer"
                 title="残り候補から5体（1チーム分）をランダム選出"
               >
                 <Dice5 className={`w-3.5 h-3.5 ${isRouletteRolling ? "animate-spin" : ""}`} />
@@ -593,7 +593,7 @@ export default function FestivalPickPage() {
         {/* ④ 🎭 特殊テーマ（縛り）モード */}
         {viewMode === "theme" && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div>
                 <h2 className="text-base font-black text-foreground flex items-center gap-2">
                   <Flame className="w-5 h-5 text-amber-500" />
@@ -723,7 +723,7 @@ export default function FestivalPickPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-surface border-2 border-primary-500/50 rounded-3xl p-6 max-w-2xl w-full shadow-2xl relative overflow-hidden flex flex-col items-center text-center">
             {/* 上部背景デコレーション */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600" />
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-600" />
 
             <div className="flex items-center justify-between w-full mb-4">
               <div className="flex items-center gap-2">

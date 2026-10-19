@@ -130,12 +130,12 @@ export function MentorshipReviewModal({
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-5 text-sm">
           
           {/* 🔒 完全非公開・安心バナー */}
-          <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/30 rounded-2xl border border-blue-200 dark:border-blue-800 space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-black text-blue-900 dark:text-blue-300">
-              <Shield size={14} className="text-blue-600 dark:text-blue-400" />
+          <div className="p-3.5 bg-teal-50/80 dark:bg-teal-950/30 rounded-2xl border border-teal-200 dark:border-teal-800 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-black text-teal-900 dark:text-teal-300">
+              <Shield size={14} className="text-teal-600 dark:text-teal-400" />
               <span>評価された相手には一切見えません（完全非公開）</span>
             </div>
-            <p className="text-[11px] text-blue-800 dark:text-blue-300/90 leading-relaxed font-medium">
+            <p className="text-[11px] text-teal-800 dark:text-teal-300/90 leading-relaxed font-medium">
               入力した星の数やコメント、あなたの名前は<strong>お相手の画面には一切表示されません</strong>。全体の集計やコミュニティ指標としてのみ安全に活用されます。
             </p>
           </div>

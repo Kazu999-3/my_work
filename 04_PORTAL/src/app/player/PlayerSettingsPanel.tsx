@@ -43,7 +43,7 @@ const PLAYSTYLE_ITEMS = [
     label: "❄️ ARAM・サクッと勢",
     desc: "平日夜や短時間で気軽に1〜2戦回したい時",
     icon: Snowflake,
-    activeColor: "bg-cyan-500/15 border-cyan-500 text-cyan-700 dark:text-cyan-400 shadow-cyan-500/10",
+    activeColor: "bg-orange-500/15 border-orange-500 text-orange-700 dark:text-orange-400 shadow-orange-500/10",
   },
   {
     key: "casual",

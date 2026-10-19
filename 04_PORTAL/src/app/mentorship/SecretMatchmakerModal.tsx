@@ -19,9 +19,9 @@ const getTierBadgeStyle = (tier?: string) => {
     case 'regular':
       return 'bg-amber-500/15 text-amber-700 border-amber-500/30';
     case 'experienced':
-      return 'bg-blue-500/15 text-blue-700 border-blue-500/30';
+      return 'bg-teal-500/15 text-teal-700 border-teal-500/30';
     case 'returning':
-      return 'bg-purple-500/15 text-purple-700 border-purple-500/30';
+      return 'bg-orange-500/15 text-orange-700 border-orange-500/30';
     default:
       return 'bg-surface-subtle text-foreground-subtle border-border/50';
   }
@@ -125,7 +125,7 @@ export function getPendingProgressInfo(mentorStatus?: string, pupilStatus?: stri
       type: 'PUPIL_ACCEPTED',
       label: '後輩リクエスト中',
       subLabel: '先輩の返事待ち',
-      badgeClass: 'bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-500/30',
+      badgeClass: 'bg-teal-500/20 text-teal-800 dark:text-teal-300 border-teal-500/30',
       icon: '🎒',
     };
   }
@@ -521,7 +521,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                           </span>
                         </div>
                         {batch.pupil.hasLearnRole && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-700">
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-700">
                             📖 教わりたい
                           </span>
                         )}
@@ -597,7 +597,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                               if (isPupilReq) {
                                 return (
                                   <>
-                                    <span className="px-3 py-1 rounded-xl bg-blue-500/20 text-blue-800 dark:text-blue-300 text-xs font-black flex items-center gap-1 border border-blue-500/30">
+                                    <span className="px-3 py-1 rounded-xl bg-teal-500/20 text-teal-800 dark:text-teal-300 text-xs font-black flex items-center gap-1 border border-teal-500/30">
                                       <span>🎒 後輩リクエスト中</span>
                                     </span>
                                     <span className="text-[10px] text-foreground-subtle font-medium">
@@ -714,7 +714,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                       👍 先輩OK済
                                     </span>
                                   ) : m.pupilStatus === 'ACCEPTED' ? (
-                                    <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-800 dark:text-blue-300 text-[9px] font-black border border-blue-500/30 inline-block mt-0.5">
+                                    <span className="px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-300 text-[9px] font-black border border-teal-500/30 inline-block mt-0.5">
                                       🎒 後輩リクエスト
                                     </span>
                                   ) : (m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING') ? (
@@ -824,7 +824,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                 {proposal.pupil.rank}
                               </span>
                               {proposal.pupil.hasLearnRole && (
-                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-700">
+                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-700">
                                   📖 教わりたい
                                 </span>
                               )}
