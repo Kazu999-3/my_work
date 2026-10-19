@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { PILOT_COOKIE_NAME, verifyToken, setAuthCookie } from './lib/tokenAuth';
+import { PILOT_COOKIE_NAME, verifyToken } from './lib/tokenAuth';
 
 // 05_PILOT は個人用コクピットだが本番URLが公開されており、API は service role キーで
 // DB を書き換えられる。2026-10-02 まで認証が一切無かったため、全ページ・全APIをここで保護する。
@@ -11,15 +11,15 @@ import { PILOT_COOKIE_NAME, verifyToken, setAuthCookie } from './lib/tokenAuth';
 export function proxy(request: NextRequest) {
   const { nextUrl } = request;
 
+  // ?token= の照合は回数制限のある /api/auth/link で行う（ここで照合すると何度でも試せた。2026-10-19）
   const queryToken = nextUrl.searchParams.get('token');
   if (queryToken !== null) {
     const clean = nextUrl.clone();
     clean.searchParams.delete('token');
-    if (verifyToken(queryToken)) {
-      const res = NextResponse.redirect(clean);
-      setAuthCookie(res, queryToken);
-      return res;
-    }
+    const link = new URL('/api/auth/link', request.url);
+    link.searchParams.set('t', queryToken);
+    link.searchParams.set('next', `${clean.pathname}${clean.search}`);
+    return NextResponse.redirect(link);
   }
 
   if (verifyToken(request.cookies.get(PILOT_COOKIE_NAME)?.value)) {
