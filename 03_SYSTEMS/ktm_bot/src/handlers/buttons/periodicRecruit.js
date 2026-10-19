@@ -160,50 +160,75 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
         const msg = await msgRes.json();
         if (!msg.embeds || msg.embeds.length === 0) throw new Error("Embedが見つかりません");
 
-        const targetEmbed = { ...msg.embeds[0] };
+        // カードの表示テキストが参加データなので「読む→書き戻す」の間に別の人が押すと、後から書いた方だけが残る。
+        // 書き戻した後に読み直し、自分の操作が反映されていなければ最新のカードでやり直す（最大3回。2026-10-19）
+        const applyOnce = async (msg) => {
+          const targetEmbed = { ...msg.embeds[0] };
 
-        // --- 参加者行のバッジを組み立てる（名簿の読み込みに失敗した時はバッジ無し。誤って 🔰 と書くより空の方がよい。
-        //     本人がもう一度押せば付く） ---
-        const { expBadgeStr, rankStr, lanePrefStr } = lookupFailed
-          ? { expBadgeStr: '', rankStr: '', lanePrefStr: '' }
-          : buildEntrySuffix(playerRow, def);
+          // --- 参加者行のバッジを組み立てる（名簿の読み込みに失敗した時はバッジ無し。誤って 🔰 と書くより空の方がよい。
+          //     本人がもう一度押せば付く） ---
+          const { expBadgeStr, rankStr, lanePrefStr } = lookupFailed
+            ? { expBadgeStr: '', rankStr: '', lanePrefStr: '' }
+            : buildEntrySuffix(playerRow, def);
 
-        const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
+          const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
 
-        // --- 参加者一覧の更新（辞退なら削除、通常ならトグル/スタイル変更）---
-        const currentLines = readDayEntryLines(targetEmbed);
-        const existingLine = currentLines.find((l) => l.includes(userMention));
-        const nextLines = currentLines.filter((l) => !l.includes(userMention));
+          // --- 参加者一覧の更新（辞退なら削除、通常ならトグル/スタイル変更）---
+          const currentLines = readDayEntryLines(targetEmbed);
+          const existingLine = currentLines.find((l) => l.includes(userMention));
+          const nextLines = currentLines.filter((l) => !l.includes(userMention));
 
-        let activityAction = null;
-        if (participationStyle === 'leave') {
-          if (existingLine) {
-            activityAction = 'LEAVE';
+          let activityAction = null;
+          if (participationStyle === 'leave') {
+            if (existingLine) {
+              activityAction = 'LEAVE';
+            }
+          } else {
+            if (!existingLine) {
+              activityAction = 'JOIN';
+              nextLines.push(entryLine);
+            } else if (!existingLine.includes(styleBadge)) {
+              activityAction = 'SWITCH_STYLE';
+              nextLines.push(entryLine);
+            }
           }
-        } else {
-          if (!existingLine) {
-            activityAction = 'JOIN';
-            nextLines.push(entryLine);
-          } else if (!existingLine.includes(styleBadge)) {
-            activityAction = 'SWITCH_STYLE';
-            nextLines.push(entryLine);
-          }
+
+          // 全員のバッジ・ランク・希望レーンを名簿の最新値で付け直す（🔰で書かれてしまった登録者の行もここで直る）
+          const healedLines = await refreshEntryLines(env, nextLines, def);
+          const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, healedLines);
+
+          const [satTarget, sunTarget] = resolveWeekendTargets();
+          const currentTarget = dayKey === 'sun' ? sunTarget : satTarget;
+          const newContent = currentTarget ? buildRecruitmentContent(currentTarget, CONFIG.NOTIFICATION_ROLE_ID) : undefined;
+
+          await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+            ...(newContent ? { content: newContent } : {}),
+            embeds: [targetEmbed],
+            components: interaction.message.components,
+            allowed_mentions: { roles: [] }
+          });
+          return { currentLines, activityAction, rankStr, lanePrefStr, nextLines, nextStatus, existingLine };
+        };
+        const fetchCard = async () => {
+          const r = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
+            headers: { "Authorization": `Bot ${botToken}` }
+          });
+          if (!r.ok) throw new Error("メッセージ取得失敗");
+          const m = await r.json();
+          if (!m.embeds || m.embeds.length === 0) throw new Error("Embedが見つかりません");
+          return m;
+        };
+        const wantPresent = participationStyle !== 'leave';
+        // 活動ログ・通知などの後続処理は、最初の1回の結果を使う
+        const { currentLines, activityAction, rankStr, lanePrefStr, nextLines, nextStatus, existingLine } = await applyOnce(msg);
+        for (let attempt = 0; attempt < 2; attempt++) {
+          await new Promise((r) => setTimeout(r, 400 + Math.floor(Math.random() * 600)));
+          const latest = await fetchCard();
+          const present = readDayEntryLines({ ...latest.embeds[0] }).some((l) => l.includes(userMention));
+          if (present === wantPresent) break;
+          console.warn(`join_periodic: 同時押しで ${userId} の操作が消えたためやり直し (${attempt + 1})`);
+          await applyOnce(latest);
         }
-
-        // 全員のバッジ・ランク・希望レーンを名簿の最新値で付け直す（🔰で書かれてしまった登録者の行もここで直る）
-        const healedLines = await refreshEntryLines(env, nextLines, def);
-        const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, healedLines);
-
-        const [satTarget, sunTarget] = resolveWeekendTargets();
-        const currentTarget = dayKey === 'sun' ? sunTarget : satTarget;
-        const newContent = currentTarget ? buildRecruitmentContent(currentTarget, CONFIG.NOTIFICATION_ROLE_ID) : undefined;
-
-        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
-          ...(newContent ? { content: newContent } : {}),
-          embeds: [targetEmbed],
-          components: interaction.message.components,
-          allowed_mentions: { roles: [] }
-        });
 
         // ⑭ 開催確定後の辞退は Pity（希望レーン優先権）をリセットする（2026-10-16 配線。
         // TODO では「完了」扱いだったが未実装だった）。「確定」は辞退前のカードが開催確定(isReady)だったか。
