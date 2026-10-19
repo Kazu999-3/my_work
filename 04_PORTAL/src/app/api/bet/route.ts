@@ -337,8 +337,7 @@ export async function POST(req: Request) {
     }
 
     // 受付中の試合（最新のチーム分けの承認待ち）があり、締め切り前であること。
-    // 2026-10-19: 以前は締め切りを画面だけで見ており、API を直接呼ぶ（Bot の /bet を含む）と
-    // 試合中・試合が終わって結果を記録するまでの間でも賭けられた（勝敗が見えてから賭けられる）
+    // 2026-10-19: 締め切りは「その回で最初に保存した時刻+15分」に固定（やり直しで延びないよう修正）。
     const { data: latestPending, error: pendingErr } = await supabase
       .from('edge_tasks')
       .select('payload, created_at')
@@ -351,8 +350,23 @@ export async function POST(req: Request) {
       if (!latestPending) {
         return NextResponse.json({ error: '現在、予想を受け付けている試合はありません。' }, { status: 409 });
       }
+      let matchCreatedAt = latestPending.payload?.initialCreatedAt || latestPending.created_at;
+      if (!latestPending.payload?.initialCreatedAt) {
+        try {
+          const { data: oldest } = await supabase
+            .from('edge_tasks')
+            .select('created_at')
+            .eq('task_type', 'balancer_pending')
+            .eq('status', 'pending')
+            .gte('created_at', new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString())
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (oldest?.created_at) matchCreatedAt = oldest.created_at;
+        } catch {}
+      }
       const { betDeadlineMs } = await import('../../../lib/betDeadline');
-      if (Date.now() > betDeadlineMs(latestPending.created_at)) {
+      if (Date.now() > betDeadlineMs(matchCreatedAt)) {
         return NextResponse.json({ error: 'この試合の予想受付は締め切られました（チーム確定から15分）。' }, { status: 409 });
       }
     }

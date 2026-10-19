@@ -41,9 +41,40 @@ export async function POST(request: Request) {
       .lt('created_at', new Date(Date.now() - EXPIRE_MS).toISOString())
       .then(({ error }: { error: any }) => { if (error) console.warn('[balancer/pending] 期限切れデータの削除に失敗:', error); });
 
+    // チーム分けやり直し時の勝敗予想締め切り固定（2026-10-19 ユーザー判断）:
+    // 同一試合（直近3時間以内の未処理 pending）で既に保存されたものがあれば、その初回保存時刻を引き継ぐ。
+    const nowIso = new Date().toISOString();
+    let initialCreatedAt = nowIso;
+    try {
+      const { data: oldestPending } = await supabase
+        .from('edge_tasks')
+        .select('created_at, payload')
+        .eq('task_type', TASK_TYPE)
+        .eq('status', 'pending')
+        .gte('created_at', new Date(Date.now() - EXPIRE_MS).toISOString())
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (oldestPending) {
+        initialCreatedAt = oldestPending.payload?.initialCreatedAt || oldestPending.created_at || nowIso;
+      }
+    } catch (e) {
+      console.warn('[balancer/pending] 初回保存時刻の取得に失敗（現在時刻でフォールバック）:', e);
+    }
+
     const { data: inserted, error: insertError } = await supabase
       .from('edge_tasks')
-      .insert({ task_type: TASK_TYPE, payload: { balanceResult, submittedBy, submittedAt: new Date().toISOString() }, status: 'pending' })
+      .insert({
+        task_type: TASK_TYPE,
+        payload: {
+          balanceResult,
+          submittedBy,
+          submittedAt: nowIso,
+          initialCreatedAt,
+        },
+        status: 'pending'
+      })
       .select('id')
       .single();
     if (insertError) throw insertError;
@@ -121,14 +152,33 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: true, activeMatch: null });
       }
 
+      // 締め切り基準時刻: チーム分けをやり直しても延びないよう、初回保存時刻を使う（2026-10-19 ユーザー判断）
+      let matchCreatedAt = latestTask.payload?.initialCreatedAt || latestTask.created_at;
+      if (!latestTask.payload?.initialCreatedAt) {
+        try {
+          const { data: oldest } = await supabase
+            .from('edge_tasks')
+            .select('created_at')
+            .eq('task_type', TASK_TYPE)
+            .eq('status', 'pending')
+            .gte('created_at', new Date(Date.now() - EXPIRE_MS).toISOString())
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (oldest?.created_at) {
+            matchCreatedAt = oldest.created_at;
+          }
+        } catch {}
+      }
+
       return NextResponse.json({
         success: true,
         pendingId: latestTask.id,
-        createdAt: latestTask.created_at,
+        createdAt: matchCreatedAt,
         balanceResult: latestTask.payload?.balanceResult,
         activeMatch: {
           ...(latestTask.payload?.balanceResult || {}),
-          createdAt: latestTask.created_at,
+          createdAt: matchCreatedAt,
           pendingId: latestTask.id,
         },
       });
