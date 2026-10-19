@@ -90,11 +90,10 @@ export async function executeMentorshipClaim(interaction, env, ctx, pupilProfile
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // サーバーサイド・ボット実行用の認証ヘッダー
-          // ⚠️ ポータル側は SYSTEM_SYNC_KEY / SUPABASE_SERVICE_ROLE_KEY / DISCORD_BOT_TOKEN の
-          // 3つを受け付ける実装で、高価値な秘密情報をAPIトークンに流用している点は
-          // TODO.md に改善候補として記録済み（専用の SYSTEM_SYNC_KEY へ絞るべき）。
-          'x-system-key': env.SYSTEM_SYNC_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '',
+          // サーバーサイド・ボット実行用の認証ヘッダー。ポータルは SYSTEM_SYNC_KEY か Bot の合言葉（X-Bot-Secret）を受け付ける。
+          // 2026-10-19: 以前は SYSTEM_SYNC_KEY / SUPABASE_SERVICE_ROLE_KEY だけを送っていたが、どちらも Bot にもポータルにも
+          // 未設定で、Discord の「弟子カードを引き受ける」ボタンは毎回 401 で失敗していた。ほかの呼び出し（fetchPortalAPI）と同じ合言葉を送る
+          'X-Bot-Secret': env.PORTAL_BOT_SECRET || '',
         },
         body: JSON.stringify({
           action: 'CLAIM_MENTOR',

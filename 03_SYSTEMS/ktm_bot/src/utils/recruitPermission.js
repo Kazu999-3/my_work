@@ -5,13 +5,18 @@
  * これに依存すると作成失敗時に募集主本人が編集できなくなる恐れがある）。
  */
 import { fetchSupabase } from './supabase.js';
+import { CONFIG } from '../config.js';
 
 // 募集の編集・削除など「日常運用」用の複数モデレーターリスト。
 // 試合結果の書き換え・MMR手動調整など「危険な操作」はこれとは別に config.js の
 // CONFIG.ADMIN_ID（単一のオーナーID）でのみ許可している（意図的な二段階権限）。
 export function getAdminDiscordIds(env) {
   const idsStr = env.ADMIN_DISCORD_IDS || '';
-  return idsStr.split(',').map((id) => id.trim()).filter(Boolean);
+  // オーナー（CONFIG.ADMIN_ID）は常に含める。2026-10-19: ADMIN_DISCORD_IDS が Bot に未設定で一覧が空になり、
+  // オーナーでも他人の募集を編集・削除できなかった
+  const ids = idsStr.split(',').map((id) => id.trim()).filter(Boolean);
+  if (CONFIG.ADMIN_ID && !ids.includes(CONFIG.ADMIN_ID)) ids.push(CONFIG.ADMIN_ID);
+  return ids;
 }
 
 /** モーダル送信時などに募集レコードを新規作成する。startAt(ISO)があれば開始リマインド対象になる。 */
