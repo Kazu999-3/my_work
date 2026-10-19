@@ -3,13 +3,17 @@ name: Database Backup
 # 個人開発かつSupabase無料プランのためPITR(Point-in-Time Recovery)が使えず、
 # 障害・誤操作時にDBを復旧する手段が無かった(2026-08-04発覚)。
 # 無料でできる代替策として、毎日論理バックアップ(pg_dump)を取得し、
-# GitHub Actionsの非公開Artifactとして保持する。
+# GitHub ActionsのArtifactとして保持する。
 #
 # 【重要】このリポジトリは公開リポジトリのため、バックアップファイルは
-# 絶対にgitへコミットしない。actions/upload-artifactのみで保存し、
-# 30日で自動失効させる。
+# 絶対にgitへコミットしない。actions/upload-artifactのみで保存し、30日で自動失効させる。
+# ⚠️ 公開リポジトリの Artifact は「非公開」ではない。GitHub にログインしている人なら誰でもダウンロードできる。
+# 2026-10-19 まで暗号化せずに上げており、DB 全体（Discord ID・コイン・匿名の評判の送り主・ナレッジ等）が
+# 誰でも取れる状態だった。今は Secrets の BACKUP_PASSPHRASE で暗号化した物だけを上げる（未設定なら失敗させる）。
+# 合言葉は 04_PORTAL/.env.local（git 管理外）の BACKUP_PASSPHRASE にも控えてある。
 #
 # 復元したい場合: このワークフローの実行結果ページからArtifactをダウンロードし、
+#   gpg --batch --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" -o backup.dump -d backup.dump.gpg
 #   pg_restore --clean --if-exists -d "$DATABASE_URL" backup.dump
 
 on:
@@ -53,11 +57,24 @@ jobs:
             exit 1
           fi
 
-      - name: Upload backup as private artifact (gitへは絶対にコミットしない)
+      - name: Encrypt dump (公開リポジトリの Artifact は誰でもダウンロードできるため)
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Secrets の BACKUP_PASSPHRASE が未設定です。暗号化せずに上げると誰でもダウンロードできるため中止します。"
+            rm -f backup.dump
+            exit 1
+          fi
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
+          rm -f backup.dump
+          ls -l backup.dump.gpg
+
+      - name: Upload encrypted backup as artifact (gitへは絶対にコミットしない)
         uses: actions/upload-artifact@v7
         with:
-          name: supabase-backup-${{ github.run_id }}
-          path: backup.dump
+          name: supabase-backup-encrypted-${{ github.run_id }}
+          path: backup.dump.gpg
           retention-days: 30
 
       # 失敗しても気づける仕組みが無く、2026-09-22〜10-04の12日間、DBパスワード不一致で毎日失敗していた
