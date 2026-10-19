@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import { BET_DEADLINE_MINUTES } from '../../../lib/betDeadline';
 
 export interface RankingPlayer {
   name: string;
@@ -24,8 +25,8 @@ export interface BetStats {
   };
 }
 
-// ⏱️ 勝敗予想締め切りカウントダウン（試合確定から15分 = 900秒）
-export const BET_DEADLINE_MINUTES = 15;
+// ⏱️ 勝敗予想締め切りカウントダウン（試合確定から15分 = 900秒）。値は API の受付判定と共通（lib/betDeadline.ts）
+export { BET_DEADLINE_MINUTES };
 
 /**
  * カジノのデータ: 長者番付・投票状況・ジャックポット・進行中の試合・所持チケット・連勝・送金先候補、

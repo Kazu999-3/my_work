@@ -40,6 +40,10 @@ export async function POST(req: NextRequest) {
         // 1つの or 条件にまとめる（旧ポータルの同期ではタグ無しの記事が永久に対象外だった）
         // __INTEGRATED__ は統合済み。外さないと3時間おきに同じ記事を統合し直す
         .or('tags.is.null,and(tags.not.cs.{__DELETED__},tags.not.cs.{__MERGED__},tags.not.cs.{__INTEGRATED__})')
+        // チャンピオン未設定（Unknown・空）の記事は統合先が無く毎回スキップされるだけなのに、3時間おきに本文ごと読み直していた
+        // （2026-10-19 時点で承認済み175件・月約200MBの転送）。チャンピオンが設定されれば自動で対象に戻る
+        .not('champion', 'is', null)
+        .not('champion', 'in', '("Unknown","")')
         .order('id', { ascending: true })
         .limit(limit);
       if (body.onlyPending) q = q.eq('review_status', 'pending');

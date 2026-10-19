@@ -325,17 +325,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'プレイヤーが見つかりません。名簿登録を行ってください。' }, { status: 404 });
     }
 
+    // 受付中の試合（最新のチーム分けの承認待ち）があり、締め切り前であること。
+    // 2026-10-19: 以前は締め切りを画面だけで見ており、API を直接呼ぶ（Bot の /bet を含む）と
+    // 試合中・試合が終わって結果を記録するまでの間でも賭けられた（勝敗が見えてから賭けられる）
+    const { data: latestPending, error: pendingErr } = await supabase
+      .from('edge_tasks')
+      .select('payload, created_at')
+      .eq('task_type', 'balancer_pending')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!pendingErr) {
+      if (!latestPending) {
+        return NextResponse.json({ error: '現在、予想を受け付けている試合はありません。' }, { status: 409 });
+      }
+      const { betDeadlineMs } = await import('../../../lib/betDeadline');
+      if (Date.now() > betDeadlineMs(latestPending.created_at)) {
+        return NextResponse.json({ error: 'この試合の予想受付は締め切られました（チーム確定から15分）。' }, { status: 409 });
+      }
+    }
+
     // ⚔️ 出場選手（BLUE / RED チームメンバー）のベット禁止チェック
     try {
-      const { data: latestPending } = await supabase
-        .from('edge_tasks')
-        .select('payload')
-        .eq('task_type', 'balancer_pending')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
       const bResult = latestPending?.payload?.balanceResult;
       if (bResult) {
         const playingMembers = [...(bResult.teamBlue || []), ...(bResult.teamRed || [])];
