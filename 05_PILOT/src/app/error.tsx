@@ -24,17 +24,17 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full p-6 rounded-2xl bg-slate-900/80 border border-slate-800 text-center space-y-3">
+      <div className="max-w-md w-full p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-center space-y-3">
         <h2 className="text-base font-black text-white">画面の読み込みで問題が発生しました</h2>
-        <p className="text-xs text-slate-400">エラー内容は管理者へ自動で通知されました。</p>
+        <p className="text-xs text-zinc-400">エラー内容は管理者へ自動で通知されました。</p>
         {error?.message && (
-          <p className="text-xs font-mono text-rose-400 break-all line-clamp-3 text-left p-3 rounded-xl bg-slate-950 border border-slate-800">
+          <p className="text-xs font-mono text-rose-400 break-all line-clamp-3 text-left p-3 rounded-xl bg-zinc-950 border border-zinc-800">
             {error.message}
           </p>
         )}
         <button
           onClick={() => reset()}
-          className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs"
+          className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs"
         >
           もう一度読み込む
         </button>

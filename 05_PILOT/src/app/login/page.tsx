@@ -38,12 +38,12 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={submit} className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-lg">
+    <form onSubmit={submit} className="w-full max-w-sm bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-lg">
       <div className="space-y-1">
         <h1 className="text-lg font-black text-white flex items-center gap-2">
           <Lock className="w-5 h-5 text-amber-400" /> Sovereign Pilot
         </h1>
-        <p className="text-xs text-slate-400">合言葉を入力してください。この端末では1年間ログイン状態が保持されます。</p>
+        <p className="text-xs text-zinc-400">合言葉を入力してください。この端末では1年間ログイン状態が保持されます。</p>
       </div>
       <input
         type="password"
@@ -52,7 +52,7 @@ function LoginForm() {
         value={token}
         onChange={(e) => setToken(e.target.value)}
         placeholder="合言葉"
-        className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+        className="w-full px-4 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
       />
       {error && (
         <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs flex items-center gap-2">
@@ -74,7 +74,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <Suspense fallback={null}>
         <LoginForm />
       </Suspense>

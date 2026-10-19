@@ -45,7 +45,7 @@ export default function PostGameTab({ initialMatchId }: { initialMatchId?: strin
     <div className="space-y-4">
 
       {!riotId ? (
-        <p className="text-xs text-stone-400 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+        <p className="text-xs text-stone-400 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800">
           画面上部の「自分のRiot ID」を入力すると、直近のソロQ試合の詳細分析・自動振り返りの履歴を表示します。
         </p>
       ) : (

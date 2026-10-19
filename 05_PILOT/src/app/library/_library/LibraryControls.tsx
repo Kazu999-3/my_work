@@ -79,14 +79,14 @@ export default function LibraryControls({
               onClick={() => onCategoryChange('general')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition cursor-pointer ${
                 activeCategory === 'general'
-                  ? 'bg-indigo-600 text-white shadow-md scale-102'
+                  ? 'bg-amber-600 text-white shadow-md scale-102'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
               }`}
             >
               <span>💡 AI・一般ナレッジ</span>
               {counts.general > 0 && (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                  activeCategory === 'general' ? 'bg-indigo-950 text-indigo-200' : 'bg-zinc-800 text-zinc-300'
+                  activeCategory === 'general' ? 'bg-amber-950 text-amber-200' : 'bg-zinc-800 text-zinc-300'
                 }`}>
                   {counts.general}
                 </span>
@@ -100,7 +100,7 @@ export default function LibraryControls({
                 ✓ 全てチャンピオン辞典またはレーンガイドに直結済み
               </span>
             ) : (
-              <span className="text-indigo-300">
+              <span className="text-amber-300">
                 過去のAI開発・ChatGPT・note制作メモ（独立退避エリア）
               </span>
             )}

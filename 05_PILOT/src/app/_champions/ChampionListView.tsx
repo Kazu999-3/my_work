@@ -242,7 +242,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                         <Link
                           href={`/coach?my=${c.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="px-1.5 py-0.2 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 font-sans font-bold hover:scale-105 transition text-[10px] ml-auto flex items-center gap-0.5 shrink-0"
+                          className="px-1.5 py-0.2 rounded bg-amber-950/70 hover:bg-amber-900 text-amber-300 border border-amber-800/60 font-sans font-bold hover:scale-105 transition text-[10px] ml-auto flex items-center gap-0.5 shrink-0"
                           title={`${c.jpName}のAI戦術コーチを開く`}
                         >
                           <span>🤖</span>

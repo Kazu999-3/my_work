@@ -78,7 +78,7 @@ export default function LibraryTab({ setIsIngestOpen, openKnowledgeModal, select
                               )}
                               <Link
                                 href={`/library?id=${item.id}`}
-                                className="text-zinc-500 hover:text-indigo-400 transition p-1.5 rounded-lg hover:bg-zinc-800"
+                                className="text-zinc-500 hover:text-amber-400 transition p-1.5 rounded-lg hover:bg-zinc-800"
                                 title="ライブラリ専用ページで開く"
                               >
                                 <BookOpen size={13} />

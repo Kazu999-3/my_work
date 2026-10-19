@@ -104,7 +104,7 @@ function LaneGuidesApp() {
           <div className="flex items-center gap-2">
             <Link
               href={`/library?q=${encodeURIComponent(activeLane)}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 text-indigo-300 text-xs font-bold transition shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950 hover:bg-amber-900 border border-amber-700 text-amber-300 text-xs font-bold transition shadow-sm"
               title="このレーンの全ライブラリ記事を検索"
             >
               <BookOpen size={13} className="text-amber-400" />

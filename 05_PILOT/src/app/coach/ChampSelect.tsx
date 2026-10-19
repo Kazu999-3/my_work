@@ -75,20 +75,20 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = '
         }}
         onFocus={() => setIsOpen(true)}
         placeholder={placeholder}
-        className={`w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl p-3 text-slate-100 placeholder-slate-500 outline-none transition-colors ${className}`}
+        className={`w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500/60 rounded-xl p-3 text-zinc-100 placeholder-zinc-500 outline-none transition-colors ${className}`}
       />
       {isOpen && filtered.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
           {filtered.map((c) => (
             <div
               key={c.id}
-              className="flex items-center gap-3 p-2.5 hover:bg-slate-800 cursor-pointer border-b border-slate-800 last:border-none"
+              className="flex items-center gap-3 p-2.5 hover:bg-zinc-800 cursor-pointer border-b border-zinc-800 last:border-none"
               onClick={() => handleSelect(c.id)}
             >
-              <Image src={getChampIcon(c.id)} alt={c.id} width={32} height={32} className="w-8 h-8 rounded-full border border-slate-700" />
+              <Image src={getChampIcon(c.id)} alt={c.id} width={32} height={32} className="w-8 h-8 rounded-full border border-zinc-700" />
               <div className="flex flex-col">
-                <span className="font-bold text-sm text-slate-100">{c.ja}</span>
-                <span className="text-[10px] text-slate-500 font-mono">{c.id}</span>
+                <span className="font-bold text-sm text-zinc-100">{c.ja}</span>
+                <span className="text-[10px] text-zinc-500 font-mono">{c.id}</span>
               </div>
             </div>
           ))}

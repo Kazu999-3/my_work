@@ -86,7 +86,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 function Card({ title, icon, children, action }: { title: string; icon: React.ReactNode; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+    <section className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="text-sm font-black text-white flex items-center gap-2">{icon}{title}</h2>
         {action}
@@ -98,10 +98,10 @@ function Card({ title, icon, children, action }: { title: string; icon: React.Re
 
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-      <div className="text-[10px] font-bold text-slate-400">{label}</div>
+    <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
+      <div className="text-[10px] font-bold text-zinc-400">{label}</div>
       <div className="text-lg font-black text-white mt-0.5">{value}</div>
-      {sub && <div className="text-[10px] text-slate-500 mt-0.5">{sub}</div>}
+      {sub && <div className="text-[10px] text-zinc-500 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -165,21 +165,21 @@ export default function OpsDashboardPage() {
   const bluePct = betTotal > 0 && bet ? Math.round((bet.blueAmount / betTotal) * 100) : 50;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
-        <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
               <Shield className="w-6 h-6 text-amber-400" /> 運用ダッシュボード
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-zinc-400 mt-1">
               PCワーカー・クラウドワーカー・KTM Botの稼働と、要対応タスクを実測値で一覧します（60秒ごとに自動更新）。
             </p>
           </div>
           <button
             onClick={load}
             disabled={loading}
-            className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             {stats ? `更新（${ago(stats.generatedAt)}）` : '更新'}
@@ -207,23 +207,23 @@ export default function OpsDashboardPage() {
                 </button>
               )}
             >
-              {retryMessage && <p className="text-[11px] text-slate-300">{retryMessage}</p>}
+              {retryMessage && <p className="text-[11px] text-zinc-300">{retryMessage}</p>}
               <div className="space-y-2">
                 {na!.failedTasks.map((t) => (
-                  <div key={t.id} className="p-2.5 rounded-xl bg-slate-950 border border-rose-800/40">
+                  <div key={t.id} className="p-2.5 rounded-xl bg-zinc-950 border border-rose-800/40">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-black text-white">
                         {TASK_LABELS[t.task_type] || t.task_type}
-                        {t.payload?.champion && <span className="text-slate-400 font-normal">（{t.payload.champion}{t.payload.role ? `/${t.payload.role}` : ''}）</span>}
+                        {t.payload?.champion && <span className="text-zinc-400 font-normal">（{t.payload.champion}{t.payload.role ? `/${t.payload.role}` : ''}）</span>}
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-950/30 text-rose-400 border-rose-800/60">{summarizeError(t.error_message)}</span>
-                      <span className="text-[10px] text-slate-500">{ago(t.updated_at)}</span>
+                      <span className="text-[10px] text-zinc-500">{ago(t.updated_at)}</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-1 break-all">{(t.error_message || '').slice(0, 160)}</div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-1 break-all">{(t.error_message || '').slice(0, 160)}</div>
                   </div>
                 ))}
                 {na!.youtubeErrorCount > 0 && (
-                  <Link href="/admin/youtube" className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-rose-800/40 hover:border-rose-700 text-xs">
+                  <Link href="/admin/youtube" className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950 border border-rose-800/40 hover:border-rose-700 text-xs">
                     <span className="font-bold text-white">YouTube動画キューのエラー（{na!.youtubeErrorCount}件）</span>
                     <span className="font-bold text-rose-400">YouTube解析へ →</span>
                   </Link>
@@ -252,19 +252,19 @@ export default function OpsDashboardPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {Object.keys(stats.cloudWorkers).length === 0 && (
-                  <p className="text-[11px] text-slate-500">クラウドワーカーの実行記録がありません。</p>
+                  <p className="text-[11px] text-zinc-500">クラウドワーカーの実行記録がありません。</p>
                 )}
                 {Object.entries(stats.cloudWorkers).map(([key, w]) => (
-                  <div key={key} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                  <div key={key} className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-black text-white">{CLOUD_WORKER_LABELS[key] || key}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[w.status || ''] || 'bg-slate-900 text-slate-400 border-slate-700'}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[w.status || ''] || 'bg-zinc-900 text-zinc-400 border-zinc-700'}`}>
                         {w.status || '不明'}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-500">最終実行: {ago(w.updated_at)}</div>
+                    <div className="text-[10px] text-zinc-500">最終実行: {ago(w.updated_at)}</div>
                     {w.details && w.details.length > 0 && (
-                      <div className="text-[10px] text-slate-400 space-y-0.5 max-h-24 overflow-y-auto">
+                      <div className="text-[10px] text-zinc-400 space-y-0.5 max-h-24 overflow-y-auto">
                         {w.details.slice(0, 5).map((d, i) => <div key={i} className="break-all">{d.replace(/\*\*/g, '')}</div>)}
                       </div>
                     )}
@@ -295,8 +295,8 @@ export default function OpsDashboardPage() {
               </div>
               {betTotal > 0 && bet && (
                 <div className="space-y-1">
-                  <div className="text-[11px] font-bold text-slate-300">未精算の勝敗予想: {betTotal.toLocaleString()}pt（{bet.blueCount + bet.redCount}票）</div>
-                  <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
+                  <div className="text-[11px] font-bold text-zinc-300">未精算の勝敗予想: {betTotal.toLocaleString()}pt（{bet.blueCount + bet.redCount}票）</div>
+                  <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden flex">
                     <div style={{ width: `${bluePct}%` }} className="bg-teal-500 h-full" />
                     <div style={{ width: `${100 - bluePct}%` }} className="bg-rose-500 h-full" />
                   </div>
@@ -309,7 +309,7 @@ export default function OpsDashboardPage() {
               {stats.casino.topPlayers.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {stats.casino.topPlayers.map((p, i) => (
-                    <span key={p.id} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
+                    <span key={p.id} className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-950 border border-zinc-800 text-zinc-300">
                       {i + 1}. {p.name} <Coins className="inline w-3 h-3 text-amber-400" /> {p.coins.toLocaleString()}
                     </span>
                   ))}
@@ -328,8 +328,8 @@ export default function OpsDashboardPage() {
                     onClick={() => setActivityFilter('all')}
                     className={`px-2 py-0.5 rounded-lg border font-bold transition ${
                       activityFilter === 'all'
-                        ? 'bg-slate-700 text-white border-slate-600'
-                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white'
+                        ? 'bg-zinc-700 text-white border-zinc-600'
+                        : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:text-white'
                     }`}
                   >
                     すべて ({stats.recruitmentActivities?.length || 0})
@@ -340,7 +340,7 @@ export default function OpsDashboardPage() {
                     className={`px-2 py-0.5 rounded-lg border font-bold transition ${
                       activityFilter === 'leave'
                         ? 'bg-rose-900/40 text-rose-300 border-rose-700'
-                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-rose-300'
+                        : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:text-rose-300'
                     }`}
                   >
                     ❌ 辞退のみ ({stats.recruitmentActivities?.filter((a) => a.action === 'LEAVE').length || 0})
@@ -351,7 +351,7 @@ export default function OpsDashboardPage() {
                     className={`px-2 py-0.5 rounded-lg border font-bold transition ${
                       activityFilter === 'join'
                         ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700'
-                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-emerald-300'
+                        : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:text-emerald-300'
                     }`}
                   >
                     🟢 参加のみ ({stats.recruitmentActivities?.filter((a) => a.action === 'JOIN').length || 0})
@@ -368,14 +368,14 @@ export default function OpsDashboardPage() {
 
                 if (logs.length === 0) {
                   return (
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-500">
+                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-center text-xs text-zinc-500">
                       記録された参加・辞退ログはありません（Discord募集でボタンが押されると自動的にここに蓄積されます）。
                     </div>
                   );
                 }
 
                 return (
-                  <div className="divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+                  <div className="divide-y divide-zinc-800/80 border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950">
                     <div className="max-h-80 overflow-y-auto">
                       {logs.map((log) => {
                         const typeBadge =
@@ -422,7 +422,7 @@ export default function OpsDashboardPage() {
 
                         const rankStr = log.metadata?.rank ? String(log.metadata.rank).toUpperCase() : null;
                         const rankCls = !rankStr
-                          ? 'bg-slate-800/60 text-slate-400 border-slate-700/60'
+                          ? 'bg-zinc-800/60 text-zinc-400 border-zinc-700/60'
                           : rankStr.includes('CHALLENGER')
                           ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
                           : rankStr.includes('MASTER')
@@ -436,19 +436,19 @@ export default function OpsDashboardPage() {
                           : rankStr.includes('GOLD')
                           ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
                           : rankStr.includes('SILVER')
-                          ? 'bg-slate-400/20 text-slate-300 border-slate-400/40'
+                          ? 'bg-zinc-400/20 text-zinc-300 border-zinc-400/40'
                           : rankStr.includes('BRONZE')
                           ? 'bg-amber-900/30 text-amber-400 border-amber-800/40'
                           : rankStr.includes('IRON')
                           ? 'bg-zinc-700/30 text-zinc-400 border-zinc-600/40'
-                          : 'bg-slate-800/60 text-slate-400 border-slate-700/60';
+                          : 'bg-zinc-800/60 text-zinc-400 border-zinc-700/60';
 
                         const reasonText = log.metadata?.reason || log.metadata?.note;
 
                         return (
                           <div
                             key={log.id}
-                            className={`p-2.5 flex items-center justify-between gap-3 text-xs hover:bg-slate-900/60 transition ${
+                            className={`p-2.5 flex items-center justify-between gap-3 text-xs hover:bg-zinc-900/60 transition ${
                               log.action === 'LEAVE' ? 'bg-rose-950/10' : ''
                             }`}
                           >
@@ -487,7 +487,7 @@ export default function OpsDashboardPage() {
                                   </span>
                                 )}
                               </span>
-                              <span className="text-[10px] text-slate-500 font-mono w-16 text-right shrink-0" title={log.created_at}>
+                              <span className="text-[10px] text-zinc-500 font-mono w-16 text-right shrink-0" title={log.created_at}>
                                 {ago(log.created_at)}
                               </span>
                             </div>

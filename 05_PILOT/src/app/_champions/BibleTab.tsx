@@ -217,7 +217,7 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
 
                             {vb.keyTactics.shadowRule && (
                               <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
-                                <span className="text-[10px] font-black text-indigo-400 flex items-center gap-1 uppercase">
+                                <span className="text-[10px] font-black text-amber-400 flex items-center gap-1 uppercase">
                                   <Compass size={12} /> 14分以降の中盤シャドウ（迷子防止）
                                 </span>
                                 <p className="text-xs text-zinc-300 leading-relaxed">

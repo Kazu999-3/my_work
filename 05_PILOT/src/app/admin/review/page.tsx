@@ -383,15 +383,15 @@ export default function ReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
         {/* ヘッダーバー */}
-        <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
               <ClipboardCheck className="w-6 h-6 text-amber-400" /> 生成記事の承認 ＆ 完全プレビュー統合
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-zinc-400 mt-1">
               動画解析記事を承認します。複数チャンピオン教本への追記・レーンガイドへのマージに加え、
               各項目（強み・弱み・スパイク等）のAI差分マージと編集履歴の完全追従に対応しています。
             </p>
@@ -400,7 +400,7 @@ export default function ReviewPage() {
             <Link href="/lane-guides" target="_blank" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold">
               <Compass className="w-3.5 h-3.5" /> レーン攻略バイブル
             </Link>
-            <Link href="/admin/youtube" className="text-xs text-slate-400 hover:text-white">
+            <Link href="/admin/youtube" className="text-xs text-zinc-400 hover:text-white">
               ← 動画解析
             </Link>
           </div>
@@ -425,8 +425,8 @@ export default function ReviewPage() {
 
         {/* 一括操作バー */}
         {items.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900/50 rounded-xl border border-slate-800">
-            <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-zinc-900/50 rounded-xl border border-zinc-800">
+            <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
               <input
                 type="checkbox"
                 className="accent-amber-500"
@@ -454,9 +454,9 @@ export default function ReviewPage() {
 
         {/* 記事カード一覧 */}
         <div className="space-y-4">
-          {loading && items.length === 0 && <p className="text-xs text-slate-500 text-center py-10">読み込み中...</p>}
+          {loading && items.length === 0 && <p className="text-xs text-zinc-500 text-center py-10">読み込み中...</p>}
           {!loading && items.length === 0 && (
-            <p className="text-xs text-slate-500 text-center py-12 bg-slate-900/40 border border-slate-800 rounded-xl">承認待ちの記事はありません</p>
+            <p className="text-xs text-zinc-500 text-center py-12 bg-zinc-900/40 border border-zinc-800 rounded-xl">承認待ちの記事はありません</p>
           )}
 
           {items.map((item) => (

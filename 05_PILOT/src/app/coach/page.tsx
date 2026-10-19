@@ -60,11 +60,11 @@ function CoachPageContent() {
   }, [qEnemy]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* ページタイトル */}
-        <div className="border-b border-slate-800 pb-4">
+        <div className="border-b border-zinc-800 pb-4">
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
             <Bot className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
             🤖 AI戦術コーチング・コクピット

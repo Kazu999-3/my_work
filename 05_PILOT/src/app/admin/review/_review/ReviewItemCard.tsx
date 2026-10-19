@@ -34,7 +34,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   return (
               <div
                 className={`p-4 md:p-5 rounded-2xl border space-y-3 transition ${
-                  isSelected ? 'bg-amber-500/5 border-amber-500/40' : 'bg-slate-900/80 border-slate-800'
+                  isSelected ? 'bg-amber-500/5 border-amber-500/40' : 'bg-zinc-900/80 border-zinc-800'
                 }`}
               >
                 {/* タイトル ＆ メタデータ行 */}
@@ -68,13 +68,13 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         </span>
                       )}
                       {Array.isArray(item.tags) && item.tags.includes('__DECOMPOSED__') && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-indigo-300 border-indigo-800/60 bg-indigo-950/40 flex items-center gap-1">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-800/60 bg-amber-950/40 flex items-center gap-1">
                           <Scissors className="w-2.5 h-2.5" /> 分解済み
                         </span>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-400">
                       {/* 📺 チャンネル名バッジ（クリックでそのチャンネルにワンクリック絞り込み） */}
                       {item.channel && (
                         <button
@@ -83,7 +83,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border transition cursor-pointer ${
                             channel === item.channel
                               ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
-                              : 'bg-slate-800/80 text-slate-300 border-slate-700/80 hover:bg-slate-700 hover:text-white'
+                              : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/80 hover:bg-zinc-700 hover:text-white'
                           }`}
                           title={channel === item.channel ? 'チャンネル絞り込みを解除' : `「${item.channel}」で絞り込む`}
                         >
@@ -93,7 +93,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                       )}
 
                       {/* 📚 文字数バッジ */}
-                      <span className="text-[11px] text-slate-400 font-mono">
+                      <span className="text-[11px] text-zinc-400 font-mono">
                         📚 {(item.char_count || item.content?.length || 0).toLocaleString()}文字
                       </span>
 
@@ -143,16 +143,16 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                 )}
 
                 {/* 🤖 自動判定＆統合先プレビューバッジ */}
-                <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">統合予定:</span>
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">統合予定:</span>
                     {/* チャンピオン教本バッジ */}
                     {edit.champion.trim() ? (
                       <span className="px-2 py-0.5 rounded-md bg-blue-950/60 border border-blue-800/70 text-blue-300 text-[11px] font-bold flex items-center gap-1">
                         <BookOpen className="w-3 h-3" /> 教本: {edit.champion}
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-800/60 text-slate-400 text-[11px]">
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-800/60 text-zinc-400 text-[11px]">
                         教本: なし（一般論）
                       </span>
                     )}
@@ -174,7 +174,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         <Compass className="w-3 h-3" /> レーンガイド: {edit.lane}（第8章）
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-800/60 text-slate-500 text-[11px]">
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-800/60 text-zinc-500 text-[11px]">
                         レーンガイド: なし
                       </span>
                     )}
@@ -209,7 +209,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                 </div>
 
                 {/* 本文プレビュー */}
-                <p className={`text-xs text-slate-300 leading-relaxed whitespace-pre-wrap ${isOpen ? '' : 'line-clamp-4'}`}>
+                <p className={`text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap ${isOpen ? '' : 'line-clamp-4'}`}>
                   {item.content}
                 </p>
                 {item.content.length > 250 && (
@@ -219,39 +219,39 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                 )}
 
                 {/* 🛠️ インライン編集＆承認コントローラー */}
-                <div className="pt-3 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
+                <div className="pt-3 border-t border-zinc-800/80 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3 flex-1">
                     {/* チャンピオン入力欄 */}
-                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold min-w-[180px] flex-1">
+                    <label className="flex flex-col gap-1 text-[10px] text-zinc-400 font-bold min-w-[180px] flex-1">
                       <span>対象チャンピオン（カンマ区切りで複数可 / 空欄＝一般論）</span>
                       <input
                         list="roster-champions"
                         value={edit.champion}
                         onChange={(e) => onEdit({ champion: e.target.value })}
                         placeholder="例: ノクターン, シン・ジャオ"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500"
                       />
                     </label>
 
                     {/* 対面相手入力欄 */}
-                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold min-w-[140px] w-40">
+                    <label className="flex flex-col gap-1 text-[10px] text-zinc-400 font-bold min-w-[140px] w-40">
                       <span>対面相手（空欄＝対面なし）</span>
                       <input
                         list="roster-champions"
                         value={edit.enemyChampion}
                         onChange={(e) => onEdit({ enemyChampion: e.target.value })}
                         placeholder="例: トリンダメア"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500"
                       />
                     </label>
 
                     {/* レーン選択セレクト */}
-                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold w-36">
+                    <label className="flex flex-col gap-1 text-[10px] text-zinc-400 font-bold w-36">
                       <span>統合先レーン</span>
                       <select
                         value={edit.lane}
                         onChange={(e) => onEdit({ lane: e.target.value as LaneKey })}
-                        className="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
+                        className="w-full px-2 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
                       >
                         {LANE_OPTIONS.map((l) => (
                           <option key={l.key} value={l.key}>{l.label}</option>
@@ -261,7 +261,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
 
                     {/* トグル群 */}
                     <div className="flex items-center gap-3 pt-4">
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-slate-300 cursor-pointer select-none">
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-zinc-300 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={edit.includeLaneGuide}
@@ -270,7 +270,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         />
                         <span>🗺️ レーンガイド</span>
                       </label>
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-slate-300 cursor-pointer select-none">
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-zinc-300 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={edit.includeFactMerge}

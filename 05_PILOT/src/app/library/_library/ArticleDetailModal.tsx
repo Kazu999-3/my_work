@@ -103,14 +103,14 @@ export default function ArticleDetailModal({ detailArticle, detailLoading, copie
 
                   {/* 双方向連携バナー */}
                   {detailArticle.champion && detailArticle.champion !== "Unknown" ? (
-                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs">
                       <div className="flex items-center gap-2">
                         <img
                           src={getChampIcon(detailArticle.champion)}
                           alt={detailArticle.champion}
-                          className="w-6 h-6 rounded-md object-cover border border-indigo-400"
+                          className="w-6 h-6 rounded-md object-cover border border-amber-400"
                         />
-                        <span className="font-bold text-indigo-200">
+                        <span className="font-bold text-amber-200">
                           対象チャンピオン: {detailArticle.champion}
                         </span>
                       </div>
@@ -123,7 +123,7 @@ export default function ArticleDetailModal({ detailArticle, detailLoading, copie
                         </Link>
                         <Link
                           href={`/coach?my=${encodeURIComponent(detailArticle.champion)}`}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-sm"
+                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-sm"
                         >
                           🤖 AIコーチで設計図を見る
                         </Link>

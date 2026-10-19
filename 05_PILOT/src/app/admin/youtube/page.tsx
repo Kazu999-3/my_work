@@ -28,14 +28,14 @@ function YoutubeAdminContent() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
-        <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
               <Video className="w-6 h-6 text-amber-400" /> YouTube動画解析センター
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-zinc-400 mt-1">
               解説動画をキューに積み、PCのエッジワーカーが字幕取得→要約→ライブラリ保存まで自動で行います。
             </p>
           </div>
@@ -51,13 +51,13 @@ function YoutubeAdminContent() {
 
         <DeepDivePanel />
 
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-800 pb-2">
+        <div className="flex gap-2 overflow-x-auto border-b border-zinc-800 pb-2">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${
-                tab === t.key ? 'bg-amber-600 text-white' : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
+                tab === t.key ? 'bg-amber-600 text-white' : 'bg-zinc-900/60 border border-zinc-800 text-zinc-400 hover:text-white'
               }`}
             >
               {t.icon} {t.label}
@@ -80,7 +80,7 @@ function YoutubeAdminContent() {
 
 export default function YoutubeAdminPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-500 text-xs">ロード中...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-zinc-500 text-xs">ロード中...</div>}>
       <YoutubeAdminContent />
     </Suspense>
   );

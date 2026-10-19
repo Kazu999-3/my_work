@@ -113,7 +113,7 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                             href={`https://www.op.gg/champions/${selectedDetail.id.toLowerCase()}/build/${(currentRole === "BOT" ? "adc" : currentRole).toLowerCase()}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-semibold flex items-center gap-1 transition"
+                            className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-1 transition"
                             title={`OP.GG公式の${selectedDetail.jpName} (${currentRole}) ビルド・スタッツを開く`}
                           >
                             <span>出典: OP.GG</span>
@@ -147,10 +147,10 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                   {/* 🤖 AIコーチ設計図へジャンプ */}
                   <Link
                     href={`/coach?my=${selectedDetail.id}${vsEnemyId ? `&enemy=${vsEnemyId}` : ''}`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-indigo-300 text-xs font-bold transition shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300 text-xs font-bold transition shadow-sm"
                     title="このチャンピオンの即死キルライン・初動JGルート・3段階手順を開く"
                   >
-                    <Bot size={14} className="text-indigo-400" />
+                    <Bot size={14} className="text-amber-400" />
                     <span>🤖 AIコーチ設計図</span>
                   </Link>
 

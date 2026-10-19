@@ -28,7 +28,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
   qualityCounts: { thin?: number; reanalyzed?: number };
 }) {
   return (
-        <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+        <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
           {/* 上段: 種別タブ ＆ チャンネル ＆ ソート ＆ 検索 */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             {/* 左側: 種別タブ */}
@@ -38,19 +38,19 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                   key={k}
                   onClick={() => setType(k)}
                   className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition ${
-                    type === k ? 'bg-amber-500/10 border-amber-500/60 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                    type === k ? 'bg-amber-500/10 border-amber-500/60 text-white' : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:text-white'
                   }`}
                 >
                   {l}
                 </button>
               ))}
-              <span className="w-px h-5 bg-slate-800 mx-0.5" aria-hidden />
+              <span className="w-px h-5 bg-zinc-800 mx-0.5" aria-hidden />
               {([['thin', '⚠️ 薄い可能性', qualityCounts.thin], ['reanalyzed', '🔁 再解析版', qualityCounts.reanalyzed]] as const).map(([k, l, n]) => (
                 <button
                   key={k}
                   onClick={() => setQuality(quality === k ? '' : k)}
                   className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition ${
-                    quality === k ? 'bg-amber-500/15 border-amber-500/60 text-amber-200' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                    quality === k ? 'bg-amber-500/15 border-amber-500/60 text-amber-200' : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:text-white'
                   }`}
                   title={k === 'thin' ? '数値・条件などの具体的な記述が少ない記事だけを表示' : '再解析で作り直した版だけを表示'}
                 >
@@ -68,7 +68,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                   value={channel}
                   onChange={(e) => setChannel(e.target.value)}
                   className={`pl-8 pr-3 py-1.5 rounded-lg text-xs font-bold border transition appearance-none cursor-pointer ${
-                    channel ? 'bg-amber-500/15 border-amber-500/60 text-amber-200 shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                    channel ? 'bg-amber-500/15 border-amber-500/60 text-amber-200 shadow-sm' : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-700'
                   }`}
                   aria-label="チャンネル絞り込み"
                 >
@@ -83,11 +83,11 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
 
               {/* ⇅ ソートセレクター */}
               <div className="relative flex items-center">
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 pointer-events-none" />
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium hover:border-slate-700 transition appearance-none cursor-pointer"
+                  className="pl-8 pr-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 font-medium hover:border-zinc-700 transition appearance-none cursor-pointer"
                   aria-label="並び替え"
                 >
                   <option value="created_asc">⏳ 登録古い順</option>
@@ -100,13 +100,13 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
 
               {/* 🔍 検索ボックス */}
               <div className="relative flex items-center">
-                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="タイトル/本文/チャンプ検索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/60 w-44 md:w-52 transition"
+                  className="pl-8 pr-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/60 w-44 md:w-52 transition"
                 />
               </div>
 
@@ -115,7 +115,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                 onClick={onReload}
                 disabled={loading}
                 title="最新に更新"
-                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -123,12 +123,12 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
           </div>
 
           {/* 下段: レーン絞り込みタブ ＆ 件数サマリー */}
-          <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2">
+          <div className="pt-2 border-t border-zinc-800/60 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1">
               <button
                 onClick={() => setLane('ALL')}
                 className={`px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition ${
-                  lane === 'ALL' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' : 'bg-slate-950/40 text-slate-400 hover:text-slate-200'
+                  lane === 'ALL' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' : 'bg-zinc-950/40 text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 全レーン ({laneCounts.ALL || 0})
@@ -143,7 +143,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                     className={`px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 cursor-pointer transition ${
                       isSelected
                         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
-                        : 'bg-slate-950/40 text-slate-400 hover:text-slate-200'
+                        : 'bg-zinc-950/40 text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
                     <span>{opt.icon}</span>
@@ -169,7 +169,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                   フィルター解除
                 </button>
               )}
-              <span className="text-slate-400 text-xs">
+              <span className="text-zinc-400 text-xs">
                 表示中: <b className="text-amber-300 font-mono">{total}</b>件 / 全体: <span className="font-mono">{totalAll}</span>件
               </span>
             </div>

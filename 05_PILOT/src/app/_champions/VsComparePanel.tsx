@@ -61,22 +61,22 @@ export default function VsComparePanel({ vsEnemyId, setVsEnemyId, selectedDetail
                     {/* 🤖 AI戦術コーチへのワンクリック直結バナー */}
                     <Link
                       href={`/coach?my=${selectedDetail.id}&enemy=${vsEnemyDetail.id}`}
-                      className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-indigo-950 via-indigo-900 to-indigo-950 border border-indigo-500/60 hover:border-indigo-400 text-white transition-all shadow-md group"
+                      className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 border border-amber-500/60 hover:border-amber-400 text-white transition-all shadow-md group"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow">
+                        <div className="p-1.5 rounded-lg bg-amber-600 text-white shadow">
                           <Bot size={16} />
                         </div>
                         <div>
-                          <span className="text-xs font-black text-white group-hover:text-indigo-200 transition">
+                          <span className="text-xs font-black text-white group-hover:text-amber-200 transition">
                             🤖 この対面で「AI戦術コーチ（試合前設計図）」を開く
                           </span>
-                          <p className="text-[10px] text-indigo-300">
+                          <p className="text-[10px] text-amber-300">
                             Lv6即死境界キルライン ＋ 3段階手順書 ＋ 敵JG初動ルート（スカトル争奪）を即時計算
                           </p>
                         </div>
                       </div>
-                      <ArrowRight size={14} className="text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                      <ArrowRight size={14} className="text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
                     </Link>
 
                     {/* 🎯 この対面専用の特化攻略メモ（存在する場合に最優先表示） */}

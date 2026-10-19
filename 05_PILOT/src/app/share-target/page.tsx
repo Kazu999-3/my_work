@@ -109,21 +109,21 @@ function ShareTargetContent() {
 
   return (
     <div className="min-h-screen bg-[#0d0d10] text-[#f1f5f9] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#16161c] border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md bg-[#16161c] border border-zinc-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
         {/* 背景の装飾光 */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
         {/* ヘッダーアイコン */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <Share2 className="w-5 h-5 animate-pulse" />
           </div>
           <div>
             <h1 className="text-sm font-black tracking-wide text-white uppercase">
               戦術インポート・クイック投函
             </h1>
-            <p className="text-[11px] text-slate-400">YouTube動画を解析キューへ登録</p>
+            <p className="text-[11px] text-zinc-400">YouTube動画を解析キューへ登録</p>
           </div>
         </div>
 
@@ -131,8 +131,8 @@ function ShareTargetContent() {
         <div className="space-y-4">
           {status === 'processing' && (
             <div className="flex flex-col items-center justify-center py-8 space-y-3">
-              <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
-              <p className="text-xs font-bold text-slate-300">{message}</p>
+              <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+              <p className="text-xs font-bold text-zinc-300">{message}</p>
             </div>
           )}
 
@@ -144,10 +144,10 @@ function ShareTargetContent() {
               <p className="text-xs font-bold text-emerald-300 leading-relaxed px-2">
                 {message}
               </p>
-              <p className="text-[10px] text-slate-500">{isPopup ? 'この画面は自動で閉じます...' : '間もなくライブラリへ自動移動します...'}</p>
+              <p className="text-[10px] text-zinc-500">{isPopup ? 'この画面は自動で閉じます...' : '間もなくライブラリへ自動移動します...'}</p>
               <Link
                 href="/library"
-                className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-bold"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-bold"
               >
                 今すぐライブラリを開く <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -164,7 +164,7 @@ function ShareTargetContent() {
               )}
 
               <form onSubmit={handleManualSubmit} className="space-y-3">
-                <label className="block text-[11px] font-bold text-slate-300">
+                <label className="block text-[11px] font-bold text-zinc-300">
                   YouTube動画のURL
                 </label>
                 <input
@@ -172,19 +172,19 @@ function ShareTargetContent() {
                   value={manualUrl}
                   onChange={(e) => setManualUrl(e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full bg-[#101014] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#101014] border border-zinc-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   required
                 />
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-indigo-600/20"
+                  className="w-full bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-amber-600/20"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> 解析キューに登録する
                 </button>
               </form>
 
               <div className="pt-2 text-center">
-                <Link href="/" className="text-xs text-slate-400 hover:text-white transition-colors">
+                <Link href="/" className="text-xs text-zinc-400 hover:text-white transition-colors">
                   ← コックピットトップへ戻る
                 </Link>
               </div>
@@ -199,7 +199,7 @@ function ShareTargetContent() {
 export default function ShareTargetPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0d0d10] flex items-center justify-center text-slate-400 text-xs">
+      <div className="min-h-screen bg-[#0d0d10] flex items-center justify-center text-zinc-400 text-xs">
         受信準備中...
       </div>
     }>

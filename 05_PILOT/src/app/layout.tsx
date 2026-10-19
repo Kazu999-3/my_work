@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className="dark">
-      <body className="min-h-screen bg-[#0a0d14] text-slate-100 antialiased selection:bg-amber-500/30 flex flex-col pb-16 md:pb-0">
+      <body className="min-h-screen bg-[#0a0d14] text-zinc-100 antialiased selection:bg-amber-500/30 flex flex-col pb-16 md:pb-0">
         <GlobalNavbar />
         <div className="flex-1">
           {children}

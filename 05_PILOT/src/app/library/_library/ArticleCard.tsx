@@ -34,7 +34,7 @@ export default function ArticleCard({ article: a, onOpen }: { article: ArticleIt
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${
                             a.lane === 'TOP' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
                             a.lane === 'JG' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' :
-                            a.lane === 'MID' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' :
+                            a.lane === 'MID' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
                             a.lane === 'ADC' ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' :
                             'bg-teal-500/15 text-teal-300 border-teal-500/30'
                           }`}>

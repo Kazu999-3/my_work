@@ -275,12 +275,12 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-800 pb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-2 flex items-center gap-3">
             <Swords className="text-[#00cfef]" size={28} /> 5v5 AIチームシミュレータ
           </h1>
-          <p className="text-slate-500 font-medium text-xs">
+          <p className="text-zinc-500 font-medium text-xs">
             両チームの5対5構成から相性・主導権・ゲームプランをAIが総合診断
           </p>
         </div>
@@ -321,7 +321,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
             </h4>
             {roles.map(role => (
               <div key={role} className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{role}</label>
                 <ChampSelect
                   value={blueChamps[role]}
                   onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))}
@@ -334,7 +334,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
           {/* VS Divider */}
           <div className="lg:col-span-1 flex flex-col items-center justify-center py-4">
-            <span className="text-2xl font-black italic text-slate-400 tracking-widest">VS</span>
+            <span className="text-2xl font-black italic text-zinc-400 tracking-widest">VS</span>
             <div className="w-px h-20 bg-gradient-to-b from-transparent via-gray-700 to-transparent hidden lg:block my-4"></div>
           </div>
 
@@ -345,7 +345,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
             </h4>
             {roles.map(role => (
               <div key={role} className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{role}</label>
                 <ChampSelect
                   value={redChamps[role]}
                   onChange={(val) => setRedChamps(prev => ({ ...prev, [role]: val }))}
@@ -357,13 +357,13 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
           </div>
         </div>
 
-        <div className="text-right mt-8 border-t border-slate-800 pt-6">
+        <div className="text-right mt-8 border-t border-zinc-800 pt-6">
           {(() => {
             const missingCount = [...Object.values(blueChamps), ...Object.values(redChamps)].filter(v => !v).length;
             return (
               <>
                 {missingCount > 0 && (
-                  <p className="text-[11px] text-slate-400 mb-2">あと{missingCount}人のチャンピオンを選択してください</p>
+                  <p className="text-[11px] text-zinc-400 mb-2">あと{missingCount}人のチャンピオンを選択してください</p>
                 )}
                 <button
                   onClick={startSimulation}
@@ -382,11 +382,11 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
       {/* 保存済みシミュレーション一覧 */}
       {savedSims && savedSims.length > 0 && (
         <div className="glass-panel rounded-2xl p-4">
-          <p className="text-xs font-black text-slate-500 mb-2">📚 保存済みの分析（クリックで再表示）</p>
+          <p className="text-xs font-black text-zinc-500 mb-2">📚 保存済みの分析（クリックで再表示）</p>
           <div className="flex flex-wrap gap-2">
             {savedSims.map((s: any) => (
               <button key={s.id} onClick={() => loadSavedSim(s.id)}
-                className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-800 text-slate-300 hover:bg-slate-800/60">
+                className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-zinc-800/60 border border-zinc-800 text-zinc-300 hover:bg-zinc-800/60">
                 {s.blue?.JG || '?'}組 vs {s.red?.JG || '?'}組 ・ {new Date(s.created_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
               </button>
             ))}
@@ -413,8 +413,8 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
             <div className="absolute inset-0 border-4 border-t-[#a78bfa] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
           </div>
           <div className="text-center">
-            <h4 className="text-lg font-black text-slate-100 animate-pulse mb-1">{simStatus}</h4>
-            <p className="text-xs text-slate-400 font-mono">通常 15秒〜25秒 で完了します</p>
+            <h4 className="text-lg font-black text-zinc-100 animate-pulse mb-1">{simStatus}</h4>
+            <p className="text-xs text-zinc-400 font-mono">通常 15秒〜25秒 で完了します</p>
           </div>
         </div>
       )}
@@ -423,12 +423,12 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
       {simResult && (
         <div className="flex flex-col gap-8">
           <div className="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs text-slate-500 font-bold">この分析結果を保存して共有できます</span>
+            <span className="text-xs text-zinc-500 font-bold">この分析結果を保存して共有できます</span>
             <div className="flex items-center gap-2 flex-wrap">
               {shareUrl && (
-                <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-800 rounded-lg px-3 py-1.5">
+                <div className="flex items-center gap-2 bg-zinc-800/60 border border-zinc-800 rounded-lg px-3 py-1.5">
                   <span className="text-[10px] text-emerald-300 font-mono truncate max-w-[220px]">{shareUrl}</span>
-                  <button onClick={() => { navigator.clipboard.writeText(shareUrl).catch(() => {}); }} className="text-[10px] font-black text-[#00cfef] hover:text-slate-100">コピー</button>
+                  <button onClick={() => { navigator.clipboard.writeText(shareUrl).catch(() => {}); }} className="text-[10px] font-black text-[#00cfef] hover:text-zinc-100">コピー</button>
                 </div>
               )}
               <button
@@ -444,7 +444,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
           {/* 1. 各レーンの主導権マップ */}
           <div className="glass-panel p-6 md:p-8 rounded-3xl relative">
-            <h3 className="text-slate-100 font-black text-base mb-6 flex items-center gap-2">
+            <h3 className="text-zinc-100 font-black text-base mb-6 flex items-center gap-2">
               <Activity className="text-[#00cfef]" size={20} /> ⚖️ 各レーン主導権分析 (Lane Priority Map)
             </h3>
 
@@ -458,14 +458,14 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                   if (laneData.priority === 'RED_PRIORITY') {
                     return { text: '敵有利 (Red)', style: 'bg-rose-950/30 text-rose-300 border-rose-800/60' };
                   }
-                  return { text: '互角 (Even)', style: 'bg-slate-900 text-slate-300 border-slate-800' };
+                  return { text: '互角 (Even)', style: 'bg-zinc-900 text-zinc-300 border-zinc-800' };
                 };
                 const label = getPriorityLabel();
 
                 return (
                   <div key={role} className="flex flex-col md:flex-row md:items-center gap-4 pt-4 first:pt-0">
                     <div className="flex items-center gap-3 w-full md:w-[240px] shrink-0">
-                      <span className="w-10 text-xs font-black text-slate-500 font-mono tracking-wider">{role}</span>
+                      <span className="w-10 text-xs font-black text-zinc-500 font-mono tracking-wider">{role}</span>
                       <div className="flex items-center gap-1.5">
                         <Image
                           src={getChampIcon(blueChamps[role])}
@@ -474,7 +474,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                           className="w-8 h-8 rounded-full border border-teal-700"
                           alt={blueChamps[role]}
                         />
-                        <span className="text-[10px] text-slate-400 font-black italic">VS</span>
+                        <span className="text-[10px] text-zinc-400 font-black italic">VS</span>
                         <Image
                           src={getChampIcon(redChamps[role])}
                           width={32}
@@ -491,7 +491,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-300 leading-relaxed flex-1">
+                    <p className="text-xs text-zinc-300 leading-relaxed flex-1">
                       {laneData.reason}
                     </p>
                   </div>
@@ -508,16 +508,16 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
               </h4>
               <div className="space-y-3">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">構成タイプ</span>
-                  <p className="text-sm font-black text-slate-100 mt-0.5">{simResult.blue_team.composition_style}</p>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">構成タイプ</span>
+                  <p className="text-sm font-black text-zinc-100 mt-0.5">{simResult.blue_team.composition_style}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">強みと狙い</span>
-                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.blue_team.strengths}</p>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">強みと狙い</span>
+                  <p className="text-xs text-zinc-300 leading-relaxed mt-0.5">{simResult.blue_team.strengths}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">弱点・警戒点</span>
-                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.blue_team.weaknesses}</p>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">弱点・警戒点</span>
+                  <p className="text-xs text-zinc-300 leading-relaxed mt-0.5">{simResult.blue_team.weaknesses}</p>
                 </div>
               </div>
             </div>
@@ -528,16 +528,16 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
               </h4>
               <div className="space-y-3">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">構成タイプ</span>
-                  <p className="text-sm font-black text-slate-100 mt-0.5">{simResult.red_team.composition_style}</p>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">構成タイプ</span>
+                  <p className="text-sm font-black text-zinc-100 mt-0.5">{simResult.red_team.composition_style}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">強みと狙い</span>
-                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.red_team.strengths}</p>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">強みと狙い</span>
+                  <p className="text-xs text-zinc-300 leading-relaxed mt-0.5">{simResult.red_team.strengths}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">弱点・警戒点</span>
-                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.red_team.weaknesses}</p>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">弱点・警戒点</span>
+                  <p className="text-xs text-zinc-300 leading-relaxed mt-0.5">{simResult.red_team.weaknesses}</p>
                 </div>
               </div>
             </div>
@@ -545,22 +545,22 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
           {/* 3. 勝利へのロードマップ */}
           <div className="glass-panel p-6 md:p-8 rounded-3xl">
-            <h3 className="text-slate-100 font-black text-base mb-6 flex items-center gap-2">
+            <h3 className="text-zinc-100 font-black text-base mb-6 flex items-center gap-2">
               <Target className="text-[#a78bfa]" size={20} /> 🗺️ 勝利へのロードマップ (Game Plan)
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-700 flex flex-col gap-2">
                 <span className="text-xs font-black text-amber-400">序盤 (〜Lv6 / オブジェクト戦準備)</span>
-                <p className="text-xs leading-relaxed text-slate-300">{simResult.game_plan.early}</p>
+                <p className="text-xs leading-relaxed text-zinc-300">{simResult.game_plan.early}</p>
               </div>
               <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-700 flex flex-col gap-2">
                 <span className="text-xs font-black text-amber-400">中盤 (1stタワー破壊 / サイドプッシュ開始)</span>
-                <p className="text-xs leading-relaxed text-slate-300">{simResult.game_plan.mid}</p>
+                <p className="text-xs leading-relaxed text-zinc-300">{simResult.game_plan.mid}</p>
               </div>
               <div className="glass-panel p-5 rounded-2xl border-t-2 border-emerald-700 flex flex-col gap-2">
                 <span className="text-xs font-black text-emerald-400">終盤 (集団戦 / ソウル・バロン決戦)</span>
-                <p className="text-xs leading-relaxed text-slate-300">{simResult.game_plan.late}</p>
+                <p className="text-xs leading-relaxed text-zinc-300">{simResult.game_plan.late}</p>
               </div>
             </div>
           </div>
@@ -572,7 +572,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
             </h3>
             <ul className="space-y-4">
               {simResult.win_conditions && simResult.win_conditions.map((cond: string, idx: number) => (
-                <li key={idx} className="flex items-start gap-4 text-sm text-slate-200">
+                <li key={idx} className="flex items-start gap-4 text-sm text-zinc-200">
                   <div className="w-6 h-6 rounded-full bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/30 flex items-center justify-center shrink-0 text-xs font-bold font-mono">
                     {idx + 1}
                   </div>

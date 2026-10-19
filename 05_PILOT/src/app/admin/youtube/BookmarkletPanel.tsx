@@ -56,7 +56,7 @@ export default function BookmarkletPanel() {
   };
 
   return (
-    <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+    <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-3">
       <h3 className="text-xs font-black text-white flex items-center gap-2">
         <Bookmark className="w-4 h-4 text-amber-400" /> PCからYouTubeを一発登録（ブックマークレット）
       </h3>
@@ -69,20 +69,20 @@ export default function BookmarkletPanel() {
         >
           📼 KTMに登録
         </a>
-        <ol className="text-[11px] text-slate-300 space-y-0.5 list-decimal pl-4">
+        <ol className="text-[11px] text-zinc-300 space-y-0.5 list-decimal pl-4">
           <li>左のボタンを、ブラウザのブックマークバーへドラッグして登録します（バーが無ければ Ctrl+Shift+B で表示）。</li>
           <li>YouTubeで動画（通常・Shorts・ライブ）を開いた状態で、ブックマークの「KTMに登録」を押します。小窓で登録され、自動で閉じます。</li>
           <li><b>プレイリスト</b>のページ（またはプレイリスト再生中）で押すと、並んでいる動画をまとめて登録できます（登録済みは飛ばします）。YouTubeは最初の約100本しか表示しないので、それ以上ある場合は下までスクロールしてから押してください。</li>
         </ol>
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+      <div className="flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
         <span>ドラッグできない場合は、新しいブックマークを作り、URL欄にこのコードを貼り付けてください。</span>
-        <button onClick={copy} disabled={!code} className="px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-1 cursor-pointer">
+        <button onClick={copy} disabled={!code} className="px-2 py-1 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-300 flex items-center gap-1 cursor-pointer">
           {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? 'コピーしました' : 'コードをコピー'}
         </button>
       </div>
-      <p className="text-[10px] text-slate-500">
+      <p className="text-[10px] text-zinc-500">
         このPCのブラウザで一度05_PILOTにログインしておく必要があります（未ログインのときは小窓でログイン画面が開きます）。
       </p>
     </div>

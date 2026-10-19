@@ -147,8 +147,8 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
   // 勝率の段階は暖色系（良い=エメラルド → 普通=琥珀 → 悪い=ローズ）。
   // ui-conventions.md の成功=emerald / 警告=rose に合わせ、中間を amber で埋める。
   const cellColor = (winRate: number, games: number) => {
-    if (games === 0) return 'bg-slate-800/40';
-    if (games < 3) return 'bg-slate-900';
+    if (games === 0) return 'bg-zinc-800/40';
+    if (games < 3) return 'bg-zinc-900';
     if (winRate >= 60) return 'bg-emerald-500';
     if (winRate >= 55) return 'bg-emerald-300';
     if (winRate >= 45) return 'bg-amber-950/30';
@@ -165,7 +165,7 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-zinc-400">
         同期したソロQ試合の開始時刻(JST)から、曜日×時間帯ごとの勝率を集計します。
       </p>
 
