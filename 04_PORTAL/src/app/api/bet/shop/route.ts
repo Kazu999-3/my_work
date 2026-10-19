@@ -79,19 +79,17 @@ export async function POST(req: Request) {
     }
 
     const newCoins = currentCoins - totalPrice;
-    const currentInventory = getPlayerInventory(player);
     const addedItems = Array.from({ length: parsedQty }).map(() => ({
       id: item.id,
       name: item.name,
       icon: item.icon,
       boughtAt: new Date().toISOString()
     }));
-    const newInventory = [...currentInventory, ...addedItems];
-
+    // 持ち物は DB 上で末尾に追加する（以前は丸ごと上書きで、同時に2回買うとチケットが1枚分消えていた。2026-10-19）
     const updateRes = await updatePlayerCoinsAndInventory({
       player,
       newCoins,
-      newInventory,
+      appendInventory: addedItems,
       reason: 'shop_purchase',
       reasonMetadata: { itemId: item.id, itemName: item.name, price: item.price },
     });
@@ -129,8 +127,8 @@ export async function POST(req: Request) {
       item,
       quantity: parsedQty,
       totalPrice,
-      remainingCoins: newCoins,
-      inventory: newInventory,
+      remainingCoins: updateRes.coins,
+      inventory: updateRes.inventory,
       message: successMsg
     });
   } catch (error: any) {

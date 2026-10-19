@@ -246,6 +246,8 @@ export async function updatePlayerCoinsAndInventory(params: {
   player: PlayerRecord;
   newCoins?: number;
   newInventory?: Array<{ id: string; name: string; icon: string; boughtAt: string }>;
+  /** 今の持ち物の末尾に追加する（DB 上で追加するので同時購入でも消えない。2026-10-19 ショップ用） */
+  appendInventory?: Array<{ id: string; name: string; icon: string; boughtAt: string }>;
   rolePreferencesUpdate?: Record<string, any>;
   /**
    * コイン増減の理由。渡すと coin_transactions へ台帳記録される（2026-09-22 新設）。
@@ -256,10 +258,12 @@ export async function updatePlayerCoinsAndInventory(params: {
   /** 倍率・オッズ・購入アイテムなど、台帳へ残す補足情報 */
   reasonMetadata?: Record<string, any>;
 }): Promise<{ success: boolean; coins: number; inventory: any[]; error?: string }> {
-  const { player, newCoins, newInventory, rolePreferencesUpdate, reason, reasonMetadata } = params;
+  const { player, newCoins, newInventory, appendInventory, rolePreferencesUpdate, reason, reasonMetadata } = params;
   const previousCoins = getPlayerCoins(player);
   const targetCoins = typeof newCoins === 'number' ? newCoins : previousCoins;
-  const targetInventory = Array.isArray(newInventory) ? newInventory : getPlayerInventory(player);
+  const targetInventory = Array.isArray(newInventory)
+    ? newInventory
+    : Array.isArray(appendInventory) ? [...getPlayerInventory(player), ...appendInventory] : getPlayerInventory(player);
 
   if (!supabase) {
     return { success: true, coins: targetCoins, inventory: targetInventory };
@@ -276,6 +280,7 @@ export async function updatePlayerCoinsAndInventory(params: {
       p_delta: delta,
       p_inventory: Array.isArray(newInventory) ? newInventory : null,
       p_prefs_patch: rolePreferencesUpdate || null,
+      p_inventory_append: !Array.isArray(newInventory) && Array.isArray(appendInventory) ? appendInventory : null,
     });
     // 関数がまだ無い（マイグレーション適用前）時だけ、従来の上書き方式で続ける
     const rpcMissing = !!rpcErr && (rpcErr.code === 'PGRST202' || /apply_player_coin_delta/.test(rpcErr.message || ''));
