@@ -438,10 +438,14 @@ export async function POST(request: Request) {
         pity: newPity,
         off_role_pity: newOffRolePity,
         spectator_pity: 0, // ★ 出場したため観戦Pityを確実に0リセット
+        metadata: { ...currentMeta, consecutive_secondary: consecutiveSecondary }
+      };
+      // コインと持ち物は MMR 等とは別に、DB 上の足し算（apply_player_coin_delta、migration 106）で更新する。
+      // 以前はここで「読んだ残高 + 報酬」を上書きしており、記録中にその人がカジノで遊ぶとどちらかが消えていた（2026-10-19）
+      const legacyCoinFields = {
         coins: newCoins,
         inventory: updatedInventory,
         role_preferences: { ...currentRolePrefs, coins: newCoins, inventory: updatedInventory },
-        metadata: { ...currentMeta, coins: newCoins, inventory: updatedInventory, consecutive_secondary: consecutiveSecondary }
       };
 
       (r as any).coinReward = coinReward;
@@ -451,17 +455,26 @@ export async function POST(request: Request) {
         .from('ktm_players')
         .update(baseUpdate)
         .eq('name', r.name);
-
       if (uError) {
-        console.warn(`[match/record] Player ${r.name} full update failed (${uError.message}), retrying without direct coins column:`);
-        delete baseUpdate.coins;
-        const retryRes = await supabase
-          .from('ktm_players')
-          .update(baseUpdate)
-          .eq('name', r.name);
-        if (retryRes.error) {
-          throw new Error(`Player ${r.name} の更新エラー: ${retryRes.error.message}`);
-        }
+        throw new Error(`Player ${r.name} の更新エラー: ${uError.message}`);
+      }
+
+      let appliedCoins = newCoins;
+      const { data: coinRows, error: coinErr } = await supabase.rpc('apply_player_coin_delta', {
+        p_name: r.name,
+        p_delta: coinReward,
+        p_inventory: hasVictoryDoubler ? updatedInventory : null,
+        p_prefs_patch: null,
+      });
+      if (coinErr && (coinErr.code === 'PGRST202' || /apply_player_coin_delta/.test(coinErr.message || ''))) {
+        // 関数がまだ無い（マイグレーション適用前）時だけ従来の上書き
+        const { error: legacyErr } = await supabase.from('ktm_players').update(legacyCoinFields).eq('name', r.name);
+        if (legacyErr) throw new Error(`Player ${r.name} のコイン更新エラー: ${legacyErr.message}`);
+      } else if (coinErr) {
+        throw new Error(`Player ${r.name} のコイン更新エラー: ${coinErr.message}`);
+      } else {
+        const row = Array.isArray(coinRows) ? coinRows[0] : coinRows;
+        if (row?.new_coins !== undefined) appliedCoins = Number(row.new_coins);
       }
 
       // 試合精算コインの台帳記録（coin_transactions へ match_settle として正式記録）
@@ -474,7 +487,7 @@ export async function POST(request: Request) {
             discord_id: r.dbPlayer?.discord_id || null,
           },
           delta: coinReward,
-          balanceAfter: newCoins,
+          balanceAfter: appliedCoins,
           reason: 'match_settle',
           metadata: {
             matchId: newMatchId,
