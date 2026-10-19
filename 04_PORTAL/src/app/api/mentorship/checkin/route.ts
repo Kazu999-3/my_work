@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { verifyBotSecret } from '../../../../lib/botAuth';
-import { updatePlayerCoinsAndInventory, findOrCreatePlayer } from '../../../../lib/playerCoins';
+import { updatePlayerCoinsAndInventory, findOrCreatePlayer, getPlayerCoins } from '../../../../lib/playerCoins';
 import {
   parseNotesMeta,
   encodeNotesMeta,
@@ -236,6 +236,14 @@ export async function POST(request: Request) {
 
     // 最新のPENDINGチェックインを探す（無ければ自動生成）
     let currentCheckin = checkins.find((c) => c.status === 'PENDING');
+    // 2026-10-19: 未回答のチェックインが無い時に、その場で新しく作って回答できたため、回答を繰り返すだけで
+    // 継続ボーナス（各+100）を何度でも受け取れた。新しく作るのは、直近のチェックインから7日以上空いた時だけにする
+    if (!currentCheckin) {
+      const lastAt = checkins.reduce((max: number, c: any) => Math.max(max, new Date(c.triggeredAt || 0).getTime() || 0), 0);
+      if (lastAt && Date.now() - lastAt < 7 * 24 * 60 * 60 * 1000) {
+        return NextResponse.json({ ok: false, error: '次のチェックインは前回から7日後に届きます。' }, { status: 409 });
+      }
+    }
     if (!currentCheckin) {
       currentCheckin = {
         id: `chk_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -280,7 +288,7 @@ export async function POST(request: Request) {
         if (mPlayer) {
           await updatePlayerCoinsAndInventory({
             player: mPlayer,
-            newCoins: (mPlayer.coins ?? 1000) + 100,
+            newCoins: getPlayerCoins(mPlayer) + 100,
             reason: 'mentorship_checkin',
             reasonMetadata: { role: 'mentor', matchId: match.id },
           });
@@ -295,7 +303,7 @@ export async function POST(request: Request) {
         if (pPlayer) {
           await updatePlayerCoinsAndInventory({
             player: pPlayer,
-            newCoins: (pPlayer.coins ?? 1000) + 100,
+            newCoins: getPlayerCoins(pPlayer) + 100,
             reason: 'mentorship_checkin',
             reasonMetadata: { role: 'pupil', matchId: match.id },
           });

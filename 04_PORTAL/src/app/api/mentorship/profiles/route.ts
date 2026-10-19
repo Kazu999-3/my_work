@@ -446,13 +446,20 @@ export async function POST(request: Request) {
       resultData = data;
 
       // 初回作成ボーナス（+500pt）を付与（管理者の代理編集時は除外）
-      if (!isAdminProxyEdit && isFirstCreationEver && player) {
+      // 「今カードが1枚も無い」だけでは、自分のカードを消して作り直すたびに +500 を受け取れた（2026-10-19）。
+      // 受取の印を1回の UPDATE で付け、付けられた時だけ渡す（claim_player_once、migration 108）
+      const { data: bonusClaimed } = !isAdminProxyEdit && isFirstCreationEver && player
+        ? await supabase.rpc('claim_player_once', { p_name: player.name, p_key: 'mentorshipProfileBonus', p_value: 'claimed' })
+        : { data: false };
+      if (!isAdminProxyEdit && isFirstCreationEver && player && bonusClaimed === true) {
         const { getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
         const currentCoins = getPlayerCoins(player);
         const newCoins = currentCoins + 500;
         await updatePlayerCoinsAndInventory({
           player,
           newCoins,
+          reason: 'mentorship_reward',
+          reasonMetadata: { kind: 'profile_first_creation', role_type },
         });
         isFirstTimeBonus = true;
         updatedCoins = newCoins;
@@ -505,7 +512,10 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id');
     const paramDiscordId = searchParams.get('discordId');
 
-    const effectiveDiscordId = session?.discordId || paramDiscordId;
+    // 削除はログイン中の本人か管理者だけ。以前は未ログインでも ?discordId= を信用しており、
+    // 他人の Discord ID とカードの ID を書けば他人のカードを消せた（2026-10-19）
+    void paramDiscordId;
+    const effectiveDiscordId = session?.discordId;
     const isAdmin = !!session?.isAdmin;
 
     if (!effectiveDiscordId && !isAdmin) {

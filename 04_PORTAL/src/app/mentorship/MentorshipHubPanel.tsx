@@ -440,7 +440,7 @@ export default function MentorshipHubPanel() {
           });
         } catch (_) {}
 
-        toast.success(`🎉 師弟ペアが成立しました！(+300コイン獲得)`);
+        toast.success(data.message || '🎉 師弟ペアが成立しました！');
         await fetchProfiles();
         await fetchMatches();
 
@@ -510,7 +510,7 @@ export default function MentorshipHubPanel() {
 
   // 🎓 目標達成・卒業完了手続き
   const handleCompleteMatch = async (matchId: string) => {
-    if (!confirm('この師弟ペアの活動を目標達成として卒業完了にしますか？\n両者に卒業ボーナス（+200コイン）が付与され、新たな募集が可能になります。')) {
+    if (!confirm('この師弟ペアの活動を目標達成として卒業完了にしますか？\n成立から7日以上経っていれば両者に卒業ボーナス（+200コイン）が付与され、新たな募集が可能になります。')) {
       return;
     }
     try {

@@ -98,13 +98,29 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { targetPlayerName, tags = [], message = '', isReport = false } = body;
 
-    const effectiveDiscordId = session?.discordId || body.senderDiscordId;
+    // 送信者はログイン中の本人だけ。以前は未ログインでも body.senderDiscordId を信用しており、
+    // 任意の ID で送れた（2026-10-19）
+    const effectiveDiscordId = session?.discordId;
     if (!effectiveDiscordId) {
       return NextResponse.json({ ok: false, error: '評判を送信するにはログインが必要です。' }, { status: 401 });
     }
 
     if (!targetPlayerName) {
       return NextResponse.json({ ok: false, error: '送信対象のプレイヤー名が必要です。' }, { status: 400 });
+    }
+
+    // 送り先は実在の登録プレイヤーだけ、自分宛ては不可。以前は名前を確認しておらず、適当な名前を変えて送るだけで
+    // 「送り先ごとに1日1回」の制限をすり抜け、+50コインを何度でも受け取れた（2026-10-19）
+    const { data: target } = await supabase
+      .from('ktm_players')
+      .select('name, discord_id')
+      .eq('name', targetPlayerName)
+      .maybeSingle();
+    if (!target) {
+      return NextResponse.json({ ok: false, error: '送信対象のプレイヤーが見つかりません。' }, { status: 404 });
+    }
+    if (target.discord_id && target.discord_id === effectiveDiscordId) {
+      return NextResponse.json({ ok: false, error: '自分自身には送信できません。' }, { status: 400 });
     }
 
     const todayJST = getTodayJST();
@@ -130,7 +146,7 @@ export async function POST(request: Request) {
       sender_discord_id: effectiveDiscordId,
       target_player_name: targetPlayerName,
       tags: Array.isArray(tags) ? tags : [],
-      message: message || '',
+      message: String(message || '').slice(0, 500),
       is_report: Boolean(isReport),
       date_key: todayJST,
     });
@@ -144,13 +160,20 @@ export async function POST(request: Request) {
         discordId: effectiveDiscordId,
         name: session?.displayName || session?.username || 'Player',
       });
-      if (player) {
+      // コインは1日1回（最初の1件）だけ。送り先の人数分もらえると、名簿の人数 × 50 コインを毎日発行できてしまう
+      // （コインの総量は約15,000枚）。受取の印は1回の UPDATE で付ける（claim_player_once、migration 108）
+      const { data: claimed, error: claimErr } = player
+        ? await supabase.rpc('claim_player_once', { p_name: player.name, p_key: 'lastReputationReward', p_value: todayJST })
+        : { data: false, error: null };
+      if (player && !claimErr && claimed === true) {
         const currentCoins = getPlayerCoins(player);
-        await updatePlayerCoinsAndInventory({
+        const res = await updatePlayerCoinsAndInventory({
           player,
           newCoins: currentCoins + 50,
+          reason: 'reputation_reward',
+          reasonMetadata: { target: target.name },
         });
-        rewardCoins = 50;
+        if (res.success) rewardCoins = 50;
       }
     } catch (coinErr) {
       console.warn('[player/reputation] Coin bonus error:', coinErr);
@@ -160,7 +183,9 @@ export async function POST(request: Request) {
       ok: true,
       message: isReport
         ? '🛡️ 管理者へ匿名の相談・報告を送信しました。'
-        : `🌟 匿名で称賛タグを贈りました！（+${rewardCoins}コイン獲得）`,
+        : rewardCoins > 0
+          ? `🌟 匿名で称賛タグを贈りました！（+${rewardCoins}コイン獲得）`
+          : '🌟 匿名で称賛タグを贈りました！（コインの獲得は1日1回までです）',
       rewardCoins,
     });
   } catch (err: any) {

@@ -4,6 +4,7 @@ import { getAuthSession } from '../../../../lib/authGuard';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
+import { isFirstPairing, isGraduationBonusEligible } from '../../../../lib/mentorshipRewards';
 import { sendDiscordDirectMessage, sendErrorNotification } from '../../../../lib/discordNotify';
 import { syncMentorshipDashboard, createMentorshipForumThread } from '../../../../lib/discordMentorship';
 
@@ -178,12 +179,14 @@ async function sendDiscordGraduationAnnounce(
   pupilName: string,
   durationLabel: string,
   mentorDiscordId?: string,
-  pupilDiscordId?: string
+  pupilDiscordId?: string,
+  bonusGiven = true
 ) {
   const portalUrl = 'https://my-work-8jbd.vercel.app/mentorship';
+  const bonusLine = bonusGiven ? '両名に卒業ボーナス **+200コイン** を進呈しました！🪙\n' : '';
   const embed = {
     title: '🎓 【祝・師弟卒業】指導期間が無事に修了しました！🎉',
-    description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **完走コース:** ${durationLabel}\n\n特訓完走おめでとうございます！✨\n両名に卒業ボーナス **+200コイン** を進呈しました！🪙\n引き続きKTMカスタムやソロキューで切磋琢磨していきましょう！\n\n👉 **[師弟ハブで新たな仲間を探す](${portalUrl})**`,
+    description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **完走コース:** ${durationLabel}\n\n特訓完走おめでとうございます！✨\n${bonusLine}引き続きKTMカスタムやソロキューで切磋琢磨していきましょう！\n\n👉 **[師弟ハブで新たな仲間を探す](${portalUrl})**`,
     color: 0xf59e0b, // Hextechゴールド
     timestamp: new Date().toISOString(),
     footer: {
@@ -505,6 +508,24 @@ export async function POST(request: Request) {
       reason = '円満解散（スケジュール都合・合意済み）',
     } = body;
 
+    // マッチを操作するのは当事者（師匠・弟子）か管理者だけ（2026-10-19）。以前は誰がどのマッチでも
+    // 承諾・卒業・解散・辞退・延長でき、承諾（+300）と卒業（+200）を繰り返して両者にコインを出し続けられた
+    const MATCH_ACTIONS = ['EXTEND', 'COMPLETE', 'CANCEL', 'ACCEPT', 'REJECT', 'CREATE_THREAD', 'UPDATE_PROGRESS'];
+    if (MATCH_ACTIONS.includes(action) && matchId) {
+      const { data: owner } = await supabase
+        .from('mentorship_matches')
+        .select('mentor_discord_id, pupil_discord_id')
+        .eq('id', matchId)
+        .maybeSingle();
+      if (!owner) {
+        return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+      }
+      const isParty = session.discordId === owner.mentor_discord_id || session.discordId === owner.pupil_discord_id;
+      if (!isParty && !session.isAdmin) {
+        return NextResponse.json({ ok: false, error: 'この師弟ペアの当事者のみが操作できます。' }, { status: 403 });
+      }
+    }
+
 
     // ==========================================
     // 1. 期間延長 / そのまま実行 (EXTEND)
@@ -575,13 +596,22 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, message: '既に卒業・指導完了済みです。' });
       }
 
-      await supabase
+      // 成立中（ACTIVE）のマッチだけを卒業にする。以前は解散・辞退済みのマッチも卒業にでき、そのたびに +200 が出た。
+      // 状態の確認と更新を1回の UPDATE で行い、同時に2回押されても片方だけが通る
+      const { data: completedRows } = await supabase
         .from('mentorship_matches')
         .update({
           status: 'COMPLETED',
           completed_at: new Date().toISOString(),
         })
-        .eq('id', matchId);
+        .eq('id', matchId)
+        .eq('status', 'ACTIVE')
+        .select('id');
+      if (!completedRows || completedRows.length === 0) {
+        return NextResponse.json({ ok: false, error: '成立中の師弟ペアだけを卒業にできます。' }, { status: 409 });
+      }
+      // 卒業ボーナスは成立から一定日数が経っている時だけ（成立してすぐ卒業、を繰り返してコインを得られないように）
+      const giveGraduationBonus = isGraduationBonusEligible(match.started_at);
 
       // プロフィールステータスを OPEN に戻す（再募集・新規ペア結成可能に）
       await supabase
@@ -593,16 +623,20 @@ export async function POST(request: Request) {
       try {
         const mentorPlayer = await findOrCreatePlayer({ discordId: match.mentor_discord_id });
         const pupilPlayer = await findOrCreatePlayer({ discordId: match.pupil_discord_id });
-        if (mentorPlayer) {
+        if (giveGraduationBonus && mentorPlayer) {
           await updatePlayerCoinsAndInventory({
             player: mentorPlayer,
             newCoins: getPlayerCoins(mentorPlayer) + 200,
+            reason: 'mentorship_reward',
+            reasonMetadata: { kind: 'mentor', matchId: match?.id },
           });
         }
-        if (pupilPlayer) {
+        if (giveGraduationBonus && pupilPlayer) {
           await updatePlayerCoinsAndInventory({
             player: pupilPlayer,
             newCoins: getPlayerCoins(pupilPlayer) + 200,
+            reason: 'mentorship_reward',
+            reasonMetadata: { kind: 'pupil', matchId: match?.id },
           });
         }
       } catch (coinErr) {
@@ -616,14 +650,17 @@ export async function POST(request: Request) {
         match.pupil?.player_name || '弟子',
         meta.durationLabel,
         match.mentor_discord_id,
-        match.pupil_discord_id
+        match.pupil_discord_id,
+        giveGraduationBonus
       ).catch(() => {});
 
       syncMentorshipDashboard().catch(() => {});
 
       return NextResponse.json({
         ok: true,
-        message: '🎓 師弟ペアの目標達成・円満卒業が完了しました！(+200コイン獲得)',
+        message: giveGraduationBonus
+          ? '🎓 師弟ペアの目標達成・円満卒業が完了しました！(+200コイン獲得)'
+          : '🎓 師弟ペアの卒業が完了しました！（卒業ボーナスは成立から7日以上経ったペアが対象です）',
       });
     }
 
@@ -660,7 +697,8 @@ export async function POST(request: Request) {
           completed_at: new Date().toISOString(),
           notes: JSON.stringify(newMeta),
         })
-        .eq('id', matchId);
+        .eq('id', matchId)
+        .in('status', ['PENDING', 'ACTIVE']);
 
       // プロフィールステータスを OPEN に戻す（即座に再募集可能）
       await supabase
@@ -703,13 +741,26 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, message: '既に師弟ペアが成立しています。' });
       }
 
-      await supabase
+      // 申請した本人は承諾できない（相手の同意が要る）。承諾できるのは申請中（PENDING）のものだけ。
+      // 以前は卒業・解散・辞退済みのマッチも承諾で成立に戻せ、そのたびに成立ボーナスが出た（2026-10-19）
+      const applicantId = parseNotesMeta(match.notes)?.fromDiscordId;
+      if (applicantId && applicantId === session.discordId && !session.isAdmin) {
+        return NextResponse.json({ ok: false, error: '自分が送った申請は承諾できません。相手の承諾を待ってください。' }, { status: 403 });
+      }
+      const { data: acceptedRows } = await supabase
         .from('mentorship_matches')
         .update({
           status: 'ACTIVE',
           started_at: new Date().toISOString(),
         })
-        .eq('id', matchId);
+        .eq('id', matchId)
+        .eq('status', 'PENDING')
+        .select('id');
+      if (!acceptedRows || acceptedRows.length === 0) {
+        return NextResponse.json({ ok: false, error: 'この申請は既に処理済みです。' }, { status: 409 });
+      }
+      // 成立ボーナスは同じ師匠・弟子の組み合わせで1回だけ
+      const giveFormationBonus = await isFirstPairing(match.mentor_discord_id, match.pupil_discord_id, matchId);
 
       // 弟子側は1対1専任のため MATCHED に更新
       await supabase
@@ -740,16 +791,20 @@ export async function POST(request: Request) {
       try {
         const mentorPlayer = await findOrCreatePlayer({ discordId: match.mentor_discord_id });
         const pupilPlayer = await findOrCreatePlayer({ discordId: match.pupil_discord_id });
-        if (mentorPlayer) {
+        if (giveFormationBonus && mentorPlayer) {
           await updatePlayerCoinsAndInventory({
             player: mentorPlayer,
             newCoins: getPlayerCoins(mentorPlayer) + 300,
+            reason: 'mentorship_reward',
+            reasonMetadata: { kind: 'mentor', matchId: match?.id },
           });
         }
-        if (pupilPlayer) {
+        if (giveFormationBonus && pupilPlayer) {
           await updatePlayerCoinsAndInventory({
             player: pupilPlayer,
             newCoins: getPlayerCoins(pupilPlayer) + 300,
+            reason: 'mentorship_reward',
+            reasonMetadata: { kind: 'pupil', matchId: match?.id },
           });
         }
       } catch (coinErr) {
@@ -797,7 +852,9 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         ok: true,
-        message: '師弟ペアが正式に成立しました！専用指導チャットを作成しました(+300コイン付与)',
+        message: giveFormationBonus
+          ? '師弟ペアが正式に成立しました！専用指導チャットを作成しました(+300コイン付与)'
+          : '師弟ペアが正式に成立しました！専用指導チャットを作成しました（成立ボーナスは同じペアで1回までです）',
         threadUrl: threadResult?.threadUrl,
       });
     }
@@ -912,22 +969,27 @@ export async function POST(request: Request) {
         .update({ status: 'MATCHED' })
         .eq('id', pupilProfile.id);
 
-      // コイン付与 (+300コイン)
+      // コイン付与 (+300コイン)。同じ師匠・弟子の組み合わせで1回だけ（引き受け → 解散 → 引き受けで何度も出ないように。2026-10-19）
+      const giveClaimBonus = await isFirstPairing(session.discordId, pupilProfile.discord_id, newMatch?.id);
       try {
         const [mentorPlayer, pupilPlayer] = await Promise.all([
           findOrCreatePlayer({ discordId: session.discordId }),
           findOrCreatePlayer({ discordId: pupilProfile.discord_id }),
         ]);
-        if (mentorPlayer) {
+        if (giveClaimBonus && mentorPlayer) {
           await updatePlayerCoinsAndInventory({
             player: mentorPlayer,
             newCoins: getPlayerCoins(mentorPlayer) + 300,
+            reason: 'mentorship_reward',
+            reasonMetadata: { kind: 'mentor', matchId: newMatch?.id },
           });
         }
-        if (pupilPlayer) {
+        if (giveClaimBonus && pupilPlayer) {
           await updatePlayerCoinsAndInventory({
             player: pupilPlayer,
             newCoins: getPlayerCoins(pupilPlayer) + 300,
+            reason: 'mentorship_reward',
+            reasonMetadata: { kind: 'pupil', matchId: newMatch?.id },
           });
         }
       } catch (cErr) {
@@ -1093,7 +1155,8 @@ export async function POST(request: Request) {
       await supabase
         .from('mentorship_matches')
         .update({ status: 'REJECTED' })
-        .eq('id', matchId);
+        .eq('id', matchId)
+        .eq('status', 'PENDING');
 
       return NextResponse.json({ ok: true, message: '申請を見送りました。' });
     }

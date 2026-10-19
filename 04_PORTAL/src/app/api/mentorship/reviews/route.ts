@@ -113,7 +113,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { matchId, rating, tags = [], feedbackComment = '' } = body;
 
-    const effectiveDiscordId = session?.discordId || body.reviewerDiscordId;
+    // 評価者はログイン中の本人だけ。以前は未ログインでも body.reviewerDiscordId を信用しており、
+    // 当事者の ID を書けば本人になりすまして評価と +100 コインを受け取れた（2026-10-19）
+    const effectiveDiscordId = session?.discordId;
     if (!effectiveDiscordId) {
       return NextResponse.json({ ok: false, error: 'レビューを送信するにはログインが必要です。' }, { status: 401 });
     }
@@ -183,6 +185,8 @@ export async function POST(request: Request) {
         await updatePlayerCoinsAndInventory({
           player,
           newCoins: currentCoins + 100,
+          reason: 'mentorship_reward',
+          reasonMetadata: { kind: 'review', matchId },
         });
         rewardCoins = 100;
       }

@@ -194,6 +194,12 @@ async function executeOfferResponse(params: {
     };
   }
 
+  // 回答できるのはお見合い中（PENDING）のものだけ。以前は卒業・解散・見送り済みのマッチにも「承諾」でき、
+  // 成立に戻るたびに成立ボーナス（+300）が出た（2026-10-19）
+  if (match.status !== 'PENDING') {
+    return { ok: false, error: 'このお見合いは既に終了しています。', httpStatus: 409, status: 'DISMISSED' };
+  }
+
   // 【見送りの場合】
   if (decision === 'DECLINE') {
     if (isMentor) notes.mentorStatus = 'DECLINED';
@@ -278,20 +284,26 @@ async function executeOfferResponse(params: {
         .eq('id', match.mentor_profile_id);
     }
 
-    // ①-c 成立ボーナス (+300コイン) を双方に付与
+    // ①-c 成立ボーナス (+300コイン) を双方に付与（同じ師匠・弟子の組み合わせで1回だけ）
+    const { isFirstPairing } = await import('../../../../lib/mentorshipRewards');
+    const giveFormationBonus = await isFirstPairing(match.mentor_discord_id, match.pupil_discord_id, matchId);
     try {
       const mentorPlayer = await findOrCreatePlayer({ discordId: match.mentor_discord_id });
       const pupilPlayer = await findOrCreatePlayer({ discordId: match.pupil_discord_id });
-      if (mentorPlayer) {
+      if (giveFormationBonus && mentorPlayer) {
         await updatePlayerCoinsAndInventory({
           player: mentorPlayer,
           newCoins: getPlayerCoins(mentorPlayer) + 300,
+          reason: 'mentorship_reward',
+          reasonMetadata: { kind: 'mentor', matchId: match?.id },
         });
       }
-      if (pupilPlayer) {
+      if (giveFormationBonus && pupilPlayer) {
         await updatePlayerCoinsAndInventory({
           player: pupilPlayer,
           newCoins: getPlayerCoins(pupilPlayer) + 300,
+          reason: 'mentorship_reward',
+          reasonMetadata: { kind: 'pupil', matchId: match?.id },
         });
       }
     } catch (coinErr) {

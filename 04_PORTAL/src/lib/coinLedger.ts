@@ -36,6 +36,8 @@ export type CoinReason =
   | 'bet_insurance_payout' // 勝敗予想・全損保険キャッシュバック
   | 'jackpot_claim'      // ジャックポット総取り
   | 'mentorship_checkin' // 師弟中間チェックイン完了ボーナス
+  | 'mentorship_reward'  // 師弟コースの報酬（成立・卒業・プロフィール初回作成・レビュー。2026-10-19 から記録）
+  | 'reputation_reward'  // 評判（Kudos）送信の報酬（1日1回。2026-10-19 から記録）
   | 'admin_adjust';      // 管理者による手動調整
 
 export interface CoinTxInput {
