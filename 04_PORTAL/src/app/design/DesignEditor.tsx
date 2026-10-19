@@ -87,7 +87,7 @@ export default function DesignEditor() {
       <div className="flex flex-col items-center justify-center min-h-[50vh] bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl text-center max-w-sm">
         <div className="text-4xl mb-4">🔑</div>
         <h2 className="text-lg font-bold mb-2 text-foreground">認証が必要です</h2>
-        <p className="text-sm text-muted-strong mb-6 leading-relaxed">システム設計書は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
+        <p className="text-sm text-muted-strong mb-6 leading-relaxed">システム設計書は管理者専用です。管理者の Discord アカウントでログインしてから再度アクセスしてください。</p>
         <a href="/login" className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-primary-400">ログインページへ</a>
       </div>
     );

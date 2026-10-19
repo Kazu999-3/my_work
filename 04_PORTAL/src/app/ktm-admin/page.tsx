@@ -164,7 +164,7 @@ export default function KtmAdminPage() {
           <Shield className="h-16 w-16 text-primary-500 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">KTM 管理ダッシュボード</h1>
-            <p className="text-sm text-faint font-medium">この画面にアクセスするには、管理者パスコードでのログインが必要です。</p>
+            <p className="text-sm text-faint font-medium">この画面にアクセスするには、管理者の Discord アカウントでのログインが必要です。</p>
           </div>
           <button
             onClick={() => { window.location.href = "/login"; }}
