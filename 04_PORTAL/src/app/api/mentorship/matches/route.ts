@@ -123,6 +123,42 @@ export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
 }
 
 /**
+ * #🤝師弟募集 チャンネルへ投稿する。Bot で直接投稿し、できなければ Webhook（設定されていれば）。
+ * 2026-10-19: ペア結成のお知らせとオファーの代替通知は Webhook（DISCORD_WEBHOOK_URL / DISCORD_RECRUIT_WEBHOOK_URL）だけを
+ * 使っており、どちらも本番に未設定のため一度もチャンネルに届いていなかった。卒業のお知らせと同じ Bot 投稿にそろえる。
+ */
+async function postToMentorshipChannel(payload: { content?: string; embeds: any[] }): Promise<boolean> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const mentorshipChannelId = process.env.DISCORD_MENTORSHIP_CHANNEL_ID || '1550159520687325205';
+  if (botToken && mentorshipChannelId) {
+    try {
+      const res = await fetch(`https://discord.com/api/v10/channels/${mentorshipChannelId}/messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, allowed_mentions: { parse: ['users'] } }),
+      });
+      if (res.ok) return true;
+      console.warn('[mentorship/matches] Bot channel post failed:', res.status);
+    } catch (e) {
+      console.warn('[mentorship/matches] Bot channel post error:', e);
+    }
+  }
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
+  if (!webhookUrl) return false;
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[mentorship/matches] Webhook post error:', err);
+    return false;
+  }
+}
+
+/**
  * Discord への師弟ペア結成速報の通知ヘルパー（DM ＋ チャンネル通知 ＋ 専用チャットリンク）
  */
 async function sendDiscordPairAnnounce(
@@ -156,19 +192,8 @@ async function sendDiscordPairAnnounce(
     sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
   }
 
-  // 2. 募集・活動チャンネルへもアナウンス
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
-  if (!webhookUrl) return;
-
-  try {
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeds: [embed] }),
-    });
-  } catch (err) {
-    console.warn('[mentorship/matches] Discord announce error:', err);
-  }
+  // 2. #🤝師弟募集 チャンネルへもアナウンス
+  await postToMentorshipChannel({ embeds: [embed] });
 }
 
 /**
@@ -202,41 +227,11 @@ async function sendDiscordGraduationAnnounce(
     sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
   }
 
-  // 2. #🤝師弟募集 チャンネルへBot直接投稿 (優先) または Webhook
-  const botToken = process.env.DISCORD_BOT_TOKEN;
-  const mentorshipChannelId = process.env.DISCORD_MENTORSHIP_CHANNEL_ID || '1550159520687325205';
-
-  if (botToken && mentorshipChannelId) {
-    try {
-      await fetch(`https://discord.com/api/v10/channels/${mentorshipChannelId}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${botToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: `🎓 **【祝・師弟卒業】** <@${mentorDiscordId}> 師匠 ＆ <@${pupilDiscordId}> 弟子ペアが指導を完走しました！お疲れ様でした！✨`,
-          embeds: [embed],
-        }),
-      });
-      return;
-    } catch (e) {
-      console.warn('[mentorship/matches] Bot channel graduation announce failed:', e);
-    }
-  }
-
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ embeds: [embed] }),
-      });
-    } catch (err) {
-      console.warn('[mentorship/matches] Discord graduation announce error:', err);
-    }
-  }
+  // 2. #🤝師弟募集 チャンネルへ
+  await postToMentorshipChannel({
+    content: `🎓 **【祝・師弟卒業】** <@${mentorDiscordId}> 師匠 ＆ <@${pupilDiscordId}> 弟子ペアが指導を完走しました！お疲れ様でした！✨`,
+    embeds: [embed],
+  });
 }
 
 /**
@@ -269,24 +264,11 @@ async function sendDiscordOfferNotification(
     }
   }
 
-  // 2. DMが拒否設定等の場合はWebhook（チャンネル通知）へフォールバック
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
-  if (!webhookUrl) return;
-
-  try {
-    const payload = {
-      content: toDiscordId ? `<@${toDiscordId}> 宛てに師弟オファーが届きました！` : undefined,
-      embeds: [embed],
-    };
-
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.warn('[mentorship/matches] Discord offer notification error:', err);
-  }
+  // 2. DMが拒否設定等の場合は #🤝師弟募集 チャンネルへフォールバック
+  await postToMentorshipChannel({
+    content: toDiscordId ? `<@${toDiscordId}> 宛てに師弟オファーが届きました！` : undefined,
+    embeds: [embed],
+  });
 }
 
 
