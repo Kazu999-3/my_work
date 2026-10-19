@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useVisiblePolling } from '../../../lib/useVisiblePolling';
 import { RefreshCw, Cpu } from 'lucide-react';
 
 interface Status {
@@ -40,11 +41,8 @@ export default function WorkerStatusPanel() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 30_000);
-    return () => clearInterval(t);
-  }, [load]);
+  // 画面が表に出ている間だけ30秒おき（2026-10-19）
+  useVisiblePolling(load, 30_000);
 
   const active = data?.worker.active;
 

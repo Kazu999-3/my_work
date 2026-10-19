@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useVisiblePolling } from '../../../lib/useVisiblePolling';
 import { Microscope, Send, RefreshCw, CheckCircle2, AlertCircle, Clock, Loader2 } from 'lucide-react';
 
 interface DeepDiveTask {
@@ -40,12 +41,8 @@ export default function VideoDeepDiveRequestPanel() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchTasks();
-    // 実行中タスクが1件でもあれば10秒おきにポーリングして完了を検知する
-    const timer = setInterval(fetchTasks, 10000);
-    return () => clearInterval(timer);
-  }, [fetchTasks]);
+  // 完了を検知するため10秒おき。ただし画面が表に出ている間だけ（2026-10-19）
+  useVisiblePolling(fetchTasks, 10000);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

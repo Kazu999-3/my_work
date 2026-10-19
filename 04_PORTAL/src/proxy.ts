@@ -139,6 +139,9 @@ export async function proxy(req: NextRequest) {
 }
 
 // 適用するルートの定義
+// 2026-10-19: 守るのは /admin と /api/admin だけ（上の isAdminGuardedRoute）なので、その2つにだけ適用する。
+// 以前は全ページ・全API・アイコン等の静的ファイルのたびに起動しており、Vercel 無料枠の
+// Fluid Active CPU（月4時間）を無駄に使っていた
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
 };

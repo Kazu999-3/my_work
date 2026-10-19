@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { useVisiblePolling } from '../lib/useVisiblePolling';
 import { createPortal } from 'react-dom';
 import { Bell } from 'lucide-react';
 
@@ -51,11 +52,8 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     } catch {}
   };
 
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // 表示中だけ2分おき（以前は30秒おき・裏に隠れても動き続けていた。重要な通知はプッシュでも届く。2026-10-19）
+  useVisiblePolling(fetchNotifications, 2 * 60 * 1000);
 
   // タスクバー/Dockのバッジ同期
   useEffect(() => {

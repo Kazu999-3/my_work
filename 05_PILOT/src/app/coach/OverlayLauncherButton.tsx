@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useVisiblePolling } from '../../lib/useVisiblePolling';
 
 export default function OverlayLauncherButton() {
   const [running, setRunning] = useState(false);
@@ -24,11 +25,9 @@ export default function OverlayLauncherButton() {
     }
   };
 
-  useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // オーバーレイは手元PCでしか動かない。本番（isCloud）と分かったら確認をやめる。手元でも表示中だけ5秒おき
+  // （以前は本番でも5秒おきに呼び続けており、Vercel の Fluid Active CPU を消費していた。2026-10-19）
+  useVisiblePolling(checkStatus, 5000, !isCloud);
 
   const launchSovereignProtocol = () => {
     try {

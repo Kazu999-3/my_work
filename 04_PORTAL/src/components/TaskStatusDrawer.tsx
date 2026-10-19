@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { useVisiblePolling } from '../lib/useVisiblePolling';
 import { createPortal } from 'react-dom';
 import { Zap, RefreshCw, Activity, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import Link from 'next/link';
@@ -57,11 +58,9 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
     }
   };
 
-  useEffect(() => {
-    fetchTaskStatus();
-    const interval = setInterval(fetchTaskStatus, 15000); // 15秒ごとに更新
-    return () => clearInterval(interval);
-  }, []);
+  // dashboard-stats は DB を何本も読む重いAPI。以前は15秒おき・裏に隠れても動き続け、開きっぱなしだと
+  // 1日5,760回呼んでいた（Vercel の Fluid Active CPU を使い切った主因の候補）。表示中だけ2分おき（2026-10-19）
+  useVisiblePolling(fetchTaskStatus, 2 * 60 * 1000);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

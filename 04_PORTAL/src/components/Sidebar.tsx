@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useVisiblePolling } from '../lib/useVisiblePolling';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -269,28 +270,19 @@ export default function Sidebar() {
   // 師弟募集中のプロフィール数（リアルタイムバッジ用）
   const [mentorshipCount, setMentorshipCount] = useState<number>(0);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchMentorshipCount = async () => {
-      try {
-        const res = await fetch('/api/mentorship/profiles?status=OPEN');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (isMounted && data.ok && Array.isArray(data.profiles)) {
-          setMentorshipCount(data.profiles.length);
-        }
-      } catch {
-        // ignore
+  // 全員の全ページに出るので、表示中だけ5分おき（以前は45秒おき・裏に隠れても動き続けていた。2026-10-19）
+  useVisiblePolling(async () => {
+    try {
+      const res = await fetch('/api/mentorship/profiles?status=OPEN');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.profiles)) {
+        setMentorshipCount(data.profiles.length);
       }
-    };
-
-    fetchMentorshipCount();
-    const timer = setInterval(fetchMentorshipCount, 45000);
-    return () => {
-      isMounted = false;
-      clearInterval(timer);
-    };
-  }, []);
+    } catch {
+      // ignore
+    }
+  }, 5 * 60 * 1000);
 
   const toggleSidebar = () => {
     const nextState = !isCollapsed;

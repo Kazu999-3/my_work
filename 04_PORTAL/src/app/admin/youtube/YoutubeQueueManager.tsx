@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useVisiblePolling } from '../../../lib/useVisiblePolling';
 import Image from 'next/image';
 
 interface QueueItem {
@@ -114,11 +115,8 @@ export default function YoutubeQueueManager() {
       if (res.ok) setSystemStatus(await res.json());
     } catch { /* サイレントに無視（補助パネルのため） */ }
   };
-  useEffect(() => {
-    fetchSystemStatus();
-    const interval = setInterval(fetchSystemStatus, 8000);
-    return () => clearInterval(interval);
-  }, []);
+  // 画面が表に出ている間だけ8秒おき（2026-10-19）
+  useVisiblePolling(fetchSystemStatus, 8000);
 
   // 登録要求(edge_tasksへの起票)が実際に処理完了したかを、taskIdでポーリングして確認する。
   // 以前は「送信しました」の成功メッセージだけを表示し、実際に処理されたかは

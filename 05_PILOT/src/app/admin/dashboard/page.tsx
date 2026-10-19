@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useVisiblePolling } from '../../../lib/useVisiblePolling';
 import Link from 'next/link';
 import { Shield, RefreshCw, ShieldAlert, Cloud, Trophy, Coins, Database, ExternalLink, Users, UserX, UserCheck } from 'lucide-react';
 import WorkerStatusPanel from '../youtube/WorkerStatusPanel';
@@ -128,11 +129,8 @@ export default function OpsDashboardPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const timer = setInterval(load, 60000);
-    return () => clearInterval(timer);
-  }, [load]);
+  // 画面が表に出ている間だけ1分おき（Vercel の Fluid Active CPU 節約。2026-10-19）
+  useVisiblePolling(load, 60000);
 
   const retryAll = async () => {
     if (!stats || stats.needsAttention.failedTasks.length === 0) return;

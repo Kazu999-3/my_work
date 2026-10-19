@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useVisiblePolling } from '../lib/useVisiblePolling';
 import Link from 'next/link';
 import {
   Bell, Check, Trash2, ChevronDown, ChevronUp, ExternalLink,
@@ -251,11 +252,8 @@ export default function NotificationBell() {
     } catch {}
   };
 
-  useEffect(() => {
-    fetchNotifications();
-    const timer = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(timer);
-  }, []);
+  // 全ページに出るので、表示中だけ2分おき（以前は30秒おき・裏に隠れても動き続けていた。2026-10-19）
+  useVisiblePolling(fetchNotifications, 2 * 60 * 1000);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
