@@ -681,8 +681,17 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                       : [balanceResult.balanceReport]
                     ).map((line: string, i: number) => {
                       if (!line) return <div key={i} className="h-1" />;
-                      // **太字** や `コード` の簡易リッチテキスト変換
-                      const formatted = line
+                      // **太字** や `コード` の簡易リッチテキスト変換。
+                      // 先に HTML の特殊文字を無害化する（2026-10-19）。レポートにはプレイヤー名が入り、承認待ちの保存
+                      // （/api/balancer/pending）ではメンバーが任意の文面を送れるため、そのまま HTML にすると
+                      // 開いた人（管理者を含む）のブラウザでスクリプトを動かせた
+                      const escaped = String(line)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                      const formatted = escaped
                         .replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-primary-950">$1</strong>')
                         .replace(/`(.*?)`/g, '<code class="bg-primary-100 text-primary-900 font-mono px-1 py-0.5 rounded text-[11px] font-bold border border-primary-edge-soft">$1</code>');
                       return (
