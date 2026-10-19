@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 import { syncOnboardingChannels } from '../../../../lib/onboardingChannels';
 import { loadNextPeriodicCustomEntries } from '../../../../lib/periodicCustomCard';
 
@@ -20,8 +21,12 @@ export async function GET(req: Request) {
     const nameOf = new Map((players || []).map((p: any) => [p.discord_id, p.name]));
 
     // 最後に試合へ出た日（送り先の絞り込み用）
+    // 出場記録は1,000件を超えている（2026-10-19 時点で1,305件）ため分けて読む。以前は新しい1,000件だけで、
+    // 古い試合にしか出ていない人の「最後の試合」が空になっていた
     const { data: parts } = ownerIds.length
-      ? await supabase.from('ktm_match_participants').select('discord_id,created_at').in('discord_id', ownerIds).order('created_at', { ascending: false })
+      ? await fetchAllRows((from, to) =>
+          supabase.from('ktm_match_participants').select('discord_id,created_at').in('discord_id', ownerIds)
+            .order('created_at', { ascending: false }).order('id', { ascending: true }).range(from, to))
       : { data: [] as any[] };
     const lastPlayed = new Map<string, string>();
     for (const p of parts || []) if (p.discord_id && !lastPlayed.has(p.discord_id)) lastPlayed.set(p.discord_id, p.created_at);

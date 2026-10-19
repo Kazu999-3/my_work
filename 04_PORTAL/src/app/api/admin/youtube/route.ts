@@ -59,18 +59,18 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sort = searchParams.get('sort') || 'date_added';
 
-    let query = supabase.from('youtube_queue').select('*');
-
-    if (sort === 'published_at') {
-      query = query.order('published_at', { ascending: false, nullsFirst: false });
-    } else {
-      query = query.order('date_added', { ascending: false, nullsFirst: false });
-    }
-    
-    // タイブレーカーとして id 順は維持
-    query = query.order('id', { ascending: true });
-
-    const { data, error } = await query;
+    // youtube_queue は1,000件を超えている（2026-10-19 時点で1,717件）ため分けて読む。
+    // 以前は新しい1,000件だけで、古い動画が一覧と件数から抜けていた
+    const { data, error } = await fetchAllRows((from, to) => {
+      let query = supabase.from('youtube_queue').select('*');
+      if (sort === 'published_at') {
+        query = query.order('published_at', { ascending: false, nullsFirst: false });
+      } else {
+        query = query.order('date_added', { ascending: false, nullsFirst: false });
+      }
+      // タイブレーカーとして id 順は維持（分けて読む時の順番を固定する）
+      return query.order('id', { ascending: true }).range(from, to);
+    });
 
     if (error) throw error;
 
