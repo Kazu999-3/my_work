@@ -17,6 +17,11 @@ export async function POST(request: Request) {
     if (!participants || !Array.isArray(participants) || participants.length < 10) {
       return NextResponse.json({ error: '参加者は最低10人必要です。' }, { status: 400 });
     }
+    // 認証の無い API なので、大量の参加者を送られると計算で Vercel の CPU（無料枠は月4時間）を使い切られる。
+    // 登録メンバー全員（2026-10 時点で77人）でも収まる上限を付ける（2026-10-19）
+    if (participants.length > 100) {
+      return NextResponse.json({ error: '参加者が多すぎます（100人まで）。' }, { status: 400 });
+    }
 
     // 1. ktm_players から該当プレイヤーの情報を取得
     const names = participants.map(p => p.name);
