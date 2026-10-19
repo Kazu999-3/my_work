@@ -225,8 +225,14 @@ export async function POST(request: Request) {
     }
 
     // 権限検証（ログインユーザー本人 or Bot認証）
-    const myDiscordId = session?.discordId;
-    if (!hasBotSecret && myDiscordId) {
+    // Bot 経由（Discord のフォーム）の回答は、押した人の Discord ID（actorDiscordId）で同じ当事者チェックをする。
+    // 2026-10-19: 以前は Bot 経由だと誰が押しても受け付けており、ペアのスレッドを見られる人なら他人の分を回答できた
+    const actorDiscordId = hasBotSecret && !session?.discordId ? (typeof body.actorDiscordId === 'string' ? body.actorDiscordId : '') : '';
+    if (hasBotSecret && !session?.discordId && !actorDiscordId) {
+      return NextResponse.json({ ok: false, error: '回答者が特定できません。' }, { status: 400 });
+    }
+    const myDiscordId = session?.discordId || actorDiscordId;
+    if (myDiscordId) {
       const isMentor = match.mentor?.discord_id === myDiscordId;
       const isPupil = match.pupil?.discord_id === myDiscordId;
       if (role === 'mentor' && !isMentor) {

@@ -406,6 +406,8 @@ export async function handleModalSubmit(interaction, env, ctx) {
         const res = await fetchPortalAPI(env, '/api/mentorship/checkin', {
           matchId,
           role: 'pupil',
+          // 押した人。ポータルが当事者かどうかを確かめる（2026-10-19）
+          actorDiscordId: interaction.member?.user?.id || interaction.user?.id || '',
           feedback: { rating, growthNote, challenges },
         });
         await patchInteractionResponse(mAppId, mToken, {
@@ -442,6 +444,8 @@ export async function handleModalSubmit(interaction, env, ctx) {
         const res = await fetchPortalAPI(env, '/api/mentorship/checkin', {
           matchId,
           role: 'mentor',
+          // 押した人。ポータルが当事者かどうかを確かめる（2026-10-19）
+          actorDiscordId: interaction.member?.user?.id || interaction.user?.id || '',
           feedback: { praise, advice },
         });
         await patchInteractionResponse(mAppId, mToken, {
