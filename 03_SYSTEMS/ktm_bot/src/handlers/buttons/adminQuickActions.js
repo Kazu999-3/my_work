@@ -1,7 +1,7 @@
 import { CONFIG } from '../../config.js';
 import { patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../../utils/api.js';
 import { handleLaneCommand, handleStatsCommand } from '../commands.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, handleHelpPage } from '../../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed } from '../../ui/embeds.js';
 import { notifyAdminError } from '../../utils/alert.js';
 
 // 管理メニュー・クイック募集・MMR初期化・勝敗ボタン・OP.GG偵察
@@ -38,7 +38,6 @@ export async function handleAdminQuickButtons(interaction, env, ctx, { customId,
       if (userId !== CONFIG.ADMIN_ID) return Response.json({ type: 4, data: { content: "⚠️ 管理者のみ実行可能です。", flags: 64 } });
       return Response.json({ type: 9, data: { title: "🛠️ MMR 手動調整", custom_id: "admin_adjust_mmr_modal", components: [{ type: 1, components: [{ type: 4, custom_id: "target", label: "対象名", style: 1, required: true }] }, { type: 1, components: [{ type: 4, custom_id: "role", label: "ロール", style: 1, required: true }] }, { type: 1, components: [{ type: 4, custom_id: "amount", label: "新しいMMR", style: 1, required: true }] }] } });
     }
-    if (value === 'portal_help') return Response.json({ type: 4, data: { ...handleHelpPage(), flags: 64 } });
     
     if (value === 'admin_sync_ranks') {
       if (userId !== CONFIG.ADMIN_ID) return Response.json({ type: 4, data: { content: "⚠️ 管理者のみ実行可能です。", flags: 64 } });
@@ -102,7 +101,7 @@ export async function handleAdminQuickButtons(interaction, env, ctx, { customId,
         }
 
         await patchInteractionResponse(quickAppId, quickToken, {
-          content: `⚡ **${qMode}${qMax}人の募集を #募集板 に投下しました！**（時刻やメモは募集カードの「⚙️ 募集を編集」ボタンから後で設定できます）`
+          content: `⚡ **${qMode}${qMax}人の募集を <#${CONFIG.RECRUIT_CHANNEL_ID}> に投下しました！**（時刻やメモは募集カードの「⚙️ 募集を編集」ボタンから後で設定できます）`
         }).catch(() => {});
 
         const sentMessage = await res.clone().json();
@@ -116,7 +115,7 @@ export async function handleAdminQuickButtons(interaction, env, ctx, { customId,
       } catch (e) {
         console.error("quick_recruit error:", e);
         await patchInteractionResponse(quickAppId, quickToken, {
-          content: `❌ **募集の投稿でエラーが発生しました**: ${e.message}\n※#募集板 にカードが出ているか確認してください。`
+          content: `❌ **募集の投稿でエラーが発生しました**: ${e.message}\n※<#${CONFIG.RECRUIT_CHANNEL_ID}> にカードが出ているか確認してください。`
         }).catch(() => {});
         await notifyAdminError(env, e, { action: 'quick_recruit（クイック即募集）', customId, userId });
       }

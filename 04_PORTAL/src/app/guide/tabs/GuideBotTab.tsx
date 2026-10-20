@@ -436,7 +436,7 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   5. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト・お見合い便
                 </h3>
-                <p className="text-xs text-muted-strong">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
+                <p className="text-xs text-muted-strong">#🎒-教えて先輩-相談募集 チャンネルからWebログイン不要で即エントリー</p>
               </div>
             </div>
             {openSection === 'mentorship' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
@@ -445,7 +445,7 @@ export default function GuideBotTab() {
           {openSection === 'mentorship' && (
             <div className="p-6 pt-0 border-t border-surface-subtle space-y-4">
               <p className="text-xs text-muted leading-relaxed">
-                Discordの <code>#🤝師弟募集</code> チャンネルに常設されているピン留めメッセージから、Webポータルを開かずにワンタップでエントリーできます。
+                Discordの <code>#🎒-教えて先輩-相談募集</code> チャンネルに常設されているピン留めメッセージから、Webポータルを開かずにワンタップでエントリーできます。
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -473,7 +473,7 @@ export default function GuideBotTab() {
                 <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-primary-edge-soft space-y-1">
                   <div className="font-black text-xs text-primary-900">🌟 頼れる先輩スカウト</div>
                   <p className="text-[11px] text-primary-800 leading-relaxed">
-                    弟子のカードが登録され、相性70%以上の師匠がいない時は、AIが頼れる先輩を選んでスカウトを送ります（先輩の個別案内チャンネルと #🤝師弟募集）。「🤝 師匠を引き受ける」を押せばペア成立＆ボーナス <strong>+300🪙</strong>（初めて組む相手のみ）。
+                    弟子のカードが登録され、相性70%以上の師匠がいない時は、AIが頼れる先輩を選んでスカウトを送ります（先輩の個別案内チャンネルと #🎒-教えて先輩-相談募集）。「🤝 師匠を引き受ける」を押せばペア成立＆ボーナス <strong>+300🪙</strong>（初めて組む相手のみ）。
                   </p>
                 </div>
               </div>

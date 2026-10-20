@@ -46,7 +46,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
       }
 
       await patchInteractionResponse(appIdR, tokenR, {
-        content: `✅ **募集を #募集板 に投下しました！**\n${mode} / ${getVal('time') || '時間未指定'} / 最大${maxCount}名`
+        content: `✅ **募集を <#${CONFIG.RECRUIT_CHANNEL_ID}> に投下しました！**\n${mode} / ${getVal('time') || '時間未指定'} / 最大${maxCount}名`
       }).catch(() => {});
 
       try {
@@ -365,7 +365,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
           player_name: discordName,
         });
         await patchInteractionResponse(mAppId, mToken, {
-          content: `✅ **${roleName}として師弟掲示板にエントリーしました！**\n#🤝師弟募集 のダッシュボードと新着カードに反映されます。相性の良いペアが見つかるのをお楽しみに！`
+          content: `✅ **${roleName}として師弟掲示板にエントリーしました！**\n<#1550159520687325205> のダッシュボードと新着カードに反映されます。相性の良いペアが見つかるのをお楽しみに！`
         });
       } catch (err) {
         // ⚠️ 2026-09-29 是正: 以前はここが console.error だけで、**保存に失敗しても

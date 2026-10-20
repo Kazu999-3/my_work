@@ -3,7 +3,7 @@ import { CONFIG } from '../../config.js';
 import { patchInteractionResponse } from '../../utils/api.js';
 import { fetchSupabase } from '../../utils/supabase.js';
 import { handleStatsCommand } from '../commands.js';
-import { getPortalComponents, getPortalEmbed, getPlaystyleEmbed, getPlaystyleComponents } from '../../ui/embeds.js';
+import { getPlaystyleEmbed, getPlaystyleComponents } from '../../ui/embeds.js';
 import { getAdminDiscordIds } from '../../utils/recruitPermission.js';
 
 // サモナー名登録・レーン・戦績、ナレッジ承認、募集/ハブ/プレイスタイル（ロール選択）
@@ -131,17 +131,8 @@ export async function handlePortalBasicsButtons(interaction, env, ctx, { customI
   }
 
   // 👑 全機能ポータルパネルの表示（エフェメラル）
-  if (customId === 'portal_hub') {
-    const portalUrl = CONFIG.PORTAL_URL;
-    return Response.json({
-      type: 4,
-      data: {
-        embeds: [getPortalEmbed()],
-        components: getPortalComponents(userId, portalUrl),
-        flags: 64 // 押した本人のみに表示
-      }
-    });
-  }
+  // 2026-10-20: 'portal_hub'（ハブパネル）は開くボタンが無く誰も見られなかったため削除。パネル内のボタンの処理（portal_register 等）は残す
+
 
   // 🎯 プレイスタイル設定パネルの表示（エフェメラル）
   if (customId === 'portal_playstyle') {

@@ -1,6 +1,6 @@
 import { CONFIG, getPortalUrl } from '../config.js';
 import { patchInteractionResponse, sendDiscordMessage, fetchPortalAPI } from '../utils/api.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData, parseStartTime, parseSmartRecruitInput } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
@@ -186,7 +186,7 @@ export function handleStatsCommand(interaction, env, ctx) {
       }
 
       await sendDiscordMessage(`channels/${CONFIG.STATS_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [embed] });
-      await patchInteractionResponse(appId, token, { content: "✅ #戦績板 に発表しました！", components });
+      await patchInteractionResponse(appId, token, { content: "✅ #🤖コマンド に発表しました！", components });
     } catch (e) { 
       console.error(e); 
       try {

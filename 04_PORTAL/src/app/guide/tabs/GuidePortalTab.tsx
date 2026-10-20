@@ -260,7 +260,7 @@ export default function GuidePortalTab() {
               師弟マッチングハブ（Discord内完結登録 ＆ AI仲人・先輩スカウト）
             </h3>
             <p className="text-muted text-xs leading-relaxed">
-              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🤝師弟募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）、先輩スカウト、運営からのお見合い便、ワンポチ指導引き受け（+300🪙）を完備しています。
+              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🎒-教えて先輩-相談募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）、先輩スカウト、運営からのお見合い便、ワンポチ指導引き受け（+300🪙）を完備しています。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
@@ -268,7 +268,7 @@ export default function GuidePortalTab() {
                   <span>💬</span> Discord完結ワンポチ登録
                 </div>
                 <p className="text-[11px] text-muted">
-                  Webログイン不要！Discordの <code>#🤝師弟募集</code> から緑/青ボタンを押すだけでモーダル入力から即登録。
+                  Webログイン不要！Discordの <code>#🎒-教えて先輩-相談募集</code> から緑/青ボタンを押すだけでモーダル入力から即登録。
                 </p>
               </div>
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
@@ -276,7 +276,7 @@ export default function GuidePortalTab() {
                   <span>🤖</span> AI仲人 ＆ 先輩スカウト
                 </div>
                 <p className="text-[11px] text-muted">
-                  カードを登録すると、相性70%以上の相手を #🤝師弟募集 で自動推薦。弟子に合う師匠がいない時は、AIが頼れる先輩を選んでスカウトを送ります（先輩の個別案内チャンネルにも届きます）。
+                  カードを登録すると、相性70%以上の相手を #🎒-教えて先輩-相談募集 で自動推薦。弟子に合う師匠がいない時は、AIが頼れる先輩を選んでスカウトを送ります（先輩の個別案内チャンネルにも届きます）。
                 </p>
               </div>
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">

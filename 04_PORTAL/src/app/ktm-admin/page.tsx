@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import MatchHistoryPanel from "./MatchHistoryPanel";
-import Link from "next/link";
 import OnboardingChannelsPanel from "./OnboardingChannelsPanel";
 import MentorSettingsSection from "./_admin/MentorSettingsSection";
 import MatchmakerSection from "./_admin/MatchmakerSection";
@@ -10,7 +9,7 @@ import OpsSummaryPanel from "./OpsSummaryPanel";
 import PlayerAnalyzerPage from "../analyzer/page";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
-import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe, BookOpen } from "lucide-react";
+import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe } from "lucide-react";
 import { useAdminRoster, type AdminMessage } from "./_admin/useAdminRoster";
 import { useRosterSync } from "./_admin/useRosterSync";
 import AdminToolbar from "./_admin/AdminToolbar";
@@ -199,9 +198,6 @@ export default function KtmAdminPage() {
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary-500" />
             <span className="text-xs font-bold text-foreground whitespace-nowrap">管理画面</span>
-            <Link href="/admin/guide" className="ml-1 sm:ml-3 inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 hover:underline whitespace-nowrap">
-              <BookOpen className="h-3.5 w-3.5" /> 仕様ガイド
-            </Link>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 text-xs">
             <span className="text-faint hidden sm:inline">
