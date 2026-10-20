@@ -13,7 +13,7 @@ export async function sendEventUsersNotification(env, options = {}) {
     const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.MATCH_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
     if (!channelId) {
       console.error('[EventNotify] 通知先チャンネルIDが解決できませんでした');
-      return;
+      return { action: 'error', reason: '通知先チャンネルが解決できない' };
     }
 
     // 当日に応じて対象日を絞る。土曜17:00の通知に日曜の話まで並べても情報量が増えるだけなので、
@@ -29,7 +29,7 @@ export async function sendEventUsersNotification(env, options = {}) {
     // 投げてしまう事態を防ぐ。
     if ((jstDay === 6 || jstDay === 0) && jstNow.getUTCHours() >= 21) {
       console.log('[EventNotify] 開催時刻(21:00 JST)を過ぎているためスキップ');
-      return;
+      return { action: 'skipped', reason: '21:00を過ぎている' };
     }
 
     const recentMessages = await fetchRecentBotMessages(env, channelId);
@@ -40,7 +40,7 @@ export async function sendEventUsersNotification(env, options = {}) {
     }
     if (summaries.length === 0) {
       console.log('[EventNotify] 対象の定期カスタム募集カードが見つからないためスキップ');
-      return;
+      return { action: 'skipped', reason: '募集カードが見つからない' };
     }
 
     const allReady = summaries.every((s) => s.status.isReady);
@@ -55,7 +55,7 @@ export async function sendEventUsersNotification(env, options = {}) {
           }).catch(() => {});
         }
       }
-      return;
+      return { action: 'skipped', reason: 'すべて定員到達' };
     }
 
     const guildId = await resolveGuildId(env, channelId);
@@ -110,7 +110,7 @@ export async function sendEventUsersNotification(env, options = {}) {
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
       if (recentMessages.find((m) => m.embeds?.[0]?.title === embed.title && new Date(m.timestamp).getTime() > oneHourAgo)) {
         console.log('[EventNotify] 同一タイトルの通知が直近1時間以内にあるためスキップ（二重発火防止）');
-        return;
+        return { action: 'skipped', reason: '直近1時間に同じ通知がある' };
       }
     } catch (dupErr) {
       console.warn('[EventNotify] 二重投稿チェックに失敗（送信は続行）:', dupErr);
@@ -191,12 +191,14 @@ export async function sendEventUsersNotification(env, options = {}) {
 
     if (!sendRes.ok) {
       console.error(`[EventNotify] 送信に失敗: ${sendRes.status} ${await sendRes.text()}`);
-    } else {
-      console.log(`[EventNotify] 残り枠リマインドを送信しました (対象${summaries.length}日分)`);
+      return { action: 'error', reason: `送信に失敗 (${sendRes.status})` };
     }
+    console.log(`[EventNotify] 残り枠リマインドを送信しました (対象${summaries.length}日分)`);
+    return { action: 'posted', reason: `残り枠のお知らせ（${shortText}）` };
   } catch (err) {
     console.error("Error in sendEventUsersNotification:", err);
     await notifyAdminError(env, err, { action: 'sendEventUsersNotification(中間アナウンス)' });
+    return { action: 'error', reason: String(err?.message || err).slice(0, 200) };
   }
 }
 
@@ -224,7 +226,7 @@ export async function checkCustomStatusAt2000(env) {
     const channelId = env.DISCORD_KTM_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
     if (!channelId) {
       console.error('[Check2000] 判定対象のチャンネルIDが解決できませんでした');
-      return;
+      return { action: 'error', reason: '判定対象のチャンネルが解決できない' };
     }
 
     // 現在のJST曜日を取得 (0=日, 6=土)
@@ -233,7 +235,7 @@ export async function checkCustomStatusAt2000(env) {
     const dayKey = dayOfWeek === 6 ? 'sat' : dayOfWeek === 0 ? 'sun' : null;
     if (!dayKey) {
       console.log('[Check2000] 土日ではないためスキップ');
-      return;
+      return { action: 'skipped', reason: '土日ではない' };
     }
 
     // ★ 2026-09-23追加: 手遅れ実行のガード。
@@ -243,7 +245,7 @@ export async function checkCustomStatusAt2000(env) {
     const jstMinutes = nowJst.getUTCHours() * 60 + nowJst.getUTCMinutes();
     if (jstMinutes < 19 * 60 + 50 || jstMinutes > 21 * 60) {
       console.log(`[Check2000] 20:00判定の有効時間帯(19:50〜21:00 JST)を外れているためスキップ (現在 ${nowJst.getUTCHours()}:${String(nowJst.getUTCMinutes()).padStart(2, '0')} JST)`);
-      return;
+      return { action: 'skipped', reason: '判定の時間帯(19:50〜21:00)を外れている' };
     }
 
     const def = getDayDef(dayKey);
@@ -269,7 +271,7 @@ export async function checkCustomStatusAt2000(env) {
         );
         if (isDuplicate) {
           console.log('[Check2000] 直近30分以内に同種の判定メッセージがあるためスキップ（二重発火防止）');
-          return;
+          return { action: 'skipped', reason: '直近30分に判定メッセージがある' };
         }
       }
     } catch (dupErr) {
@@ -280,12 +282,12 @@ export async function checkCustomStatusAt2000(env) {
     const target = resolveWeekendTargets().find((t) => t.dayKey === dayKey);
     if (!target) {
       console.log('[Check2000] 本日の開催対象が解決できませんでした');
-      return;
+      return { action: 'error', reason: '本日の開催対象が解決できない' };
     }
     const summary = await loadDayRecruitmentSummary(env, target);
     if (!summary) {
       console.log(`[Check2000] ${def.name}(${target.label})の募集カードが見つかりません`);
-      return;
+      return { action: 'skipped', reason: '募集カードが見つからない' };
     }
 
     // 1戦目から稼働できる人数（フル + 1戦のみ）と、途中参加の人数（土曜は1ティア差の出場対象枠のみをカウント）
@@ -314,7 +316,7 @@ export async function checkCustomStatusAt2000(env) {
       const attendeeMentions = attendeeIds.length > 0
         ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
         : '';
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${confirmChannelId}/messages`, {
+      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${confirmChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -324,7 +326,7 @@ export async function checkCustomStatusAt2000(env) {
         })
       });
       console.log(`[Check2000] 開催確定通知を募集カードへの返信として投稿しました（通知対象 ${attendeeIds.length}名）`);
-      return;
+      return postOutcome(postRes, '開催確定');
     }
 
     const idsIn = (lines) => [...new Set((lines || []).flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1])))].slice(0, 100);
@@ -335,7 +337,7 @@ export async function checkCustomStatusAt2000(env) {
     if (breakdown?.isMatch2Ready) {
       // 第2戦に出る人 = 第1戦欄のうち「1戦のみ」以外 ＋ 2戦目から合流
       const match2Ids = idsIn([...(breakdown.match1Lines || []).filter((l) => !/1戦のみ/.test(l)), ...(breakdown.match2LateLines || [])]);
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
+      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -346,14 +348,14 @@ export async function checkCustomStatusAt2000(env) {
         })
       });
       console.log(`[Check2000] 第2戦から開催確定を投稿しました（${breakdown.match2Count}名）`);
-      return;
+      return postOutcome(postRes, '第2戦から開催確定');
     }
 
     // A-3. 観戦希望の人まで含めれば第1戦が10名になる → 観戦の人へ参加のお願い（中止にしない。2026-10-17）
     const spectatorLinesForMatch1 = (breakdown?.spectatorLines || []).filter((l) => !/2戦目/.test(l));
     if (breakdown && firstMatchCount + spectatorLinesForMatch1.length >= DAY_CAPACITY) {
       const spectatorIds = idsIn(spectatorLinesForMatch1);
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
+      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -367,7 +369,7 @@ export async function checkCustomStatusAt2000(env) {
         })
       });
       console.log(`[Check2000] 観戦枠への参加依頼を投稿しました（第1戦 ${firstMatchCount}名 + 観戦枠 ${spectatorLinesForMatch1.length}名）`);
-      return;
+      return postOutcome(postRes, '観戦枠への参加依頼');
     }
 
     // B. あと1〜2名 かつ 途中参加者がいる場合は、1戦だけの助っ人をピンポイント募集（募集カードへの返信）
@@ -398,7 +400,7 @@ export async function checkCustomStatusAt2000(env) {
         `下のボタンから1戦だけ助っ人エントリーをお願いします！`;
 
       const helpChannelId = summary.channelId || channelId;
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${helpChannelId}/messages`, {
+      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${helpChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -409,7 +411,7 @@ export async function checkCustomStatusAt2000(env) {
         })
       });
       console.log('[Check2000] ピンポイント助っ人募集メッセージを募集カードへの返信として投稿しました');
-      return;
+      return postOutcome(postRes, '助っ人募集');
     }
 
     // C. 中止
@@ -417,7 +419,7 @@ export async function checkCustomStatusAt2000(env) {
     const todayJst = nowJst.toISOString().slice(0, 10);
     if (NO_CANCEL_NOTICE_DATES.includes(todayJst)) {
       console.log(`[Check2000] ${todayJst} は中止告知を出さない日のためスキップ（第1戦 ${firstMatchCount}名）`);
-      return;
+      return { action: 'skipped', reason: '中止告知を出さない日' };
     }
 
     // 2026-10-03: 以前は「21:00まで参加枠を開放しています／別モードで遊ぶことも可能です」という
@@ -450,7 +452,7 @@ export async function checkCustomStatusAt2000(env) {
 
     // 返信は同一チャンネル内でしか成立しないため、投稿先は募集カードのチャンネルに合わせる
     const cancelChannelId = summary.channelId || channelId;
-    await fetchWithRetry(`https://discord.com/api/v10/channels/${cancelChannelId}/messages`, {
+    const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${cancelChannelId}/messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -468,11 +470,20 @@ export async function checkCustomStatusAt2000(env) {
       await closePeriodicCard(env, cancelChannelId, summary.messageId)
         .catch((e) => console.warn('[Check2000] 中止したカードの締め切りに失敗:', e));
     }
+    return postOutcome(postRes, '中止告知');
 
   } catch (err) {
     console.error('[Check2000] error:', err);
     // 20:00判定は「開催/中止」を告知する最重要処理。ここが落ちると誰にも何も届かないまま
     // 試合時刻を迎えるため、必ず管理者へ通知する（consoleはWorkersで保存されず追跡不能）
     await notifyAdminError(env, err, { action: 'checkCustomStatusAt(20:00開催判定)' });
+    return { action: 'error', reason: String(err?.message || err).slice(0, 200) };
   }
+}
+
+// 定期実行の記録（bot_cron_runs.detail）に残す結果。Discord への投稿が失敗していたら error にし、
+// pg_cron の保険がやり直せるようにする（2026-10-20）
+function postOutcome(res, label) {
+  if (res && !res.ok) return { action: 'error', reason: `${label}の投稿に失敗 (${res.status})` };
+  return { action: 'posted', reason: label };
 }

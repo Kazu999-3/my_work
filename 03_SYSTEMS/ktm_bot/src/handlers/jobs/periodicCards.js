@@ -38,12 +38,16 @@ export async function postWeeklyRecruitment(env, options = {}) {
     await cleanupStaleAdhocRecruitments(env);
 
     // 2. 土曜・日曜のカードをそれぞれ投稿する（片方が失敗しても、もう片方は投稿する）
+    // 結果は定期実行の記録（bot_cron_runs.detail）に残す。既にあるカードは「飛ばした」、投稿の失敗は error（2026-10-20）
     let posted = 0;
+    let existing = 0;
     for (const target of targets) {
-      const ok = await postDayRecruitmentCard(env, targetChannelId, target, { recentMessages });
-      if (ok) posted += 1;
+      const result = await postDayRecruitmentCard(env, targetChannelId, target, { recentMessages });
+      if (result === 'exists') existing += 1;
+      else if (result) posted += 1;
     }
     console.log(`[WeeklyRecruit] 定期カスタム募集カードを ${posted}/${targets.length} 件投稿しました`);
+    const failed = targets.length - posted - existing;
 
     if (posted > 0 && options.isBackupKick) {
       await notifyAdminError(
@@ -55,8 +59,14 @@ export async function postWeeklyRecruitment(env, options = {}) {
         }
       ).catch(() => {});
     }
+    const reason = `投稿${posted}件・既存${existing}件・失敗${failed}件`;
+    if (failed > 0) return { action: 'error', reason };
+    return { action: posted > 0 ? 'posted' : 'skipped', reason };
   } catch (err) {
     console.error('[WeeklyRecruit] error:', err);
+    // 以前は管理者通知が無く、水曜の募集カードが途中で落ちても誰も気づけなかった（2026-10-20）
+    await notifyAdminError(env, err, { action: 'postWeeklyRecruitment(水曜の募集カード)' }).catch(() => {});
+    return { action: 'error', reason: String(err?.message || err).slice(0, 200) };
   }
 }
 
@@ -241,7 +251,7 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
     const messages = options.recentMessages || await fetchRecentBotMessages(env, channelId);
     if (findDayCard(messages, target)) {
       console.log(`[WeeklyRecruit] ${label}のカードは既にチャンネルに存在するためスキップ（二重発火防止）`);
-      return false;
+      return 'exists';
     }
   }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { createAdminNotification } from '../../../../lib/notify';
 
 // ============================================================
 // Bot の定期実行の保険（2026-10-20 追加、migration 115）
@@ -26,10 +27,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const job = new URL(req.url).searchParams.get('job') || '';
+  const params = new URL(req.url).searchParams;
+  const job = params.get('job') || '';
   const windowMinutes = JOB_WINDOW_MINUTES[job];
   if (!windowMinutes) {
     return NextResponse.json({ error: 'unknown job' }, { status: 400 });
+  }
+
+  // 見張り（migration 116 の cron_bot_watch）から: 保険の後も成功の記録が無い → 管理者に知らせる
+  if (params.get('alert') === '1') {
+    return alertMissingRun(job);
   }
 
   const workerUrl = process.env.BOT_WORKER_URL;
@@ -70,4 +77,44 @@ export async function GET(req: Request) {
     console.error(`[bot-backup] Bot の呼び出しで例外 (${job}):`, err?.message);
     return NextResponse.json({ error: err?.message }, { status: 502 });
   }
+}
+
+const JOB_LABELS: Record<string, string> = {
+  weekly_recruit: '水曜の募集カード',
+  event_notify: '残り枠のお知らせ',
+  check_2000: '20:00の開催判定',
+};
+
+const SOURCE_LABELS: Record<string, string> = { cloudflare: '本命', pg_cron: '保険', manual: '手動' };
+
+async function alertMissingRun(job: string) {
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { data: rows, error } = await supabase
+    .from('bot_cron_runs')
+    .select('source, status, detail, started_at')
+    .eq('job', job)
+    .gt('started_at', since)
+    .order('started_at', { ascending: true });
+  if (error) {
+    console.error('[bot-backup] 見張り: bot_cron_runs の確認に失敗:', error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const lines = (rows || []).map((r: any) => {
+    const time = new Date(r.started_at).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' });
+    const reason = r.detail?.reason || r.detail?.message || '';
+    return `・${time} ${SOURCE_LABELS[r.source] || r.source}: ${r.status}${reason ? `（${reason}）` : ''}`;
+  });
+  const label = JOB_LABELS[job] || job;
+  await createAdminNotification({
+    type: 'bot_cron',
+    level: 'error',
+    title: `⚠️ Bot の定期実行「${label}」が完了していません`,
+    body: [
+      '本命（Cloudflare）と保険（pg_cron）のどちらでも、投稿まで終わった記録がありません。Discord のチャンネルを確認してください。',
+      lines.length > 0 ? `直近1時間の記録:\n${lines.join('\n')}` : '直近1時間の記録: なし（本命も保険も動いていません）',
+    ].join('\n'),
+    data: { job },
+  });
+  return NextResponse.json({ alerted: true, job, runs: lines.length });
 }

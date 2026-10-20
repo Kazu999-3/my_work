@@ -49,8 +49,14 @@ export async function handleScheduledEvent(event, env, ctx) {
   const source = cronExpression === "manual" ? (event.source || "manual") : "cloudflare";
   const runId = await recordCronRun(env, { job, source, status: 'running', cron: cronExpression || null, mode: mode || null });
   try {
-    await runScheduledJob(event, env, ctx);
-    await recordCronRun(env, { status: 'success', finished_at: new Date().toISOString() }, runId);
+    // 各処理は { action: 'posted' | 'skipped' | 'error', reason } を返す（返さない処理は記録だけ成功にする）。
+    // 内部で失敗を握りつぶす処理でも error を返せば記録は error になり、pg_cron の保険がやり直す
+    const result = await runScheduledJob(event, env, ctx);
+    await recordCronRun(env, {
+      status: result?.action === 'error' ? 'error' : 'success',
+      finished_at: new Date().toISOString(),
+      detail: result || null,
+    }, runId);
   } catch (err) {
     await recordCronRun(env, { status: 'error', finished_at: new Date().toISOString(), detail: { message: String(err?.message || err).slice(0, 500) } }, runId);
     throw err;
@@ -74,7 +80,7 @@ async function runScheduledJob(event, env, ctx) {
     // Cloudflare側の本命cron(水曜12:00 JST)が空振りしたということなので、無言で済ませず
     // 管理者へ通知する。2026-09-23に本命が不発し、GitHub Actions側も5時間20分遅延した結果、
     // 募集が水曜17:35に飛ぶ事故が起きたが、誰も気づける仕組みが無かった。
-    await postWeeklyRecruitment(env, { isBackupKick: mode === "weekly_recruit" });
+    return await postWeeklyRecruitment(env, { isBackupKick: mode === "weekly_recruit" });
   } else if (mode === "weekly_recruit_reset") {
     // 移行が途中で失敗したときの立て直し。手動キック専用。
     console.log("[Scheduled] Executing periodic card reset...");
@@ -116,7 +122,7 @@ async function runScheduledJob(event, env, ctx) {
   ) {
     // 毎週土日 20:00 JST (UTC 11:00 土日 / CF dow=7,1): 開催可否判定 ＆ 中止時クイック代替募集
     console.log("[Scheduled] Executing 20:00 Custom Check & Substitute Handler...");
-    await checkCustomStatusAt2000(env);
+    return await checkCustomStatusAt2000(env);
   } else if (
     mode === "event_notify" ||
     cronExpression.includes("0 10 * * 6") || // 金曜 19:00 JST (UTC 10:00 / CF dow=6)
@@ -124,9 +130,10 @@ async function runScheduledJob(event, env, ctx) {
   ) {
     // 金曜 19:00 JST, 土曜 17:00 JST, 日曜 17:00 JST: 中間アナウンス＆リマインド通知
     console.log("[Scheduled] Executing intermediate custom reminder & status notification...");
-    await sendEventUsersNotification(env, { lookaheadHours: 72 });
+    return await sendEventUsersNotification(env, { lookaheadHours: 72 });
   } else {
     console.log("[Scheduled] No matching handler for this trigger:", cronExpression || mode);
+    return { action: 'skipped', reason: '該当する処理が無い' };
   }
 }
 
