@@ -26,6 +26,9 @@ ALTER TABLE public.balancer_predictions DROP COLUMN IF EXISTS match_id;
 
 - **番号24が重複している**（`24_add_participant_mmr.sql` と `24_initial_prefs.sql`）。
   ファイル名で管理しているため実害はない。**上記の理由からリネームせず、このまま残す。**
+- **番号115・116も重複している**（2026-10-20）。`115_bot_cron_runs.sql` / `115_knowledge_reanalysis.sql`、
+  `116_bot_cron_watch.sql` / `116_coach_missions.sql`。どれも `_migrations` に記録済みなので、24番と同じく**リネームしない**。
+  新しく書く時は、このフォルダの最大の番号を確かめてから次の番号を使うこと。
 - **28番は欠番**。「上達の原則」をレーンガイドへ統合した際に削除した跡。
 
 ## 新しいマイグレーションを書くとき

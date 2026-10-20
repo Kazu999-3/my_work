@@ -390,7 +390,8 @@ export interface LinkedSourceBlock {
   id: number;
   label: string;
   value: string;
-  url: string;
+  /** 2026-10-20: 記事を開く先だった 04 /admin/knowledge を削除したため任意に（記事は 05 の記事承認画面で見る） */
+  url?: string;
 }
 
 const FACT_FIELD_LABELS: Record<string, string> = {
@@ -443,7 +444,7 @@ export function buildEditableBlocks(bundle: ChampionSourceBundle): { editable: E
   bundle.knowledge.forEach((k) => {
     linked.push({
       key: `personal_knowledge:${k.id}`, table: 'personal_knowledge', id: k.id,
-      label: `ナレッジ: ${k.title || '(無題)'}`, value: k.content, url: `/admin/knowledge?tab=library&article=${k.id}`,
+      label: `ナレッジ: ${k.title || '(無題)'}`, value: k.content,
     });
   });
 
