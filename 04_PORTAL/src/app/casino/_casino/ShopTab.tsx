@@ -18,8 +18,8 @@ export default function ShopTab({ shopMessage, handleBuyItem }: {
                   <ShoppingBag size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-foreground">KTMショップ ＆ 特権アイテム交換所</h2>
-                  <p className="text-xs text-muted-strong">貯めたコインでカスタム特権チケットやバラエティ権をGET！</p>
+                  <h2 className="text-lg font-black text-foreground">KTMショップ</h2>
+                  <p className="text-xs text-muted-strong">貯めたコインで、宝くじ・スクラッチくじ・全損保険・激闘チケットと交換できます</p>
                 </div>
               </div>
             </div>

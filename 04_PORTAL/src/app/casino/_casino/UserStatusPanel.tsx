@@ -135,7 +135,7 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
             {/* 🎒 所持特権チケット（インベントリ） ＆ 発動宣言ボタン */}
             <div className="pt-3 border-t border-primary-edge-strong/20">
               <div className="flex items-center gap-2 text-xs font-bold text-primary-950 mb-2">
-                <span>🎒 あなたの所持特権チケット:</span>
+                <span>🎒 あなたの所持チケット:</span>
                 <span className="text-[11px] font-normal text-muted">({inventory.length}枚保有中)</span>
               </div>
               {inventory.length > 0 ? (
@@ -180,7 +180,7 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                 </div>
               ) : (
                 <p className="text-xs text-muted-strong italic">
-                  現在保有している特権チケットはありません。「🛒 KTMショップ」からお好みの特権を交換できます！
+                  現在保有しているチケットはありません。「🛒 KTMショップ」から交換できます！
                 </p>
               )}
             </div>

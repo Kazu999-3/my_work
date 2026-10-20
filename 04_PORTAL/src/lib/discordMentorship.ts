@@ -567,36 +567,14 @@ export async function notifySeniorScout(params: {
       },
     ];
 
-    // 1. 先輩のDiscord ID宛てにダイレクトメッセージ(DM)を最優先で送信！
+    // 1. 先輩本人の個別案内チャンネルへ送る（2026-10-20 ユーザー判断で DM から切り替え。チャンネルが無い人には送らない）
     if (seniorPlayer.discord_id) {
-      try {
-        const dmRes = await discordFetch('https://discord.com/api/v10/users/@me/channels', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ recipient_id: seniorPlayer.discord_id }),
-        });
-
-        if (dmRes.ok) {
-          const dmChannel = await dmRes.json();
-          await discordFetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              content: `📩 **【KTM 師弟スカウト】** 先輩、後輩の ${pupilProfile.player_name} さんからアドバイスを求められています！`,
-              embeds: [embed],
-              components,
-            }),
-          });
-        }
-      } catch (dmErr) {
-        console.warn('[discordMentorship] Senior scout DM send failed:', dmErr);
-      }
+      const { sendToMemberChannel } = await import('./onboardingChannels');
+      await sendToMemberChannel(seniorPlayer.discord_id, {
+        content: `📩 **【KTM 師弟スカウト】** 後輩の ${pupilProfile.player_name} さんがアドバイスを求めています！`,
+        embeds: [embed],
+        components,
+      });
     }
 
     // 2. #🤝師弟募集 チャンネルにも公開スカウト（他の先輩も名乗り出られるように）

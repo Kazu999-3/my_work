@@ -42,7 +42,8 @@ export default {
       }
       
       if (gasSecret !== expectedSecret) {
-        console.error(`Unauthorized GAS request: received=${gasSecret}, expected=${expectedSecret}`);
+        // 2026-10-20: 以前は正しい合言葉（expected）と送られてきた値をそのままログに出していた。ログを見られる人に合言葉が分かるため出さない
+        console.error(`Unauthorized GAS request (x-gas-secret ${gasSecret ? 'mismatch' : 'missing'})`);
         return new Response('Unauthorized', { status: 401 });
       }
       const payload = await request.json();

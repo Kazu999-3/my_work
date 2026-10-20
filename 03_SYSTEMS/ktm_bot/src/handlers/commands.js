@@ -129,10 +129,10 @@ export function handleStatsCommand(interaction, env, ctx) {
            content:
              "⚠️ あなたの戦績がまだ登録されていません。\n\n" +
              "👉 **次の手順で表示されるようになります**\n" +
-             "1. 案内メッセージ（`/welcome`）の緑「🎮 サモナー名 ＆ 希望レーン登録」を押す\n" +
-             "　（Riot IDと希望レーンをまとめて登録でき、ランクも同期されます。コマンドなら `/ign` と `/lane`）\n" +
+             "1. <#1485646578621616209> にテンプレを貼って自己紹介する（Riot ID・ランク・希望レーンが自動で登録されます）\n" +
+             "　（コマンドで登録するなら `/ign` と `/lane`）\n" +
              "2. カスタムに1回参加して対戦する\n\n" +
-             "※ 登録内容を後から変えたい場合は「📝 サモナー名変更」「📍 レーン設定変更」から行えます。"
+             "※ 登録内容を後から変えたい場合は `/ign` `/lane`、または案内メッセージ（`/welcome`）の「👤 マイページ」から行えます。"
          });
          return;
       }
@@ -350,7 +350,7 @@ export async function handleSetIgn(interaction, env, ctx) {
       if (data.status === "SUCCESS") {
         const rankMsg = data.rankTier ? ` (現在のランク: **${data.rankTier}** を同期)` : '';
         await patchInteractionResponse(appId, token, { 
-          content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付けを完了しました！${rankMsg}\n👉 続いて「📍 レーン設定」を行うとチーム分けで希望が通りやすくなります。` 
+          content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付けを完了しました！${rankMsg}\n👉 続いて `/lane` で希望レーンを設定すると、チーム分けで希望が通りやすくなります。` 
         });
       } else {
         await patchInteractionResponse(appId, token, { content: `⚠️ 登録中にエラーが発生しました: ${data.message}` });
@@ -373,19 +373,6 @@ export async function handleSetIgn(interaction, env, ctx) {
 // 完全に同一**だった。同じものに2つの入口があるとメンバーが使い分けを考えてしまうため、
 // /portal に一本化した（ユーザー判断）。
 
-export async function handlePortalPanel(interaction, env, ctx) {
-  const { getPortalEmbed, getPortalComponents } = await import('../ui/embeds.js');
-  const portalUrl = getPortalUrl(env);
-  const userId = interaction.member?.user?.id || interaction.user?.id;
-
-  return Response.json({
-    type: 4,
-    data: {
-      embeds: [getPortalEmbed()],
-      components: getPortalComponents(userId, portalUrl)
-    }
-  });
-}
 
 export async function handleRolesCommand(interaction, env, ctx) {
   const { getPlaystyleEmbed, getPlaystyleComponents } = await import('../ui/embeds.js');

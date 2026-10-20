@@ -170,7 +170,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
         if (data.status === "SUCCESS") {
           const rankMsg = data.rankTier ? ` (現在のランク: **${data.rankTier}** を同期)` : '';
           await patchInteractionResponse(appId, token, { 
-            content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付けを完了しました！${rankMsg}\n👉 続いて「📍 レーン設定」を行うとチーム分けで希望が通りやすくなります。` 
+            content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付けを完了しました！${rankMsg}\n👉 続いて `/lane` で希望レーンを設定すると、チーム分けで希望が通りやすくなります。` 
           });
         } else {
           await patchInteractionResponse(appId, token, { content: `⚠️ 登録中にエラーが発生しました: ${data.message}` });

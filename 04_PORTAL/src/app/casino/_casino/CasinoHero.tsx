@@ -23,7 +23,7 @@ export default function CasinoHero({ betStats }: {
             勝敗予想 ＆ KTMショップ ＆ 長者番付
           </h1>
           <p className="text-foreground-subtle text-xs md:text-sm max-w-xl mx-auto font-medium">
-            勝敗予想でコインを増やし、特権チケットやバラエティ権と交換しよう🔥
+            勝敗予想でコインを増やして、宝くじ・スクラッチ・保険・激闘チケットと交換しよう🔥
           </p>
 
           <Link

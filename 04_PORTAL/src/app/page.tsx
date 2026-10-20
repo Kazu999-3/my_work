@@ -171,7 +171,7 @@ export default function HomePage() {
                   勝敗予想 ＆ KTMショップ
                 </h2>
                 <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
-                  カスタム対戦の勝敗にコインをベットして配当を獲得！貯まったコインで特殊アイテム（ロール指定など）を購入できます。
+                  カスタム対戦の勝敗にコインをベットして配当を獲得！貯まったコインで宝くじ・スクラッチくじ・保険などと交換できます。
                 </p>
               </div>
             </div>

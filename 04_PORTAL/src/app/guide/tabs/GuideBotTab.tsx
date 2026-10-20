@@ -434,7 +434,7 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  5. 師弟募集チャンネルのワンポチ登録 ＆ お見合い便
+                  5. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト・お見合い便
                 </h3>
                 <p className="text-xs text-muted-strong">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
               </div>
@@ -467,6 +467,13 @@ export default function GuideBotTab() {
                   <div className="font-black text-xs text-primary-900">💌 お見合い便</div>
                   <p className="text-[11px] text-primary-800 leading-relaxed">
                     運営から、相性のよさそうな先輩の紹介があなたの個別案内チャンネルに届くことがあります。「話す」を押してお相手もOKならペア成立＆ボーナス <strong>+300🪙</strong>。「見送る」を押しても相手には伝わりません。
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-primary-edge-soft space-y-1">
+                  <div className="font-black text-xs text-primary-900">🌟 頼れる先輩スカウト</div>
+                  <p className="text-[11px] text-primary-800 leading-relaxed">
+                    弟子のカードが登録され、相性70%以上の師匠がいない時は、AIが頼れる先輩を選んでスカウトを送ります（先輩の個別案内チャンネルと #🤝師弟募集）。「🤝 師匠を引き受ける」を押せばペア成立＆ボーナス <strong>+300🪙</strong>（初めて組む相手のみ）。
                   </p>
                 </div>
               </div>
