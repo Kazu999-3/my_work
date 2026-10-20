@@ -50,8 +50,23 @@ export async function GET(req: Request) {
     const tagLine = process.env.RIOT_TAG_LINE!;
     if (!apiKey || !gameName || !tagLine) return NextResponse.json({ error: 'Riot環境変数が未設定' }, { status: 500 });
 
-    const puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
-    // ランクソロのみ（直近10試合から未分析の試合を全件検出）
+    // puuid は Riot ID が変わらない限り同じなので保存して使い回す。2026-10-20: 毎時 Riot ID から引き直しており、
+    // 他の同期と重なった回に回数制限（429）で 500 になっていた（毎朝の健康診断に毎日出ていた）
+    const riotId = `${gameName}#${tagLine}`;
+    const cached = await getSetting('soloq_owner_puuid');
+    let puuid: string = cached?.riotId === riotId && cached?.puuid ? cached.puuid : '';
+    if (!puuid) {
+      try {
+        puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
+      } catch (e: any) {
+        if (/Too Many Requests/i.test(e?.message || '')) {
+          return NextResponse.json({ skipped: true, reason: 'Riot APIの回数制限。次の回に回します' });
+        }
+        throw e;
+      }
+      await setSetting('soloq_owner_puuid', { riotId, puuid });
+    }
+    // ランクソロのみ（直近10試合から未分析の試合を全件検出）。失敗時は空配列が返る
     const matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 10);
     if (!matchIds.length) return NextResponse.json({ noGame: true });
 
