@@ -469,9 +469,9 @@ export default function GuideBotTab() {
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-primary-edge-soft space-y-1">
-                  <div className="font-black text-xs text-primary-900">🌟 頼れる先輩スカウト ＆ 指導引き受け</div>
+                  <div className="font-black text-xs text-primary-900">💌 お見合い便</div>
                   <p className="text-[11px] text-primary-800 leading-relaxed">
-                    弟子エントリーがあると、適任な先輩へAIからDMでスカウト通知が届きます。「🤝 師匠を引き受ける」ボタンを押せば即時ペア結成＆ボーナス <strong>+300🪙</strong>！
+                    運営から、相性のよさそうな先輩の紹介があなたの個別案内チャンネルに届くことがあります。「話す」を押してお相手もOKならペア成立＆ボーナス <strong>+300🪙</strong>。「見送る」を押しても相手には伝わりません。
                   </p>
                 </div>
               </div>
