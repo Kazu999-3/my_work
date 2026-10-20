@@ -16,6 +16,8 @@ interface Row {
   needsReply: boolean;
   unread: boolean;
   lastPlayedAt: string | null;
+  /** 名簿に入った日 */
+  joinedAt: string | null;
   url: string;
 }
 
@@ -23,8 +25,34 @@ const DAY = 86400e3;
 
 interface NextCustom { title: string; startAt: string; messageUrl: string; entryIds: string[]; spectatorIds: string[] }
 
-type FilterKey = 'all' | 'unread' | 'needsReply' | 'nextSpectator' | 'nextEntry' | 'recent60' | 'silent30';
-type SortKey = 'status' | 'messageNew' | 'messageOld' | 'played' | 'name';
+type FilterKey = 'all' | 'unread' | 'needsReply' | 'newNoPlay' | 'nextSpectator' | 'nextEntry' | 'recent60' | 'silent30';
+
+/** 定期カスタムの開始日時を「10/25（土）21:00」の形にする（日本時間） */
+function formatCustomStart(iso: string): string {
+  const d = new Date(new Date(iso).getTime() + 9 * 3600e3);
+  const wd = ['日', '月', '火', '水', '木', '金', '土'][d.getUTCDay()];
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}（${wd}）${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+// 一斉連絡の定型文（2026-10-20）。押すと入力欄に入り、必要なら一覧の絞り込みも切り替える。
+// 本人へのメンションは「本人にメンションする」で付くので、文面には入れない。定型文を増やす時はここに足す
+const MESSAGE_TEMPLATES: { key: string; label: string; hint: string; filter?: FilterKey; build: (next: NextCustom | null) => string }[] = [
+  {
+    key: 'firstCustomNudge',
+    label: '未出場の人への声かけ',
+    hint: '入って間もない・まだカスタムに出ていない人向け。押すと一覧が「未出場の新しい人」に切り替わる',
+    filter: 'newNoPlay',
+    build: (next) => [
+      next
+        ? `👋 **${formatCustomStart(next.startAt)}から週末の定期カスタムです！**`
+        : '👋 **週末の定期カスタム（毎週土日 21:00〜）のお誘いです！**',
+      '観戦だけ・1戦だけでも大歓迎です。気が向いたら、募集カードの「フル参加」「⏱️ 1戦のみ」「👀 観戦希望」のどれかを押してください👍',
+      next ? `👉 ${next.messageUrl}` : '👉 <#1528646515533287497> の募集カードからエントリーできます',
+      '当日の流れが分からなければ、ここに書き込んでくださいね🤝',
+    ].join('\n'),
+  },
+];
+type SortKey = 'status' | 'messageNew' | 'messageOld' | 'played' | 'joined' | 'name';
 
 function ago(iso: string | null): string {
   if (!iso) return '発言なし';
@@ -82,6 +110,9 @@ export default function OnboardingChannelsPanel() {
     { key: 'all', label: '全員', test: () => true },
     { key: 'unread', label: '未読', test: (r) => r.unread },
     { key: 'needsReply', label: '要返信', test: (r) => r.needsReply },
+    // 2026-10-20: 入って60日以内で、まだ一度もカスタムに出ていない人（直接声をかける対象）。
+    // 直近75日に入った41人のうち出場は11人で、未出場の31人は個別案内で一度も発言していなかった
+    { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => !r.lastPlayedAt && !!r.joinedAt && loadedAt - new Date(r.joinedAt).getTime() <= 60 * DAY },
     { key: 'nextSpectator', label: '次の定期カスタム: 観戦希望', test: (r) => spectatorSet.has(r.ownerUserId) },
     { key: 'nextEntry', label: '次の定期カスタム: エントリー', test: (r) => entrySet.has(r.ownerUserId) },
     { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && loadedAt - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
@@ -100,6 +131,7 @@ export default function OnboardingChannelsPanel() {
         case 'messageNew': return time(b.lastMessageAt) - time(a.lastMessageAt);
         case 'messageOld': return time(a.lastMessageAt) - time(b.lastMessageAt);
         case 'played': return time(b.lastPlayedAt) - time(a.lastPlayedAt);
+        case 'joined': return time(b.joinedAt) - time(a.joinedAt);
         case 'name': return (a.playerName || a.channelName).localeCompare(b.playerName || b.channelName, 'ja');
         default:
           if (rank(a) !== rank(b)) return rank(a) - rank(b);
@@ -185,6 +217,22 @@ export default function OnboardingChannelsPanel() {
           <button onClick={selectVisible} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">表示中の{visible.length}件をすべて選択</button>
           <button onClick={() => setSelected(new Set())} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">選択解除</button>
         </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-strong">📝 定型文:</span>
+          {MESSAGE_TEMPLATES.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => {
+                setContent(t.build(nextCustom));
+                if (t.filter) setFilter(t.filter);
+              }}
+              title={t.hint}
+              className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -242,6 +290,7 @@ export default function OnboardingChannelsPanel() {
               <option value="messageNew">最後の発言が新しい順</option>
               <option value="messageOld">最後の発言が古い順</option>
               <option value="played">最後の試合が新しい順</option>
+              <option value="joined">入った日が新しい順</option>
               <option value="name">名前順</option>
             </select>
           </label>
@@ -259,7 +308,7 @@ export default function OnboardingChannelsPanel() {
 
       {/* 一覧 */}
       <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-sm min-w-[640px]">
+        <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-black/5 text-xs text-muted-strong">
             <tr>
               <th className="p-2 w-8"></th>
@@ -268,14 +317,15 @@ export default function OnboardingChannelsPanel() {
               <th className="p-2 text-left">状態</th>
               <th className="p-2 text-left">話した人</th>
               <th className="p-2 text-left">最後の試合</th>
+              <th className="p-2 text-left">入った日</th>
               <th className="p-2"></th>
             </tr>
           </thead>
           <tbody>
             {loading && rows.length === 0 ? (
-              <tr><td colSpan={7} className="p-6 text-center text-muted-strong">読み込み中…</td></tr>
+              <tr><td colSpan={8} className="p-6 text-center text-muted-strong">読み込み中…</td></tr>
             ) : visible.length === 0 ? (
-              <tr><td colSpan={7} className="p-6 text-center text-muted-strong">該当する人はいません</td></tr>
+              <tr><td colSpan={8} className="p-6 text-center text-muted-strong">該当する人はいません</td></tr>
             ) : visible.map((r) => {
               const kind = r.lastAuthorKind ? KIND_LABEL[r.lastAuthorKind] : null;
               return (
@@ -310,6 +360,7 @@ export default function OnboardingChannelsPanel() {
                     {kind ? <span className={`text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${kind.cls}`}>{kind.text}</span> : <span className="text-faint">-</span>}
                   </td>
                   <td className="p-2 text-muted-strong whitespace-nowrap">{r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'}</td>
+                  <td className="p-2 text-muted-strong whitespace-nowrap">{r.joinedAt ? ago(r.joinedAt) : '-'}</td>
                   <td className="p-2 text-right">
                     <a href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => markRead(r.channelId)} className="inline-flex items-center gap-1 text-xs text-secondary-700 hover:underline whitespace-nowrap">
                       開く <ExternalLink className="h-3 w-3" />

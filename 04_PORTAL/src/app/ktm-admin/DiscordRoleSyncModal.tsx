@@ -35,7 +35,6 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
   const [config, setConfig] = useState<RoleSyncConfig | null>(null);
   const [definitions, setDefinitions] = useState<Record<string, RoleDefinition>>({});
   const [playstyleDefinitions, setPlaystyleDefinitions] = useState<Record<string, RoleDefinition>>({});
-  const [beginnerLoungeDefinition, setBeginnerLoungeDefinition] = useState<RoleDefinition | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
@@ -61,7 +60,6 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
         setConfig(data.config);
         setDefinitions(data.definitions || {});
         setPlaystyleDefinitions(data.playstyleDefinitions || {});
-        setBeginnerLoungeDefinition(data.beginnerLoungeDefinition || null);
       } else {
         setMessage({ type: "error", text: data.error || "設定の取得に失敗しました。" });
       }
@@ -307,49 +305,6 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
               )}
             </div>
 
-            {/* 初中級限定部屋アクセス用ロール */}
-            <div>
-              <h3 className="text-xs font-bold text-foreground-subtle uppercase tracking-wider mb-2">
-                🌱 初中級限定部屋アクセス用ロール (自動付与 / 1種)
-              </h3>
-
-              {loading ? (
-                <div className="py-4 text-center text-xs text-faint">設定を読み込み中...</div>
-              ) : (
-                <div className="p-3 bg-surface-raised border border-border rounded-xl flex items-center justify-between gap-3 text-xs">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground">
-                        {beginnerLoungeDefinition?.name || "🌱 初中級交流"}
-                      </span>
-                      {config?.beginner_lounge_role ? (
-                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-100 text-emerald-800 border border-emerald-edge">
-                          連携済み
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-surface text-faint border border-border">
-                          未作成
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-faint">
-                      {beginnerLoungeDefinition?.description ||
-                        "初参加・ライト・復帰勢かつアイアン〜ゴールド帯の限定部屋アクセス用ロール"}
-                    </p>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    {config?.beginner_lounge_role ? (
-                      <span className="font-mono text-[11px] text-faint bg-background px-2 py-1 rounded border border-border select-all">
-                        ID: {config.beginner_lounge_role}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-faint italic">「自動作成」で生成されます</span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* 直近の同期サマリー */}

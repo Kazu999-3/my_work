@@ -21,15 +21,10 @@ export interface DiscordRoleConfig {
     casual: string;   // ☕ エンジョイ・まったり
     learner: string;  // 📖 教わりたい
   };
-  beginner_lounge_role?: string; // 🌱 初中級交流 (限定部屋アクセス用)
+  /** 廃止（2026-10-20 に🌱初中級交流ロールと部屋を削除）。古い設定に残っていても使わない */
+  beginner_lounge_role?: string;
   updated_at?: string;
 }
-
-export const BEGINNER_LOUNGE_ROLE_DEFINITION = {
-  name: '🌱 初中級交流',
-  color: 0x1abc9c, // ターコイズ
-  description: '初参加・ライト・復帰勢かつアイアン〜ゴールド帯の限定部屋アクセス用ロール',
-};
 
 /** Discordサーバー上のランクロールIDと正規化ランク名（大文字）の対応表 */
 export const DISCORD_RANK_ROLES: Record<string, string> = {
@@ -136,43 +131,12 @@ export async function updateMemberDiscordRankRole(
       }
     }
 
-    // 3. プラチナ・エメラルド等（上位）に昇格した場合は、初中級交流ロールも自動剥奪
-    const isHigh = ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(cleanRank);
-    const roleConfig = await getRoleSyncConfig();
-    const loungeRoleId = roleConfig.beginner_lounge_role || '1557006452261126194';
-    if (isHigh && currentRoles.has(loungeRoleId)) {
-      const removeLounge = await discordFetch(
-        `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,
-        { method: 'DELETE', headers: { Authorization: `Bot ${token}` } }
-      );
-      if (removeLounge.ok) changed = true;
-    }
 
     return { success: true, changed };
   } catch (err: any) {
     console.error(`[updateMemberDiscordRankRole] エラー (${discordId}):`, err);
     return { success: false, changed: false, message: err?.message };
   }
-}
-
-/**
- * ランクが「アイアン〜ゴールド（初中級帯）」または未登録かどうかを判定する。
- * currentRoles が渡されている場合、Discord上のランクロールも二重検証する。
- */
-export function isLowRank(rank?: string | null, currentRoles?: Set<string> | string[]): boolean {
-  // Discordの現行ロールにプラチナ・エメラルド等が付いていれば確実に初中級対象外
-  if (currentRoles) {
-    const roleRank = getRankFromDiscordRoles(currentRoles);
-    if (roleRank && ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(roleRank)) {
-      return false;
-    }
-  }
-
-  if (!rank) return true; // 未登録・未入力は初級者・ビギナー扱いとして許可
-  const lower = rank.toLowerCase();
-  // プラチナ以上（上位帯）を検出
-  const highTiers = ['plat', 'プラチナ', 'emerald', 'エメラルド', 'dia', 'ダイヤ', 'master', 'マスター', 'grandmaster', 'グランドマスター', 'challenger', 'チャレンジャー'];
-  return !highTiers.some((t) => lower.includes(t));
 }
 
 export const ROLE_DEFINITIONS: Record<ExperienceTier, { name: string; color: number; description: string }> = {
@@ -440,37 +404,11 @@ export async function setupDiscordRoles(): Promise<{
       playstyleRoleIds[key] = newRole.id;
     }
 
-    // 3. 🌱 初中級交流ロールの作成（または再利用）
-    let beginnerLoungeRoleId = '';
-    const foundLounge = existingRoles.find((r) => r.name === BEGINNER_LOUNGE_ROLE_DEFINITION.name);
-    if (foundLounge) {
-      beginnerLoungeRoleId = foundLounge.id;
-    } else {
-      const createLoungeRes = await discordFetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: BEGINNER_LOUNGE_ROLE_DEFINITION.name,
-          color: BEGINNER_LOUNGE_ROLE_DEFINITION.color,
-          hoist: false,
-          mentionable: true,
-        }),
-      });
-      if (createLoungeRes.ok) {
-        const newLoungeRole = await createLoungeRes.json();
-        beginnerLoungeRoleId = newLoungeRole.id;
-      }
-    }
-
     // 4. 設定を保存
     const newConfig: DiscordRoleConfig = {
       enabled: true,
       roles: roleIds,
       playstyle_roles: playstyleRoleIds,
-      beginner_lounge_role: beginnerLoungeRoleId,
     };
     await saveRoleSyncConfig(newConfig);
 
@@ -478,8 +416,7 @@ export async function setupDiscordRoles(): Promise<{
       success: true,
       roles: roleIds,
       playstyle_roles: playstyleRoleIds,
-      beginner_lounge_role: beginnerLoungeRoleId,
-      message: '経験度5種・プレイスタイル5種・初中級交流ロール（計11種）を正常にセットアップしました。',
+      message: '経験度5種・プレイスタイル5種（計10種）を正常にセットアップしました。',
     };
   } catch (err: any) {
     console.error('[discordRoleSync] セットアップエラー:', err);
@@ -597,37 +534,6 @@ export async function syncMemberDiscordRole(
       }
     }
 
-    // 3. 🌱 初中級交流ロール（beginner_lounge_role）の同期（合致なら付与、非合致なら剥奪）
-    const loungeRoleId = roleConfig.beginner_lounge_role;
-    if (loungeRoleId) {
-      const isEligibleForLounge =
-        (targetTier === 'new' || targetTier === 'light' || targetTier === 'returning') &&
-        isLowRank(effectiveRank, currentRoles);
-
-      if (isEligibleForLounge) {
-        if (!currentRoles.has(loungeRoleId)) {
-          const addLounge = await discordFetch(
-            `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,
-            {
-              method: 'PUT',
-              headers: { Authorization: `Bot ${token}` },
-            }
-          );
-          if (addLounge.ok) changed = true;
-        }
-      } else {
-        if (currentRoles.has(loungeRoleId)) {
-          const removeLounge = await discordFetch(
-            `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,
-            {
-              method: 'DELETE',
-              headers: { Authorization: `Bot ${token}` },
-            }
-          );
-          if (removeLounge.ok) changed = true;
-        }
-      }
-    }
 
     return { success: true, changed };
   } catch (err: any) {
@@ -812,18 +718,11 @@ export async function syncPlayersDiscordRoles(options?: {
       }
     }
 
-    // 初中級交流ロールの要件判定
-    const loungeRoleId = config.beginner_lounge_role;
-    const isEligibleForLounge =
-      (tierInfo.tier === 'new' || tierInfo.tier === 'light' || tierInfo.tier === 'returning') &&
-      isLowRank(effectiveRank, currentRoles);
-
-    // 既に目標ロールが付いており、余分な管理ロールも付いておらず、初中級交流ロールの状態も一致していれば完全スキップ
+    // 既に目標ロールが付いており、余分な管理ロールも付いていなければ完全スキップ
     if (currentRoles && targetRoleId && currentRoles.has(targetRoleId)) {
       const hasOtherManagedRole = allManagedRoleIds.some((rId) => rId !== targetRoleId && currentRoles.has(rId));
-      const loungeStatusMismatch = loungeRoleId ? currentRoles.has(loungeRoleId) !== isEligibleForLounge : false;
 
-      if (!hasOtherManagedRole && !loungeStatusMismatch) {
+      if (!hasOtherManagedRole) {
         synced++;
         results.push({ name: player.name, tier: tierInfo.tier, changed: false });
         continue;

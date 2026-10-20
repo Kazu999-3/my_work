@@ -234,7 +234,7 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
    * ⚡ 全員メンテ:
    * 1. 全プレイヤーの最新SoloQランクをRiot APIから一括取得し、最高ランク(higherRank)を更新
    * 2. Discordのランクロールを最新ランクへ付与・剥奪
-   * 3. Discordの参加歴ロール（常連/ライト/初参加等）および初中級交流ロールを一括同期
+   * 3. Discordの参加歴ロール（常連/ライト/初参加等）（初中級交流ロールは 2026-10-20 に廃止）を一括同期
    * 4. 昇格検知時は初期MMRを自動再計算
    */
   const handleSyncAllMaintenance = async () => {
@@ -265,8 +265,8 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
         { rankOnly: true }
       );
 
-      // 3. Discordロール（参加歴・初中級交流）の一括同期
-      setMessage({ type: "info", text: "⚡ 全員メンテ中: Discordの参加歴・初中級交流ロールを一括同期中..." });
+      // 3. Discordロール（参加歴）の一括同期
+      setMessage({ type: "info", text: "⚡ 全員メンテ中: Discordの参加歴ロールを一括同期中..." });
       let roleSyncMsg = '';
       try {
         const roleSyncRes = await fetchWithTimeout('/api/discord/role-sync', {

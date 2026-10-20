@@ -16,9 +16,11 @@ export async function GET(req: Request) {
     const ownerIds = channels.map((c) => c.ownerUserId);
 
     const { data: players } = ownerIds.length
-      ? await supabase.from('ktm_players').select('name,discord_id').in('discord_id', ownerIds)
+      ? await supabase.from('ktm_players').select('name,discord_id,created_at,metadata').in('discord_id', ownerIds)
       : { data: [] as any[] };
     const nameOf = new Map((players || []).map((p: any) => [p.discord_id, p.name]));
+    // 名簿に入った日（自己紹介の取り込み時の joined_at、無ければ行の作成日）。「未出場の新しい人」の絞り込み用（2026-10-20）
+    const joinedOf = new Map((players || []).map((p: any) => [p.discord_id, p.metadata?.joined_at || p.created_at || null]));
 
     // 最後に試合へ出た日（送り先の絞り込み用）
     // 出場記録は1,000件を超えている（2026-10-19 時点で1,305件）ため分けて読む。以前は新しい1,000件だけで、
@@ -35,6 +37,7 @@ export async function GET(req: Request) {
       ...c,
       playerName: nameOf.get(c.ownerUserId) || null,
       lastPlayedAt: lastPlayed.get(c.ownerUserId) || null,
+      joinedAt: joinedOf.get(c.ownerUserId) || null,
     }));
     // 次の定期カスタムのエントリー者・観戦希望（フィルタ用）。読めなくても一覧は返す
     const nextCustom = await loadNextPeriodicCustomEntries().catch((e) => {

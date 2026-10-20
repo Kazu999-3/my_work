@@ -2,7 +2,7 @@ import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from './riot';
 import { RANKS } from './mmr';
-import { isLowRank, updateMemberDiscordRankRole, getRankRoleName } from './discordRoleSync';
+import { updateMemberDiscordRankRole, getRankRoleName } from './discordRoleSync';
 
 export const INTRO_CHANNEL_ID = '1485646578621616209'; // #📝自己紹介
 export const GUILD_ID = '1485636149379858567';
@@ -11,7 +11,6 @@ export const SERVER_ADMIN_USER_ID = '697220229964759130'; // かずき (サー�
 
 export const ONBOARDING_ROLES = {
   NEW_MEMBER: '1556958870486777976',     // 🔰 初参加
-  BEGINNER_LOUNGE: '1557006452261126194',// 🌱 初中級交流
   RECRUIT_NOTICE: '1513531261950492833', // 🔔 募集通知
   LANE_TOP: '1486761227064705256',
   LANE_JG: '1486761458233770144',
@@ -20,7 +19,6 @@ export const ONBOARDING_ROLES = {
   LANE_SUP: '1486761816980979722',
 };
 
-export const BEGINNER_CHANNEL_ID = '1557013003407200346'; // #🌱初参加・ライト・復帰交流
 export const ONBOARDING_CATEGORY_NAME = '🤝 個別案内';
 
 export interface ParsedIntro {
@@ -553,10 +551,6 @@ export async function processSingleIntroMessage(msg: {
     console.warn(`[processSingleIntroMessage] ランクロール付与エラー (${discordName}):`, rErr?.message);
   }
 
-  // 🌱 初中級交流 (アイアン〜ゴールド)
-  if (isLowRank(rankTier)) {
-    await addMemberRole(discordId, ONBOARDING_ROLES.BEGINNER_LOUNGE);
-  }
 
   // メンバーの現在のDiscordロールを取得（旧レーンロールの剥奪用）
   let currentRoles = new Set<string>();
@@ -616,9 +610,6 @@ export async function processSingleIntroMessage(msg: {
     if (rankRoleName) {
       grantedRoles.push(`\`${rankRoleName}\``);
     }
-    if (isLowRank(rankTier)) {
-      grantedRoles.push('`🌱 初中級交流`');
-    }
     if (parsed.mainLane in laneRoleMap) {
       grantedRoles.push(`\`${parsed.mainLane}\``);
     }
@@ -627,43 +618,24 @@ export async function processSingleIntroMessage(msg: {
     }
     grantedRoles.push('`🔔 募集通知`');
 
-    const loungeGuide = isLowRank(rankTier)
-      ? [
-          '',
-          `3️⃣ **初中級・初参加限定の交流チャット**:`,
-          `   ・<#${BEGINNER_CHANNEL_ID}>`,
-          `   ・アイアン〜ゴールド帯や初参加メンバー限定の安心スペースです！雑談や挨拶、カスタムの疑問など何でも気軽に書き込んでみてくださいね🌱`,
-        ].join('\n')
-      : '';
+    // 2026-10-20: 最初の1通は「次の一歩（定期カスタムの参加ボタンを押す）」を先頭にして短くした（ユーザー判断）。
+    // 直近75日に入った41人のうち、名簿登録は41人とも済んでいたが、参加ボタンを押したのは未出場31人中2人だけで、
+    // 案内が長く次の一歩が埋もれていた。また「リアクション（スタンプ）を押す」と書いていたが、実際の募集カードはボタン。
 
     const welcomeText = [
-      `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
+      `👋 **<@${discordId}> さん、KTMサーバーへようこそ！** 名簿への登録が完了しました✨`,
       '',
-      `自己紹介をいただき、KTM名簿への登録が完了しました！✨`,
+      `🚀 **次の一歩: 週末の定期カスタム（毎週土日 21:00〜）に参加する**`,
+      `・<#1528646515533287497> の募集カードで「フル参加」を押せばエントリー完了です`,
+      `・最初は「⏱️ 1戦のみ」や「👀 観戦希望」からでもOK。日曜のお祭りカスタムは戦績に残らない練習歓迎の回です`,
+      `・チーム分けは実力が五分になるよう自動で決まります。格上との対面は「🛡️守ってほしい」にしてあるので、初めてでも大丈夫です`,
       '',
-      `📋 **ご登録情報**:`,
-      `・**LoL ID**: \`${parsed.ign}\``,
-      `・**現在のランク**: \`${rankDisplay}\`（初期KTM MMR: \`${initialMmr}\`）`,
-      `・**希望レーン**: メイン \`${parsed.mainLane}\` / サブ \`${parsed.subLane}\``,
+      `📋 **登録内容**（変更は [マイページ](<${mypageUrl}>) から）`,
+      `・LoL ID \`${parsed.ign}\` / ランク \`${rankDisplay}\` / レーン メイン \`${parsed.mainLane}\`・サブ \`${parsed.subLane}\``,
       ngLine,
-      `・**チーム分けの設定**: 希望レーンの強さ \`できれば\` / 格上との対面 \`🛡️守ってほしい\`（[マイページ](<${mypageUrl}>) の設定からいつでも変えられます）`,
-      `・**初期所持コイン**: \`1,000 🪙\``,
+      `・付いたロール: ${grantedRoles.join('、')}（募集の通知は <#1485646544043642964> の「🔔 募集通知」からOFFにできます）`,
       '',
-      `🎉 **付与されたロール**:`,
-      `・${grantedRoles.join('、')}`,
-      '',
-      `🚀 **次の一歩！カスタム参加の目安**:`,
-      `1️⃣ **週末定期カスタム（毎週土日 21:00〜）**:`,
-      `   ・<#1528646515533287497> に募集案内が出ます。参加したい日のリアクション（スタンプ）を押すだけでエントリー完了！`,
-      `   ・**初参加におすすめ**: 日曜日の「お祭りカスタム（戦績ノーカウント保護・練習歓迎）」や、土曜の「1戦だけ参加（⏱️）」から体験するのが気楽でおすすめです！`,
-      `   ・チーム分けはバランサーが実力五分五分に自動調整するので「足を引っ張ったらどうしよう…」の心配は一切不要です👍`,
-      `   *(※通知が不要になった場合は、<#1485646544043642964> の「🔔 募集通知」ボタンからいつでもOFFにできます)*`,
-      `2️⃣ **Webポータル（戦績・設定・カジノ）**:`,
-      `   ・Discordだけで試合はフル参加できます！マイページから希望レーン変更や「🥊 ソロキュー」「❄️ ARAM」「☕ エンジョイ」等のプレイスタイル設定、勝敗予想カジノも楽しめます。`,
-      loungeGuide,
-      '',
-      `💡 **ここは運営との個別案内チャットです**`,
-      `「当日の流れが分からない」「VC聞き専でもいい？」など、疑問や不安があれば何でもこの部屋でお気軽にメッセージしてくださいね！🤝`,
+      `💬 当日の流れや「VC聞き専でもいい？」など、分からないことはこの部屋に書き込んでください。運営が見ています🤝`,
     ].filter(Boolean).join('\n');
 
     const welcomeButtons = [
@@ -703,31 +675,8 @@ export async function processSingleIntroMessage(msg: {
     });
   }
 
-  // 8. #🌱初参加・ライト・復帰交流 への自動歓迎メッセージ投稿
-  // 新メンバーが発言しやすくなるよう、Botが部屋に歓迎メッセージを添えてコミュニティの輪を広げる
-  // 2026-10-16: 部屋に入れるロール（🌱 初中級交流）を付けた人だけを歓迎する。以前は全員に投稿しており、
-  // プラチナ以上の新メンバーは自分が入れない部屋でメンションされていた。部屋の説明はピン留め済みなので、
-  // 毎回の長文（4行）は1行にし、同時に何人も入った時にチャンネルが埋まらないようにする。
-  if (isLowRank(rankTier)) {
-  try {
-    const beginnerWelcomeContent =
-      `👋 <@${discordId}> さん、ようこそ！🎉 気軽に話しかけてください（部屋の使い方は📌ピン留めにあります）`;
-
-    await discordFetch(`https://discord.com/api/v10/channels/${BEGINNER_CHANNEL_ID}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        content: beginnerWelcomeContent,
-        allowed_mentions: { users: [discordId] },
-      }),
-    });
-  } catch (bwErr) {
-    console.warn('[onboarding] 初中級部屋への歓迎投稿に失敗（オンボーディング自体は続行）:', bwErr);
-  }
-  }
+  // 8. （廃止）#🌱初参加・ライト・復帰交流 への歓迎投稿。部屋に人の発言が10/6〜9の7件しか無く、
+  //    2026-10-20 に部屋と🌱初中級交流ロールを削除した（ユーザー判断）
 
   // 9. 自己紹介メッセージに「✅」リアクションを付与（完了マーク）
   await addReactionToMessage(INTRO_CHANNEL_ID, msg.id, '✅');
