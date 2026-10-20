@@ -100,7 +100,7 @@ export default function WatchTab({ kind }: { kind: 'channel' | 'playlist' }) {
           <ol className="text-[11px] text-zinc-300 space-y-0.5 list-decimal pl-4">
             <li>YouTubeで解析用のプレイリストを作ります。公開範囲は<b>「公開」か「限定公開」</b>にしてください（非公開は読み取れません）。</li>
             <li>そのプレイリストのURLを下に登録します（登録済みなら不要）。</li>
-            <li>あとはPCでもスマホでも、YouTubeの「保存」でそのプレイリストに入れるだけです。3時間おきの巡回でキューに追加されます。すぐ入れたいときは「今すぐ巡回」を押してください。</li>
+            <li>あとはPCでもスマホでも、YouTubeの「保存」でそのプレイリストに入れるだけです。1日3回（8時・14時・20時）の巡回でキューに追加されます。すぐ入れたいときは「今すぐ巡回」を押してください。</li>
           </ol>
           <p className="text-[10px] text-zinc-500">巡回と解析はPCのエッジワーカーが行います。キューに入った動画はプレイリストから外しても問題ありません（解析済みの記録が残るため二重に登録されません）。</p>
         </div>
@@ -156,7 +156,7 @@ export default function WatchTab({ kind }: { kind: 'channel' | 'playlist' }) {
             onClick={() => call('scan', { method: 'POST', body: JSON.stringify({ action: 'scan' }) })}
             disabled={busy !== null}
             className="px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-            title="チャンネルとプレイリストの新着を今すぐキューへ追加します（通常は3時間おき）"
+            title="チャンネルとプレイリストの新着を今すぐキューへ追加します（通常は1日3回: 8時・14時・20時）"
           >
             <Radar className="w-3.5 h-3.5" /> 今すぐ巡回
           </button>

@@ -8,9 +8,9 @@ name: SoloQ Coach Poll
 # 必要シークレット: VERCEL_CRON_SECRET (Vercelの環境変数 CRON_SECRET と同じ値)
 
 on:
-  schedule:
-    # 2026-10-19: 15分おき→1時間おき（Vercel 無料枠の Fluid Active CPU を使い切ったため）
-    - cron: '40 * * * *'
+  # 2026-10-20: 定期実行を外した。2026-10-07 から Supabase の pg_cron（poll-soloq-coach、毎時25分。migration 93/107）が
+  # 同じ /api/cron/soloq-coach を呼んでおり、こちらも毎時40分に動いて二重になっていた（Vercel の CPU と Riot の回数制限を倍使う）。
+  # 手動で確認したい時のために workflow_dispatch だけ残す
   workflow_dispatch:
 
 jobs:

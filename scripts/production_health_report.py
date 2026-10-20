@@ -42,7 +42,7 @@ DB_LIMIT_MB = 500  # Supabase 無料プランの上限
 # 失敗していないかを見る定期ワークフロー（ファイル名: 表示名）
 WATCHED_WORKFLOWS = {
     "ktm-cloud-worker.yml": "辞典統合・動画発掘",
-    "soloq-coach-poll.yml": "ソロQ自動振り返り",
+    # soloq-coach-poll.yml は 2026-10-20 に定期実行を外した（pg_cron の poll-soloq-coach と二重だった）。pg_cron 側は「DBの定期実行」で見る
     "soloq-history-sync.yml": "ソロQ戦績同期",
     "edge-cloud-worker.yml": "クラウドワーカー",
     "youtube-monitor.yml": "YouTube新着監視",

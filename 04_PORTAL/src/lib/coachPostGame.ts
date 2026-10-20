@@ -21,7 +21,7 @@ async function callGemini(prompt: string, cacheKey?: string): Promise<string> {
   return callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
     temperature: 0.7,
-    maxOutputTokens: 2048,
+    maxOutputTokens: 4096, // 2026-10-20: 2048 だと振り返りが見出しの途中で止まる回があった（考える分も上限に数えられる）
     maxRetries: 3,
     cacheKey,
   });
@@ -827,6 +827,13 @@ ${focus ? `4. 今日の焦点の達成度: 「${focus}」を【達成】また�
     }
   } catch (e) {
     console.warn('[coachPostGame] JSON parsing fallback:', e);
+  }
+
+  // 次戦のアクションは JSON の中にしか無いことがある（本文が「以下の2点を徹底してください。」で終わる）。
+  // JSON は保存も表示もしていなかったため、本文に無いアクションを末尾に書き足す（2026-10-20）
+  const missingActions = actionItems.filter((a) => a?.action && !advice.includes(String(a.action).slice(0, 12)));
+  if (missingActions.length > 0) {
+    advice += `\n\n**次戦のアクション**\n${missingActions.map((a, i) => `${i + 1}. ${a.action}${a.why ? `（${a.why}）` : ''}`).join('\n')}`;
   }
 
   let focusAchieved: boolean | null = null;

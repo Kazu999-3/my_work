@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleWelcomeCommand } from './handlers/commands.js';
+import { handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleWelcomeCommand } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
@@ -32,63 +32,13 @@ export default {
       }
     }
 
-    // GAS からのプロキシ通知リクエストを処理
-    if (url.pathname === '/announce-match' && request.method === 'POST') {
-      const gasSecret = request.headers.get('x-gas-secret');
-      const expectedSecret = env.INTERNAL_GAS_SECRET;
-      if (!expectedSecret) {
-        console.error("INTERNAL_GAS_SECRET is not configured; rejecting request.");
-        return new Response('Unauthorized', { status: 401 });
-      }
-      
-      if (gasSecret !== expectedSecret) {
-        // 2026-10-20: 以前は正しい合言葉（expected）と送られてきた値をそのままログに出していた。ログを見られる人に合言葉が分かるため出さない
-        console.error(`Unauthorized GAS request (x-gas-secret ${gasSecret ? 'mismatch' : 'missing'})`);
-        return new Response('Unauthorized', { status: 401 });
-      }
-      const payload = await request.json();
-      return await handleAnnounceMatch(payload, { ...env, DISCORD_TOKEN }, ctx);
-    }
-    
-    // GAS からのリザルトレポート制作用エンドポイント
-    if (url.pathname === '/post-report' && request.method === 'POST') {
-      const gasSecret = request.headers.get('x-gas-secret');
-      const expectedSecret = env.INTERNAL_GAS_SECRET;
-      if (!expectedSecret) {
-        console.error("INTERNAL_GAS_SECRET is not configured; rejecting request.");
-        return new Response('Unauthorized', { status: 401 });
-      }
-      
-      if (gasSecret !== expectedSecret) {
-        return new Response('Unauthorized', { status: 401 });
-      }
-      
-      const payload = await request.json();
-      const channelId = payload.channelId || "1485636511679651871"; // #マッチ結果板
-      
-      const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bot ${DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: payload.content || "",
-          embeds: payload.embeds || []
-        })
-      });
-      
-      if (!res.ok) {
-        return new Response(`Discord Error: ${await res.text()}`, { status: 500 });
-      }
-      return new Response('OK', { status: 200 });
-    }
+    // 2026-10-20: GAS（スプレッドシート）用の /announce-match・/post-report を削除（スプレッドシートは使っていない。ユーザー確認）
 
     // 手動で Scheduled Event をキックする管理者用エンドポイント
     if (url.pathname === '/trigger-scheduled' && request.method === 'GET') {
       const authKey = url.searchParams.get('key');
       // 2026-10-20: 定期実行の保険（Supabase の pg_cron → ポータル → ここ）専用の合言葉 BOT_TRIGGER_KEY も受け付ける。
-      // INTERNAL_GAS_SECRET は GAS 連携でも使っているため、変えずに別の合言葉を足した
+      // INTERNAL_GAS_SECRET は GitHub Actions の保険（KTM_TRIGGER_KEY）でも使っているため、変えずに別の合言葉を足した
       const acceptedKeys = [env.INTERNAL_GAS_SECRET, env.BOT_TRIGGER_KEY].filter(Boolean);
       if (acceptedKeys.length === 0) {
         console.error("INTERNAL_GAS_SECRET / BOT_TRIGGER_KEY is not configured; rejecting request.");

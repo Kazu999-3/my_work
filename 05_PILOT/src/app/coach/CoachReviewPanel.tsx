@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 // ============================================================
 // 自動振り返りの履歴 ＆ 傾向分析（2026-09-30新設）
 //
-// 15分おきのcron(/api/cron/soloq-coach)が新しいランク戦を検知するたびに
+// 1時間おきの pg_cron（poll-soloq-coach、毎時25分）が /api/cron/soloq-coach を呼び、新しいランク戦を検知するたびに
 // AI振り返りを生成して coach_analyses へ保存している（調査時点で86件、直近30日で14件）。
 // サーバー側には一覧用の mode=history と傾向集計用の mode=trends が前からあったが、
 // **どの画面からも呼ばれていなかった**ため、貯まった振り返りは通知本文
