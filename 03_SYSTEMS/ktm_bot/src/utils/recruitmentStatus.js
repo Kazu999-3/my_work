@@ -40,7 +40,7 @@ export const DAY_DEFS = {
     label: '日曜',
     name: '日曜・お祭りカスタム',
     shortName: '日曜お祭りカスタム',
-    rule: 'ランク不問・MMR変動なし。特殊ルール/ランダム/オフメタ等なんでも歓迎です',
+    rule: 'ランク不問のお祭り枠。特殊ルール/ランダム/オフメタ等なんでも歓迎（主催者が「お祭り扱い」にした試合はMMRが動きません）',
     joinPrefix: 'join_periodic_sunday',
     showRank: false,
     buttonStyle: 3,   // Success (Green)

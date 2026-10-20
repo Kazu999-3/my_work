@@ -179,10 +179,10 @@ export default function GuideBotTab() {
               <div className="bg-background rounded-2xl p-4 border border-border text-xs text-foreground-subtle space-y-2">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles size={14} className="text-primary-600" />
-                  爆速AIメモ解析機能
+                  メモからの自動読み取り
                 </div>
                 <p>
-                  メモ欄に <code className="bg-surface px-1.5 py-0.5 rounded font-mono font-bold text-primary-900 border border-border">21:30 カスタム 初心者歓迎！</code> のように書くだけで、AIが時間（21:30）・モード（カスタム）・人数（10人）を自動解析して即座にパネルを作成します。
+                  メモ欄に <code className="bg-surface px-1.5 py-0.5 rounded font-mono font-bold text-primary-900 border border-border">21:30 カスタム 初心者歓迎！</code> のように書くだけで、時間（21:30）・モード（カスタム）・人数（10人）を読み取って、すぐにパネルを作成します。
                 </p>
               </div>
 
@@ -229,11 +229,6 @@ export default function GuideBotTab() {
                         <td className="p-2.5">Discordメンバーを選択し、代わりに募集へ追加します。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-foreground">📢 一括連絡</td>
-                        <td className="p-2.5">募集主のみ</td>
-                        <td className="p-2.5">参加者全員へ一括でメンション連絡を送信します。</td>
-                      </tr>
-                      <tr>
                         <td className="p-2.5 font-bold text-foreground">🚩 募集終了（通知あり）</td>
                         <td className="p-2.5">募集主のみ</td>
                         <td className="p-2.5">参加者全員にメンションで締切・解散通知を送信して締め切ります。</td>
@@ -266,7 +261,7 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   2. 週末定期カスタム募集（土曜本戦 ＆ 日曜お祭り）
                 </h3>
-                <p className="text-xs text-muted-strong">毎週月曜12時に自動投稿される定期募集と参加ボタンの役割</p>
+                <p className="text-xs text-muted-strong">毎週水曜12時に自動投稿される定期募集と参加ボタンの役割</p>
               </div>
             </div>
             {openSection === 'periodic' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
@@ -282,7 +277,7 @@ export default function GuideBotTab() {
                 <ul className="space-y-1 text-muted">
                   <li>・<strong className="text-foreground-soft">毎週水曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
                   <li>・<strong className="text-foreground-soft">毎週金曜 19:00 ＆ 土日 17:00:</strong> 中間人数アナウンス（残り枠状況のお知らせ）。</li>
-                  <li>・<strong className="text-foreground-soft">当日 20:00:</strong> 開催可否の最終判定。10名未満の部門は自動中止となり、ワンクリックで「ノーマル」「ARAM」の代替募集へ切り替わります（※8〜9名時は助っ人急募通知が自動投稿）。</li>
+                  <li>・<strong className="text-foreground-soft">当日 20:00:</strong> 開催可否の判定。第1戦が10人なら確定、第2戦なら10人の時は第2戦から開催。観戦希望の人が入れば10人の時は参加のお願い、あと1〜2人なら1戦だけの助っ人募集。それ以外は中止（集まれる人で遊ぶ通常募集を立てられます）。</li>
                 </ul>
               </div>
 
@@ -309,7 +304,7 @@ export default function GuideBotTab() {
 
                   <div className="p-3.5 rounded-2xl bg-primary-50/70 border border-primary-edge-soft space-y-1.5">
                     <div className="font-black text-xs text-primary-900 flex items-center gap-1.5">
-                      <span>🌙</span> 途中参加 (2戦目〜 / 21:45頃)
+                      <span>🌙</span> 途中参加 (2戦目〜 / 21:50頃)
                     </div>
                     <p className="text-[11px] text-primary-800 leading-relaxed">
                       21時には間に合わない方向け！2戦目開始時にバランサー側で自動合流できます。
@@ -386,9 +381,9 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  4. チーム分け実行（🏆 ボタン）と3つのプリセット
+                  4. チーム分け（Webバランサー）と3つの案
                 </h3>
-                <p className="text-xs text-muted-strong">AIが提案する3タイプのチーム分け案と投票の仕組み</p>
+                <p className="text-xs text-muted-strong">バランサーが出す3タイプのチーム分け案と投票の仕組み</p>
               </div>
             </div>
             {openSection === 'balance' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
@@ -397,7 +392,7 @@ export default function GuideBotTab() {
           {openSection === 'balance' && (
             <div className="p-6 pt-0 border-t border-surface-subtle space-y-4">
               <p className="text-xs text-muted leading-relaxed">
-                定員（10名）に達した募集パネルで募集主が「🏆 チーム分け実行」ボタンを押すと、AIが参加者のレーン希望と直近MMRを解析し、以下の3案を同時に提案します。
+                募集パネルの「🌐 Webバランサーでチーム分け」からバランサーを開き、主催者が「チーム分け実行」を押すと、参加者のレーン希望とMMRから以下の3案を同時に出します。
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -439,7 +434,7 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  5. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト機能
+                  5. 師弟募集チャンネルのワンポチ登録 ＆ お見合い便
                 </h3>
                 <p className="text-xs text-muted-strong">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
               </div>

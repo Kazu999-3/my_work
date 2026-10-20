@@ -35,7 +35,7 @@ function buildEntrySuffix(playerRow, def) {
   const expBadgeStr = ` ${getPlayerExperienceBadge(playerRow).short}`;
 
   // ランク表記は土曜（最多ランク帯を基準にチーム分けする）でのみ意味を持つ。
-  // 日曜はランク不問・MMR変動なしなので出さない。
+  // 日曜はランク不問のお祭り枠なので出さない。
   let rankStr = "";
   if (def.showRank && playerRow) {
     const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);

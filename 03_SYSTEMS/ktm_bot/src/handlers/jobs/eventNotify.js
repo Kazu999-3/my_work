@@ -72,12 +72,9 @@ export async function sendEventUsersNotification(env, options = {}) {
         state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名**`;
       }
 
+      // 2026-10-20: 土曜の「基準 / 対象」（帯で出場者を絞っていた頃の表示）は 10/17 の全員出場への変更で実態と合わなくなったため外した
       let rankInfo = '';
       if (s.target.dayKey === 'sat') {
-        const dom = s.status.dominantTierInfo;
-        if (dom?.text) {
-          rankInfo = `（基準: **${dom.text}** / 対象: **${dom.rangeText}**）`;
-        }
         if (s.status.breakdown?.spectatorTotal > 0) {
           rankInfo += `（※観戦枠: ${s.status.breakdown.spectatorTotal}名）`;
         }
@@ -96,8 +93,8 @@ export async function sendEventUsersNotification(env, options = {}) {
       description: [
         dayLines.join('\n\n'),
         '',
-        '💡 土曜は**ランク差を作らない1ティア差選出**（20名で2部屋同時開催✨）。',
-        '💡 日曜は**ランク不問・レート変動なし**で誰でも気楽に参加できます。',
+        '💡 土曜は**全員出場が基本**。チームはMMRで五分五分に組みます。',
+        '💡 日曜は**ランク不問のお祭り枠**。誰でも気楽に参加できます。',
         '💡 21:00の第1試合だけ参加する「1戦のみ」や途中参加も大歓迎！各募集カードからどうぞ。',
       ].join('\n'),
       color: RECRUITMENT_COLORS.recruiting,
@@ -128,10 +125,7 @@ export async function sendEventUsersNotification(env, options = {}) {
       .filter((s) => !s.status.isReady)
       .map((s) => {
         const def = getDayDef(s.target.dayKey);
-        let targetNote = '';
-        if (s.target.dayKey === 'sat' && s.status.dominantTierInfo?.rangeText) {
-          targetNote = ` [${s.status.dominantTierInfo.rangeText}歓迎]`;
-        }
+        const targetNote = '';
         if (s.status.breakdown?.hasBreakdown) {
           const b = s.status.breakdown;
           const parts = [];
@@ -388,10 +382,7 @@ export async function checkCustomStatusAt2000(env) {
         }
       ];
 
-      let rankHint = '';
-      if (dayKey === 'sat' && dominant?.rangeText) {
-        rankHint = `（※ランク差を作らないため、**${dominant.rangeText}** の方を大募集中です！）\n`;
-      }
+      const rankHint = '';
 
       const content = `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 助っ人をピンポイント募集中！】**\n\n` +
         `・**${def.shortName}**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n` +

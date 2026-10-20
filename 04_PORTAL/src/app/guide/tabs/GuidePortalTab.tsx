@@ -257,10 +257,10 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base md:text-lg font-black text-foreground">
-              師弟マッチングハブ（Discord内完結登録 ＆ AI仲人・先輩スカウト）
+              師弟マッチングハブ（Discord内完結登録 ＆ AI仲人・お見合い便）
             </h3>
             <p className="text-muted text-xs leading-relaxed">
-              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🤝師弟募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）や「先輩スカウト機能」、ワンポチ指導引き受け（+300🪙）を完備しています。
+              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🤝師弟募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）や、運営からのお見合い便、ワンポチ指導引き受け（+300🪙）を完備しています。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
@@ -273,10 +273,10 @@ export default function GuidePortalTab() {
               </div>
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
-                  <span>🤖</span> AI仲人 ＆ 先輩スカウト
+                  <span>🤖</span> AI仲人 ＆ お見合い便
                 </div>
                 <p className="text-[11px] text-muted">
-                  相性70%以上のベストマッチを自動お見合い推薦。師匠が未登録でも頼れる先輩をAIが自動指名スカウト！
+                  カードを登録すると、相性70%以上の相手を #🤝師弟募集 で自動推薦。運営からは、相性のよさそうな先輩の紹介（お見合い便）が個別案内チャンネルに届くこともあります。
                 </p>
               </div>
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">

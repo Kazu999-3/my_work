@@ -122,6 +122,16 @@ export default function CasinoRulesPage() {
           </p>
         </div>
 
+        {/* ラッキーデー（2026-10-17 導入。ルールページへの記載が漏れていたため 2026-10-20 に追加） */}
+        <div className="rounded-2xl border border-primary-edge-soft bg-primary-50/40 p-5">
+          <h2 className="text-sm font-black text-foreground flex items-center gap-2 mb-2">🍀 ラッキーデー（毎月 7・17・27 日）</h2>
+          <p className="text-xs md:text-sm text-foreground-subtle leading-relaxed">
+            日本時間の毎月 7・17・27 日は、スロット・Plinko・ブッシュ・スクラッチの払い戻しが <strong className="text-foreground">1.03倍</strong>、
+            デイリーおみくじの報酬が <strong className="text-foreground">2倍</strong> になります。バカラは対象外です。
+            このページの還元率・平均獲得は、ラッキーデー以外の日の値です。
+          </p>
+        </div>
+
         {/* スロット */}
         <section className={CARD}>
           <h2 className={H2}>

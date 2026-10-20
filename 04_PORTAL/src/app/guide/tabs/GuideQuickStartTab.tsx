@@ -171,16 +171,16 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </div>
             <h3 className="text-base font-black text-foreground">Discord募集にワンタップ参加！</h3>
             <p className="text-muted text-xs leading-relaxed">
-              Discordの募集チャンネルにパネルが出たら、お好みの参加ボタンを押すだけ！10人集まると自動で公平チーム分けが始まります。
+              Discordの募集チャンネルにパネルが出たら、お好みの参加ボタンを押すだけ！当日は主催者がバランサーで公平にチーム分けします。
             </p>
             <div className="bg-background border border-border/80 rounded-2xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
                 <Gamepad2 size={13} className="text-success-600" />
                 ゲーム中の流れ
               </div>
-              <p>1. チーム分け結果がDiscordに届く</p>
+              <p>1. 主催者がチーム分けし、結果がDiscordに届く</p>
               <p>2. ポータルで勝敗予想ベットで盛り上がる🎲</p>
-              <p>3. 試合終了後に勝敗が自動反映！</p>
+              <p>3. 試合後に主催者が結果を記録すると、MMR・コインに反映！</p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-surface-subtle">
@@ -305,7 +305,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>❓</span> 初心者やランクの低い人でも楽しめますか？
             </h4>
             <p className="text-[11px] text-muted leading-relaxed">
-              はい！チーム分けAIが「実力五分五分」に自動調整し、2ランク差対面（エメラルド対シルバー等）はシステム的に完全禁止されています。また20名以上の場合は上位部屋と初中級部屋の2部屋同時開催で全員が出場できます。
+              はい！参加ボタンを押した人は全員出場が基本で、バランサーが両チームの実力を五分五分に組みます。格上と当たるのが不安な人は、マイページで「格上との対面」を「🛡️守ってほしい」にしておくと、格上と対面しにくいように配置されます。
             </p>
           </div>
 
@@ -314,7 +314,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>⏰</span> 開催判断は何時に行われますか？
             </h4>
             <p className="text-[11px] text-muted leading-relaxed">
-              当日20:00の時点で参加希望が10名未満の場合は開催中止（ワンクリックでノーマルやARAMの代替募集へ切り替え）となります。また8〜9名集まっている場合は「助っ人急募通知」が自動投稿されます。
+              当日20:00です。第1戦が10人なら開催確定、第2戦なら10人そろう時は第2戦から開催します。観戦希望の人が入れば10人になる時は観戦の人へ参加をお願いし、あと1〜2人で2戦目から来る人がいる時は1戦だけの助っ人を募集します。それ以外は中止で、集まれる人で遊ぶ通常募集を立てられます。
             </p>
           </div>
 
@@ -332,7 +332,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>🎪</span> 日曜日のお祭りカスタムは戦績に影響しますか？
             </h4>
             <p className="text-[11px] text-muted leading-relaxed">
-              日曜日のカスタムは「お祭りカスタム（完全戦績保護）」となっており、公式勝率・MMR変動が一切ノーカウントになります。普段使わないチャンピオンの練習やオフメタ構成も安心してワイワイ楽しめます！
+              日曜日はランク不問のお祭りカスタムです。主催者が「お祭り扱い」にした試合は、MMRが動かず勝率にも数えません。普段使わないチャンピオンの練習やオフメタ構成も気軽に楽しめます！
             </p>
           </div>
         </div>

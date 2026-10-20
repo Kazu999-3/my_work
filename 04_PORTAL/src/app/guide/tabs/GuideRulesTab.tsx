@@ -47,57 +47,57 @@ export default function GuideRulesTab() {
           </div>
           <div>
             <h3 className="text-lg font-black text-foreground dark:text-white">1. 定期カスタム 開催＆人数決め優先度ルール</h3>
-            <p className="text-xs text-muted-strong">参加人数に応じた部屋分け・選出基準・開催判断の公式ガイドライン</p>
+            <p className="text-xs text-muted-strong">誰が出場するか・ランク差への配慮・開催の判定</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* ① 20人揃えば2部屋開催 */}
+          {/* ① 全員出場が基本（2026-10-17 から。以前の「20名で2部屋」「1ランク差の10名を選出」は廃止） */}
           <div className="p-5 rounded-2xl bg-success-50/50 dark:bg-success-950/20 border border-success-edge-soft/80 dark:border-success-edge-strong/40 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-success-600 text-white text-xs font-black">
-                ① 20名以上
+                ① 出場
               </span>
-              <span className="text-xs font-bold text-success-700 dark:text-success-400">🎉 2部屋同時開催</span>
+              <span className="text-xs font-bold text-success-700 dark:text-success-400">🙌 全員出場が基本</span>
             </div>
-            <h4 className="text-sm font-black text-foreground dark:text-white">👑 上位10名 ＆ 下位10名 スプリット</h4>
+            <h4 className="text-sm font-black text-foreground dark:text-white">参加ボタンを押した人は全員出場</h4>
             <p className="text-xs text-muted leading-relaxed">
-              MMR上位10名（上級部屋）とMMR下位10名（初中級部屋）に綺麗に分かれて同時開催！実力差が離れず、両部屋とも最高に白熱するマッチになります。
+              ランクで人を選んで外すことはしません。観戦になるのは、自分で「👀 観戦希望」を選んだ人だけです。<br />
+              11人以上いる試合では、主催者が試合ごとに出る人を選びます（休んだ回数が多い人から、など）。
             </p>
           </div>
 
-          {/* ② 10名以上の場合は2ランク格差防止（1ランク差選出） */}
+          {/* ② ランク差への配慮はチーム分けで行う */}
           <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-primary-edge-soft/80 dark:border-primary-edge-strong/40 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-primary-500 text-stone-950 text-xs font-black">
-                ② 10名〜19名
+                ② ランク差
               </span>
-              <span className="text-xs font-bold text-primary-800 dark:text-primary-300">⚔️ 1部屋 開催</span>
+              <span className="text-xs font-bold text-primary-800 dark:text-primary-300">⚖️ チーム分けで配慮</span>
             </div>
-            <h4 className="text-sm font-black text-foreground dark:text-white">🎯 2ランク格差防止（1ランク差以内で10名選出）</h4>
+            <h4 className="text-sm font-black text-foreground dark:text-white">戦力は五分五分に、対面は守れる</h4>
             <p className="text-xs text-muted leading-relaxed">
-              「シルバー対プラチナ」のような2ランク差対戦を防ぐため、最多層に合わせて<strong>実力差が1ランク差以内の10名</strong>を自動選出！<br />
-              （例：初中級者優先のため、ゴールド最多のときは「シルバー＋ゴールド」を最優先で編成。同数の場合も下のレートを優先し、シルバー対プラチナは同室になりません）<br />
-              <span className="font-bold text-primary-900 dark:text-primary-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。20名集まれば2部屋同時開催で全員出場可能です。</span>
+              バランサーが<strong>KTM MMR（独自レート）</strong>で両チームの戦力を五分五分に組みます。<br />
+              「格上との対面」を<strong>🛡️守ってほしい</strong>にした人は、格上と対面しにくいように配置し、「希望レーンの強さ」で行きたいレーンを守ります（マイページの設定から変更できます）。
             </p>
-            <div className="mt-2 pt-2 border-t border-primary-edge-soft/60 text-[11px] text-primary-900 dark:text-primary-300 space-y-0.5">
-              <p className="font-bold">📊 判定基準：</p>
-              <p>・ソロQランクではなく<strong>KTM MMR（独自レート）</strong>を基準に公平に判定されます</p>
-            </div>
           </div>
 
-          {/* ③ 当日20:00時点で10名未満なら中止（代替募集へ移行） */}
+          {/* ③ 当日20:00の判定 */}
           <div className="p-5 rounded-2xl bg-background/80 dark:bg-stone-800/30 border border-border/80 dark:border-stone-700/50 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-stone-500 text-white text-xs font-black">
-                ③ 10名未満
+                ③ 20:00
               </span>
-              <span className="text-xs font-bold text-muted">💤 開催見送り（代替募集）</span>
+              <span className="text-xs font-bold text-muted">⏰ 当日20:00に判定</span>
             </div>
-            <h4 className="text-sm font-black text-foreground dark:text-white">⏰ 当日20:00で確定判断</h4>
-            <p className="text-xs text-muted leading-relaxed">
-              当日20:00の時点で10名に満たない場合はカスタム開催中止となり、ワンクリックで「ノーマル5人」や「ARAM」の代替募集へスムーズに切り替えられます。（※8〜9名集まっている場合は「助っ人急募」通知が自動投稿されます）
-            </p>
+            <h4 className="text-sm font-black text-foreground dark:text-white">第1戦の人数で決まります</h4>
+            <ul className="text-xs text-muted leading-relaxed space-y-1">
+              <li>・第1戦が10人 → <strong>開催確定</strong></li>
+              <li>・第2戦なら10人 → <strong>第2戦から開催</strong></li>
+              <li>・観戦希望の人が入れば10人 → 観戦の人へ参加のお願い</li>
+              <li>・あと1〜2人で、2戦目から来る人がいる → 1戦だけの助っ人を募集</li>
+              <li>・それ以外 → 中止（集まれる人で遊ぶ通常募集を立てられます）</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function GuideRulesTab() {
               <span className="px-2.5 py-1 rounded-lg bg-primary-500 text-stone-950 text-xs font-black">
                 土曜日 21:00〜
               </span>
-              <span className="text-xs font-bold text-primary-800 dark:text-primary-300">⚔️ ランク別ガチ勝負</span>
+              <span className="text-xs font-bold text-primary-800 dark:text-primary-300">⚔️ 真剣勝負</span>
             </div>
             <h4 className="text-sm font-black text-foreground dark:text-white">👑 土曜：バランス重視・実力伯仲カスタム</h4>
             <p className="text-xs text-muted leading-relaxed">
@@ -147,14 +147,14 @@ export default function GuideRulesTab() {
               </span>
               <span className="text-xs font-bold text-primary-700 dark:text-primary-300">🎪 ランク無差別・お祭り</span>
             </div>
-            <h4 className="text-sm font-black text-foreground dark:text-white">🎲 日曜：完全ランダム・お祭りカスタム</h4>
+            <h4 className="text-sm font-black text-foreground dark:text-white">🎲 日曜：ランク不問・お祭りカスタム</h4>
             <p className="text-xs text-muted leading-relaxed">
-              ランク・MMR・レート差を完全無視！ランダムシャッフルでチーム分けを行い、初心者から上級者までワイワイ盛り上がるお祭りナイトです。
+              ランク差を気にせず、初心者から上級者までワイワイ楽しむお祭りナイトです。チーム分けをランダムにすることもあります。
             </p>
             <ul className="text-xs text-muted space-y-1 pt-1">
               <li className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={14} className="text-primary-600 shrink-0" />
-                <span>MMR変動なし（完全カジュアル）</span>
+                <span>主催者が「お祭り扱い」にした試合はMMRが動きません</span>
               </li>
               <li className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={14} className="text-primary-600 shrink-0" />
@@ -172,7 +172,7 @@ export default function GuideRulesTab() {
             <Clock size={22} />
           </div>
           <div>
-            <h3 className="text-lg font-black text-foreground">2. スタイル別エントリー ＆ 2戦目交代システム</h3>
+            <h3 className="text-lg font-black text-foreground">3. スタイル別エントリー ＆ 2戦目交代システム</h3>
             <p className="text-xs text-muted-strong">仕事や予定に合わせて無理なく参加できる3つのスタイル</p>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function GuideRulesTab() {
             <Flame size={22} />
           </div>
           <div>
-            <h3 className="text-lg font-black text-foreground">3. 特殊カスタムルール（企画マッチ）</h3>
+            <h3 className="text-lg font-black text-foreground">4. 特殊カスタムルール（企画マッチ）</h3>
             <p className="text-xs text-muted-strong">定期イベントや突発企画で開催される特別レギュレーション</p>
           </div>
         </div>
