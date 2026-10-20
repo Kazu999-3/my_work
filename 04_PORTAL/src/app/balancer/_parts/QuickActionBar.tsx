@@ -28,12 +28,12 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
 }) {
   return (
         <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/95 text-foreground backdrop-blur-md border border-border rounded-2xl p-2.5 px-3 sm:p-3 sm:px-5 shadow-2xl flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-primary-600" />
+              <Users className="w-4 h-4 text-primary-600 hidden sm:block" />
               <span className="text-xs text-muted font-bold hidden sm:inline">参加:</span>
               <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg whitespace-nowrap ${canBalance ? 'bg-success-100 text-success-800 border border-success-edge' : 'bg-danger-100 text-danger-800 border border-danger-edge'}`}>
-                {activeCount} / 10 人 {canBalance ? '✅' : `(あと${10 - activeCount}人)`}
+                {activeCount}/10<span className="hidden sm:inline"> 人</span> {canBalance ? '✅' : `(あと${10 - activeCount})`}
               </strong>
             </div>
             {spectatorCount > 0 && (
@@ -54,7 +54,7 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
             )}
             <Link
               href="/festival/pick"
-              className="px-2.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs border border-border transition flex items-center gap-1 cursor-pointer shrink-0"
+              className="px-2.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs border border-border transition hidden sm:flex items-center gap-1 cursor-pointer shrink-0"
               title="お祭りカスタム用のチャンピオンピック候補・出身地一覧を開く"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
