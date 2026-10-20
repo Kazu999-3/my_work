@@ -18,6 +18,8 @@ interface Row {
   lastPlayedAt: string | null;
   /** 名簿に入った日 */
   joinedAt: string | null;
+  /** これまでの出場回数 */
+  playCount: number;
   url: string;
 }
 
@@ -25,7 +27,7 @@ const DAY = 86400e3;
 
 interface NextCustom { title: string; startAt: string; messageUrl: string; entryIds: string[]; spectatorIds: string[] }
 
-type FilterKey = 'all' | 'unread' | 'needsReply' | 'newNoPlay' | 'nextSpectator' | 'nextEntry' | 'recent60' | 'silent30';
+type FilterKey = 'all' | 'unread' | 'needsReply' | 'newNoPlay' | 'lapsedRegular' | 'nextSpectator' | 'nextEntry' | 'recent60' | 'silent30';
 
 /** 定期カスタムの開始日時を「10/25（土）21:00」の形にする（日本時間） */
 function formatCustomStart(iso: string): string {
@@ -49,6 +51,20 @@ const MESSAGE_TEMPLATES: { key: string; label: string; hint: string; filter?: Fi
       '観戦だけ・1戦だけでも大歓迎です。気が向いたら、募集カードの「フル参加」「⏱️ 1戦のみ」「👀 観戦希望」のどれかを押してください👍',
       next ? `👉 ${next.messageUrl}` : '👉 <#1528646515533287497> の募集カードからエントリーできます',
       '当日の流れが分からなければ、ここに書き込んでくださいね🤝',
+    ].join('\n'),
+  },
+  {
+    key: 'lapsedRegularNudge',
+    label: 'ひさしぶりにどう？',
+    hint: '以前よく出ていたのに最近来ていない人向け。押すと一覧が「来なくなった常連」に切り替わる',
+    filter: 'lapsedRegular',
+    build: (next) => [
+      next
+        ? `👋 おひさしぶりです！ **${formatCustomStart(next.startAt)}から週末の定期カスタム**があります`
+        : '👋 おひさしぶりです！ 週末の定期カスタム（毎週土日 21:00〜）、また一緒にどうですか？',
+      '最近は1戦だけ・途中からの参加もできるようになりました。予定が合えば、募集カードのボタンを押してもらえると嬉しいです🙌',
+      next ? `👉 ${next.messageUrl}` : '👉 <#1528646515533287497> の募集カードからエントリーできます',
+      '「最近こういうところが参加しにくい」などあれば、ここに一言もらえると助かります🤝',
     ].join('\n'),
   },
 ];
@@ -113,6 +129,8 @@ export default function OnboardingChannelsPanel() {
     // 2026-10-20: 入って60日以内で、まだ一度もカスタムに出ていない人（直接声をかける対象）。
     // 直近75日に入った41人のうち出場は11人で、未出場の31人は個別案内で一度も発言していなかった
     { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => !r.lastPlayedAt && !!r.joinedAt && loadedAt - new Date(r.joinedAt).getTime() <= 60 * DAY },
+    // 2026-10-20: 以前は3回以上出ていたのに、直近30日は出ていない人（8〜9月に3回以上出た23人のうち12人が10月に未出場だった）
+    { key: 'lapsedRegular', label: '来なくなった常連（3回以上出場・30日以上出ていない）', test: (r) => (r.playCount || 0) >= 3 && !!r.lastPlayedAt && loadedAt - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
     { key: 'nextSpectator', label: '次の定期カスタム: 観戦希望', test: (r) => spectatorSet.has(r.ownerUserId) },
     { key: 'nextEntry', label: '次の定期カスタム: エントリー', test: (r) => entrySet.has(r.ownerUserId) },
     { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && loadedAt - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },

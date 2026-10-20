@@ -31,13 +31,20 @@ export async function GET(req: Request) {
             .order('created_at', { ascending: false }).order('id', { ascending: true }).range(from, to))
       : { data: [] as any[] };
     const lastPlayed = new Map<string, string>();
-    for (const p of parts || []) if (p.discord_id && !lastPlayed.has(p.discord_id)) lastPlayed.set(p.discord_id, p.created_at);
+    // 出場回数（「来なくなった常連」の絞り込み用。2026-10-20）
+    const playCount = new Map<string, number>();
+    for (const p of parts || []) {
+      if (!p.discord_id) continue;
+      if (!lastPlayed.has(p.discord_id)) lastPlayed.set(p.discord_id, p.created_at);
+      playCount.set(p.discord_id, (playCount.get(p.discord_id) || 0) + 1);
+    }
 
     const rows = channels.map((c) => ({
       ...c,
       playerName: nameOf.get(c.ownerUserId) || null,
       lastPlayedAt: lastPlayed.get(c.ownerUserId) || null,
       joinedAt: joinedOf.get(c.ownerUserId) || null,
+      playCount: playCount.get(c.ownerUserId) || 0,
     }));
     // 次の定期カスタムのエントリー者・観戦希望（フィルタ用）。読めなくても一覧は返す
     const nextCustom = await loadNextPeriodicCustomEntries().catch((e) => {
