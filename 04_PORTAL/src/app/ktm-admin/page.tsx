@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import OnboardingChannelsPanel from "./OnboardingChannelsPanel";
 import MentorSettingsSection from "./_admin/MentorSettingsSection";
+import OpsSummaryPanel from "./OpsSummaryPanel";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
-import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle } from "lucide-react";
+import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3 } from "lucide-react";
 import { useAdminRoster, type AdminMessage } from "./_admin/useAdminRoster";
 import { useRosterSync } from "./_admin/useRosterSync";
 import AdminToolbar from "./_admin/AdminToolbar";
@@ -91,12 +92,12 @@ export default function KtmAdminPage() {
   };
 
   // タブ（URLクエリ ?tab=history / ?tab=players と同期）
-  const [activeTab, setActiveTab] = useState<'players' | 'history' | 'onboarding'>('players');
+  const [activeTab, setActiveTab] = useState<'players' | 'history' | 'onboarding' | 'ops'>('players');
   useEffect(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab');
-    if (tabParam === 'history' || tabParam === 'players' || tabParam === 'onboarding') setActiveTab(tabParam);
+    if (tabParam === 'history' || tabParam === 'players' || tabParam === 'onboarding' || tabParam === 'ops') setActiveTab(tabParam);
   }, []);
-  const handleTabChange = (tab: 'players' | 'history' | 'onboarding') => {
+  const handleTabChange = (tab: 'players' | 'history' | 'onboarding' | 'ops') => {
     setActiveTab(tab);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tab);
@@ -241,9 +242,20 @@ export default function KtmAdminPage() {
           >
             <MessageCircle className="h-4 w-4" /> 個別案内
           </button>
+          <button
+            onClick={() => handleTabChange('ops')}
+            className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'ops'
+                ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5'
+                : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" /> 運営
+          </button>
         </div>
 
         {activeTab === 'history' && <MatchHistoryPanel />}
+        {activeTab === 'ops' && <OpsSummaryPanel />}
         {activeTab === 'onboarding' && (
           <div className="space-y-6">
             <OnboardingChannelsPanel />
