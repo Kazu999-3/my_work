@@ -386,7 +386,7 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
 }
 
 /**
- * 初参加者へのオンボーディングDM。
+ * 初参加者へのオンボーディング案内（2026-10-20 から DM ではなく個別案内チャンネルへ）。
  * 名簿にレーン希望が未設定のまま参加すると、チーム分けでMMR未設定扱いになり
  * バランスが崩れる。参加ボタンを押した時点で本人に案内を送って予防する。
  */
@@ -413,28 +413,20 @@ async function sendOnboardingIfNeeded(env, userId) {
     if (!p || !p.role_preferences?.primary) missing.push('・**希望レーンの設定** → `/lane` コマンド、または案内メッセージの「📍 レーン設定変更」ボタン');
     if (p && !p.ign) missing.push('・Riot IDの登録 → `/ign` コマンド（任意。ソロQ戦績と連携できます）');
 
-    const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
-      method: 'POST',
-      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipient_id: userId })
-    });
-    if (!dmRes.ok) return;
-    const dm = await dmRes.json();
-    await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        embeds: [{
-          title: '👋 KTMカスタムへの参加ありがとうございます！',
-          description: `より良いチーム分けのために、以下の設定をお願いします：\n\n${missing.join('\n')}\n\n設定しておくと、あなたの希望レーンや「希望レーンの強さ」「格上との対面」がチーム分けに反映されます。`,
-          // 0x00cfef（シアン）は `.claude/rules/ui-conventions.md` の「寒色系ネオン禁止」に反するため
-          // Hextechゴールド（#C89B3C 系）へ変更（2026-09-29）
-          color: 0xc2650f,
-          footer: { text: 'この案内は設定が完了すると表示されなくなります' }
-        }]
-      })
+    // 2026-10-20: DM ではなく本人の個別案内チャンネルへ送る（ユーザー判断）。チャンネルの見つけ方はポータル側にあるため頼む
+    const { fetchPortalAPI } = await import('../../utils/api.js');
+    await fetchPortalAPI(env, '/api/bot/member-channel-message', {
+      discordId: userId,
+      embeds: [{
+        title: '👋 KTMカスタムへの参加ありがとうございます！',
+        description: `より良いチーム分けのために、以下の設定をお願いします：\n\n${missing.join('\n')}\n\n設定しておくと、あなたの希望レーンや「希望レーンの強さ」「格上との対面」がチーム分けに反映されます。`,
+        // 0x00cfef（シアン）は `.claude/rules/ui-conventions.md` の「寒色系ネオン禁止」に反するため
+        // Hextechゴールド（#C89B3C 系）へ変更（2026-09-29）
+        color: 0xc2650f,
+        footer: { text: 'この案内は設定が完了すると表示されなくなります' }
+      }]
     });
   } catch (e) {
-    console.warn('[Onboarding] DM送信スキップ:', e?.message);
+    console.warn('[Onboarding] 個別案内チャンネルへの送信スキップ:', e?.message);
   }
 }

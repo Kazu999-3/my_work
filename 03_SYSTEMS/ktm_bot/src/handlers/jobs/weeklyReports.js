@@ -1,5 +1,5 @@
 import { fetchSupabase } from '../../utils/supabase.js';
-import { fetchWithRetry } from '../../utils/api.js';
+import { fetchPortalAPI } from '../../utils/api.js';
 import { notifyAdminError } from '../../utils/alert.js';
 
 // 個人の週間レポート配信
@@ -7,8 +7,9 @@ import { notifyAdminError } from '../../utils/alert.js';
 
 /**
  * 個人週間レポート(#84): 直近7日にKTMカスタムをプレイした人へ、
- * 「◯勝◯敗 / MMR±◯ / 最多レーン」のサマリーをDiscord DMで送る。
- * ※DMを閉じている人へは送れない（エラーはスキップ）。cronは週1のためGH側の冗長キック対象外（DM二重送信防止）。
+ * 「◯勝◯敗 / MMR±◯ / 最多レーン」のサマリーを本人の個別案内チャンネルへ送る。
+ * 2026-10-20: DM から個別案内チャンネルへ切り替えた（ユーザー判断）。チャンネルの見つけ方はポータル側にあるため頼む。
+ * 個別案内チャンネルが無い人には送らない。cronは週1のためGH側の冗長キック対象外（二重送信防止）。
  */
 export async function sendWeeklyReports(env) {
   try {
@@ -37,41 +38,31 @@ export async function sendWeeklyReports(env) {
       try {
         const topRole = Object.entries(a.roles).sort((x, y) => y[1] - x[1])[0]?.[0] || '-';
         const mmrStr = a.mmr > 0 ? `+${a.mmr}` : `${a.mmr}`;
-        // DMチャンネル作成 → 送信
-        const dmRes = await fetchWithRetry('https://discord.com/api/v10/users/@me/channels', {
-          method: 'POST',
-          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipient_id: discordId })
+        const result = await fetchPortalAPI(env, '/api/bot/member-channel-message', {
+          discordId,
+          embeds: [{
+            title: '📈 今週のKTMカスタム レポート',
+            description: `**${a.name}** さんの直近7日間のまとめです`,
+            color: a.mmr >= 0 ? 0x2ecc71 : 0xe67e22,
+            fields: [
+              { name: '戦績', value: `${a.games}戦 ${a.wins}勝${a.games - a.wins}敗（勝率${Math.round((a.wins / a.games) * 100)}%）`, inline: true },
+              { name: 'MMR変動', value: `**${mmrStr}**`, inline: true },
+              { name: '最多レーン', value: topRole, inline: true },
+            ],
+            footer: { text: 'KTM Bot | 週間レポート（毎週月曜配信）' },
+            timestamp: new Date().toISOString()
+          }]
         });
-        if (!dmRes.ok) continue;
-        const dm = await dmRes.json();
-        await fetchWithRetry(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            embeds: [{
-              title: '📈 今週のKTMカスタム レポート',
-              description: `**${a.name}** さんの直近7日間のまとめです`,
-              color: a.mmr >= 0 ? 0x2ecc71 : 0xe67e22,
-              fields: [
-                { name: '戦績', value: `${a.games}戦 ${a.wins}勝${a.games - a.wins}敗（勝率${Math.round((a.wins / a.games) * 100)}%）`, inline: true },
-                { name: 'MMR変動', value: `**${mmrStr}**`, inline: true },
-                { name: '最多レーン', value: topRole, inline: true },
-              ],
-              footer: { text: 'KTM Bot | 週間レポート（毎週月曜配信）' },
-              timestamp: new Date().toISOString()
-            }]
-          })
-        });
+        if (!result?.sent) continue;
         sent++;
         await new Promise(r => setTimeout(r, 350)); // レート配慮
       } catch (e) {
-        console.warn(`[WeeklyReport] DM失敗 (${discordId}):`, e?.message);
+        console.warn(`[WeeklyReport] 送信失敗 (${discordId}):`, e?.message);
       }
     }
     console.log(`[WeeklyReport] ${sent}/${agg.size} 人へ送信しました`);
   } catch (err) {
     console.error('[WeeklyReport] error:', err);
-    await notifyAdminError(env, err, { action: 'sendWeeklyReports(週間レポートDM)' });
+    await notifyAdminError(env, err, { action: 'sendWeeklyReports(週間レポート)' });
   }
 }
