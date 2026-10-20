@@ -5,7 +5,9 @@ import { verifyBotSecret } from '../../../../lib/botAuth';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
 import { isFirstPairing, isGraduationBonusEligible } from '../../../../lib/mentorshipRewards';
-import { sendDiscordDirectMessage, sendErrorNotification } from '../../../../lib/discordNotify';
+import { sendErrorNotification } from '../../../../lib/discordNotify';
+// 師弟の通知は DM ではなく本人の個別案内チャンネルへ送る（2026-10-20 ユーザー判断）
+import { sendToMemberChannel } from '../../../../lib/onboardingChannels';
 import { syncMentorshipDashboard, createMentorshipForumThread } from '../../../../lib/discordMentorship';
 
 export const dynamic = 'force-dynamic';
@@ -159,7 +161,7 @@ async function postToMentorshipChannel(payload: { content?: string; embeds: any[
 }
 
 /**
- * Discord への師弟ペア結成速報の通知ヘルパー（DM ＋ チャンネル通知 ＋ 専用チャットリンク）
+ * Discord への師弟ペア結成速報の通知ヘルパー（個別案内チャンネル ＋ チャンネル通知 ＋ 専用チャットリンク）
  */
 async function sendDiscordPairAnnounce(
   mentorName: string,
@@ -184,12 +186,12 @@ async function sendDiscordPairAnnounce(
     },
   };
 
-  // 1. 師匠・弟子の双方へDM送信
+  // 1. 師匠・弟子の双方の個別案内チャンネルへ送信
   if (mentorDiscordId) {
-    sendDiscordDirectMessage(mentorDiscordId, { embeds: [embed] }).catch(() => {});
+    sendToMemberChannel(mentorDiscordId, { embeds: [embed] }).catch(() => {});
   }
   if (pupilDiscordId) {
-    sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
+    sendToMemberChannel(pupilDiscordId, { embeds: [embed] }).catch(() => {});
   }
 
   // 2. #🤝師弟募集 チャンネルへもアナウンス
@@ -197,7 +199,7 @@ async function sendDiscordPairAnnounce(
 }
 
 /**
- * Discord への師弟卒業・指導完了速報の通知ヘルパー（DM ＋ #🤝師弟募集チャンネル）
+ * Discord への師弟卒業・指導完了速報の通知ヘルパー（個別案内チャンネル ＋ #🤝師弟募集チャンネル）
  */
 async function sendDiscordGraduationAnnounce(
   mentorName: string,
@@ -219,12 +221,12 @@ async function sendDiscordGraduationAnnounce(
     },
   };
 
-  // 1. 師匠・弟子へ個別祝賀DM
+  // 1. 師匠・弟子の個別案内チャンネルへ祝賀
   if (mentorDiscordId) {
-    sendDiscordDirectMessage(mentorDiscordId, { embeds: [embed] }).catch(() => {});
+    sendToMemberChannel(mentorDiscordId, { embeds: [embed] }).catch(() => {});
   }
   if (pupilDiscordId) {
-    sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
+    sendToMemberChannel(pupilDiscordId, { embeds: [embed] }).catch(() => {});
   }
 
   // 2. #🤝師弟募集 チャンネルへ
@@ -235,7 +237,7 @@ async function sendDiscordGraduationAnnounce(
 }
 
 /**
- * Discord へのオファー着信速報通知ヘルパー（DM直接通知 ＋ フォールバック）
+ * Discord へのオファー着信速報通知ヘルパー（個別案内チャンネルへの通知 ＋ フォールバック）
  */
 async function sendDiscordOfferNotification(
   fromName: string,
@@ -255,16 +257,16 @@ async function sendDiscordOfferNotification(
     },
   };
 
-  // 1. まず相手本人へBot経由でDM送信を試行
+  // 1. まず相手本人の個別案内チャンネルへ送る
   if (toDiscordId) {
-    const dmSuccess = await sendDiscordDirectMessage(toDiscordId, { embeds: [embed] });
+    const dmSuccess = await sendToMemberChannel(toDiscordId, { embeds: [embed] });
     if (dmSuccess) {
-      console.log(`[mentorship/matches] Successfully sent DM offer notification to ${toDiscordId}`);
+      console.log(`[mentorship/matches] Sent offer notification to member channel of ${toDiscordId}`);
       return;
     }
   }
 
-  // 2. DMが拒否設定等の場合は #🤝師弟募集 チャンネルへフォールバック
+  // 2. 個別案内チャンネルが無い場合は #🤝師弟募集 チャンネルへフォールバック
   await postToMentorshipChannel({
     content: toDiscordId ? `<@${toDiscordId}> 宛てに師弟オファーが届きました！` : undefined,
     embeds: [embed],
@@ -625,7 +627,7 @@ export async function POST(request: Request) {
         console.warn('[mentorship/matches] Complete bonus coin warning:', coinErr);
       }
 
-      // Discordへ卒業祝賀アナウンス送信 (#🤝師弟募集 ＆ 双方DM)
+      // Discordへ卒業祝賀アナウンス送信 (#🤝師弟募集 ＆ 双方の個別案内チャンネル)
       const meta = parseNotesMeta(match.notes);
       sendDiscordGraduationAnnounce(
         match.mentor?.player_name || '師匠',
@@ -718,7 +720,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, error: '申請が見つかりません。' }, { status: 404 });
       }
 
-      // 既に成立済みの場合は二重処理（多重DM・多重コイン付与）を完全にスキップ
+      // 既に成立済みの場合は二重処理（多重通知・多重コイン付与）を完全にスキップ
       if (match.status === 'ACTIVE') {
         return NextResponse.json({ ok: true, message: '既に師弟ペアが成立しています。' });
       }
@@ -820,7 +822,7 @@ export async function POST(request: Request) {
           .eq('id', matchId);
       }
 
-      // Discord通知を非同期送信（師匠・弟子の双方へDM + 募集チャンネル）
+      // Discord通知を非同期送信（師匠・弟子の双方の個別案内チャンネル + 募集チャンネル）
       sendDiscordPairAnnounce(
         match.mentor?.player_name || '師匠',
         match.pupil?.player_name || '弟子',

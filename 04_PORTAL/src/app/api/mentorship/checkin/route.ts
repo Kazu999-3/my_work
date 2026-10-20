@@ -8,7 +8,8 @@ import {
   encodeNotesMeta,
   MentorshipCheckin,
 } from '../matches/route';
-import { sendDiscordDirectMessage } from '../../../../lib/discordNotify';
+// 師弟の通知は DM ではなく本人の個別案内チャンネルへ送る（2026-10-20 ユーザー判断）
+import { sendToMemberChannel } from '../../../../lib/onboardingChannels';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,12 +70,12 @@ async function sendDiscordCheckinSummary(
     }
   }
 
-  // 2. スレッドがない場合は両名へDM
+  // 2. スレッドがない場合は両名の個別案内チャンネルへ
   if (mentorDiscordId) {
-    sendDiscordDirectMessage(mentorDiscordId, { embeds: [embed] }).catch(() => {});
+    sendToMemberChannel(mentorDiscordId, { embeds: [embed] }).catch(() => {});
   }
   if (pupilDiscordId) {
-    sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
+    sendToMemberChannel(pupilDiscordId, { embeds: [embed] }).catch(() => {});
   }
 }
 
@@ -192,7 +193,7 @@ export async function POST(request: Request) {
             .update({ notes: encodeNotesMeta(meta) })
             .eq('id', m.id);
 
-          // Discord専用スレッドまたはDMへ通知
+          // Discord専用スレッドまたは個別案内チャンネルへ通知
           await sendDiscordCheckinPrompt(m, triggerType, newCheckin.id);
           triggered.push(m.id);
         }
@@ -330,7 +331,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // DiscordスレッドまたはDMへ完成サマリーを投稿
+      // Discordスレッドまたは個別案内チャンネルへ完成サマリーを投稿
       await sendDiscordCheckinSummary(
         meta.threadId,
         match.mentor?.discord_id,
@@ -430,11 +431,11 @@ async function sendDiscordCheckinPrompt(
     }
   }
 
-  // 2. スレッドがない場合は両名へDM
+  // 2. スレッドがない場合は両名の個別案内チャンネルへ
   if (match.mentor?.discord_id) {
-    sendDiscordDirectMessage(match.mentor.discord_id, { embeds: [embed], components }).catch(() => {});
+    sendToMemberChannel(match.mentor.discord_id, { embeds: [embed], components }).catch(() => {});
   }
   if (match.pupil?.discord_id) {
-    sendDiscordDirectMessage(match.pupil.discord_id, { embeds: [embed], components }).catch(() => {});
+    sendToMemberChannel(match.pupil.discord_id, { embeds: [embed], components }).catch(() => {});
   }
 }
