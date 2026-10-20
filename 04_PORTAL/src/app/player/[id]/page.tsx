@@ -842,7 +842,7 @@ export default function PlayerMyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary-300/40">
       {/* 背景ネオンデコレーション */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute top-0 left-1/4 w-[min(500px,60vw)] h-[500px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
       <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
       <div className="max-w-[1600px] w-full mx-auto space-y-6">
@@ -945,7 +945,7 @@ export default function PlayerMyPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 pt-1">
                   {/* 🎮 ソロキュー情報 */}
-                  <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-start gap-1.5 gap-y-1 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs">
                     <span className="text-[10px] font-black text-secondary-400 flex items-center gap-1 shrink-0">
                       <span>🎮 ソロ:</span>
                     </span>
@@ -967,7 +967,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* ⚔️ KTMカスタム情報 */}
-                  <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-primary-950/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-primary-edge-strong/30 text-xs">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-start gap-1.5 gap-y-1 bg-primary-950/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-primary-edge-strong/30 text-xs">
                     <span className="text-[10px] font-black text-primary-400 flex items-center gap-1 shrink-0">
                       <span>⚔️ KTM:</span>
                     </span>

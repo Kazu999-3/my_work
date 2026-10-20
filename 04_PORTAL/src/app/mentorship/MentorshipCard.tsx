@@ -214,7 +214,7 @@ export function MentorshipCard({
 
           {/* 編集・削除ボタン（本人または管理者の場合） */}
           {(isMine || isAdmin) && (
-            <div className="flex items-center gap-1 bg-surface-subtle dark:bg-background p-0.5 rounded-lg border border-border dark:border-border">
+            <div className="flex items-center gap-1 bg-surface-subtle dark:bg-background p-0.5 rounded-lg border border-border dark:border-border shrink-0 whitespace-nowrap">
               {(isMine || isAdmin) && onEdit && (
                 <button
                   onClick={() => onEdit(profile)}

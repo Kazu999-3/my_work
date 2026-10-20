@@ -188,21 +188,21 @@ export default function KtmAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground-soft p-8">
+    <div className="min-h-screen bg-background text-foreground-soft p-3 sm:p-8">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Auth Bar */}
-        <div className="flex justify-between items-center bg-surface border border-border rounded-lg px-6 py-3">
+        <div className="flex justify-between items-center gap-2 bg-surface border border-border rounded-lg px-3 sm:px-6 py-3">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary-500" />
-            <span className="text-xs font-bold text-foreground">KTM 管理モード</span>
+            <span className="text-xs font-bold text-foreground whitespace-nowrap">KTM 管理モード</span>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="text-faint">
+          <div className="flex items-center gap-2 sm:gap-4 text-xs">
+            <span className="text-faint hidden sm:inline">
               ログイン中: <strong className="text-foreground font-bold">管理者</strong>
             </span>
             <button
               onClick={handleLogout}
-              className="bg-black/5 hover:bg-danger-100 hover:text-danger-700 border border-border px-3 py-1.5 rounded text-xs font-bold transition"
+              className="bg-black/5 hover:bg-danger-100 hover:text-danger-700 border border-border px-3 py-1.5 rounded text-xs font-bold transition whitespace-nowrap"
             >
               ログアウト
             </button>
@@ -213,33 +213,33 @@ export default function KtmAdminPage() {
         <div className="flex border-b border-border mb-6 overflow-x-auto">
           <button
             onClick={() => handleTabChange('players')}
-            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
+            className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'players'
                 ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5'
                 : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
-            <Users className="h-4 w-4" /> 👥 プレイヤー名簿・MMR編集 ({players.length}名)
+            <Users className="h-4 w-4" /> 名簿<span className="hidden sm:inline">・MMR編集</span> ({players.length})
           </button>
           <button
             onClick={() => handleTabChange('history')}
-            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
+            className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'history'
                 ? 'border-success-edge-strong text-success-700 bg-success-500/5'
                 : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
-            <History className="h-4 w-4" /> ⚔️ 戦績履歴・勝敗登録
+            <History className="h-4 w-4" /> 戦績<span className="hidden sm:inline">履歴・勝敗登録</span>
           </button>
           <button
             onClick={() => handleTabChange('onboarding')}
-            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap ${
+            className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'onboarding'
                 ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5'
                 : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
-            <MessageCircle className="h-4 w-4" /> 🤝 個別案内
+            <MessageCircle className="h-4 w-4" /> 個別案内
           </button>
         </div>
 

@@ -288,7 +288,7 @@ export default function OnboardingChannelsPanel() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-2.5 py-1 rounded-full border whitespace-nowrap ${filter === f.key ? 'bg-primary-500 text-white border-primary-edge-strong font-bold' : 'border-border hover:bg-black/5'}`}
+              className={`px-2.5 py-1 rounded-full border text-left max-w-full ${filter === f.key ? 'bg-primary-500 text-white border-primary-edge-strong font-bold' : 'border-border hover:bg-black/5'}`}
             >
               {f.label}（{rows.filter(f.test).length}）
             </button>
@@ -326,16 +326,16 @@ export default function OnboardingChannelsPanel() {
 
       {/* 一覧 */}
       <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-sm min-w-[720px]">
+        <table className="w-full text-sm sm:min-w-[720px]">
           <thead className="bg-black/5 text-xs text-muted-strong">
             <tr>
               <th className="p-2 w-8"></th>
               <th className="p-2 text-left">メンバー</th>
               <th className="p-2 text-left">最後の発言</th>
               <th className="p-2 text-left">状態</th>
-              <th className="p-2 text-left">話した人</th>
-              <th className="p-2 text-left">最後の試合</th>
-              <th className="p-2 text-left">入った日</th>
+              <th className="p-2 text-left hidden sm:table-cell">話した人</th>
+              <th className="p-2 text-left hidden sm:table-cell">最後の試合</th>
+              <th className="p-2 text-left hidden sm:table-cell">入った日</th>
               <th className="p-2"></th>
             </tr>
           </thead>
@@ -354,6 +354,8 @@ export default function OnboardingChannelsPanel() {
                   <td className="p-2">
                     <div className="font-bold text-foreground">{r.playerName || r.channelName}</div>
                     {r.playerName && <div className="text-[11px] text-faint">#{r.channelName}</div>}
+                    {/* スマホでは「最後の試合・入った日」の列を隠すので、名前の下にまとめて出す */}
+                    <div className="sm:hidden text-[11px] text-muted-strong">試合: {r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'} ／ 入: {r.joinedAt ? ago(r.joinedAt) : '-'}</div>
                   </td>
                   <td className="p-2 text-foreground-subtle whitespace-nowrap">{ago(r.lastMessageAt)}</td>
                   <td className="p-2">
@@ -374,11 +376,11 @@ export default function OnboardingChannelsPanel() {
                       </button>
                     )}
                   </td>
-                  <td className="p-2">
+                  <td className="p-2 hidden sm:table-cell">
                     {kind ? <span className={`text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${kind.cls}`}>{kind.text}</span> : <span className="text-faint">-</span>}
                   </td>
-                  <td className="p-2 text-muted-strong whitespace-nowrap">{r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'}</td>
-                  <td className="p-2 text-muted-strong whitespace-nowrap">{r.joinedAt ? ago(r.joinedAt) : '-'}</td>
+                  <td className="p-2 text-muted-strong whitespace-nowrap hidden sm:table-cell">{r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'}</td>
+                  <td className="p-2 text-muted-strong whitespace-nowrap hidden sm:table-cell">{r.joinedAt ? ago(r.joinedAt) : '-'}</td>
                   <td className="p-2 text-right">
                     <a href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => markRead(r.channelId)} className="inline-flex items-center gap-1 text-xs text-secondary-700 hover:underline whitespace-nowrap">
                       開く <ExternalLink className="h-3 w-3" />

@@ -801,7 +801,7 @@ function CustomRecordPageContent() {
                   const uid = `BLUE-slot-${index}`;
                   return (
                     <div key={uid} className="flex flex-col bg-surface/70 p-3 rounded-lg border border-border gap-2">
-                      <div className="flex items-center gap-2 w-full">
+                      <div className="flex flex-wrap items-center gap-2 w-full">
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
@@ -836,7 +836,7 @@ function CustomRecordPageContent() {
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex flex-wrap gap-1 justify-end items-center">
+                        <div className="flex-1 min-w-0 flex flex-wrap gap-1 justify-end items-center">
                           <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-muted-strong self-center text-xs">/</span>
                           <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
@@ -875,7 +875,7 @@ function CustomRecordPageContent() {
                   const uid = `RED-slot-${index}`;
                   return (
                     <div key={uid} className="flex flex-col bg-surface/70 p-3 rounded-lg border border-border gap-2">
-                      <div className="flex items-center gap-2 w-full">
+                      <div className="flex flex-wrap items-center gap-2 w-full">
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
@@ -910,7 +910,7 @@ function CustomRecordPageContent() {
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex flex-wrap gap-1 justify-end items-center">
+                        <div className="flex-1 min-w-0 flex flex-wrap gap-1 justify-end items-center">
                           <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-muted-strong self-center text-xs">/</span>
                           <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
