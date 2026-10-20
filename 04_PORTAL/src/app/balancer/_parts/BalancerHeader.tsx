@@ -54,9 +54,6 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, s
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {saving && <span className="flex items-center gap-1 text-primary-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
-              <Link href="/history" className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover text-foreground-soft hover:text-foreground px-2.5 py-1.5 rounded-lg font-bold transition text-xs border border-border whitespace-nowrap shrink-0" title="過去の試合結果を確認">
-                <History className="h-3.5 w-3.5 text-muted" /> 過去の試合
-              </Link>
               {isAdmin && (
                 <button
                   onClick={() => setShowAdminPanel(v => !v)}

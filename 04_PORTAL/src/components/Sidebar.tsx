@@ -33,7 +33,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
 import TaskStatusDrawer from './TaskStatusDrawer';
@@ -184,39 +183,54 @@ interface MenuItem {
   color: string;
   activeBg: string;
   adminOnly?: boolean;
+  /** メニューのまとまり。main はホーム・マイページ（スマホでは下メニューにあるのでメニュー画面には出さない） */
+  group: MenuGroupKey;
+  /** この項目を「表示中」とみなすパスの先頭（href 以外にも当てはめたい時） */
+  activePrefixes?: string[];
 }
 
-// 🌐 一般ユーザー向けメニュー（7大機能）
-const GENERAL_MENU_ITEMS: MenuItem[] = [
-  // メイン
-  { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
-  // ユーザー・師弟
-  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
-  { id: 'mentorship', label: '🎒 教えて先輩！掲示板', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
-  // 対戦・大会
-  { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
-  { id: 'festival-pick', label: '🎲 お祭りピック候補', shortLabel: 'お祭りピック', icon: Sparkles, href: '/festival/pick', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-  { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
-  // 2026-09-23: サイドメニューからは外した（バランサーの「過去の試合」ボタンから開く導線に一本化）。
-  // ページ自体は /history に残っており、一般メンバーも閲覧できる。
-  // コミュニティ・戦績
-  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
-  // ガイド
-  { id: 'guide', label: '使い方ガイド', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15' },
+type MenuGroupKey = 'main' | 'play' | 'records' | 'social' | 'help' | 'admin';
+
+// 2026-10-20 ユーザー判断でページを目的ごとに整理した（以前は8項目が同じ並びで、管理者項目も3つに分かれていた）
+const MENU_GROUPS: { key: Exclude<MenuGroupKey, 'main'>; title: string }[] = [
+  { key: 'play', title: 'カスタムで遊ぶ' },
+  { key: 'records', title: 'みんなの記録' },
+  { key: 'social', title: '交流' },
+  { key: 'help', title: '困ったとき' },
 ];
 
-// 🛡️ 管理者向け追加メニュー（大会管理・運用）。05（戦術パイロット）へのリンクはユーザー判断で 2026-10-07 に削除
-const ADMIN_EXTRA_ITEMS: MenuItem[] = [
-  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
-  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15' },
-  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
+// 🌐 一般ユーザー向けメニュー
+const GENERAL_MENU_ITEMS: MenuItem[] = [
+  { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15', group: 'main' },
+  { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15', group: 'main' },
+  // カスタムで遊ぶ（画面の上でも「チーム分け／過去の試合／お祭りピック」を切り替えられる: CustomSubNav）
+  { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15', group: 'play' },
+  { id: 'history', label: '過去の試合', shortLabel: '過去の試合', icon: History, href: '/history', color: 'text-success-600', activeBg: 'bg-success-500/15', group: 'play' },
+  { id: 'festival-pick', label: 'お祭りピック', shortLabel: 'お祭りピック', icon: Sparkles, href: '/festival/pick', color: 'text-amber-500', activeBg: 'bg-amber-500/15', group: 'play' },
+  // みんなの記録
+  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'records' },
+  { id: 'casino', label: '勝敗予想', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'records' },
+  // 交流
+  { id: 'mentorship', label: '教えて先輩', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15', group: 'social' },
+  // 困ったとき
+  { id: 'guide', label: '使い方ガイド', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', group: 'help' },
 ];
+
+// 🛡️ 管理者向け。外部分析・仕様ガイドは管理画面のタブ・リンクから開く（2026-10-20 に1項目へまとめた）
+const ADMIN_EXTRA_ITEMS: MenuItem[] = [
+  { id: 'ktm-admin', label: '管理画面', shortLabel: '管理画面', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'admin', activePrefixes: ['/analyzer', '/admin'] },
+];
+
+function isItemActive(item: MenuItem, pathname: string): boolean {
+  if (pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))) return true;
+  if (item.id === 'mypage' && pathname.startsWith('/player/')) return true;
+  return (item.activePrefixes || []).some((p) => pathname.startsWith(p));
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useCurrentUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'general' | 'admin'>('general');
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
@@ -232,10 +246,6 @@ export default function Sidebar() {
     const savedCollapsed = localStorage.getItem('sovereign_sidebar_collapsed');
     if (savedCollapsed === 'true') {
       setIsCollapsed(true);
-    }
-    const savedTab = localStorage.getItem('sovereign_sidebar_tab') as 'general' | 'admin';
-    if (savedTab) {
-      setActiveTab(savedTab);
     }
 
     // 厳格な管理者判定（Discord ID または API検証結果）
@@ -290,22 +300,19 @@ export default function Sidebar() {
     localStorage.setItem('sovereign_sidebar_collapsed', String(nextState));
   };
 
-  const handleTabChange = (tab: 'general' | 'admin') => {
-    setActiveTab(tab);
-    localStorage.setItem('sovereign_sidebar_tab', tab);
-  };
+  // デスクトップのメニュー: ホーム・マイページの下に、まとまりごとの見出しを付けて並べる
+  const desktopSections: { title: string | null; items: MenuItem[] }[] = [
+    { title: null, items: GENERAL_MENU_ITEMS.filter((i) => i.group === 'main') },
+    ...MENU_GROUPS.map((g) => ({ title: g.title, items: GENERAL_MENU_ITEMS.filter((i) => i.group === g.key) })),
+    ...(isAdminUser ? [{ title: '管理者', items: ADMIN_EXTRA_ITEMS }] : []),
+  ];
 
-  // デスクトップメニュー項目
-  const desktopItems = isAdminUser
-    ? (activeTab === 'admin' ? [...GENERAL_MENU_ITEMS, ...ADMIN_EXTRA_ITEMS] : GENERAL_MENU_ITEMS)
-    : GENERAL_MENU_ITEMS;
-
-  // スマホ用ボトムバー固定項目（主要画面）
+  // スマホ用ボトムバー（2026-10-20 ユーザー判断: ホーム／カスタム／教えて先輩／マイページ／メニュー）
   const mobileBottomBarItems: MenuItem[] = [
-    { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
-    { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
-    { id: 'mentorship', label: '教えて先輩', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
-    { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
+    { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15', group: 'main' },
+    { id: 'custom', label: 'カスタム', shortLabel: 'カスタム', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15', group: 'play', activePrefixes: ['/history', '/festival'] },
+    { id: 'mentorship', label: '教えて先輩', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15', group: 'social' },
+    { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15', group: 'main' },
   ];
 
   return (
@@ -333,36 +340,20 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* 🛡️ 管理者の場合のみ表示されるタブ切り替え */}
-        {isAdminUser && !isCollapsed && (
-          <div className="p-3 border-b border-border/80 dark:border-border">
-            <div className="flex bg-surface-hover/60 dark:bg-surface p-1 rounded-xl">
-              <button
-                onClick={() => handleTabChange('general')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'general' ? 'bg-surface dark:bg-background text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
-                }`}
-              >
-                一般
-              </button>
-              <button
-                onClick={() => handleTabChange('admin')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'admin' ? 'bg-surface dark:bg-background text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
-                }`}
-              >
-                管理者
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* メニューリスト */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          {desktopItems.map((item: MenuItem) => {
+          {desktopSections.map((section, si) => (
+            <React.Fragment key={section.title || 'main'}>
+              {section.title && !isCollapsed && (
+                <div className={`px-3 pb-1 text-[10px] font-extrabold tracking-wider ${section.title === '管理者' ? 'text-primary-500' : 'text-faint'} ${si > 0 ? 'pt-3' : ''}`}>
+                  {section.title}
+                </div>
+              )}
+              {section.title && isCollapsed && si > 0 && <div className="my-2 border-t border-border/80" />}
+          {section.items.map((item: MenuItem) => {
             const Icon = item.icon;
             const itemHref = resolveItemHref(item);
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) || (item.id === 'mypage' && pathname.startsWith('/player/'));
+            const isActive = isItemActive(item, pathname);
             const isMentorship = item.id === 'mentorship';
 
             return (
@@ -397,6 +388,8 @@ export default function Sidebar() {
               </React.Fragment>
             );
           })}
+            </React.Fragment>
+          ))}
         </div>
 
         {/* 下部ウィジェット */}
@@ -411,7 +404,6 @@ export default function Sidebar() {
             <>
               <TaskStatusDrawer collapsed={isCollapsed} />
               <NotificationBell collapsed={isCollapsed} />
-              <FavoritesPanel isCollapsed={isCollapsed} />
               <PushOptIn collapsed={isCollapsed} />
             </>
           )}
@@ -422,12 +414,12 @@ export default function Sidebar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 dark:bg-background/95 backdrop-blur-md border-t border-border dark:border-border z-40 px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
         {mobileBottomBarItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isActive = isItemActive(item, pathname);
           const isMentorship = item.id === 'mentorship';
           return (
             <Link
               key={item.id}
-              href={item.href}
+              href={resolveItemHref(item)}
               className={`flex flex-col items-center justify-center flex-1 py-1 rounded-xl transition-all duration-150 touch-manipulation select-none ${
                 isActive
                   ? `${item.color} font-black scale-105`
@@ -498,41 +490,19 @@ export default function Sidebar() {
               <UserAuthWidget inDrawer />
             </div>
 
-            {/* 🛡️ 管理者の場合のみ表示する切り替えスイッチ */}
-            {isAdminUser && (
-              <div className="mb-4 bg-surface-hover/60 dark:bg-surface p-1 rounded-xl flex">
-                <button
-                  onClick={() => handleTabChange('general')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                    activeTab === 'general' ? 'bg-surface dark:bg-background text-foreground dark:text-white shadow-sm' : 'text-muted'
-                  }`}
-                >
-                  一般メニュー
-                </button>
-                <button
-                  onClick={() => handleTabChange('admin')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-                    activeTab === 'admin' ? 'bg-surface dark:bg-background text-primary-600 dark:text-primary-400 shadow-sm' : 'text-muted'
-                  }`}
-                >
-                  <Shield size={13} />
-                  <span>管理者専用</span>
-                </button>
-              </div>
-            )}
-
             {/* 全機能メニュー一覧 */}
             <div className="space-y-4">
-              {/* 一般機能セクション */}
-              <div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-faint mb-2 px-1">
-                  メイン機能
+              {/* まとまりごとのセクション（ホーム・マイページは下メニューにあるので出さない） */}
+              {MENU_GROUPS.map((g) => (
+              <div key={g.key}>
+                <div className="text-[11px] font-extrabold tracking-wider text-faint mb-2 px-1">
+                  {g.title}
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {GENERAL_MENU_ITEMS.map((item) => {
+                  {GENERAL_MENU_ITEMS.filter((item) => item.group === g.key).map((item) => {
                     const Icon = item.icon;
                     const itemHref = resolveItemHref(item);
-                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) || (item.id === 'mypage' && pathname.startsWith('/player/'));
+                    const isActive = isItemActive(item, pathname);
                     const isMentorship = item.id === 'mentorship';
                     return (
                       <Link
@@ -562,18 +532,19 @@ export default function Sidebar() {
                   })}
                 </div>
               </div>
+              ))}
 
               {/* 🛡️ 管理者専用セクション (管理者かつAdminタブ選択時のみ表示) */}
-              {isAdminUser && activeTab === 'admin' && (
+              {isAdminUser && (
                 <div className="pt-2 border-t border-border dark:border-border">
                   <div className="text-[11px] font-extrabold uppercase tracking-wider text-primary-500 dark:text-primary-400 mb-2 px-1 flex items-center gap-1">
                     <Shield size={12} />
-                    <span>管理者コントロール</span>
+                    <span>管理者</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     {ADMIN_EXTRA_ITEMS.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                      const isActive = isItemActive(item, pathname);
                       return (
                         <Link
                           key={item.id}

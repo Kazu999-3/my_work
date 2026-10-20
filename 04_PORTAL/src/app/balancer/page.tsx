@@ -23,6 +23,7 @@ import GapDiagnosisPanel from "./_parts/GapDiagnosisPanel";
 import TableSplitPanel from "./_parts/TableSplitPanel";
 import PlayerListTable from "./_parts/PlayerListTable";
 import QuickActionBar from "./_parts/QuickActionBar";
+import CustomSubNav from "../../components/CustomSubNav";
 
 // ── 遅延読込 ───────────────────────────────────────────────────────
 // いずれも「常に表示されるわけではない」ものを、必要になるまで読み込まない。
@@ -280,6 +281,7 @@ export default function BalancerPage() {
   if (modeTab === 'aram_rotation') {
     return (
       <div className="min-h-screen bg-background text-foreground-soft p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-6">
+        <CustomSubNav />
         <ModeTabBar modeTab={modeTab} setModeTab={setModeTab} />
         <AramRotationPanel availablePlayers={players} isAdmin={isAdmin} />
       </div>
@@ -288,6 +290,7 @@ export default function BalancerPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground-soft p-4 pb-28 md:p-8 md:pb-28 lg:p-10 lg:pb-28 max-w-[1680px] w-full mx-auto space-y-6">
+      <CustomSubNav />
       <ModeTabBar modeTab={modeTab} setModeTab={setModeTab} />
       <UsageGuide />
 

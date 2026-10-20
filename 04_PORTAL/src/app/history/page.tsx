@@ -3,21 +3,16 @@
 import React from 'react';
 import MatchHistoryPanel from '../ktm-admin/MatchHistoryPanel';
 import Link from 'next/link';
-import { Trophy, ArrowLeft } from 'lucide-react';
+import { Trophy } from 'lucide-react';
+import CustomSubNav from '../../components/CustomSubNav';
 
 export default function HistoryPage() {
   return (
     <div className="min-h-screen bg-background text-foreground py-6 md:py-10 px-4 sm:px-6 lg:px-10">
       <div className="max-w-[1400px] w-full mx-auto space-y-6">
-        {/* ナビゲーション */}
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/balancer"
-            className="inline-flex items-center gap-2 text-xs font-bold text-muted hover:text-primary-700 transition cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>バランサーへ戻る</span>
-          </Link>
+        {/* カスタムの画面の切り替え（2026-10-20） */}
+        <CustomSubNav />
+        <div className="flex items-center justify-end gap-4">
           <div className="flex items-center gap-2">
             <Link
               href="/leaderboard"

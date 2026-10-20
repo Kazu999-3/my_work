@@ -36,6 +36,7 @@ import {
   Flame,
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
+import CustomSubNav from "../../../components/CustomSubNav";
 
 type ViewMode = "region" | "role" | "class" | "theme" | "all";
 
@@ -224,6 +225,7 @@ export default function FestivalPickPage() {
     <div className="min-h-screen bg-background text-foreground p-3 sm:p-6 pb-28">
       {/* ── ヘッダー ── */}
       <div className="max-w-7xl mx-auto flex flex-col gap-4 mb-6">
+        <CustomSubNav />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">

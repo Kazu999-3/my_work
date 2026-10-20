@@ -54,7 +54,7 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status: 401 });
 
   try {
-    const [runsRes, playersRes, partsRes, matchesRes] = await Promise.all([
+    const [runsRes, playersRes, partsRes, matchesRes, recruitRes] = await Promise.all([
       supabase
         .from('bot_cron_runs')
         .select('id, job, source, status, detail, started_at, finished_at')
@@ -67,6 +67,12 @@ export async function GET(req: Request) {
         supabase.from('ktm_match_participants').select('player_name, match_id').order('id').range(from, to)
       ),
       fetchAllRows((from, to) => supabase.from('ktm_matches').select('id, created_at').order('id').range(from, to)),
+      // カスタム募集の参加・辞退の記録（Bot が書く。以前は 05 の管理画面でしか見られなかった）
+      supabase
+        .from('recruitment_activity_logs')
+        .select('id, recruitment_type, user_name, action, style, created_at')
+        .order('created_at', { ascending: false })
+        .limit(40),
     ]);
     if (playersRes.error) throw playersRes.error;
     if (partsRes.error) throw partsRes.error;
@@ -152,6 +158,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       botRuns: runsRes.error ? [] : runsRes.data || [],
       botRunsError: runsRes.error?.message || null,
+      recruitLogs: recruitRes.error ? [] : recruitRes.data || [],
       weeks: weeks.map((w) => ({
         label: w.label,
         matches: w.matches.size,

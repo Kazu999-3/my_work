@@ -1132,16 +1132,6 @@ function CustomRecordPageContent() {
                 <span className="text-primary-200 group-hover:translate-x-1 transition-transform">→</span>
               </Link>
 
-              <Link
-                href="/coach?tab=postgame"
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-black text-xs sm:text-sm shadow-md transition group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">👑</span>
-                  <span>1分振り返り ＆ 集団戦ディープアナリティクス</span>
-                </div>
-                <span className="text-faint group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
 
               <Link
                 href="/balancer"

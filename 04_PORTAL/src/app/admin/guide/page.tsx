@@ -44,22 +44,6 @@ export default function AdminGuidePage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap md:flex-col gap-2 shrink-0">
-            <Link
-              href="/admin/knowledge"
-              className="px-4 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2"
-            >
-              <Sparkles size={14} />
-              <span>📥 戦術取り込みを開く</span>
-            </Link>
-            <Link
-              href="/champions"
-              className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-bold text-xs transition-all border border-border flex items-center justify-center gap-2"
-            >
-              <BookOpen size={14} />
-              <span>👑 チャンピオン辞典</span>
-            </Link>
-          </div>
         </div>
 
         {/* タブ切り替えバー */}
@@ -429,17 +413,17 @@ export default function AdminGuidePage() {
                 <li>
                   <strong>システム運用ダッシュボード確認</strong>:
                   <br />
-                  <Link href="/admin/dashboard" className="text-primary-700 underline font-bold">ダッシュボード</Link> で「ALL GREEN」になっているか、要対応タスクが無いかを見る。
+                  <strong>05 の運用ダッシュボード</strong>で「ALL GREEN」になっているか、要対応タスクが無いかを見る。
                 </li>
                 <li>
                   <strong>承認待ちナレッジの処理</strong>:
                   <br />
-                  <Link href="/admin/knowledge?tab=pending" className="text-primary-700 underline font-bold">戦術取り込み ＞ 承認待ち</Link> で「⚡ 全件一括承認＆マージ」を実行。
+                  <strong>05 の記事承認画面</strong>で承認を進める。
                 </li>
                 <li>
                   <strong>辞典ヘルスチェック</strong>:
                   <br />
-                  <Link href="/champions?scope=health" className="text-primary-700 underline font-bold">辞典ヘルス</Link> でパッチ更新に伴う鮮度低下や重複知見が無いかを確認。
+                  <strong>05 の辞典ヘルス</strong>でパッチ更新に伴う鮮度低下や重複知見が無いかを確認。
                 </li>
               </ol>
             </div>
@@ -489,39 +473,6 @@ export default function AdminGuidePage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-          <Link
-            href="/admin/knowledge"
-            className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
-          >
-            <span>📥 戦術取り込み</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
-          </Link>
-
-          <Link
-            href="/champions"
-            className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
-          >
-            <span>👑 チャンピオン辞典</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
-          </Link>
-
-          <Link
-            href="/champions?scope=health"
-            className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
-          >
-            <span>🩺 辞典ヘルス</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
-          </Link>
-
-          <Link
-            href="/admin/dashboard"
-            className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
-          >
-            <span>📊 運用ダッシュボード</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
-          </Link>
-        </div>
       </footer>
     </div>
   );
