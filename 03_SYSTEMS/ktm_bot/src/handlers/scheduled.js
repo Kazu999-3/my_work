@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { fetchSupabase } from '../utils/supabase.js';
 import { fetchWithRetry } from '../utils/api.js';
 import { sendEventUsersNotification, checkCustomStatusAt2000 } from './jobs/eventNotify.js';
 import { cleanupStaleAdhocRecruitments } from './jobs/maintenance.js';
@@ -10,7 +11,53 @@ import { sendWeeklyReports } from './jobs/weeklyReports.js';
 export { cleanupOldReminderMessages } from './jobs/periodicCards.js';
 export { checkCustomStatusAt2000 } from './jobs/eventNotify.js';
 
+/**
+ * 定期実行がどの仕事か（記録用）。分岐の条件は下の runScheduledJob と同じ
+ */
+function scheduledJobName(cronExpression, mode) {
+  if (cronExpression.includes("0 3 * * 4") || mode === "weekly_recruit") return "weekly_recruit";
+  if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") return "weekly_report";
+  if (cronExpression.startsWith("0 11 ") || mode === "check_2000") return "check_2000";
+  if (mode === "event_notify" || cronExpression.includes("0 10 * * 6") || cronExpression.startsWith("0 8 ")) return "event_notify";
+  return mode || cronExpression || "unknown";
+}
+
+/**
+ * 定期実行の記録（bot_cron_runs、migration 115）。2026-10-20 追加。
+ * 以前は記録が無く、Cloudflare の定期実行が空振りしても後から確かめられなかった。
+ * Supabase の pg_cron がこの記録を見て、本命が動いていなかった時だけポータル経由で手動実行を呼ぶ（保険）。
+ * 記録に失敗しても本来の処理は止めない。
+ */
+async function recordCronRun(env, row, id = null) {
+  try {
+    if (id) {
+      await fetchSupabase(env, 'bot_cron_runs', `id=eq.${id}`, 'PATCH', row);
+      return id;
+    }
+    const res = await fetchSupabase(env, 'bot_cron_runs', '', 'POST', row);
+    return Array.isArray(res) && res[0]?.id ? res[0].id : null;
+  } catch (e) {
+    console.warn('[Scheduled] 定期実行の記録に失敗（処理は続行）:', e?.message || e);
+    return null;
+  }
+}
+
 export async function handleScheduledEvent(event, env, ctx) {
+  const cronExpression = (event.cron || "").trim();
+  const mode = event.mode || "";
+  const job = scheduledJobName(cronExpression, mode);
+  const source = cronExpression === "manual" ? (event.source || "manual") : "cloudflare";
+  const runId = await recordCronRun(env, { job, source, status: 'running', cron: cronExpression || null, mode: mode || null });
+  try {
+    await runScheduledJob(event, env, ctx);
+    await recordCronRun(env, { status: 'success', finished_at: new Date().toISOString() }, runId);
+  } catch (err) {
+    await recordCronRun(env, { status: 'error', finished_at: new Date().toISOString(), detail: { message: String(err?.message || err).slice(0, 500) } }, runId);
+    throw err;
+  }
+}
+
+async function runScheduledJob(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
   const cronExpression = (event.cron || "").trim();
   const mode = event.mode || "";

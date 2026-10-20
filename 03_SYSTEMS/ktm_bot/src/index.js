@@ -86,18 +86,22 @@ export default {
     // 手動で Scheduled Event をキックする管理者用エンドポイント
     if (url.pathname === '/trigger-scheduled' && request.method === 'GET') {
       const authKey = url.searchParams.get('key');
-      const expectedSecret = env.INTERNAL_GAS_SECRET;
-      if (!expectedSecret) {
-        console.error("INTERNAL_GAS_SECRET is not configured; rejecting request.");
+      // 2026-10-20: 定期実行の保険（Supabase の pg_cron → ポータル → ここ）専用の合言葉 BOT_TRIGGER_KEY も受け付ける。
+      // INTERNAL_GAS_SECRET は GAS 連携でも使っているため、変えずに別の合言葉を足した
+      const acceptedKeys = [env.INTERNAL_GAS_SECRET, env.BOT_TRIGGER_KEY].filter(Boolean);
+      if (acceptedKeys.length === 0) {
+        console.error("INTERNAL_GAS_SECRET / BOT_TRIGGER_KEY is not configured; rejecting request.");
         return new Response('Unauthorized', { status: 401 });
       }
-      
-      if (authKey !== expectedSecret) {
-        console.error(`Unauthorized trigger attempt: key=${authKey}`);
+
+      if (!authKey || !acceptedKeys.includes(authKey)) {
+        console.error('Unauthorized trigger attempt');
         return new Response('Unauthorized', { status: 401 });
       }
 
       const mode = url.searchParams.get('mode') || "";
+      // どこから呼ばれたか（定期実行の記録に残す）。pg_cron の保険は source=pg_cron を付けて呼ぶ
+      const source = (url.searchParams.get('source') || 'manual').slice(0, 20);
 
       // ── アラート経路の自己診断 (2026-09-29追加) ──────────────────────────
       // エラー通知は「壊れていても誰も気づけない」のが最大の弱点。
@@ -128,7 +132,7 @@ export default {
       }
 
       try {
-        await handleScheduledEvent({ cron: "manual", mode }, { ...env, DISCORD_TOKEN }, ctx);
+        await handleScheduledEvent({ cron: "manual", mode, source }, { ...env, DISCORD_TOKEN }, ctx);
         return new Response(`Scheduled event triggered successfully (mode: ${mode})`, { status: 200 });
       } catch (e) {
         console.error("Manual trigger error:", e);
