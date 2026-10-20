@@ -178,7 +178,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       warningPrefix =
         `⚠️【連投注意】\n` +
         `このペアには ${offerDate.text} (${offerDate.relative}) に送信済みです。\n` +
-        `短期間での再送信（重複DM）となりますが、本当に送信しますか？\n\n`;
+        `短期間での再送信（同じ案内の2通目）となりますが、本当に送信しますか？\n\n`;
     }
 
     const confirmMsg =
@@ -186,7 +186,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       `【お見合い案内を送信】\n\n` +
       `先輩: ${proposal.mentor.name} (${proposal.mentor.rank})\n` +
       `後輩: ${proposal.pupil.name} (${proposal.pupil.rank})\n\n` +
-      `双方向へお見合い案内（DM）を送信しますか？\n` +
+      `後輩の個別案内チャンネルへお見合い案内を送信しますか？\n` +
       `※見送った場合でも相手には一切通知されません。`;
 
     if (!confirm(confirmMsg)) return;
@@ -205,7 +205,8 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       });
       const data = await res.json();
       if (data.ok) {
-        toast.success(`💌 ${proposal.pupil.name} さんと ${proposal.mentor.name} さんへお見合い便を届けました！`);
+        if (data.pupilDmSent) toast.success(`💌 ${proposal.pupil.name} さんの個別案内チャンネルへお見合い便を届けました！`);
+        else toast.error(`${proposal.pupil.name} さんに個別案内チャンネルが無いため、届いていません（お見合いの記録は保存済み）`);
         const nowIso = new Date().toISOString();
         setProposals((prev) =>
           prev.map((p) =>
@@ -230,7 +231,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       warningPrefix =
         `⚠️【連投注意】\n` +
         `この後輩（${batch.pupil.name} さん）には ${offerDate.text} (${offerDate.relative}) に送信済みです。\n` +
-        `短期間での再送信（重複DM）となりますが、本当に送信しますか？\n\n`;
+        `短期間での再送信（同じ案内の2通目）となりますが、本当に送信しますか？\n\n`;
     }
 
     const mentorNames = batch.mentors.map((m, i) => `${i + 1}. ${m.name} (${m.lanes.join('/')} / ★${m.matchScore}%)`).join('\n');
@@ -239,7 +240,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       `【まとめ便（パターンA）を送信】\n\n` +
       `後輩: ${batch.pupil.name} さん (${batch.pupil.rank} / ${batch.pupil.primaryLane})\n\n` +
       `ご紹介する先輩（${batch.mentors.length}名）:\n${mentorNames}\n\n` +
-      `上記をまとめた1通のDMを後輩へ送信しますか？\n` +
+      `上記をまとめた1通を、後輩の個別案内チャンネルへ送信しますか？\n` +
       `※見送った場合でも相手には一切通知されません。`;
 
     if (!confirm(confirmMsg)) return;
@@ -256,7 +257,8 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       });
       const data = await res.json();
       if (data.ok) {
-        toast.success(`💌 ${batch.pupil.name} さんへ先輩${batch.mentors.length}名のまとめ便を届けました！`);
+        if (data.pupilDmSent) toast.success(`💌 ${batch.pupil.name} さんの個別案内チャンネルへ、先輩${batch.mentors.length}名のまとめ便を届けました！`);
+        else toast.error(`${batch.pupil.name} さんに個別案内チャンネルが無いため、届いていません（お見合いの記録は保存済み）`);
         const nowIso = new Date().toISOString();
         setBatches((prev) =>
           prev.map((b) =>

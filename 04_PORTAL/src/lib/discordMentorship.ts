@@ -459,7 +459,7 @@ export async function notifyAiMentorshipMatch(params: {
         },
       ],
       footer: {
-        text: 'KTM AI Matchmaker | ポータルからオファーを送ると相手に直接DMが届きます',
+        text: 'KTM AI Matchmaker | ポータルからオファーを送ると、相手の個別案内チャンネルに届きます',
       },
     };
 

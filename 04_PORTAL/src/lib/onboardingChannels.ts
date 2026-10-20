@@ -175,6 +175,40 @@ export async function broadcastToOnboardingChannels(
   return { sent, failed };
 }
 
+/**
+ * 本人の個別案内チャンネルへ、メンション付きで1件送る（その人だけ通知が鳴る）。2026-10-20
+ * 師弟のお見合い便は DM で送っていたが、ユーザー判断で個別チャンネルへ切り替えた（DM は届いたか分からず、
+ * 運営側も後から見返せないため）。チャンネルが無い人には送らず false を返す（DM には切り替えない）。
+ */
+export async function sendToMemberChannel(
+  discordId: string,
+  payload: { content?: string; embeds?: any[]; components?: any[] }
+): Promise<boolean> {
+  if (!discordId) return false;
+  try {
+    const channel = (await listOnboardingChannels()).find((c) => c.userId === discordId);
+    if (!channel) {
+      console.warn(`[onboardingChannels] ${discordId} の個別案内チャンネルが無いため送れませんでした`);
+      return false;
+    }
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${channel.channelId}/messages`, {
+      method: 'POST',
+      headers: botHeaders(),
+      body: JSON.stringify({
+        content: [`<@${discordId}>`, payload.content].filter(Boolean).join('\n'),
+        embeds: payload.embeds,
+        components: payload.components,
+        allowed_mentions: { users: [discordId] },
+      }),
+    });
+    if (!res.ok) console.warn(`[onboardingChannels] 個別案内チャンネルへの送信に失敗 (${res.status})`);
+    return res.ok;
+  } catch (e) {
+    console.warn('[onboardingChannels] 個別案内チャンネルへの送信で例外:', e);
+    return false;
+  }
+}
+
 /** 管理画面の「開く」を押した時点の最新メッセージを既読にする */
 export async function markOnboardingChannelRead(channelId: string): Promise<void> {
   const { data } = await supabase.from('onboarding_channel_state').select('last_message_id').eq('channel_id', channelId).maybeSingle();

@@ -5,6 +5,7 @@ import MatchHistoryPanel from "./MatchHistoryPanel";
 import Link from "next/link";
 import OnboardingChannelsPanel from "./OnboardingChannelsPanel";
 import MentorSettingsSection from "./_admin/MentorSettingsSection";
+import MatchmakerSection from "./_admin/MatchmakerSection";
 import OpsSummaryPanel from "./OpsSummaryPanel";
 import PlayerAnalyzerPage from "../analyzer/page";
 import ProfileModal from "./ProfileModal";
@@ -275,6 +276,7 @@ export default function KtmAdminPage() {
         {activeTab === 'onboarding' && (
           <div className="space-y-6">
             <OnboardingChannelsPanel />
+            <MatchmakerSection />
             <MentorSettingsSection players={players} />
           </div>
         )}

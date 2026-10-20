@@ -3,7 +3,8 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { generateSecretMatchmakerPairs, generateSecretMatchmakerBatches, SecretMatchProposal, SecretMatchBatchProposal } from '../../../../lib/mentorshipMatchmaker';
-import { sendDiscordDirectMessage } from '../../../../lib/discordNotify';
+// お見合い便は DM ではなく本人の個別案内チャンネルへ送る（2026-10-20 ユーザー判断）
+import { sendToMemberChannel } from '../../../../lib/onboardingChannels';
 import { createMentorshipForumThread, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 
@@ -40,7 +41,7 @@ async function resolveProfileId(
 }
 
 /**
- * 【後輩ファースト】後輩が「話す」を選んだ際、指名された先輩へリクエストDMを送信
+ * 【後輩ファースト】後輩が「話す」を選んだ際、指名された先輩へリクエストを送信
  */
 async function sendMentorRequestDm(params: {
   matchId: string;
@@ -92,7 +93,7 @@ async function sendMentorRequestDm(params: {
   ];
 
   try {
-    return await sendDiscordDirectMessage(mentorDiscordId, {
+    return await sendToMemberChannel(mentorDiscordId, {
       embeds: [mentorEmbed],
       components: mentorComponents,
     });
@@ -106,7 +107,7 @@ async function sendMentorRequestDm(params: {
  * 共通お見合い回答ハンドラ（Web / Discord Bot 共通）
  * 1. プロフィール更新（弟子: MATCHED / 師匠: 枠数チェック）
  * 2. コイン付与 (+300コイン)
- * 3. 専用スレッド作成 & 双方DM通知
+ * 3. 専用スレッド作成 & 双方の個別案内チャンネルへ通知
  * 4. 同一まとめ便の他先輩オファーの自動クリーンアップ
  * 5. 募集ダッシュボード同期
  */
@@ -334,7 +335,7 @@ async function executeOfferResponse(params: {
       console.warn('[matchmaker] Failed to create forum thread:', tErr);
     }
 
-    // ①-e 双方へマッチング成立通知DMを送信
+    // ①-e 双方の個別案内チャンネルへマッチング成立を通知
     const notifyContent =
       `🎉 **【お見合い成立！】**\n` +
       `双方が「話してみたい」を選択されたため、マッチングが成立しました！✨\n` +
@@ -342,8 +343,8 @@ async function executeOfferResponse(params: {
       `お互いに挨拶や質問をしてみてくださいね！\n` +
       `（成立ボーナス **+300コイン** を獲得しました！🪙）`;
 
-    await sendDiscordDirectMessage(match.mentor_discord_id, { content: notifyContent });
-    await sendDiscordDirectMessage(match.pupil_discord_id, { content: notifyContent });
+    await sendToMemberChannel(match.mentor_discord_id, { content: notifyContent });
+    await sendToMemberChannel(match.pupil_discord_id, { content: notifyContent });
 
     // ①-f 募集ダッシュボード同期
     syncMentorshipDashboard().catch(() => {});
@@ -392,7 +393,7 @@ async function executeOfferResponse(params: {
       })
       .eq('id', matchId);
 
-    // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストDMを送信
+    // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストを送信
     if (isPupil && match.mentor_discord_id && notes.mentorStatus !== 'ACCEPTED') {
       await sendMentorRequestDm({
         matchId,
@@ -588,7 +589,7 @@ export async function POST(req: Request) {
         matchId = inserted.id;
       }
 
-      // 后輩側へDM送信
+      // 後輩の個別案内チャンネルへ送信
       let pupilDmSent = false;
       if (sendToPupil && pupilDiscordId) {
         const pupilEmbed = {
@@ -613,12 +614,12 @@ export async function POST(req: Request) {
           },
         };
 
-        pupilDmSent = await sendDiscordDirectMessage(pupilDiscordId, {
+        pupilDmSent = await sendToMemberChannel(pupilDiscordId, {
           embeds: [pupilEmbed],
         });
       }
 
-      // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストDMを送信するため、初期送信は行わない
+      // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストを送信するため、初期送信は行わない
       const mentorDmSent = false;
 
       return NextResponse.json({
@@ -710,7 +711,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'マッチング情報の保存に失敗しました' }, { status: 500 });
       }
 
-      // 後輩宛てDMの作成（パターンA: 2〜3名並列Embed）
+      // 後輩宛ての案内の作成（パターンA: 2〜3名並列Embed）
       let pupilDmSent = false;
       if (pupil.discordId && createdMatches.length > 0) {
         const mentorBlocks = createdMatches.map((cm, idx) => {
@@ -773,7 +774,7 @@ export async function POST(req: Request) {
           ],
         };
 
-        pupilDmSent = await sendDiscordDirectMessage(pupil.discordId, {
+        pupilDmSent = await sendToMemberChannel(pupil.discordId, {
           embeds: [pupilEmbed],
           components: [
             { type: 1, components: mentorButtons },
@@ -782,7 +783,7 @@ export async function POST(req: Request) {
         });
       }
 
-      // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストDMを送信するため、初期一斉送信は行わない
+      // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストを送信するため、初期一斉送信は行わない
 
       return NextResponse.json({
         ok: true,
