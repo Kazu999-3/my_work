@@ -549,7 +549,7 @@ export default function Sidebar() {
                           <Icon size={18} className={item.color} />
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-xs truncate">{item.label}</span>
+                          <span className="text-xs leading-snug line-clamp-2 break-words">{item.label}</span>
                           {isMentorship && mentorshipCount > 0 && (
                             <span className="text-[10px] text-success-600 dark:text-success-400 font-black flex items-center gap-1 mt-0.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
@@ -588,7 +588,7 @@ export default function Sidebar() {
                           <div className={`p-1.5 rounded-xl ${item.activeBg}`}>
                             <Icon size={18} className={item.color} />
                           </div>
-                          <span className="text-xs truncate">{item.label}</span>
+                          <span className="text-xs leading-snug line-clamp-2 break-words">{item.label}</span>
                         </Link>
                       );
                     })}

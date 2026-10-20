@@ -287,7 +287,7 @@ export default function BalancerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground-soft p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-6">
+    <div className="min-h-screen bg-background text-foreground-soft p-4 pb-28 md:p-8 md:pb-28 lg:p-10 lg:pb-28 max-w-[1680px] w-full mx-auto space-y-6">
       <ModeTabBar modeTab={modeTab} setModeTab={setModeTab} />
       <UsageGuide />
 

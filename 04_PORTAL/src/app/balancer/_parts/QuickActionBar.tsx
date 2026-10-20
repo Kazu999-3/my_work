@@ -27,12 +27,12 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
   canBalance: boolean;
 }) {
   return (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/95 text-foreground backdrop-blur-md border border-border rounded-2xl p-3 px-5 shadow-2xl flex items-center justify-between gap-4">
+        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/95 text-foreground backdrop-blur-md border border-border rounded-2xl p-2.5 px-3 sm:p-3 sm:px-5 shadow-2xl flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <Users className="w-4 h-4 text-primary-600" />
-              <span className="text-xs text-muted font-bold">参加:</span>
-              <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg ${canBalance ? 'bg-success-100 text-success-800 border border-success-edge' : 'bg-danger-100 text-danger-800 border border-danger-edge'}`}>
+              <span className="text-xs text-muted font-bold hidden sm:inline">参加:</span>
+              <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg whitespace-nowrap ${canBalance ? 'bg-success-100 text-success-800 border border-success-edge' : 'bg-danger-100 text-danger-800 border border-danger-edge'}`}>
                 {activeCount} / 10 人 {canBalance ? '✅' : `(あと${10 - activeCount}人)`}
               </strong>
             </div>
@@ -43,7 +43,7 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {balanceResult && (
               <button
                 onClick={() => setShowResultModal(true)}
@@ -65,7 +65,7 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
               type="button"
               onClick={handleFestivalRandomBalance}
               disabled={balancing || !canBalance}
-              className={`px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
+              className={`px-2.5 sm:px-3 py-2 rounded-xl font-black text-xs whitespace-nowrap flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
                 balancing || !canBalance
                   ? 'bg-surface-subtle text-faint border-border cursor-not-allowed opacity-50'
                   : 'bg-gradient-to-r from-primary-600 to-danger-600 hover:from-primary-500 hover:to-danger-500 text-white border-primary-edge shadow-primary-500/20'
@@ -78,14 +78,14 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
             <button
               onClick={handleBalance}
               disabled={balancing || !canBalance}
-              className={`px-4 sm:px-5 py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer shadow-lg ${
+              className={`px-3 sm:px-5 py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer shadow-lg ${
                 balancing || !canBalance
                   ? 'bg-surface-hover text-faint cursor-not-allowed opacity-50'
                   : 'bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-400 hover:to-primary-400 text-stone-950 shadow-primary-500/30'
               }`}
             >
               {balancing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Swords className="w-4 h-4" />}
-              <span>{balancing ? 'AI編成中...' : '⚔️ チーム分け実行'}</span>
+              <span className="whitespace-nowrap">{balancing ? '編成中...' : <>チーム分け<span className="hidden sm:inline">実行</span></>}</span>
             </button>
           </div>
         </div>

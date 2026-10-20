@@ -177,42 +177,42 @@ function LeaderboardContent() {
               <button
                 type="button"
                 onClick={() => handleTabChange(['ranking', 'coins'].includes(activeTab) ? activeTab : 'ranking')}
-                className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   ['ranking', 'coins'].includes(activeTab)
                     ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
                     : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Trophy className="w-4 h-4 text-primary-500" />
-                <span>🏆 ランキング</span>
+                <span>ランキング</span>
               </button>
 
               {/* グループ2: 名簿一覧 */}
               <button
                 type="button"
                 onClick={() => handleTabChange('roster')}
-                className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === 'roster'
                     ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
                     : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Users className="w-4 h-4 text-primary-500" />
-                <span>👥 メンバー名簿</span>
+                <span><span className="hidden sm:inline">メンバー</span>名簿</span>
               </button>
 
               {/* グループ3: データ分析 */}
               <button
                 type="button"
                 onClick={() => handleTabChange(['synergy', 'meta', 'winrate'].includes(activeTab) ? activeTab : 'synergy')}
-                className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   ['synergy', 'meta', 'winrate'].includes(activeTab)
                     ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
                     : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Activity className="w-4 h-4 text-secondary-500" />
-                <span>📊 詳細データ分析</span>
+                <span><span className="hidden sm:inline">詳細</span>データ分析</span>
               </button>
             </div>
           </div>

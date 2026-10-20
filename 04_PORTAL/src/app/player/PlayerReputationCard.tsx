@@ -193,8 +193,8 @@ export default function PlayerReputationCard({
 
       {/* 称賛送信モーダル */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
-          <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
+          <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto text-foreground animate-in fade-in zoom-in-95 duration-200">
             
             {/* モーダルヘッダー */}
             <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-b border-border flex items-center justify-between">

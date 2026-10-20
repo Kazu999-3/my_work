@@ -62,8 +62,8 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
   const isJackpot = resultData.prize >= 800; // 1等以上
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-3xl bg-surface border-2 border-primary-edge shadow-2xl p-6 text-center space-y-6 overflow-hidden">
+    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-sm rounded-3xl bg-surface border-2 border-primary-edge shadow-2xl p-6 text-center space-y-6 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         {/* 背景の装飾グロー */}
         <div
           className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-30 ${

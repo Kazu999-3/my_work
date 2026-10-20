@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import OnboardingChannelsPanel from "./OnboardingChannelsPanel";
+import MentorSettingsSection from "./_admin/MentorSettingsSection";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
 import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle } from "lucide-react";
@@ -243,7 +244,12 @@ export default function KtmAdminPage() {
         </div>
 
         {activeTab === 'history' && <MatchHistoryPanel />}
-        {activeTab === 'onboarding' && <OnboardingChannelsPanel />}
+        {activeTab === 'onboarding' && (
+          <div className="space-y-6">
+            <OnboardingChannelsPanel />
+            <MentorSettingsSection players={players} />
+          </div>
+        )}
 
         {activeTab === 'players' && (
           <div className="space-y-6">

@@ -720,8 +720,8 @@ export default function FestivalPickPage() {
 
       {/* ── ルーレット抽選結果モーダル ── */}
       {rouletteResults.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface border-2 border-primary-500/50 rounded-3xl p-6 max-w-2xl w-full shadow-2xl relative overflow-hidden flex flex-col items-center text-center">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface border-2 border-primary-500/50 rounded-3xl p-6 max-w-2xl w-full shadow-2xl relative max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col items-center text-center">
             {/* 上部背景デコレーション */}
             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-600" />
 

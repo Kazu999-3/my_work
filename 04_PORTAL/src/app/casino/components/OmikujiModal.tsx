@@ -84,8 +84,8 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
   const style = TIER_STYLES[omikujiData.tier] || TIER_STYLES['小吉'];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-surface border-2 border-primary-edge/60 shadow-2xl p-6 text-center space-y-5 overflow-hidden">
+    <div className="fixed inset-0 overflow-y-auto z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-surface border-2 border-primary-edge/60 shadow-2xl p-6 text-center space-y-5 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         
         {/* 背景の光彩演出 */}
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-primary-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />

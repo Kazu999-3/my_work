@@ -1011,8 +1011,8 @@ function CustomRecordPageContent() {
 
       {/* チャンピオン選択モーダル */}
       {activeChampSelector && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
                 <Target className="h-5 w-5 text-success-600" />
@@ -1091,10 +1091,10 @@ function CustomRecordPageContent() {
       {/* 🎉 試合結果記録 完了モーダル (3大ネクストアクション) */}
       {savedMatchSummary && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in"
+          className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in"
           onClick={e => { if (e.target === e.currentTarget) setSavedMatchSummary(null); }}
         >
-          <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
+          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
             <div className="w-16 h-16 rounded-3xl bg-success-100 border-2 border-success-edge flex items-center justify-center text-3xl mx-auto shadow-xs">
               🏆
             </div>
