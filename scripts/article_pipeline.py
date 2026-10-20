@@ -265,7 +265,10 @@ def call_gemini_json(prompt, api_key, model, max_tokens=8192, temperature=0.2, r
             req.add_header("Content-Type", "application/json")
             with urllib.request.urlopen(req, timeout=240) as r:
                 res = json.loads(r.read().decode())
-            text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+            # 返事は複数の part に分かれることがある。最初の part だけだと途中で切れるため、考え中のメモ以外をつなげる（2026-10-20）
+            text = "".join(p.get("text", "") for p in res["candidates"][0]["content"]["parts"] if not p.get("thought")).strip()
+            if res["candidates"][0].get("finishReason") not in (None, "STOP"):
+                print(f"⚠️ Gemini の生成が途中で止まりました: {res['candidates'][0].get('finishReason')}")
             text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
             s, e = text.find("{"), text.rfind("}")
             return json.loads(text[s:e + 1])

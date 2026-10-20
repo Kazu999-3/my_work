@@ -19,6 +19,16 @@ except ImportError:
 # edge_worker_daemon.py と同じロガー（ハンドラ設定は本体側）
 logger = logging.getLogger("EdgeWorkerDaemon")
 
+# このデーモンが処理できるタスクの種類（execute_task の分岐と揃えること）。
+# 2026-10-20: 以前は待っているタスクを種類を問わず取っていたため、デーモンを起動した後に追加された種類
+# （article_reanalyze。10/18 起動・10/19 追加）を「未サポート」で失敗にしていた。クラウドワーカーなら処理できたのに横取りしていた。
+# ここに無い種類は取らずに残し、クラウドワーカー（scripts/edge_cloud_worker.py）に任せる。
+SUPPORTED_TASK_TYPES = frozenset({
+    "test_ping", "youtube_absorb", "reddit_scout", "lol_trend_collect", "dict_synthesizer", "champion_trend",
+    "opgg_meta_sync", "resolve_youtube_channel", "resolve_youtube_playlist", "youtube_channel_monitor",
+    "video_deep_dive", "article_reanalyze", "youtube_rotation", "youtube_queue_process", "champion_db_bulk_update",
+})
+
 
 class TaskDispatchMixin:
     def execute_task(self, task: dict):

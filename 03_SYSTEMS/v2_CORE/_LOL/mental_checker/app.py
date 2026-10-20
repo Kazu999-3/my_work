@@ -241,7 +241,7 @@ class MentalCheckerAPI:
                 r = httpx.post(url, headers=headers, json=post_data, timeout=10)
                 if r.status_code == 200:
                     res_json = r.json()
-                    advice = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    advice = "".join(p.get("text", "") for p in res_json["candidates"][0]["content"]["parts"] if not p.get("thought")).strip()
                     js_code = f"if(window.onAdviceLoaded) {{ window.onAdviceLoaded({json.dumps(advice)}); }}"
                     self.window.evaluate_js(js_code)
                     logger.info(f"🤖 AIアドバイスの生成が完了し({model})、JSへ送信しました。")

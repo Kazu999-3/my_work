@@ -60,7 +60,8 @@ def call_gemini(prompt):
     req = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req, timeout=120) as r:
         res = json.loads(r.read().decode())
-    return res["candidates"][0]["content"]["parts"][0]["text"].strip()
+    # 返事は複数の part に分かれることがある。考え中のメモ以外をつなげて読む（2026-10-20）
+    return "".join(p.get("text", "") for p in res["candidates"][0]["content"]["parts"] if not p.get("thought")).strip()
 
 
 def enqueue_videos(champion):

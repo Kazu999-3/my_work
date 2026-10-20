@@ -262,7 +262,16 @@ ${properNounRule}
     }
 
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '生成失敗';
+    // 返事は複数の part に分かれて届くことがある。以前は最初の part だけを読んでおり、ソロQ振り返りが
+    // 「一方で自身は15分」で切れて保存されていた（2026-10-20）。考え中のメモ（thought）以外の part をつなげて読む
+    const candidate = data.candidates?.[0];
+    const text = (candidate?.content?.parts || [])
+      .filter((p: any) => typeof p?.text === 'string' && !p.thought)
+      .map((p: any) => p.text)
+      .join('') || '生成失敗';
+    if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+      console.warn(`[geminiClient] 生成が途中で止まりました (finishReason=${candidate.finishReason}, ${text.length}文字)`);
+    }
 
     if (options.validator) {
       try {

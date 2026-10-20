@@ -57,7 +57,15 @@ export async function callGemini(prompt: string, options: GeminiOptions = {}): P
 
       const data = await res.json();
       const candidate = data.candidates?.[0];
-      const text = candidate?.content?.parts?.[0]?.text;
+      // 返事は複数の part に分かれて届くことがある。最初の part だけを読むと途中で切れるため、
+      // 考え中のメモ（thought）以外をつなげて読む（2026-10-20。04 のソロQ振り返りが途中で切れていた）
+      const text = (candidate?.content?.parts || [])
+        .filter((p: any) => typeof p?.text === 'string' && !p.thought)
+        .map((p: any) => p.text)
+        .join('');
+      if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+        console.warn(`[Gemini ${model}] 生成が途中で止まりました (finishReason=${candidate.finishReason}, ${text.length}文字)`);
+      }
       if (text) {
         return text;
       }

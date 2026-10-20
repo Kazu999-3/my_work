@@ -15,7 +15,7 @@ except ImportError:
     from v2_CORE.settings import settings
 
 # タスク種別ごとの実行と定期起動のループは edge_daemon/ に分割（2026-10-07、976行から）
-from v2_CORE.edge_daemon.task_dispatch import TaskDispatchMixin
+from v2_CORE.edge_daemon.task_dispatch import TaskDispatchMixin, SUPPORTED_TASK_TYPES
 from v2_CORE.edge_daemon.schedulers import SchedulerLoopsMixin
 
 logger = logging.getLogger("EdgeWorkerDaemon")
@@ -149,6 +149,10 @@ class EdgeWorkerDaemon(TaskDispatchMixin, SchedulerLoopsMixin):
                 for task in tasks:
                     task_id = task["id"]
                     task_type = task["task_type"]
+
+                    # 処理できない種類は取らずに残し、クラウドワーカーに任せる（2026-10-20。起動後に追加された種類を「未サポート」で失敗にしていた）
+                    if task_type not in SUPPORTED_TASK_TYPES:
+                        continue
                     
                     # 競合排他制御チェック
                     if self.is_task_conflicting(task_type):
