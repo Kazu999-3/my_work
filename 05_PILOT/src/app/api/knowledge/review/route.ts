@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     const laneFilter = searchParams.get('lane') || ''; // 'COMMON' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'
     const queryKeyword = (searchParams.get('q') || '').trim().toLowerCase();
     const sort = searchParams.get('sort') || 'created_asc'; // 'created_asc' | 'created_desc' | 'channel_asc' | 'volume_desc' | 'title_asc'
-    const quality = searchParams.get('quality') || ''; // 'thin'（薄い可能性） | 'reanalyzed'（再解析版）
+    const quality = searchParams.get('quality') || ''; // 'thin'（薄い可能性） | 'reanalyzed'（再解析版） | 'approve' | 'check' | 'skip'（承認の目安。2026-10-20）
 
     // 1. youtube_queue からチャンネル名辞書をロード
     const { data: queueRows } = await supabase
@@ -268,12 +268,16 @@ export async function GET(req: NextRequest) {
     const qualityCounts = {
       thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
       reanalyzed: enrichedItems.filter((i) => i.reanalysis_of != null).length,
+      approve: enrichedItems.filter((i) => i.density.triage === 'approve').length,
+      check: enrichedItems.filter((i) => i.density.triage === 'check').length,
+      skip: enrichedItems.filter((i) => i.density.triage === 'skip').length,
     };
 
     // 5. フィルタリング適用
     let filtered = enrichedItems;
     if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
     if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysis_of != null);
+    if (quality === 'approve' || quality === 'check' || quality === 'skip') filtered = filtered.filter((i) => i.density.triage === quality);
 
     // チャンネルフィルター
     if (channelFilter) {

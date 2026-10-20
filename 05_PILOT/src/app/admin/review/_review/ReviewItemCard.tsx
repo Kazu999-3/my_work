@@ -67,6 +67,22 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                           ⚠️ 薄い可能性
                         </span>
                       )}
+                      {/* 承認の目安（2026-10-20）。理由は印の上に出す */}
+                      {item.density?.triage && !isDraft && (
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                            item.density.triage === 'approve'
+                              ? 'text-emerald-200 border-emerald-700/60 bg-emerald-950/40'
+                              : item.density.triage === 'skip'
+                              ? 'text-rose-200 border-rose-700/60 bg-rose-950/40'
+                              : 'text-zinc-300 border-zinc-700/60 bg-zinc-900/60'
+                          }`}
+                          title={(item.density.triageReasons || []).join('\n')}
+                        >
+                          {item.density.triage === 'approve' ? '✅ 承認候補' : item.density.triage === 'skip' ? '🍃 見送り候補' : '🔎 要確認'}
+                          {item.density.triageReasons?.[0] ? `：${item.density.triageReasons[0]}` : ''}
+                        </span>
+                      )}
                       {Array.isArray(item.tags) && item.tags.includes('__DECOMPOSED__') && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-800/60 bg-amber-950/40 flex items-center gap-1">
                           <Scissors className="w-2.5 h-2.5" /> 分解済み
@@ -207,6 +223,37 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                     </button>
                   </div>
                 </div>
+
+                {/* 字幕から取れた事実（2026-10-20）。全文を読まずに判断できるよう本文より先に出す。時刻は動画のその場面へのリンク */}
+                {Array.isArray(item.analysis_meta?.facts) && item.analysis_meta!.facts!.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800 space-y-1">
+                    <div className="text-[11px] font-bold text-zinc-400">
+                      🧾 字幕から取れた事実（{item.analysis_meta!.facts!.length}件）
+                    </div>
+                    <ul className="space-y-1">
+                      {item.analysis_meta!.facts!.map((f, i) => {
+                        const sec = f.ts ? f.ts.split(':').reduce((acc, v) => acc * 60 + Number(v), 0) : null;
+                        const href = sec !== null && item.source_url
+                          ? `${item.source_url}${item.source_url.includes('?') ? '&' : '?'}t=${sec}s`
+                          : null;
+                        return (
+                          <li key={i} className="text-[11px] text-zinc-300 leading-relaxed">
+                            {href ? (
+                              <a href={href} target="_blank" rel="noopener noreferrer" className="font-mono text-amber-400 hover:underline mr-1.5">[{f.ts}]</a>
+                            ) : (
+                              <span className="font-mono text-zinc-600 mr-1.5">[--:--]</span>
+                            )}
+                            {f.uncertain && <span className="text-rose-300 mr-1" title="聞き間違いの疑いがある固有名詞を含む">要確認</span>}
+                            <span>{f.claim}</span>
+                            {f.condition && <span className="text-zinc-500">（{f.condition}）</span>}
+                            {f.reason && <span className="text-zinc-400"> ← {f.reason}</span>}
+                            {f.numbers && <span className="text-emerald-300/80 ml-1">[{f.numbers}]</span>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
 
                 {/* 本文プレビュー */}
                 <p className={`text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap ${isOpen ? '' : 'line-clamp-4'}`}>

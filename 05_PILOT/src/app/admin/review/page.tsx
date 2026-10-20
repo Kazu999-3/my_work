@@ -34,7 +34,7 @@ export default function ReviewPage() {
   const [laneCounts, setLaneCounts] = useState<Record<string, number>>({});
   // 2026-10-19: 薄い可能性・再解析版の絞り込み
   const [quality, setQuality] = useState<string>('');
-  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number }>({});
+  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number; approve?: number; check?: number; skip?: number }>({});
   const [reanalyzeItem, setReanalyzeItem] = useState<ReviewItem | null>(null);
   const [compareItem, setCompareItem] = useState<ReviewItem | null>(null);
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});

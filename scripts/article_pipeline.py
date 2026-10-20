@@ -361,6 +361,13 @@ def generate_article(title, channel, transcript, api_key, model, is_short=False,
         "categories": cats,
         "not_covered": [c for c in (extraction.get("not_covered") or []) if c in CATEGORIES],
         "enemy": extraction.get("enemy"),
+        # 2026-10-20: 承認画面で全文を読まずに判断できるよう、抽出した事実の一覧も残す（件数だけでは中身が分からなかった）
+        "facts": [
+            {k: (str(f.get(k))[:200] if f.get(k) is not None else None)
+             for k in ("category", "claim", "condition", "reason", "numbers", "ts")}
+            | {"uncertain": bool(f.get("uncertain"))}
+            for f in facts[:30]
+        ],
     }
     return article
 

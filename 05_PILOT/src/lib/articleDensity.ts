@@ -26,6 +26,11 @@ export interface DensityReport {
   legacyTemplate: boolean;
   /** 抽出できた事実の件数（新しい解析のみ） */
   factCount: number | null;
+  /** 本文が文の途中で終わっている（2026-10-20 まで Gemini の返事の最初の part だけを読んでいた不具合の影響） */
+  truncated: boolean;
+  /** 承認の目安（2026-10-20）。approve=承認候補 / check=要確認 / skip=見送り候補。理由は triageReasons */
+  triage: 'approve' | 'check' | 'skip';
+  triageReasons: string[];
 }
 
 const SPECIFIC_RE =
@@ -91,6 +96,33 @@ export function assessArticleDensity(
     if (memoryHits > 0 || specificPer1k < 1.8) thin = true;
   }
 
+  // 文の途中で終わっているか（句点・閉じ括弧・記号・URL などで終わっていない）
+  const lastChar = body.trim().slice(-1);
+  const truncated = chars >= 200 && !!lastChar && !/[。！？!?）)」』\]】*`\-|.:：…ー〜~>0-9a-zA-Z]/.test(lastChar);
+  if (truncated) reasons.push('本文が文の途中で終わっている（生成が途中で切れた可能性）');
+
+  // 承認の目安。数値で決めず、理由を添えて「どこから手を付けるか」の並び替えに使う
+  const triageReasons: string[] = [];
+  let triage: 'approve' | 'check' | 'skip' = 'check';
+  if (truncated) {
+    triage = 'skip';
+    triageReasons.push('途中で切れている');
+  } else if (factCount !== null && factCount < 3) {
+    triage = 'skip';
+    triageReasons.push(`字幕から取れた事実が ${factCount} 件だけ`);
+  } else if (legacyTemplate && thin) {
+    triage = 'skip';
+    triageReasons.push('旧形式で、一般論・記憶で書いた疑いが強い');
+  } else if (factCount !== null && factCount >= 8) {
+    triage = 'approve';
+    triageReasons.push(`字幕から取れた事実が ${factCount} 件`);
+  } else if (factCount === null && !legacyTemplate && memoryHits === 0 && specificPer1k >= 2.5 && genericPer1k < 2.4) {
+    triage = 'approve';
+    triageReasons.push(`具体的な記述が多い（1,000字あたり ${specificPer1k} 件）`);
+  } else {
+    triageReasons.push(thin ? '薄い可能性あり' : '目立った問題はないが、決め手もない');
+  }
+
   return {
     level: thin ? 'thin' : 'ok',
     specificPer1k,
@@ -99,5 +131,8 @@ export function assessArticleDensity(
     reasons,
     legacyTemplate,
     factCount,
+    truncated,
+    triage,
+    triageReasons,
   };
 }

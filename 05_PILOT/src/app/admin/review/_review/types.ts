@@ -46,6 +46,10 @@ export interface DensityInfo {
   reasons: string[];
   legacyTemplate: boolean;
   factCount: number | null;
+  truncated?: boolean;
+  /** 承認の目安（lib/articleDensity.ts）。approve=承認候補 / check=要確認 / skip=見送り候補 */
+  triage?: 'approve' | 'check' | 'skip';
+  triageReasons?: string[];
 }
 
 export interface AnalysisMeta {
@@ -59,6 +63,8 @@ export interface AnalysisMeta {
   uncertain_count?: number;
   categories?: Record<string, number>;
   not_covered?: string[];
+  /** 字幕から抽出した事実（2026-10-20 以降に作った記事のみ） */
+  facts?: { category: string | null; claim: string | null; condition: string | null; reason: string | null; numbers: string | null; ts: string | null; uncertain: boolean }[];
   reanalysis?: { reason?: string; focus?: string[]; note?: string; source?: string; requested_model?: string };
 }
 
