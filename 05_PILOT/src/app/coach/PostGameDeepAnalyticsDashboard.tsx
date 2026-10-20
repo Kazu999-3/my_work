@@ -12,6 +12,8 @@ import PostGameReflectionForm from './PostGameReflectionForm';
 import JgRelativeTrackerCard from './JgRelativeTrackerCard';
 import VodReviewPointsCard from './VodReviewPointsCard';
 import type { PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
+import type { PathMapReport } from '@/lib/pathMap';
+import PathMapCard from './PathMapCard';
 import type { TrollAnalysisResult } from '@/lib/trollDetector';
 import type { WhatIfAnalysisReport } from '@/lib/whatIfAnalyzer';
 
@@ -98,6 +100,8 @@ interface PostGameData {
     avg: Record<'cs_per_min' | 'deaths' | 'vision_per_min' | 'kill_participation' | 'damage_share' | 'control_wards_bought', number | null>;
   };
   jg_analysis?: PostgameJgAnalysisReport | null;
+  path_map?: PathMapReport | null;
+  ddragon_patch?: string | null;
   allies_troll_analysis?: TrollAnalysisResult | null;
   what_if_analysis?: WhatIfAnalysisReport | null;
 }
@@ -126,7 +130,7 @@ const COMPARE_ROWS: { key: keyof MatchStats; label: string; unit?: string; lower
   { key: 'control_wards_bought', label: 'コントロールワード購入' },
 ];
 
-type DetailTab = 'lane' | 'target' | 'tempo' | 'jg' | 'note';
+type DetailTab = 'lane' | 'target' | 'tempo' | 'jg' | 'map' | 'note';
 
 const signed = (v: number) => (v > 0 ? `+${v.toLocaleString()}` : v.toLocaleString());
 const diffColor = (v: number | null) => (v == null || v === 0 ? 'text-stone-300' : v > 0 ? 'text-emerald-400' : 'text-rose-400');
@@ -225,6 +229,7 @@ export default function PostGameDeepAnalyticsDashboard({
     { key: 'target', label: '🎯 目標ランク比較' },
     { key: 'tempo', label: '⏱️ テンポ・ビルド' },
     ...(data.jg_analysis ? [{ key: 'jg' as const, label: '🌲 JG分析' }] : []),
+    ...(data.path_map && data.path_map.tracks.length > 0 ? [{ key: 'map' as const, label: '🗺️ 道筋マップ' }] : []),
     { key: 'note', label: '📝 振り返りメモ' },
   ];
   // JGの試合からJG以外の試合へ切り替えた時に、存在しないタブのままにしない
@@ -488,6 +493,10 @@ export default function PostGameDeepAnalyticsDashboard({
           recentAvg={data.role_recent.avg}
           recentCount={data.role_recent.count}
         />
+      )}
+
+      {activeTab === 'map' && data.path_map && (
+        <PathMapCard report={data.path_map} patch={data.ddragon_patch} />
       )}
 
       {activeTab === 'jg' && data.jg_analysis && (

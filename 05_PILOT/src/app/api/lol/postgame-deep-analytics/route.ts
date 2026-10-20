@@ -11,6 +11,8 @@ import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/
 import { analyzePostgameJgMetrics, type PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 import { detectAlliesTroll } from '@/lib/trollDetector';
 import { analyzeWhatIfTimeline } from '@/lib/whatIfAnalyzer';
+import { buildPathMap } from '@/lib/pathMap';
+import { getLatestPatch } from '@/lib/ddragonClient';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -270,6 +272,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 道筋マップ（自分と敵JG。1分ごとの位置＋出来事の場所。2026-10-20）
+    let path_map = null;
+    if (timeline) {
+      try {
+        path_map = buildPathMap(match, timeline, puuid);
+      } catch (e: any) {
+        console.warn('[postgame-deep-analytics] path map error:', e);
+      }
+    }
+    const ddragon_patch = await getLatestPatch().catch(() => null);
+
     const allies_troll_analysis = detectAlliesTroll(match.participants, puuid, match.gameDuration);
 
     const what_if_analysis = timeline ? analyzeWhatIfTimeline({
@@ -303,6 +316,8 @@ export async function GET(request: NextRequest) {
       jg_analysis,
       allies_troll_analysis,
       what_if_analysis,
+      path_map,
+      ddragon_patch,
     });
   } catch (error: any) {
     console.error('[postgame-deep-analytics] Error:', error);
