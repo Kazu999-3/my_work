@@ -271,8 +271,9 @@ def capture(work, end_sec, speed=4.0):
                 grab_fails = 0
             except OSError:
                 grab_fails += 1
-                if grab_fails >= 10:
+                if grab_fails >= 30:
                     raise SystemExit("画面の撮影に連続して失敗しました（PCが画面ロックまたはディスプレイ消灯になっている可能性があります）")
+                front(game)
                 time.sleep(0.3)
                 continue
             im = np.array(grab_im)

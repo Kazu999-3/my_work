@@ -127,6 +127,11 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
     });
   }, [matches]);
 
+  // 直近で失敗したタスクがあるか？
+  const failedTask = useMemo(() => {
+    return matches.find((m) => m.quality?.status === "failed");
+  }, [matches]);
+
   // 処理中タスクがある場合は3秒おきに自動更新
   useEffect(() => {
     if (!activeTask) return;
@@ -139,16 +144,32 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
 
   const handleQueueImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!importMatchId.trim()) return;
+    const matchIdToQueue = importMatchId.trim();
+    if (!matchIdToQueue) return;
     setIsQueueing(true);
     setQueueError(null);
     setQueueMsg(null);
+
+    // 楽観的UI更新: 押した瞬間に即座に進捗バーを表示する
+    const optimisticRow: MatchRow = {
+      match_id: matchIdToQueue,
+      game_version: null,
+      duration_sec: null,
+      covered_sec: null,
+      created_at: new Date().toISOString(),
+      quality: {
+        status: "pending",
+        message: "取り込み依頼を受付ました。PCの待機ワーカーが自動で撮影を開始します...",
+      },
+    };
+    setMatches((prev) => [optimisticRow, ...prev.filter((m) => m.match_id !== matchIdToQueue)]);
+
     try {
       const res = await fetch("/api/admin/replay-paths/queue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ matchId: importMatchId.trim(), minutes: importMinutes }),
+        body: JSON.stringify({ matchId: matchIdToQueue, minutes: importMinutes }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "依頼の登録に失敗しました");
@@ -156,6 +177,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
       loadList();
     } catch (err: any) {
       setQueueError(err.message);
+      loadList();
     } finally {
       setIsQueueing(false);
     }
@@ -411,6 +433,27 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
               className="text-[11px] text-muted-strong hover:text-danger-600 flex items-center gap-0.5 cursor-pointer shrink-0"
             >
               <XCircle className="h-3.5 w-3.5" /> 取り消し
+            </button>
+          </div>
+        )}
+
+        {/* 失敗したタスクの通知バナー */}
+        {!activeTask && failedTask && (
+          <div className="p-3 rounded-xl border border-danger-500/30 bg-danger-500/10 text-danger-900 dark:text-danger-200 text-xs flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-danger-600 shrink-0" />
+              <div>
+                <span className="font-bold font-mono">[{failedTask.match_id}]</span>{" "}
+                <span>取り込みに失敗しました: {failedTask.quality?.error || failedTask.quality?.message || "不明なエラー"}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleCancelTask(failedTask.match_id)}
+              className="text-[11px] text-muted-strong hover:text-danger-600 flex items-center gap-0.5 cursor-pointer shrink-0"
+              title="この失敗レコードを削除して再試行できるようにする"
+            >
+              <XCircle className="h-3.5 w-3.5" /> 閉じる
             </button>
           </div>
         )}
