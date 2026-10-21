@@ -111,7 +111,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
   const [cmdCopied, setCmdCopied] = useState(false);
 
   const cleanMatchId = cmdMatchId.trim();
-  const generatedCommand = `d:\\my_work\\.venv\\Scripts\\python.exe scripts/replay_paths.py ${cleanMatchId || '<試合ID>'}${cmdMinutes > 0 ? ` --minutes ${cmdMinutes}` : ''} --upload`;
+  const generatedCommand = `d:\\my_work\\.venv\\Scripts\\python.exe d:\\my_work\\scripts\\replay_paths.py ${cleanMatchId || '<試合ID>'}${cmdMinutes > 0 ? ` --minutes ${cmdMinutes}` : ''} --upload`;
 
   const handleCopyCommand = () => {
     navigator.clipboard.writeText(generatedCommand);
@@ -280,6 +280,16 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
             </div>
             <div className="p-2 rounded-lg bg-black/80 text-emerald-400 font-mono text-[11px] break-all select-all flex items-center justify-between gap-2">
               <span>{generatedCommand}</span>
+            </div>
+            <div className="text-[11px] text-muted-strong space-y-1 bg-surface p-2.5 rounded-lg border border-border">
+              <div className="font-bold text-foreground flex items-center gap-1">
+                <span>🖥️ PowerShell の開き方</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-[10px]">
+                <li>キーボードの <kbd className="px-1 py-0.5 rounded bg-black/10 border font-mono">Win + R</kbd> を押し、<code className="text-primary-600 font-bold">powershell</code> と入力して Enter</li>
+                <li>または、タスクバーの検索欄に「PowerShell」と入力して開く</li>
+                <li>開いた画面で右クリック（または Ctrl + V）して Enter を押すだけで撮影が始まります</li>
+              </ul>
             </div>
             <div className="text-[10px] text-muted-strong flex items-center gap-1">
               <span>💡 実行完了後、右上の「一覧を更新」を押すと地図に即座に反映されます。</span>

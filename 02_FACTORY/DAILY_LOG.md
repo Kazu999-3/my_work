@@ -10,6 +10,33 @@
 
 ## 🗓️ 2026-10-21（水）
 
+### 🚀 スクリプト絶対パス化（No such file or directory 解消）＆ デスクトップ専用ワンクリック取り込みバッチ配備
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーより「`d:\my_work\.venv\Scripts\python.exe: can't open file 'C:\Users\PC_User\scripts\replay_paths.py': [Errno 2] No such file or directory` が出た」「PowerShellを開くコマンドもボタン作ってほしい」との相談を受領。
+   - PowerShellのカレントディレクトリが `C:\Users\PC_User` であったため、相対パス `scripts/replay_paths.py` が見つからなかった事象を特定。
+   - コマンド生成を絶対パス `d:\my_work\scripts\replay_paths.py` に改修し、さらにデスクトップ上にダブルクリック一発で起動・対話入力できる専用バッチファイルを配備。
+2. **実施内容**:
+   - **【スクリプトの絶対パス指定】(`04_PORTAL/src/app/ktm-admin/ReplayPathsPanel.tsx`)**:
+     - `d:\my_work\.venv\Scripts\python.exe d:\my_work\scripts\replay_paths.py <ID> --upload` のようにスクリプト側も絶対パス化。どのディレクトリ（`C:\Users\PC_User` 等）から実行しても100%確実に動作するよう修正。
+     - UI内に「PowerShellの開き方（Win + R ➔ powershell 等）」のガイドをわかりやすく配置。
+   - **【デスクトップワンクリック取り込みバッチ新設】(`C:/Users/PC_User/Desktop/リプレイ道筋取り込み.bat`)**:
+     - デスクトップにダブルクリックで起動する対話式バッチファイルを配置。
+     - 起動すると試合ID（例: `JP1_608209265`）と撮影範囲（全編/10分）を聞いてきて、Enterキーを押すだけで自動で撮影・アップロードまで完走するUIを提供。PowerShellを手動で起動する必要すらゼロに。
+3. **機械的実値検証**:
+   - `04_PORTAL` TypeScript 型チェック（`npx tsc --noEmit`）: **エラー0件 PASS**
+   - `04_PORTAL` 単体テスト全142件: **全件PASS**
+4. **再利用可能な3行ナレッジ**:
+   - ユーザーにターミナル実行を促すCLIワンライナーは、カレントディレクトリに依存しないよう実行ファイル（Python等）だけでなく引数のスクリプトパスも全てドライブレター付き絶対パスで提供する。
+   - CUI操作に慣れていないユーザー向けには、コマンドコピー機能に加えてデスクトップにダブルクリックで動くショートカットバッチを配置することで、ターミナルを開く心理的障壁を一気に解消できる。
+5. **思考・アイデアのストック**:
+   - `[要検証]`: デスクトップのバッチファイルから `JP1_608209265` の撮影を実行し、正常にSupabaseへアップロードされることの確認。
+   - `[継続ウォッチ]`: なし。
+   - `[発信候補]`: なし。
+
+---
+
 ### 📋 リプレイ取り込みの「ワンクリックPowerShellコマンド生成」へ刷新 ＆ クラウド不要APIの完全撤去
 
 **概要**:
