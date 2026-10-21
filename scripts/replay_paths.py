@@ -14,12 +14,55 @@
 #    前向きと後ろ向きの両方から「近くだけ」を探して追いかけ、確かな方を採る
 #  - 動かない背景（全体の中央値）でも点数が出る場所は減点する（青の泉のショップのアイコン対策）
 #  - デスは試合の記録から時刻が分かるので泉へ移す。8秒以上見失ったら、リコールを疑って泉の周りも探す
-import argparse, ctypes, io, json, os, re, ssl, sys, time, urllib.request
+import argparse, contextlib, ctypes, io, json, os, re, ssl, sys, time, urllib.request
 import numpy as np
 import cv2
 from PIL import Image, ImageGrab
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+GAME_CFG = "C:/Riot Games/League of Legends/Config/game.cfg"
+
+
+@contextlib.contextmanager
+def temporary_game_config():
+    """撮影時だけ解像度・WindowModeを1920x1080ボーダレスにし、終了後は確実に元の設定へ自動復元する"""
+    if not os.path.exists(GAME_CFG):
+        yield
+        return
+    try:
+        with open(GAME_CFG, "r", encoding="utf-8") as f:
+            original = f.read()
+    except Exception as e:
+        print("game.cfg 読み込み失敗:", e, flush=True)
+        yield
+        return
+
+    try:
+        def update_val(text, key, val):
+            if re.search(rf"^{key}=.*$", text, flags=re.MULTILINE):
+                return re.sub(rf"^{key}=.*$", f"{key}={val}", text, flags=re.MULTILINE)
+            return text.replace("[General]\n", f"[General]\n{key}={val}\n")
+
+        mod = original
+        mod = update_val(mod, "WindowMode", "2")
+        mod = update_val(mod, "Width", "1920")
+        mod = update_val(mod, "Height", "1080")
+        mod = update_val(mod, "EnableReplayApi", "1")
+        with open(GAME_CFG, "w", encoding="utf-8") as f:
+            f.write(mod)
+        print("game.cfg を一時的に撮影用設定（1920x1080 ボーダレス）に切り替えました", flush=True)
+    except Exception as e:
+        print("game.cfg 適用失敗:", e, flush=True)
+
+    try:
+        yield
+    finally:
+        try:
+            with open(GAME_CFG, "w", encoding="utf-8") as f:
+                f.write(original)
+            print("game.cfg を元の設定に自動復元しました", flush=True)
+        except Exception as e:
+            print("game.cfg 復元失敗:", e, flush=True)
 CROP = (1630, 790, 1920, 1080)                          # 画面上のミニマップを含む範囲
 CALIB = ((57.86, -1271.94), (-58.64, 16230.35))          # 切り抜き画像の px → 試合の座標（x, y それぞれ 傾き・切片）
 FOUNTAIN = {100: (400, 400), 200: (14400, 14400)}
@@ -407,10 +450,14 @@ def main():
         for f in os.listdir(work):
             if f.startswith("chunk_"):
                 os.remove(os.path.join(work, f))   # 前回の撮影の残り（別の試合の可能性もある）を混ぜない
-        loaded = open_replay(int(a.match_id.split("_")[1]), players)
-        capture(work, end_sec)
-        if not loaded()[0]:
-            raise SystemExit("撮影中にリプレイが別の試合に切り替わりました。撮り直してください")
+        with temporary_game_config():
+            loaded = open_replay(int(a.match_id.split("_")[1]), players)
+            try:
+                capture(work, end_sec)
+                if not loaded()[0]:
+                    raise SystemExit("撮影中にリプレイが別の試合に切り替わりました。撮り直してください")
+            finally:
+                os.system('taskkill /IM "League of Legends.exe" /F >NUL 2>&1')
     t0 = time.time()
     trk = Tracker(work, tl, players, icons)
     quality = {}

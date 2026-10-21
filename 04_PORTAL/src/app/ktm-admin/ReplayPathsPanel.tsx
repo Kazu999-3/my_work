@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RefreshCw } from "lucide-react";
+import { Pause, Play, RefreshCw, Download, Loader2, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle } from "lucide-react";
 
 // 管理画面「道筋（試作）」タブ（2026-10-21、ユーザー要望）。
 // リプレイのミニマップから読み取った10人の秒単位の移動経路を、地図に線で重ねる。
 // 読み取りは PC のスクリプト（mobilecheck/replay_paths.py）が行い、replay_paths 表に保存したものを /api/admin/replay-paths で読む。
 // 読み取りの仕組み上、アイコンが重なって見失った区間は「最後に見えた場所」に留まるので、見失ってから5秒を超えた区間は点線にしている。
+
+type ImportStatus = {
+  running: boolean;
+  matchId: string | null;
+  phase: 'idle' | 'starting' | 'capturing' | 'tracking' | 'uploading' | 'completed' | 'failed';
+  message: string;
+  startedAt: number | null;
+  logs: string[];
+};
 
 type Player = {
   participantId: number;
@@ -92,6 +101,57 @@ export default function ReplayPathsPanel() {
   const [playing, setPlaying] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // リプレイ取り込み
+  const [showImportForm, setShowImportForm] = useState(false);
+  const [importMatchId, setImportMatchId] = useState("");
+  const [importMinutes, setImportMinutes] = useState(0); // 0 = 全編
+  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
+
+  // 取り込みステータスの定期同期
+  const fetchImportStatus = async () => {
+    try {
+      const res = await fetch("/api/admin/replay-paths/import", { credentials: "include", cache: "no-store" });
+      const j = await res.json();
+      if (res.ok) {
+        setImportStatus(j);
+        if (j.phase === 'completed' && j.matchId) {
+          loadList();
+        }
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchImportStatus();
+  }, []);
+
+  useEffect(() => {
+    if (!importStatus?.running) return;
+    const interval = setInterval(fetchImportStatus, 2000);
+    return () => clearInterval(interval);
+  }, [importStatus?.running]);
+
+  const handleStartImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importMatchId.trim()) return;
+    setImportError(null);
+    try {
+      const res = await fetch("/api/admin/replay-paths/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ matchId: importMatchId.trim(), minutes: importMinutes }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "取り込みの開始に失敗しました");
+      setImportStatus(j.status);
+    } catch (err: any) {
+      setImportError(err.message);
+    }
+  };
+
   const loadList = async () => {
     setError(null);
     try {
@@ -174,10 +234,102 @@ export default function ReplayPathsPanel() {
       <div className="bg-surface border border-border rounded-2xl p-4 space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-lg font-black text-foreground">🗺️ リプレイの道筋（試作）</h3>
-          <button type="button" onClick={loadList} className="text-xs px-2.5 py-1 rounded-lg border border-border hover:bg-black/5 cursor-pointer flex items-center gap-1">
-            <RefreshCw className="h-3.5 w-3.5" /> 一覧を更新
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowImportForm((v) => !v)}
+              className="text-xs px-2.5 py-1 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1 font-bold"
+            >
+              <Download className="h-3.5 w-3.5" /> 新しい試合を取り込む
+            </button>
+            <button type="button" onClick={loadList} className="text-xs px-2.5 py-1 rounded-lg border border-border hover:bg-black/5 cursor-pointer flex items-center gap-1">
+              <RefreshCw className="h-3.5 w-3.5" /> 一覧を更新
+            </button>
+          </div>
         </div>
+
+        {/* 取り込みフォーム & 実行状態 */}
+        {showImportForm && (
+          <form onSubmit={handleStartImport} className="p-3 rounded-xl border border-primary-edge-soft bg-primary-500/5 space-y-2 mt-2">
+            <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <Download className="h-4 w-4 text-primary-600" /> リプレイ自動取り込み（PCローカル連携）
+            </div>
+            <p className="text-[11px] text-muted-strong leading-relaxed">
+              クライアントでリプレイをDLした状態で試合IDを入力してください。撮影開始時に画面設定を自動で一時変更し、撮影終了後に確実に元の設定（解像度等）へ自動復元します。
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                placeholder="試合ID（例: JP1_608213185）"
+                value={importMatchId}
+                onChange={(e) => setImportMatchId(e.target.value)}
+                disabled={importStatus?.running}
+                className="px-2.5 py-1.5 rounded-lg border border-border bg-surface text-xs font-mono w-56 focus:outline-none focus:border-primary-500"
+              />
+              <select
+                value={importMinutes}
+                onChange={(e) => setImportMinutes(Number(e.target.value))}
+                disabled={importStatus?.running}
+                className="px-2 py-1.5 rounded-lg border border-border bg-surface text-xs"
+              >
+                <option value={0}>試合終了まで（全編）</option>
+                <option value={10}>序盤10分だけ（高速）</option>
+                <option value={15}>15分まで</option>
+              </select>
+              <button
+                type="submit"
+                disabled={importStatus?.running || !importMatchId.trim()}
+                className="px-3 py-1.5 rounded-lg bg-primary-600 text-white font-bold text-xs hover:bg-primary-700 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+              >
+                {importStatus?.running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                {importStatus?.running ? "取り込み中..." : "取り込み開始"}
+              </button>
+            </div>
+            {importError && (
+              <div className="text-xs text-danger-700 bg-danger-100 p-2 rounded-lg border border-danger-edge-soft flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {importError}
+              </div>
+            )}
+          </form>
+        )}
+
+        {/* 取り込み実行中の進捗バナー */}
+        {importStatus && importStatus.phase !== 'idle' && (
+          <div className={`p-3 rounded-xl border text-xs space-y-1.5 mt-2 ${
+            importStatus.phase === 'completed'
+              ? 'bg-teal-500/10 border-teal-500/30 text-teal-900 dark:text-teal-200'
+              : importStatus.phase === 'failed'
+              ? 'bg-danger-100 border-danger-edge-soft text-danger-700'
+              : 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+          }`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-bold flex items-center gap-1.5">
+                {importStatus.running ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                ) : importStatus.phase === 'completed' ? (
+                  <CheckCircle2 className="h-4 w-4 text-teal-600" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-danger-600" />
+                )}
+                <span>[{importStatus.matchId}] {importStatus.message}</span>
+              </div>
+              {importStatus.logs.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowLogs((v) => !v)}
+                  className="text-[11px] underline opacity-80 hover:opacity-100 flex items-center gap-0.5 cursor-pointer"
+                >
+                  ログ {showLogs ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+              )}
+            </div>
+            {showLogs && (
+              <pre className="text-[10px] p-2 rounded bg-black/80 text-emerald-400 font-mono max-h-36 overflow-y-auto whitespace-pre-wrap">
+                {importStatus.logs.join('\n')}
+              </pre>
+            )}
+          </div>
+        )}
         <p className="text-[11px] text-muted-strong leading-relaxed">
           リプレイのミニマップを PC で読み取った、10人の秒単位の動きです。Riot API の1分ごとの位置を起点に追いかけているので、毎分ちょうどの位置は正確で、その間は読み取りです。
           アイコンが重なって見えなかった区間は点線（その間は最後に見えた場所に留まっています）。
