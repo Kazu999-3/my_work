@@ -1,14 +1,14 @@
 {
-  "patch_version": "26.20",
-  "updated_at": "2026-10-19T22:58:51.495512+00:00",
+  "patch_version": "16.21.1",
+  "updated_at": "2026-10-21T00:39:24.532911+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-11T21:17:21.797208+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Ahri": {
       "name": "アーリ",
@@ -84,9 +84,10 @@
     },
     "Azir": {
       "name": "アジール",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-11T21:34:44.989663+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.21.1 modified: ['mpperlevel']"
     },
     "Bard": {
       "name": "バード",
@@ -157,10 +158,10 @@
     },
     "Darius": {
       "name": "ダリウス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-15T09:56:25.276980+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Diana": {
       "name": "ダイアナ",
@@ -212,10 +213,10 @@
     },
     "Fiora": {
       "name": "フィオラ",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-16T07:47:33.472246+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Fizz": {
       "name": "フィズ",
@@ -309,17 +310,17 @@
     },
     "JarvanIV": {
       "name": "ジャーヴァンⅣ",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-17T02:17:20.856958+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Jax": {
       "name": "ジャックス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-17T05:10:48.206080+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Jayce": {
       "name": "ジェイス",
@@ -335,9 +336,10 @@
     },
     "Jinx": {
       "name": "ジンクス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-17T07:51:07.539944+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.21.1 modified: ['hp']"
     },
     "Kaisa": {
       "name": "カイ＝サ",
@@ -431,10 +433,10 @@
     },
     "LeeSin": {
       "name": "リー・シン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-17T18:50:09.011484+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Leona": {
       "name": "レオナ",
@@ -444,10 +446,10 @@
     },
     "Lillia": {
       "name": "リリア",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-17T21:10:03.469366+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Lissandra": {
       "name": "リサンドラ",
@@ -457,9 +459,10 @@
     },
     "Locke": {
       "name": "ロック",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-17T23:35:49.551477+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.21.1 modified: ['mpperlevel']"
     },
     "Lucian": {
       "name": "ルシアン",
@@ -523,9 +526,10 @@
     },
     "MonkeyKing": {
       "name": "ウーコン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-18T13:09:15.566424+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.21.1 modified: ['hpregen']"
     },
     "Mordekaiser": {
       "name": "モルデカイザー",
@@ -583,10 +587,10 @@
     },
     "Nocturne": {
       "name": "ノクターン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-19T07:32:25.056331+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Nunu": {
       "name": "ヌヌ＆ウィルンプ",
@@ -758,9 +762,10 @@
     },
     "Sion": {
       "name": "サイオン",
-      "status": "pending",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:32:23.318417+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.21.1 modified: ['hpperlevel']"
     },
     "Sivir": {
       "name": "シヴィア",
@@ -928,16 +933,17 @@
     },
     "Viego": {
       "name": "ヴィエゴ",
-      "status": "pending",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:42:56.203645+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Viktor": {
       "name": "ビクター",
-      "status": "pending",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:43:18.014402+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.21.1 modified: ['movespeed']"
     },
     "Vladimir": {
       "name": "ブラッドミア",
@@ -971,10 +977,10 @@
     },
     "XinZhao": {
       "name": "シン・ジャオ",
-      "status": "pending",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:45:30.033296+00:00",
       "error": null,
-      "note": "Patch 16.20.1 core monitoring."
+      "note": "Patch 16.21.1 core monitoring."
     },
     "Yasuo": {
       "name": "ヤスオ",

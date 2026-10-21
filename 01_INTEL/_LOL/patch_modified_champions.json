@@ -1,52 +1,73 @@
 {
-  "old_patch": "16.19.1",
-  "new_patch": "16.20.1",
-  "detected_at": "2026-10-07T01:35:49.202272+00:00",
+  "old_patch": "16.20.1",
+  "new_patch": "16.21.1",
+  "detected_at": "2026-10-21T00:39:24.532133+00:00",
   "total_champions": 173,
-  "modified_count": 3,
+  "modified_count": 6,
   "champions": [
     {
-      "id": "Cassiopeia",
-      "name": "カシオペア",
+      "id": "Azir",
+      "name": "アジール",
+      "type": "stats_changed",
+      "diffs": {
+        "mpperlevel": {
+          "old": 40,
+          "new": 50
+        }
+      }
+    },
+    {
+      "id": "Jinx",
+      "name": "ジンクス",
       "type": "stats_changed",
       "diffs": {
         "hp": {
           "old": 630,
           "new": 610
-        },
-        "mp": {
-          "old": 480,
-          "new": 450
         }
       }
     },
     {
-      "id": "Swain",
-      "name": "スウェイン",
+      "id": "Locke",
+      "name": "ロック",
       "type": "stats_changed",
       "diffs": {
-        "armor": {
-          "old": 25,
-          "new": 23
-        },
-        "spellblock": {
-          "old": 31,
-          "new": 34
+        "mpperlevel": {
+          "old": 70,
+          "new": 60
         }
       }
     },
     {
-      "id": "Vayne",
-      "name": "ヴェイン",
+      "id": "MonkeyKing",
+      "name": "ウーコン",
       "type": "stats_changed",
       "diffs": {
         "hpregen": {
-          "old": 4,
+          "old": 3.5,
           "new": 5.5
-        },
-        "hpregenperlevel": {
-          "old": 0.5,
-          "new": 0.4
+        }
+      }
+    },
+    {
+      "id": "Sion",
+      "name": "サイオン",
+      "type": "stats_changed",
+      "diffs": {
+        "hpperlevel": {
+          "old": 87,
+          "new": 95
+        }
+      }
+    },
+    {
+      "id": "Viktor",
+      "name": "ビクター",
+      "type": "stats_changed",
+      "diffs": {
+        "movespeed": {
+          "old": 335,
+          "new": 330
         }
       }
     }
