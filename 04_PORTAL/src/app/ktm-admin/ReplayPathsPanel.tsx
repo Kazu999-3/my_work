@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check } from "lucide-react";
+import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check, Download, Loader2, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 
 // 管理画面「道筋（試作）」タブ（2026-10-21、ユーザー要望）。
 // リプレイのミニマップから読み取った10人の秒単位の移動経路を、地図に線で重ねる。
@@ -104,14 +104,75 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
   const [copied, setCopied] = useState(false);
   const isAdmin = propIsAdmin ?? serverIsAdmin;
 
-  // リプレイ取り込みコマンド生成
-  const [showCommandGenerator, setShowCommandGenerator] = useState(false);
-  const [cmdMatchId, setCmdMatchId] = useState("");
-  const [cmdMinutes, setCmdMinutes] = useState(0); // 0 = 全編
+  // リプレイ取り込み依頼（Supabaseキュー連携）
+  const [showImportForm, setShowImportForm] = useState(false);
+  const [importMatchId, setImportMatchId] = useState("");
+  const [importMinutes, setImportMinutes] = useState(0); // 0 = 全編
+  const [isQueueing, setIsQueueing] = useState(false);
+  const [queueMsg, setQueueMsg] = useState<string | null>(null);
+  const [queueError, setQueueError] = useState<string | null>(null);
+
+  // コマンド生成（手動実行用）
+  const [showManualCmd, setShowManualCmd] = useState(false);
   const [cmdCopied, setCmdCopied] = useState(false);
 
-  const cleanMatchId = cmdMatchId.trim();
-  const generatedCommand = `d:\\my_work\\.venv\\Scripts\\python.exe d:\\my_work\\scripts\\replay_paths.py ${cleanMatchId || '<試合ID>'}${cmdMinutes > 0 ? ` --minutes ${cmdMinutes}` : ''} --upload`;
+  const cleanMatchId = importMatchId.trim();
+  const generatedCommand = `d:\\my_work\\.venv\\Scripts\\python.exe d:\\my_work\\scripts\\replay_paths.py ${cleanMatchId || '<試合ID>'}${importMinutes > 0 ? ` --minutes ${importMinutes}` : ''} --upload`;
+
+  // 現在処理中のタスクがあるか？
+  const activeTask = useMemo(() => {
+    return matches.find((m) => {
+      const st = m.quality?.status;
+      return st && ["pending", "capturing", "tracking", "uploading"].includes(st);
+    });
+  }, [matches]);
+
+  // 処理中タスクがある場合は3秒おきに自動更新
+  useEffect(() => {
+    if (!activeTask) return;
+    const timer = setInterval(() => {
+      loadList();
+    }, 3000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTask]);
+
+  const handleQueueImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importMatchId.trim()) return;
+    setIsQueueing(true);
+    setQueueError(null);
+    setQueueMsg(null);
+    try {
+      const res = await fetch("/api/admin/replay-paths/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ matchId: importMatchId.trim(), minutes: importMinutes }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "依頼の登録に失敗しました");
+      setQueueMsg(j.message);
+      loadList();
+    } catch (err: any) {
+      setQueueError(err.message);
+    } finally {
+      setIsQueueing(false);
+    }
+  };
+
+  const handleCancelTask = async (matchId: string) => {
+    if (!confirm(`試合 ${matchId} の取り込み依頼を取り消しますか？`)) return;
+    try {
+      await fetch(`/api/admin/replay-paths/queue?matchId=${encodeURIComponent(matchId)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      loadList();
+    } catch (e: any) {
+      alert(`取り消しに失敗しました: ${e.message}`);
+    }
+  };
 
   const handleCopyCommand = () => {
     navigator.clipboard.writeText(generatedCommand);
@@ -230,10 +291,10 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowCommandGenerator((v) => !v)}
+                  onClick={() => setShowImportForm((v) => !v)}
                   className="text-xs px-2.5 py-1 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1 font-bold"
                 >
-                  <Terminal className="h-3.5 w-3.5" /> 取り込みコマンドを作る
+                  <Download className="h-3.5 w-3.5" /> 新しい試合を取り込む
                 </button>
               </>
             )}
@@ -243,26 +304,28 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
           </div>
         </div>
 
-        {/* 取り込みコマンド生成パネル */}
-        {showCommandGenerator && (
-          <div className="p-3.5 rounded-xl border border-primary-edge-soft bg-primary-500/5 space-y-2.5 mt-2">
+        {/* 取り込みフォーム（ポータル完結型キュー連携） */}
+        {showImportForm && (
+          <div className="p-3.5 rounded-xl border border-primary-edge-soft bg-primary-500/5 space-y-3 mt-2">
             <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Terminal className="h-4 w-4 text-primary-600" /> PCで実行する取り込みコマンドを作成
+              <Download className="h-4 w-4 text-primary-600" /> ポータルからリプレイを取り込む
             </div>
             <p className="text-[11px] text-muted-strong leading-relaxed">
-              リプレイのミニマップ撮影は、LoLクライアントが起動しているPC手元で行う必要があります。試合IDを入力してコマンドをコピーし、PowerShell等に貼り付けて実行してください。
+              LoLクライアントでリプレイをDLした状態で試合IDを入力し、「取り込み開始」を押してください。手元PCの待機ワーカーが自動でリプレイを起動し、撮影・解析してこの画面に反映します。
             </p>
-            <div className="flex flex-wrap items-center gap-2">
+            <form onSubmit={handleQueueImport} className="flex flex-wrap items-center gap-2">
               <input
                 type="text"
                 placeholder="試合ID（例: JP1_608209265）"
-                value={cmdMatchId}
-                onChange={(e) => setCmdMatchId(e.target.value)}
+                value={importMatchId}
+                onChange={(e) => setImportMatchId(e.target.value)}
+                disabled={isQueueing}
                 className="px-2.5 py-1.5 rounded-lg border border-border bg-surface text-xs font-mono w-56 focus:outline-none focus:border-primary-500"
               />
               <select
-                value={cmdMinutes}
-                onChange={(e) => setCmdMinutes(Number(e.target.value))}
+                value={importMinutes}
+                onChange={(e) => setImportMinutes(Number(e.target.value))}
+                disabled={isQueueing}
                 className="px-2 py-1.5 rounded-lg border border-border bg-surface text-xs"
               >
                 <option value={0}>試合終了まで（全編）</option>
@@ -270,30 +333,78 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                 <option value={15}>15分まで</option>
               </select>
               <button
-                type="button"
-                onClick={handleCopyCommand}
-                className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                type="submit"
+                disabled={isQueueing || !importMatchId.trim()}
+                className="px-3.5 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
               >
-                {cmdCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {cmdCopied ? "コマンドをコピー完了！" : "コマンドをコピー"}
+                {isQueueing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                {isQueueing ? "登録中..." : "取り込み開始"}
               </button>
-            </div>
-            <div className="p-2 rounded-lg bg-black/80 text-emerald-400 font-mono text-[11px] break-all select-all flex items-center justify-between gap-2">
-              <span>{generatedCommand}</span>
-            </div>
-            <div className="text-[11px] text-muted-strong space-y-1 bg-surface p-2.5 rounded-lg border border-border">
-              <div className="font-bold text-foreground flex items-center gap-1">
-                <span>🖥️ PowerShell の開き方</span>
+            </form>
+
+            {queueMsg && (
+              <div className="text-xs text-teal-800 bg-teal-500/10 border border-teal-500/30 p-2.5 rounded-lg flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" />
+                <span>{queueMsg}</span>
               </div>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px]">
-                <li>キーボードの <kbd className="px-1 py-0.5 rounded bg-black/10 border font-mono">Win + R</kbd> を押し、<code className="text-primary-600 font-bold">powershell</code> と入力して Enter</li>
-                <li>または、タスクバーの検索欄に「PowerShell」と入力して開く</li>
-                <li>開いた画面で右クリック（または Ctrl + V）して Enter を押すだけで撮影が始まります</li>
-              </ul>
+            )}
+            {queueError && (
+              <div className="text-xs text-danger-700 bg-danger-100 border border-danger-edge-soft p-2.5 rounded-lg flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{queueError}</span>
+              </div>
+            )}
+
+            {/* 手動コマンド実行の折りたたみ */}
+            <div className="pt-1 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setShowManualCmd((v) => !v)}
+                className="text-[11px] text-muted-strong hover:text-foreground flex items-center gap-1 cursor-pointer"
+              >
+                <Terminal className="h-3 w-3" />
+                <span>手動コマンド（PowerShell）で実行したい場合はこちら</span>
+                {showManualCmd ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+              {showManualCmd && (
+                <div className="mt-2 p-2.5 rounded-lg bg-surface border border-border space-y-2">
+                  <div className="p-2 rounded bg-black/80 text-emerald-400 font-mono text-[11px] break-all select-all flex items-center justify-between gap-2">
+                    <span>{generatedCommand}</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyCommand}
+                      className="shrink-0 px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white text-[10px] flex items-center gap-1 cursor-pointer"
+                    >
+                      {cmdCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {cmdCopied ? "コピー済" : "コピー"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-strong">
+                    ※デスクトップの「リプレイ道筋取り込み.bat」をダブルクリックしても実行できます。
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="text-[10px] text-muted-strong flex items-center gap-1">
-              <span>💡 実行完了後、右上の「一覧を更新」を押すと地図に即座に反映されます。</span>
+          </div>
+        )}
+
+        {/* 現在処理中のタスク進捗バナー */}
+        {activeTask && (
+          <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-amber-600 shrink-0" />
+              <div>
+                <span className="font-bold font-mono">[{activeTask.match_id}]</span>{" "}
+                <span>{activeTask.quality?.message || "手元PCで処理中..."}</span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => handleCancelTask(activeTask.match_id)}
+              className="text-[11px] text-muted-strong hover:text-danger-600 flex items-center gap-0.5 cursor-pointer shrink-0"
+            >
+              <XCircle className="h-3.5 w-3.5" /> 取り消し
+            </button>
           </div>
         )}
         <p className="text-[11px] text-muted-strong leading-relaxed">
@@ -305,6 +416,8 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {matches.map((m) => {
               const q = m.quality?.heldOut?.["間の分の正解"];
+              const st = m.quality?.status;
+              const isProcessing = st && ["pending", "capturing", "tracking", "uploading"].includes(st);
               return (
                 <button
                   key={m.match_id}
@@ -314,10 +427,19 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                     selected === m.match_id ? "border-primary-edge-strong bg-primary-500/10 text-foreground" : "border-border hover:bg-black/5 text-muted-strong"
                   }`}
                 >
-                  <div className="font-mono font-bold">{m.match_id}</div>
+                  <div className="font-mono font-bold flex items-center gap-1">
+                    {isProcessing && <Loader2 className="h-3 w-3 animate-spin text-amber-500" />}
+                    <span>{m.match_id}</span>
+                  </div>
                   <div>
-                    {Math.round((m.covered_sec || 0) / 60)}分ぶん / 全{Math.round((m.duration_sec || 0) / 60)}分
-                    {q ? ` / 精度 ${Math.round(q.within500 * 100)}%` : ""}
+                    {isProcessing ? (
+                      <span className="text-amber-600 font-bold">処理中...</span>
+                    ) : (
+                      <>
+                        {Math.round((m.covered_sec || 0) / 60)}分ぶん / 全{Math.round((m.duration_sec || 0) / 60)}分
+                        {q ? ` / 精度 ${Math.round(q.within500 * 100)}%` : ""}
+                      </>
+                    )}
                   </div>
                 </button>
               );
