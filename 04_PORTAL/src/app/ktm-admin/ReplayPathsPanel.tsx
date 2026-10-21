@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check, Download, Loader2, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check, Download, Loader2, CheckCircle2, AlertTriangle, XCircle, Trash2 } from "lucide-react";
 
 // 管理画面「道筋（試作）」タブ（2026-10-21、ユーザー要望）。
 // リプレイのミニマップから読み取った10人の秒単位の移動経路を、地図に線で重ねる。
@@ -193,6 +193,25 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
       loadList();
     } catch (e: any) {
       alert(`取り消しに失敗しました: ${e.message}`);
+    }
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!confirm(`試合 ${matchId} の移動経路データを完全に削除しますか？\n※この操作は取り消せません。`)) return;
+    try {
+      const res = await fetch(`/api/admin/replay-paths/queue?matchId=${encodeURIComponent(matchId)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "削除に失敗しました");
+      if (selected === matchId) {
+        setSelected(null);
+        setData(null);
+      }
+      loadList();
+    } catch (e: any) {
+      alert(`削除に失敗しました: ${e.message}`);
     }
   };
 
@@ -469,29 +488,46 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
               const st = m.quality?.status;
               const isProcessing = st && ["pending", "capturing", "tracking", "uploading"].includes(st);
               return (
-                <button
+                <div
                   key={m.match_id}
-                  type="button"
-                  onClick={() => setSelected(m.match_id)}
-                  className={`shrink-0 text-left px-2.5 py-1.5 rounded-lg border text-[11px] cursor-pointer ${
+                  className={`group relative shrink-0 text-left rounded-lg border text-[11px] flex items-stretch transition ${
                     selected === m.match_id ? "border-primary-edge-strong bg-primary-500/10 text-foreground" : "border-border hover:bg-black/5 text-muted-strong"
                   }`}
                 >
-                  <div className="font-mono font-bold flex items-center gap-1">
-                    {isProcessing && <Loader2 className="h-3 w-3 animate-spin text-amber-500" />}
-                    <span>{m.match_id}</span>
-                  </div>
-                  <div>
-                    {isProcessing ? (
-                      <span className="text-amber-600 font-bold">処理中...</span>
-                    ) : (
-                      <>
-                        {Math.round((m.covered_sec || 0) / 60)}分ぶん / 全{Math.round((m.duration_sec || 0) / 60)}分
-                        {q ? ` / 精度 ${Math.round(q.within500 * 100)}%` : ""}
-                      </>
-                    )}
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(m.match_id)}
+                    className="px-2.5 py-1.5 cursor-pointer text-left flex-1"
+                  >
+                    <div className="font-mono font-bold flex items-center gap-1">
+                      {isProcessing && <Loader2 className="h-3 w-3 animate-spin text-amber-500" />}
+                      <span>{m.match_id}</span>
+                    </div>
+                    <div>
+                      {isProcessing ? (
+                        <span className="text-amber-600 font-bold">処理中...</span>
+                      ) : (
+                        <>
+                          {Math.round((m.covered_sec || 0) / 60)}分ぶん / 全{Math.round((m.duration_sec || 0) / 60)}分
+                          {q ? ` / 精度 ${Math.round(q.within500 * 100)}%` : ""}
+                        </>
+                      )}
+                    </div>
+                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteMatch(m.match_id);
+                      }}
+                      className="px-1.5 text-muted-strong/40 hover:text-danger-600 hover:bg-danger-500/10 rounded-r-lg transition flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100"
+                      title={`試合 ${m.match_id} を削除`}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -502,9 +538,20 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
       {loading && <div className="text-sm text-muted-strong">読み込み中…</div>}
 
       {!loading && selected && !data && (
-        <div className="p-8 rounded-2xl border border-border bg-surface text-center space-y-2">
+        <div className="p-8 rounded-2xl border border-border bg-surface text-center space-y-3">
           <p className="text-sm font-bold text-foreground">この試合の移動経路データは現在準備中、または取り込み処理中です</p>
           <p className="text-xs text-muted-strong">取り込みが完了すると、自動的にここにサモナーズリフトの軌跡が表示されます。</p>
+          {isAdmin && (
+            <div>
+              <button
+                type="button"
+                onClick={() => handleDeleteMatch(selected)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-danger-500/30 text-danger-700 bg-danger-500/5 hover:bg-danger-500/10 cursor-pointer inline-flex items-center gap-1 font-bold"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-danger-600" /> この未完了レコードを削除する
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -564,16 +611,28 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                 <div className="text-sm font-black text-foreground">
                   時間: {fmt(from)} 〜 {fmt(to)}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!playing && range[1] >= maxSec) setRange([range[0], range[0]]);
-                    setPlaying((v) => !v);
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1"
-                >
-                  {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />} {playing ? "止める" : "再生"}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {isAdmin && selected && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteMatch(selected)}
+                      className="text-xs px-2 py-1 rounded-lg border border-danger-500/30 text-danger-700 bg-danger-500/5 hover:bg-danger-500/10 cursor-pointer flex items-center gap-1 font-bold"
+                      title={`試合 ${selected} の移動経路データを完全に削除`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-danger-600" /> 削除
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!playing && range[1] >= maxSec) setRange([range[0], range[0]]);
+                      setPlaying((v) => !v);
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1 font-bold"
+                  >
+                    {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />} {playing ? "止める" : "再生"}
+                  </button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {(
