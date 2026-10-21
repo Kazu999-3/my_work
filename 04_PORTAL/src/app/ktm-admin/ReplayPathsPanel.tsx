@@ -201,7 +201,10 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
       setMatches(j.matches || []);
       if (j.isAdmin) setServerIsAdmin(true);
       if (j.viewKey) setCurrentViewKey(j.viewKey);
-      if (!selected && j.matches?.length) setSelected(j.matches[0].match_id);
+      if (!selected && j.matches?.length) {
+        const completedMatch = j.matches.find((m: MatchRow) => m.duration_sec && m.duration_sec > 0);
+        setSelected(completedMatch ? completedMatch.match_id : j.matches[0].match_id);
+      }
     } catch (e: any) {
       setError(e.message);
     }
@@ -223,10 +226,14 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
         const j = await res.json();
         if (!res.ok) throw new Error(j.error || `取得に失敗しました（${res.status}）`);
         const d = j as PathData;
+        if (!d || !d.players || !Array.isArray(d.players)) {
+          setData(null);
+          return;
+        }
         d.players.sort((a, b) => a.teamId - b.teamId || POS_ORDER.indexOf(a.position) - POS_ORDER.indexOf(b.position));
         setData(d);
         setVisible(Object.fromEntries(d.players.map((p) => [p.participantId, true])));
-        setRange([0, Math.min(180, d.coveredSec)]);
+        setRange([0, Math.min(180, d.coveredSec || 0)]);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -450,6 +457,13 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
       </div>
 
       {loading && <div className="text-sm text-muted-strong">読み込み中…</div>}
+
+      {!loading && selected && !data && (
+        <div className="p-8 rounded-2xl border border-border bg-surface text-center space-y-2">
+          <p className="text-sm font-bold text-foreground">この試合の移動経路データは現在準備中、または取り込み処理中です</p>
+          <p className="text-xs text-muted-strong">取り込みが完了すると、自動的にここにサモナーズリフトの軌跡が表示されます。</p>
+        </div>
+      )}
 
       {data && !loading && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,512px)_1fr]">
