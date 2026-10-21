@@ -6,10 +6,11 @@ import OnboardingChannelsPanel from "./OnboardingChannelsPanel";
 import MentorSettingsSection from "./_admin/MentorSettingsSection";
 import MatchmakerSection from "./_admin/MatchmakerSection";
 import OpsSummaryPanel from "./OpsSummaryPanel";
+import ReplayPathsPanel from "./ReplayPathsPanel";
 import PlayerAnalyzerPage from "../analyzer/page";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
-import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe } from "lucide-react";
+import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe, Map as MapIcon } from "lucide-react";
 import { useAdminRoster, type AdminMessage } from "./_admin/useAdminRoster";
 import { useRosterSync } from "./_admin/useRosterSync";
 import AdminToolbar from "./_admin/AdminToolbar";
@@ -94,12 +95,12 @@ export default function KtmAdminPage() {
   };
 
   // タブ（URLクエリ ?tab=history / ?tab=players と同期）
-  const [activeTab, setActiveTab] = useState<'players' | 'history' | 'onboarding' | 'ops' | 'analyzer'>('players');
+  const [activeTab, setActiveTab] = useState<'players' | 'history' | 'onboarding' | 'ops' | 'analyzer' | 'paths'>('players');
   useEffect(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab');
-    if (tabParam === 'history' || tabParam === 'players' || tabParam === 'onboarding' || tabParam === 'ops' || tabParam === 'analyzer') setActiveTab(tabParam);
+    if (tabParam === 'history' || tabParam === 'players' || tabParam === 'onboarding' || tabParam === 'ops' || tabParam === 'analyzer' || tabParam === 'paths') setActiveTab(tabParam);
   }, []);
-  const handleTabChange = (tab: 'players' | 'history' | 'onboarding' | 'ops' | 'analyzer') => {
+  const handleTabChange = (tab: 'players' | 'history' | 'onboarding' | 'ops' | 'analyzer' | 'paths') => {
     setActiveTab(tab);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tab);
@@ -264,11 +265,22 @@ export default function KtmAdminPage() {
           >
             <Globe className="h-4 w-4" /> 外部分析
           </button>
+          <button
+            onClick={() => handleTabChange('paths')}
+            className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
+              activeTab === 'paths'
+                ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5'
+                : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
+            }`}
+          >
+            <MapIcon className="h-4 w-4" /> 道筋<span className="hidden sm:inline">（試作）</span>
+          </button>
         </div>
 
         {activeTab === 'history' && <MatchHistoryPanel />}
         {activeTab === 'ops' && <OpsSummaryPanel />}
         {activeTab === 'analyzer' && <PlayerAnalyzerPage />}
+        {activeTab === 'paths' && <ReplayPathsPanel />}
         {activeTab === 'onboarding' && (
           <div className="space-y-6">
             <OnboardingChannelsPanel />
