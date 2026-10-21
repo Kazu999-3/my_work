@@ -7,12 +7,22 @@ status が 'pending' の試合があれば、手元PCでリプレイを起動・
 import atexit, json, os, re, ssl, sys, time, urllib.request, traceback
 import subprocess
 
+BASE = os.path.dirname(os.path.abspath(__file__))
+
+# pythonw.exe （非表示実行）で sys.stdout が None の場合はログファイルに自動リダイレクト
+if sys.stdout is None:
+    try:
+        log_f = open(os.path.join(BASE, "worker_output.log"), "a", encoding="utf-8", buffering=1)
+        sys.stdout = log_f
+        sys.stderr = log_f
+    except Exception:
+        pass
+
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
-BASE = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = BASE
 PYTHON_EXE = sys.executable
 GAME_CFG = "C:/Riot Games/League of Legends/Config/game.cfg"
