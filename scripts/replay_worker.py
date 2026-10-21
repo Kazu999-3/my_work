@@ -4,7 +4,7 @@ Supabase の replay_paths テーブルを定期監視し、
 status が 'pending' の試合があれば、手元PCでリプレイを起動・撮影・解析・アップロードまで全自動で実行する。
 """
 
-import json, os, ssl, sys, time, urllib.request, traceback
+import atexit, json, os, re, ssl, sys, time, urllib.request, traceback
 import subprocess
 
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
@@ -15,6 +15,57 @@ if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
 BASE = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = BASE
 PYTHON_EXE = sys.executable
+GAME_CFG = "C:/Riot Games/League of Legends/Config/game.cfg"
+GAME_CFG_BACKUP = "C:/Riot Games/League of Legends/Config/game.cfg.user_default"
+
+
+def restore_user_game_cfg():
+    """LoL画面設定を確実にユーザーの本来の設定（1600x900 ウィンドウモード）へ復元・維持するフェイルセーフ"""
+    if not os.path.exists(GAME_CFG):
+        return
+
+    # LoLプロセスが動いていれば終了を待機
+    for _ in range(2):
+        subprocess.run('taskkill /IM "League of Legends.exe" /F', shell=True, capture_output=True)
+        t0 = time.time()
+        while time.time() - t0 < 10:
+            res = subprocess.run('tasklist /FI "IMAGENAME eq League of Legends.exe"', shell=True, capture_output=True, text=True)
+            if "League of Legends.exe" not in res.stdout:
+                time.sleep(1.0)
+                break
+            time.sleep(0.5)
+
+    target_content = None
+    if os.path.exists(GAME_CFG_BACKUP):
+        try:
+            with open(GAME_CFG_BACKUP, "r", encoding="utf-8") as f:
+                target_content = f.read()
+        except Exception:
+            pass
+
+    if not target_content and os.path.exists(GAME_CFG):
+        try:
+            with open(GAME_CFG, "r", encoding="utf-8") as f:
+                target_content = f.read()
+        except Exception:
+            pass
+
+    if target_content:
+        # 万が一 1920x1080 ボーダレスになっていたら矯正
+        if "WindowMode=2" in target_content or "Width=1920" in target_content:
+            target_content = re.sub(r"^WindowMode=.*$", "WindowMode=1", target_content, flags=re.MULTILINE)
+            target_content = re.sub(r"^Width=.*$", "Width=1600", target_content, flags=re.MULTILINE)
+            target_content = re.sub(r"^Height=.*$", "Height=900", target_content, flags=re.MULTILINE)
+
+        try:
+            with open(GAME_CFG, "w", encoding="utf-8") as f:
+                f.write(target_content)
+        except Exception as e:
+            print(f"フェイルセーフ: game.cfg 復元失敗: {e}", flush=True)
+
+
+# ワーカー終了時に必ず設定を復元
+atexit.register(restore_user_game_cfg)
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
@@ -137,9 +188,15 @@ def process_task(env, match_id, minutes):
         print(f"[{match_id}] 実行時例外: {err_msg}", flush=True)
         traceback.print_exc()
         update_status(env, match_id, "failed", err_msg, error=err_msg)
+    finally:
+        # 成功・失敗・例外にかかわらず、親ワーカー側でも確実にゲーム設定をユーザーの元設定へ復元する
+        restore_user_game_cfg()
 
 
 def main():
+    # 起動時にも万が一前回の異常終了で設定が崩れていたら即座に元通りに修復
+    restore_user_game_cfg()
+
     env = load_env()
     if "NEXT_PUBLIC_SUPABASE_URL" not in env or "SUPABASE_SERVICE_ROLE_KEY" not in env:
         print("エラー: .env.local に Supabase の接続情報がありません", flush=True)

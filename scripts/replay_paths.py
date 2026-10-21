@@ -14,24 +14,95 @@
 #    前向きと後ろ向きの両方から「近くだけ」を探して追いかけ、確かな方を採る
 #  - 動かない背景（全体の中央値）でも点数が出る場所は減点する（青の泉のショップのアイコン対策）
 #  - デスは試合の記録から時刻が分かるので泉へ移す。8秒以上見失ったら、リコールを疑って泉の周りも探す
-import argparse, contextlib, ctypes, io, json, os, re, ssl, sys, time, urllib.request
+import argparse, atexit, contextlib, ctypes, io, json, os, re, ssl, subprocess, sys, time, urllib.request
 import numpy as np
 import cv2
 from PIL import Image, ImageGrab
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 GAME_CFG = "C:/Riot Games/League of Legends/Config/game.cfg"
+GAME_CFG_BACKUP = "C:/Riot Games/League of Legends/Config/game.cfg.user_default"
+
+_SAVED_ORIGINAL_CFG = None
+
+
+def close_game_and_wait(timeout=15):
+    """League of Legends.exe を確実に終了させ、プロセスが完全に消滅するまで待機する"""
+    for _ in range(3):
+        subprocess.run('taskkill /IM "League of Legends.exe" /F', shell=True, capture_output=True)
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            res = subprocess.run('tasklist /FI "IMAGENAME eq League of Legends.exe"', shell=True, capture_output=True, text=True)
+            if "League of Legends.exe" not in res.stdout:
+                time.sleep(1.2)  # プロセス終了後のファイルシステム/キャッシュ安定待機
+                return True
+            time.sleep(0.5)
+    return False
+
+
+def restore_game_config():
+    """設定ファイルを確実にユーザー本来の設定（1600x900 ウィンドウモード）へ復元する"""
+    global _SAVED_ORIGINAL_CFG
+    if not os.path.exists(GAME_CFG):
+        return
+
+    # ゲームプロセスが動いていれば確実に落として終了を待つ
+    close_game_and_wait(timeout=10)
+
+    target_content = None
+    # 1. 永続マスターバックアップが存在すれば最優先（ユーザーの1600x900が保証されている）
+    if os.path.exists(GAME_CFG_BACKUP):
+        try:
+            with open(GAME_CFG_BACKUP, "r", encoding="utf-8") as f:
+                target_content = f.read()
+        except Exception:
+            pass
+
+    # 2. マスターバックアップが読めなければ開始時に取得したオリジナル
+    if not target_content and _SAVED_ORIGINAL_CFG:
+        target_content = _SAVED_ORIGINAL_CFG
+
+    if not target_content:
+        return
+
+    # 万が一 target_content 自体が 1920x1080 ボーダレスになっていたら 1600x900 ウィンドウモードに強制矯正
+    if "WindowMode=2" in target_content or "Width=1920" in target_content:
+        target_content = re.sub(r"^WindowMode=.*$", "WindowMode=1", target_content, flags=re.MULTILINE)
+        target_content = re.sub(r"^Width=.*$", "Width=1600", target_content, flags=re.MULTILINE)
+        target_content = re.sub(r"^Height=.*$", "Height=900", target_content, flags=re.MULTILINE)
+
+    try:
+        with open(GAME_CFG, "w", encoding="utf-8") as f:
+            f.write(target_content)
+        # 実際に書き込まれたか検証
+        with open(GAME_CFG, "r", encoding="utf-8") as f:
+            verified = f.read()
+        w_m = re.search(r"^Width=(\d+)", verified, re.M)
+        h_m = re.search(r"^Height=(\d+)", verified, re.M)
+        wm_m = re.search(r"^WindowMode=(\d+)", verified, re.M)
+        w = w_m.group(1) if w_m else "?"
+        h = h_m.group(1) if h_m else "?"
+        wm = wm_m.group(1) if wm_m else "?"
+        print(f"game.cfg を元の設定に自動復元完了（解像度: {w}x{h}, WindowMode: {wm}）", flush=True)
+    except Exception as e:
+        print(f"game.cfg 復元失敗: {e}", flush=True)
+
+
+# スクリプト終了時（正常終了・例外・SIGINTなど）に必ず設定を復元するフェイルセーフ
+atexit.register(restore_game_config)
 
 
 @contextlib.contextmanager
 def temporary_game_config():
     """撮影時だけ解像度・WindowModeを1920x1080ボーダレスにし、終了後は確実に元の設定へ自動復元する"""
+    global _SAVED_ORIGINAL_CFG
     if not os.path.exists(GAME_CFG):
         yield
         return
     try:
         with open(GAME_CFG, "r", encoding="utf-8") as f:
             original = f.read()
+            _SAVED_ORIGINAL_CFG = original
     except Exception as e:
         print("game.cfg 読み込み失敗:", e, flush=True)
         yield
@@ -57,12 +128,7 @@ def temporary_game_config():
     try:
         yield
     finally:
-        try:
-            with open(GAME_CFG, "w", encoding="utf-8") as f:
-                f.write(original)
-            print("game.cfg を元の設定に自動復元しました", flush=True)
-        except Exception as e:
-            print("game.cfg 復元失敗:", e, flush=True)
+        restore_game_config()
 CROP = (1630, 790, 1920, 1080)                          # 画面上のミニマップを含む範囲
 CALIB = ((57.86, -1271.94), (-58.64, 16230.35))          # 切り抜き画像の px → 試合の座標（x, y それぞれ 傾き・切片）
 FOUNTAIN = {100: (400, 400), 200: (14400, 14400)}
@@ -143,7 +209,7 @@ def open_replay(game_id, players):
     if ok:
         return loaded
     if n:
-        os.system('taskkill /IM "League of Legends.exe" /F >NUL 2>&1')
+        close_game_and_wait()
     # 閉じた直後は「開く」を受け付けないことがあるので、ゲームが立ち上がらなければ頼み直す
     started = False
     for attempt in range(4):
@@ -467,7 +533,7 @@ def main():
                 if not loaded()[0]:
                     raise SystemExit("撮影中にリプレイが別の試合に切り替わりました。撮り直してください")
             finally:
-                os.system('taskkill /IM "League of Legends.exe" /F >NUL 2>&1')
+                close_game_and_wait()
     t0 = time.time()
     trk = Tracker(work, tl, players, icons)
     quality = {}

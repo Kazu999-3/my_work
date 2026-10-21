@@ -103,3 +103,7 @@ scratch/
 
 # TypeScript のビルドキャッシュ（ビルドのたびに書き換わる。2026-10-07 管理対象から外した）
 *.tsbuildinfo
+
+# リプレイ経路解析のキャッシュ・作業ファイル
+scripts/icons/
+scripts/matches/
