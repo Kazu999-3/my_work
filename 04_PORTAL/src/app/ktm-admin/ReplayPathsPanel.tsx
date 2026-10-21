@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check, Download, Loader2, CheckCircle2, AlertTriangle, XCircle, Trash2 } from "lucide-react";
+import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check, Download, Loader2, CheckCircle2, AlertTriangle, XCircle, Trash2, Gauge } from "lucide-react";
 
 // 管理画面「道筋（試作）」タブ（2026-10-21、ユーザー要望）。
 // リプレイのミニマップから読み取った10人の秒単位の移動経路を、地図に線で重ねる。
@@ -103,6 +103,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
   const [range, setRange] = useState<[number, number]>([0, 180]);
   const [trail, setTrail] = useState(0); // 0 = 範囲の最初から全部、>0 = 終わりから◯秒だけ
   const [playing, setPlaying] = useState(false);
+  const [playSpeed, setPlaySpeed] = useState<number>(8); // 再生速度倍率（1, 2, 4, 8, 16, 32x）
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 権限と共有キー
@@ -287,20 +288,44 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
       .finally(() => setLoading(false));
   }, [selected, viewKey]);
 
-  // 再生: 終わりの時刻を進める（試合の1秒 = 画面の1/8秒）
+  // 再生: 終わりの時刻を進める（速度可変対応: 1x〜32x）
   useEffect(() => {
     if (!playing || !data) return;
+
+    let intervalMs = 125;
+    let stepSec = 1;
+    if (playSpeed === 1) {
+      intervalMs = 1000;
+      stepSec = 1;
+    } else if (playSpeed === 2) {
+      intervalMs = 500;
+      stepSec = 1;
+    } else if (playSpeed === 4) {
+      intervalMs = 250;
+      stepSec = 1;
+    } else if (playSpeed === 8) {
+      intervalMs = 125;
+      stepSec = 1;
+    } else if (playSpeed === 16) {
+      intervalMs = 125;
+      stepSec = 2;
+    } else if (playSpeed === 32) {
+      intervalMs = 125;
+      stepSec = 4;
+    }
+
     timer.current = setInterval(() => {
       setRange(([a, b]) => {
-        const nb = Math.min(data.coveredSec, b + 1);
+        const nb = Math.min(data.coveredSec, b + stepSec);
         if (nb >= data.coveredSec) setPlaying(false);
         return [a, nb];
       });
-    }, 125);
+    }, intervalMs);
+
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
-  }, [playing, data]);
+  }, [playing, data, playSpeed]);
 
   const colorOf = useMemo(() => {
     const m: Record<number, string> = {};
@@ -659,6 +684,36 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                   >
                     {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />} {playing ? "止める" : "再生"}
                   </button>
+                </div>
+              </div>
+
+              {/* 再生速度セレクター */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-muted-strong pt-0.5">
+                <span className="font-bold flex items-center gap-1 text-foreground">
+                  <Gauge className="h-3.5 w-3.5 text-primary-600" /> 速度:
+                </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {[
+                    [1, "1x (等倍)"],
+                    [2, "2x"],
+                    [4, "4x"],
+                    [8, "8x (標準)"],
+                    [16, "16x"],
+                    [32, "32x (超高速)"],
+                  ].map(([spd, label]) => (
+                    <button
+                      key={spd}
+                      type="button"
+                      onClick={() => setPlaySpeed(spd as number)}
+                      className={`px-2 py-0.5 rounded border text-[11px] font-mono cursor-pointer transition ${
+                        playSpeed === spd
+                          ? "border-primary-edge-strong bg-primary-500/15 text-primary-700 font-bold shadow-xs"
+                          : "border-border hover:bg-black/5 text-muted-strong"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
