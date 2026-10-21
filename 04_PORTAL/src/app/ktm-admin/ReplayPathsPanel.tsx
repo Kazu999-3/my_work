@@ -85,6 +85,13 @@ type ReplayPathsPanelProps = {
   onKeyError?: () => void;
 };
 
+function normalizeMatchId(raw: string): string {
+  const s = raw.trim().toUpperCase();
+  if (/^JP_\d+$/i.test(s)) return s.replace(/^JP_/i, 'JP1_');
+  if (/^\d+$/.test(s)) return `JP1_${s}`;
+  return s;
+}
+
 export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyError }: ReplayPathsPanelProps = {}) {
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -116,7 +123,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
   const [showManualCmd, setShowManualCmd] = useState(false);
   const [cmdCopied, setCmdCopied] = useState(false);
 
-  const cleanMatchId = importMatchId.trim();
+  const cleanMatchId = normalizeMatchId(importMatchId);
   const generatedCommand = `d:\\my_work\\.venv\\Scripts\\python.exe d:\\my_work\\scripts\\replay_paths.py ${cleanMatchId || '<試合ID>'}${importMinutes > 0 ? ` --minutes ${importMinutes}` : ''} --upload`;
 
   // 現在処理中のタスクがあるか？
@@ -144,7 +151,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
 
   const handleQueueImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    const matchIdToQueue = importMatchId.trim();
+    const matchIdToQueue = normalizeMatchId(importMatchId);
     if (!matchIdToQueue) return;
     setIsQueueing(true);
     setQueueError(null);

@@ -11,11 +11,18 @@ export async function POST(request: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const matchId = (body.matchId || '').trim();
+  let matchId = (body.matchId || '').trim().toUpperCase();
   const minutes = Number(body.minutes) || 0;
 
+  // JP_ や数字のみの入力を自動で正規化（例: JP_608209265 ➔ JP1_608209265, 608209265 ➔ JP1_608209265）
+  if (/^JP_\d+$/i.test(matchId)) {
+    matchId = matchId.replace(/^JP_/i, 'JP1_');
+  } else if (/^\d+$/.test(matchId)) {
+    matchId = `JP1_${matchId}`;
+  }
+
   if (!/^[A-Z0-9]+_\d+$/.test(matchId)) {
-    return NextResponse.json({ error: '試合IDの形式が正しくありません（例: JP1_608213185）' }, { status: 400 });
+    return NextResponse.json({ error: '試合IDの形式が正しくありません（例: JP1_608213185 または 608213185）' }, { status: 400 });
   }
 
   // 既に完了しているか、実行中かをチェック
