@@ -107,7 +107,14 @@ export async function POST(request: Request) {
       state.logs.push(`[${new Date().toLocaleTimeString('ja-JP')}] 正常完了`);
     } else {
       state.phase = 'failed';
-      state.message = `取り込み中にエラーが発生しました（終了コード ${code}）`;
+      // 直近のエラーメッセージ行を探して表示
+      const lastErrorLine = [...state.logs].reverse().find((l) =>
+        l.includes('失敗') || l.includes('エラー') || l.includes('SystemExit') || l.includes('Error') || l.includes('一致しません') || l.includes('開けません')
+      );
+      const cleanReason = lastErrorLine ? lastErrorLine.replace(/^.*SystemExit:\s*/, '').trim() : '';
+      state.message = cleanReason
+        ? `エラー: ${cleanReason}`
+        : `取り込み中にエラーが発生しました（終了コード ${code}）`;
       state.logs.push(`[${new Date().toLocaleTimeString('ja-JP')}] 終了コード ${code} で失敗`);
     }
   });
