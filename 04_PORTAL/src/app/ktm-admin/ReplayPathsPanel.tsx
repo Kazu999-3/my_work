@@ -366,7 +366,9 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
               <Download className="h-4 w-4 text-primary-600" /> ポータルからリプレイを取り込む
             </div>
             <p className="text-[11px] text-muted-strong leading-relaxed">
-              LoLクライアントでリプレイをDLした状態で試合IDを入力し、「取り込み開始」を押してください。手元PCの待機ワーカーが自動でリプレイを起動し、撮影・解析してこの画面に反映します。
+              LoLクライアントでリプレイをDLした状態で試合IDを入力し、「取り込み開始」を押してください。
+              <br />
+              <span className="text-primary-700 font-bold">※デスクトップの「KTMリプレイ待機ワーカー常駐.bat」を起動（最小化でOK）しておくと、ポータルからの指示を検知して自動で撮影・解析が走ります。</span>
             </p>
             <form onSubmit={handleQueueImport} className="flex flex-wrap items-center gap-2">
               <input
