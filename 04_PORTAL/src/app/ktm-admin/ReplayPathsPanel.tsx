@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RefreshCw, Download, Loader2, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Pause, Play, RefreshCw, Download, Loader2, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Link, Copy, Check } from "lucide-react";
 
 // 管理画面「道筋（試作）」タブ（2026-10-21、ユーザー要望）。
 // リプレイのミニマップから読み取った10人の秒単位の移動経路を、地図に線で重ねる。
@@ -88,7 +88,13 @@ function positionAt(points: Player["points"], t: number) {
   return points[lo];
 }
 
-export default function ReplayPathsPanel() {
+type ReplayPathsPanelProps = {
+  isAdmin?: boolean;
+  viewKey?: string;
+  onKeyError?: () => void;
+};
+
+export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyError }: ReplayPathsPanelProps = {}) {
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [data, setData] = useState<PathData | null>(null);
@@ -101,6 +107,12 @@ export default function ReplayPathsPanel() {
   const [playing, setPlaying] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // 権限と共有キー
+  const [serverIsAdmin, setServerIsAdmin] = useState(false);
+  const [currentViewKey, setCurrentViewKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const isAdmin = propIsAdmin ?? serverIsAdmin;
+
   // リプレイ取り込み
   const [showImportForm, setShowImportForm] = useState(false);
   const [importMatchId, setImportMatchId] = useState("");
@@ -109,8 +121,9 @@ export default function ReplayPathsPanel() {
   const [importError, setImportError] = useState<string | null>(null);
   const [showLogs, setShowLogs] = useState(false);
 
-  // 取り込みステータスの定期同期
+  // 取り込みステータスの定期同期（管理者のみ）
   const fetchImportStatus = async () => {
+    if (!isAdmin) return;
     try {
       const res = await fetch("/api/admin/replay-paths/import", { credentials: "include", cache: "no-store" });
       const j = await res.json();
@@ -124,14 +137,14 @@ export default function ReplayPathsPanel() {
   };
 
   useEffect(() => {
-    fetchImportStatus();
-  }, []);
+    if (isAdmin) fetchImportStatus();
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (!importStatus?.running) return;
+    if (!isAdmin || !importStatus?.running) return;
     const interval = setInterval(fetchImportStatus, 2000);
     return () => clearInterval(interval);
-  }, [importStatus?.running]);
+  }, [isAdmin, importStatus?.running]);
 
   const handleStartImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,13 +165,27 @@ export default function ReplayPathsPanel() {
     }
   };
 
+  const handleCopyShareUrl = () => {
+    const key = currentViewKey || viewKey || 'ktm-scout-secret';
+    const url = `${window.location.origin}/replay-paths?key=${encodeURIComponent(key)}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   const loadList = async () => {
     setError(null);
     try {
-      const res = await fetch("/api/admin/replay-paths", { credentials: "include", cache: "no-store" });
+      const keyParam = viewKey ? `?key=${encodeURIComponent(viewKey)}` : "";
+      const res = await fetch(`/api/replay-paths${keyParam}`, { credentials: "include", cache: "no-store" });
       const j = await res.json();
-      if (!res.ok) throw new Error(j.error || `取得に失敗しました（${res.status}）`);
+      if (!res.ok) {
+        if (res.status === 401 && onKeyError) onKeyError();
+        throw new Error(j.error || `取得に失敗しました（${res.status}）`);
+      }
       setMatches(j.matches || []);
+      if (j.isAdmin) setServerIsAdmin(true);
+      if (j.viewKey) setCurrentViewKey(j.viewKey);
       if (!selected && j.matches?.length) setSelected(j.matches[0].match_id);
     } catch (e: any) {
       setError(e.message);
@@ -168,14 +195,15 @@ export default function ReplayPathsPanel() {
   useEffect(() => {
     loadList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [viewKey]);
 
   useEffect(() => {
     if (!selected) return;
     setLoading(true);
     setError(null);
     setPlaying(false);
-    fetch(`/api/admin/replay-paths?matchId=${encodeURIComponent(selected)}`, { credentials: "include", cache: "no-store" })
+    const keyParam = viewKey ? `&key=${encodeURIComponent(viewKey)}` : "";
+    fetch(`/api/replay-paths?matchId=${encodeURIComponent(selected)}${keyParam}`, { credentials: "include", cache: "no-store" })
       .then(async (res) => {
         const j = await res.json();
         if (!res.ok) throw new Error(j.error || `取得に失敗しました（${res.status}）`);
@@ -187,7 +215,7 @@ export default function ReplayPathsPanel() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [selected]);
+  }, [selected, viewKey]);
 
   // 再生: 終わりの時刻を進める（試合の1秒 = 画面の1/8秒）
   useEffect(() => {
@@ -234,14 +262,27 @@ export default function ReplayPathsPanel() {
       <div className="bg-surface border border-border rounded-2xl p-4 space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-lg font-black text-foreground">🗺️ リプレイの道筋（試作）</h3>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowImportForm((v) => !v)}
-              className="text-xs px-2.5 py-1 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1 font-bold"
-            >
-              <Download className="h-3.5 w-3.5" /> 新しい試合を取り込む
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {isAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCopyShareUrl}
+                  className="text-xs px-2.5 py-1 rounded-lg border border-teal-500/30 text-teal-700 bg-teal-500/5 hover:bg-teal-500/10 cursor-pointer flex items-center gap-1 font-bold"
+                  title="合言葉付きの閲覧専用URLをクリップボードにコピー"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5 text-teal-600" /> : <Link className="h-3.5 w-3.5" />}
+                  {copied ? "リンクをコピー完了！" : "共有URLをコピー"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowImportForm((v) => !v)}
+                  className="text-xs px-2.5 py-1 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1 font-bold"
+                >
+                  <Download className="h-3.5 w-3.5" /> 新しい試合を取り込む
+                </button>
+              </>
+            )}
             <button type="button" onClick={loadList} className="text-xs px-2.5 py-1 rounded-lg border border-border hover:bg-black/5 cursor-pointer flex items-center gap-1">
               <RefreshCw className="h-3.5 w-3.5" /> 一覧を更新
             </button>
