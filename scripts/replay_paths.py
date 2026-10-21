@@ -14,7 +14,7 @@
 #    前向きと後ろ向きの両方から「近くだけ」を探して追いかけ、確かな方を採る
 #  - 動かない背景（全体の中央値）でも点数が出る場所は減点する（青の泉のショップのアイコン対策）
 #  - デスは試合の記録から時刻が分かるので泉へ移す。8秒以上見失ったら、リコールを疑って泉の周りも探す
-import argparse, atexit, contextlib, ctypes, io, json, os, re, ssl, subprocess, sys, time, urllib.request
+import argparse, atexit, bisect, contextlib, ctypes, io, json, os, re, ssl, subprocess, sys, time, urllib.request
 import numpy as np
 import cv2
 from PIL import Image, ImageGrab
@@ -283,7 +283,10 @@ def capture(work, end_sec, speed=4.0):
             t = (t0 + t1) / 2
             m = int(t // 60)
             if m != cur:
-                flush(cur); buf, tbuf, cur = [], [], m
+                flush(cur)
+                buf, tbuf, cur = [], [], m
+                pct = int(min(100, (t / max(1, end_sec)) * 100))
+                print(f"撮影中: {m}/{int(end_sec // 60)}分 ({pct}%)", flush=True)
             buf.append(cv2.cvtColor(im, cv2.COLOR_RGB2BGR)); tbuf.append(t)
             if t1 >= end_sec:
                 break
@@ -404,8 +407,11 @@ class Tracker:
         """anchors_min の分の正解位置を起点に全員を追う。返り値: {pid: [(t, x, y, 見失ってからの秒数)]}（試合の座標）"""
         fr_meta = self.tl["info"]["frames"]
         res = {pid: [] for pid in self.players}
-        for a, b in zip(anchors_min, anchors_min[1:]):
+        total_steps = max(1, len(anchors_min) - 1)
+        for idx, (a, b) in enumerate(zip(anchors_min, anchors_min[1:]), 1):
             ta = fr_meta[a]["timestamp"] / 1000; tb = fr_meta[b]["timestamp"] / 1000
+            pct = int((idx / total_steps) * 100)
+            print(f"解析中: {idx}/{total_steps}分 ({pct}%)", flush=True)
             frames, times = self.load_range(ta, tb)
             if not frames:
                 continue
@@ -435,8 +441,17 @@ class Tracker:
 # ---------------------------------------------------------------- 5) 精度の測定
 def evaluate(tr, tl, players, anchors):
     def nearest(lst, t, before=False):
-        c = [p for p in lst if (p[0] < t if before else True)]
-        return min(c, key=lambda p: abs(p[0] - t)) if c else None
+        if not lst:
+            return None
+        # 二分探索で最寄りの点を O(log N) で高速取得
+        idx = bisect.bisect_left(lst, t, key=lambda p: p[0])
+        candidates = []
+        for i in (idx - 1, idx, idx + 1):
+            if 0 <= i < len(lst):
+                p = lst[i]
+                if not before or p[0] < t:
+                    candidates.append(p)
+        return min(candidates, key=lambda p: abs(p[0] - t)) if candidates else None
     mins, evs = [], []
     last_min = max(anchors)
     for m in range(1, last_min + 1):

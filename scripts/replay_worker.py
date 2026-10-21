@@ -178,8 +178,14 @@ def process_task(env, match_id, minutes):
 
             if "撮影用設定" in line_str:
                 update_status(env, match_id, "capturing", "画面設定を一時変更し、リプレイを準備中...")
+            elif "撮影中:" in line_str:
+                # 例: 撮影中: 12/30分 (40%)
+                update_status(env, match_id, "capturing", f"ミニマップ撮影中... {line_str.split('撮影中:')[1].strip()}")
             elif "撮影:" in line_str:
-                update_status(env, match_id, "tracking", "撮影完了。10人の移動経路を解析・追跡中...")
+                update_status(env, match_id, "tracking", "撮影完了。10人の移動経路の解析準備中...")
+            elif "解析中:" in line_str:
+                # 例: 解析中: 15/30分 (50%)
+                update_status(env, match_id, "tracking", f"10人の移動経路を解析中... {line_str.split('解析中:')[1].strip()}")
             elif "追跡にかかった時間" in line_str:
                 update_status(env, match_id, "uploading", "解析完了。Supabaseへデータをアップロード中...")
 

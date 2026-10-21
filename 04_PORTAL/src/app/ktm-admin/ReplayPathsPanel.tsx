@@ -445,25 +445,43 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
           </div>
         )}
 
-        {/* 現在処理中のタスク進捗バナー */}
-        {activeTask && (
-          <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-2 mt-2">
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-amber-600 shrink-0" />
-              <div>
-                <span className="font-bold font-mono">[{activeTask.match_id}]</span>{" "}
-                <span>{activeTask.quality?.message || "手元PCで処理中..."}</span>
+        {/* 現在処理中のタスク進捗バナー（プログレスバー付き） */}
+        {activeTask && (() => {
+          const msg = activeTask.quality?.message || "手元PCで処理中...";
+          const pctMatch = msg.match(/(\d+)%/);
+          const percent = pctMatch ? Math.min(100, Math.max(0, parseInt(pctMatch[1], 10))) : null;
+
+          return (
+            <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs mt-2 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-600 shrink-0" />
+                  <div>
+                    <span className="font-bold font-mono">[{activeTask.match_id}]</span>{" "}
+                    <span>{msg}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCancelTask(activeTask.match_id)}
+                  className="text-[11px] text-muted-strong hover:text-danger-600 flex items-center gap-0.5 cursor-pointer shrink-0"
+                >
+                  <XCircle className="h-3.5 w-3.5" /> 取り消し
+                </button>
               </div>
+
+              {/* パーセンテージ付きプログレスバー */}
+              {percent !== null && (
+                <div className="w-full bg-amber-500/20 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-amber-500 h-2 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => handleCancelTask(activeTask.match_id)}
-              className="text-[11px] text-muted-strong hover:text-danger-600 flex items-center gap-0.5 cursor-pointer shrink-0"
-            >
-              <XCircle className="h-3.5 w-3.5" /> 取り消し
-            </button>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 失敗したタスクの通知バナー */}
         {!activeTask && failedTask && (
