@@ -1,21 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RefreshCw, Download, Loader2, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Link, Copy, Check } from "lucide-react";
+import { Pause, Play, RefreshCw, Terminal, ChevronDown, ChevronUp, Link, Copy, Check } from "lucide-react";
 
 // 管理画面「道筋（試作）」タブ（2026-10-21、ユーザー要望）。
 // リプレイのミニマップから読み取った10人の秒単位の移動経路を、地図に線で重ねる。
-// 読み取りは PC のスクリプト（mobilecheck/replay_paths.py）が行い、replay_paths 表に保存したものを /api/admin/replay-paths で読む。
+// 読み取りは PC のスクリプト（scripts/replay_paths.py）が行い、replay_paths 表に保存したものを /api/replay-paths で読む。
 // 読み取りの仕組み上、アイコンが重なって見失った区間は「最後に見えた場所」に留まるので、見失ってから5秒を超えた区間は点線にしている。
-
-type ImportStatus = {
-  running: boolean;
-  matchId: string | null;
-  phase: 'idle' | 'starting' | 'capturing' | 'tracking' | 'uploading' | 'completed' | 'failed';
-  message: string;
-  startedAt: number | null;
-  logs: string[];
-};
 
 type Player = {
   participantId: number;
@@ -113,56 +104,19 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
   const [copied, setCopied] = useState(false);
   const isAdmin = propIsAdmin ?? serverIsAdmin;
 
-  // リプレイ取り込み
-  const [showImportForm, setShowImportForm] = useState(false);
-  const [importMatchId, setImportMatchId] = useState("");
-  const [importMinutes, setImportMinutes] = useState(0); // 0 = 全編
-  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [showLogs, setShowLogs] = useState(false);
+  // リプレイ取り込みコマンド生成
+  const [showCommandGenerator, setShowCommandGenerator] = useState(false);
+  const [cmdMatchId, setCmdMatchId] = useState("");
+  const [cmdMinutes, setCmdMinutes] = useState(0); // 0 = 全編
+  const [cmdCopied, setCmdCopied] = useState(false);
 
-  // 取り込みステータスの定期同期（管理者のみ）
-  const fetchImportStatus = async () => {
-    if (!isAdmin) return;
-    try {
-      const res = await fetch("/api/admin/replay-paths/import", { credentials: "include", cache: "no-store" });
-      const j = await res.json();
-      if (res.ok) {
-        setImportStatus(j);
-        if (j.phase === 'completed' && j.matchId) {
-          loadList();
-        }
-      }
-    } catch {}
-  };
+  const cleanMatchId = cmdMatchId.trim();
+  const generatedCommand = `d:\\my_work\\.venv\\Scripts\\python.exe scripts/replay_paths.py ${cleanMatchId || '<試合ID>'}${cmdMinutes > 0 ? ` --minutes ${cmdMinutes}` : ''} --upload`;
 
-  useEffect(() => {
-    if (isAdmin) fetchImportStatus();
-  }, [isAdmin]);
-
-  useEffect(() => {
-    if (!isAdmin || !importStatus?.running) return;
-    const interval = setInterval(fetchImportStatus, 2000);
-    return () => clearInterval(interval);
-  }, [isAdmin, importStatus?.running]);
-
-  const handleStartImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!importMatchId.trim()) return;
-    setImportError(null);
-    try {
-      const res = await fetch("/api/admin/replay-paths/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ matchId: importMatchId.trim(), minutes: importMinutes }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || "取り込みの開始に失敗しました");
-      setImportStatus(j.status);
-    } catch (err: any) {
-      setImportError(err.message);
-    }
+  const handleCopyCommand = () => {
+    navigator.clipboard.writeText(generatedCommand);
+    setCmdCopied(true);
+    setTimeout(() => setCmdCopied(false), 2500);
   };
 
   const handleCopyShareUrl = () => {
@@ -276,10 +230,10 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowImportForm((v) => !v)}
+                  onClick={() => setShowCommandGenerator((v) => !v)}
                   className="text-xs px-2.5 py-1 rounded-lg border border-primary-edge-strong text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 cursor-pointer flex items-center gap-1 font-bold"
                 >
-                  <Download className="h-3.5 w-3.5" /> 新しい試合を取り込む
+                  <Terminal className="h-3.5 w-3.5" /> 取り込みコマンドを作る
                 </button>
               </>
             )}
@@ -289,28 +243,26 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
           </div>
         </div>
 
-        {/* 取り込みフォーム & 実行状態 */}
-        {showImportForm && (
-          <form onSubmit={handleStartImport} className="p-3 rounded-xl border border-primary-edge-soft bg-primary-500/5 space-y-2 mt-2">
+        {/* 取り込みコマンド生成パネル */}
+        {showCommandGenerator && (
+          <div className="p-3.5 rounded-xl border border-primary-edge-soft bg-primary-500/5 space-y-2.5 mt-2">
             <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Download className="h-4 w-4 text-primary-600" /> リプレイ自動取り込み（PCローカル連携）
+              <Terminal className="h-4 w-4 text-primary-600" /> PCで実行する取り込みコマンドを作成
             </div>
             <p className="text-[11px] text-muted-strong leading-relaxed">
-              クライアントでリプレイをDLした状態で試合IDを入力してください。撮影開始時に画面設定を自動で一時変更し、撮影終了後に確実に元の設定（解像度等）へ自動復元します。
+              リプレイのミニマップ撮影は、LoLクライアントが起動しているPC手元で行う必要があります。試合IDを入力してコマンドをコピーし、PowerShell等に貼り付けて実行してください。
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="text"
-                placeholder="試合ID（例: JP1_608213185）"
-                value={importMatchId}
-                onChange={(e) => setImportMatchId(e.target.value)}
-                disabled={importStatus?.running}
+                placeholder="試合ID（例: JP1_608209265）"
+                value={cmdMatchId}
+                onChange={(e) => setCmdMatchId(e.target.value)}
                 className="px-2.5 py-1.5 rounded-lg border border-border bg-surface text-xs font-mono w-56 focus:outline-none focus:border-primary-500"
               />
               <select
-                value={importMinutes}
-                onChange={(e) => setImportMinutes(Number(e.target.value))}
-                disabled={importStatus?.running}
+                value={cmdMinutes}
+                onChange={(e) => setCmdMinutes(Number(e.target.value))}
                 className="px-2 py-1.5 rounded-lg border border-border bg-surface text-xs"
               >
                 <option value={0}>試合終了まで（全編）</option>
@@ -318,57 +270,20 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                 <option value={15}>15分まで</option>
               </select>
               <button
-                type="submit"
-                disabled={importStatus?.running || !importMatchId.trim()}
-                className="px-3 py-1.5 rounded-lg bg-primary-600 text-white font-bold text-xs hover:bg-primary-700 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                type="button"
+                onClick={handleCopyCommand}
+                className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
               >
-                {importStatus?.running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                {importStatus?.running ? "取り込み中..." : "取り込み開始"}
+                {cmdCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {cmdCopied ? "コマンドをコピー完了！" : "コマンドをコピー"}
               </button>
             </div>
-            {importError && (
-              <div className="text-xs text-danger-700 bg-danger-100 p-2 rounded-lg border border-danger-edge-soft flex items-center gap-1.5">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {importError}
-              </div>
-            )}
-          </form>
-        )}
-
-        {/* 取り込み実行中の進捗バナー */}
-        {importStatus && importStatus.phase !== 'idle' && (
-          <div className={`p-3 rounded-xl border text-xs space-y-1.5 mt-2 ${
-            importStatus.phase === 'completed'
-              ? 'bg-teal-500/10 border-teal-500/30 text-teal-900 dark:text-teal-200'
-              : importStatus.phase === 'failed'
-              ? 'bg-danger-100 border-danger-edge-soft text-danger-700'
-              : 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
-          }`}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="font-bold flex items-center gap-1.5">
-                {importStatus.running ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
-                ) : importStatus.phase === 'completed' ? (
-                  <CheckCircle2 className="h-4 w-4 text-teal-600" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 text-danger-600" />
-                )}
-                <span>[{importStatus.matchId}] {importStatus.message}</span>
-              </div>
-              {importStatus.logs.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowLogs((v) => !v)}
-                  className="text-[11px] underline opacity-80 hover:opacity-100 flex items-center gap-0.5 cursor-pointer"
-                >
-                  ログ {showLogs ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                </button>
-              )}
+            <div className="p-2 rounded-lg bg-black/80 text-emerald-400 font-mono text-[11px] break-all select-all flex items-center justify-between gap-2">
+              <span>{generatedCommand}</span>
             </div>
-            {showLogs && (
-              <pre className="text-[10px] p-2 rounded bg-black/80 text-emerald-400 font-mono max-h-36 overflow-y-auto whitespace-pre-wrap">
-                {importStatus.logs.join('\n')}
-              </pre>
-            )}
+            <div className="text-[10px] text-muted-strong flex items-center gap-1">
+              <span>💡 実行完了後、右上の「一覧を更新」を押すと地図に即座に反映されます。</span>
+            </div>
           </div>
         )}
         <p className="text-[11px] text-muted-strong leading-relaxed">
