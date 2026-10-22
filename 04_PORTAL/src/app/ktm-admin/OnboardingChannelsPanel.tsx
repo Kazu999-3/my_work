@@ -137,25 +137,24 @@ export default function OnboardingChannelsPanel() {
   };
   useEffect(() => { load(); }, []);
 
-  // フィルタ（次の定期カスタムは bot の募集カードのエントリー行から）
+  // 基準時刻: loadedAt が 0 の場合でも現在時刻で評価し判定狂いを防止
+  const now = loadedAt || Date.now();
   const spectatorSet = useMemo(() => new Set(nextCustom?.spectatorIds || []), [nextCustom]);
   const entrySet = useMemo(() => new Set(nextCustom?.entryIds || []), [nextCustom]);
   const FILTERS: { key: FilterKey; label: string; test: (r: Row) => boolean }[] = [
     { key: 'all', label: '全員', test: () => true },
-    { key: 'unread', label: '未読', test: (r) => r.unread },
-    { key: 'needsReply', label: '要返信', test: (r) => r.needsReply },
-    // 2026-10-20: 入って60日以内で、まだ一度もカスタムに出ていない人（直接声をかける対象）。
-    // 直近75日に入った41人のうち出場は11人で、未出場の31人は個別案内で一度も発言していなかった
-    { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => !r.lastPlayedAt && !!r.joinedAt && loadedAt - new Date(r.joinedAt).getTime() <= 60 * DAY },
-    // 2026-10-20: 初めて出た夜から60日以内で、まだ2晩目に来ていない人（9月に初参加した5人は、2回目に来たのが0人だった）
-    { key: 'firstTimeOnly', label: '初参加して2回目がまだ（初参加から60日以内）', test: (r) => r.playNights === 1 && !!r.firstPlayedAt && loadedAt - new Date(r.firstPlayedAt).getTime() <= 60 * DAY },
-    // 2026-10-20: 以前は3晩以上出ていたのに、直近30日は出ていない人（8〜9月に3回以上出た23人のうち12人が10月に未出場だった）。
-    // 当初は試合の数で数えていたが、1晩に3試合出ると「3回」になるため、運営タブと同じく夜の数に揃えた
-    { key: 'lapsedRegular', label: '来なくなった常連（3晩以上出場・30日以上出ていない）', test: (r) => (r.playNights || 0) >= 3 && !!r.lastPlayedAt && loadedAt - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
+    { key: 'unread', label: '未読', test: (r) => !!r.unread },
+    { key: 'needsReply', label: '要返信', test: (r) => !!r.needsReply },
+    // 入って60日以内で、まだ一度もカスタムに出ていない人（通算試合数0または最終出場なし）
+    { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => (!r.playCount || r.playCount === 0 || !r.lastPlayedAt) && !!r.joinedAt && now - new Date(r.joinedAt).getTime() <= 60 * DAY },
+    // 初めて出た夜から60日以内で、まだ2晩目に来ていない人
+    { key: 'firstTimeOnly', label: '初参加して2回目がまだ（初参加から60日以内）', test: (r) => r.playNights === 1 && !!r.firstPlayedAt && now - new Date(r.firstPlayedAt).getTime() <= 60 * DAY },
+    // 以前は3晩以上出ていたのに、直近30日は出ていない人（夜数で正確に判定）
+    { key: 'lapsedRegular', label: '来なくなった常連（3晩以上出場・30日以上出ていない）', test: (r) => (r.playNights || 0) >= 3 && !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
     { key: 'nextSpectator', label: '次の定期カスタム: 観戦希望', test: (r) => spectatorSet.has(r.ownerUserId) },
     { key: 'nextEntry', label: '次の定期カスタム: エントリー', test: (r) => entrySet.has(r.ownerUserId) },
-    { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && loadedAt - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
-    { key: 'silent30', label: '30日以上発言なし', test: (r) => !r.lastMessageAt || loadedAt - new Date(r.lastMessageAt).getTime() > 30 * DAY },
+    { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
+    { key: 'silent30', label: '30日以上発言なし', test: (r) => !r.lastMessageAt || now - new Date(r.lastMessageAt).getTime() > 30 * DAY },
   ];
   const activeFilter = FILTERS.find((f) => f.key === filter) || FILTERS[0];
 

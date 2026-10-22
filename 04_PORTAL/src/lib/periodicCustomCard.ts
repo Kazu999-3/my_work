@@ -14,7 +14,7 @@ export interface PeriodicCustomEntries {
   title: string;
   startAt: string;
   messageUrl: string;
-  /** カードにエントリーしている人（観戦希望を含む） */
+  /** カードに出場エントリーしている人（観戦希望を除く） */
   entryIds: string[];
   /** 自分で観戦を選んだ人 */
   spectatorIds: string[];
@@ -52,15 +52,37 @@ export async function loadNextPeriodicCustomEntries(now = new Date()): Promise<P
   }
   if (!best) return null;
 
-  const lines = String(best.msg.embeds[0].fields?.[0]?.value || '').split('\n').filter((l) => l.startsWith('- '));
+  // 全 fields から参加行を走査（複数フィールド分割や日跨ぎカードにも完全対応）
+  const allFields = best.msg.embeds?.[0]?.fields || [];
+  const lines: string[] = [];
+  for (const f of allFields) {
+    const rawLines = String(f.value || '').split('\n');
+    for (const l of rawLines) {
+      if (l.startsWith('- ') && /<@!?\d+>/.test(l)) {
+        lines.push(l);
+      }
+    }
+  }
+
   const idOf = (l: string) => l.match(/<@!?(\d+)>/)?.[1];
-  const entryIds = [...new Set(lines.map(idOf).filter((v): v is string => !!v))];
-  const spectatorIds = [...new Set(lines.filter((l) => /観戦/.test(l)).map(idOf).filter((v): v is string => !!v))];
+  const spectatorIds: string[] = [];
+  const entryIds: string[] = [];
+
+  for (const l of lines) {
+    const id = idOf(l);
+    if (!id) continue;
+    if (/観戦/.test(l)) {
+      spectatorIds.push(id);
+    } else {
+      entryIds.push(id);
+    }
+  }
+
   return {
     title: best.title,
     startAt: best.start.toISOString(),
     messageUrl: `https://discord.com/channels/${best.msg.guild_id || '1485636149379858567'}/${PERIODIC_RECRUIT_CHANNEL_ID}/${best.msg.id}`,
-    entryIds,
-    spectatorIds,
+    entryIds: [...new Set(entryIds)],
+    spectatorIds: [...new Set(spectatorIds)],
   };
 }

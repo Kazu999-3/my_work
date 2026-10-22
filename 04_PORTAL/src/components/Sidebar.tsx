@@ -294,6 +294,37 @@ export default function Sidebar() {
     }
   }, 5 * 60 * 1000);
 
+  // 📱 スマホ用 ボトムバーのスマート退避（オートハイド: 下スクロールで退避、上スクロールで復帰）
+  const [isMobileBarVisible, setIsMobileBarVisible] = useState(true);
+  useEffect(() => {
+    let lastScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY < 50) {
+            setIsMobileBarVisible(true);
+          } else {
+            const diff = currentScrollY - lastScrollY;
+            if (diff > 8) {
+              setIsMobileBarVisible(false);
+            } else if (diff < -8) {
+              setIsMobileBarVisible(true);
+            }
+          }
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const toggleSidebar = () => {
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
@@ -411,7 +442,7 @@ export default function Sidebar() {
       </aside>
 
       {/* 📱 スマホ用 ボトム固定ナビゲーションバー (5項目) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 transform-gpu will-change-transform bg-[#f7f5f0]/95 dark:bg-background/95 backdrop-blur-md border-t border-border dark:border-border px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transform-gpu will-change-transform bg-[#f7f5f0]/95 dark:bg-background/95 backdrop-blur-md border-t border-border dark:border-border px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg transition-transform duration-300 ease-out ${isMobileBarVisible || showMobileDrawer ? "translate-y-0" : "translate-y-[120%]"}` }>
         {mobileBottomBarItems.map((item) => {
           const Icon = item.icon;
           const isActive = isItemActive(item, pathname);
