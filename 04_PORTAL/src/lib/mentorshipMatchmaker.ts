@@ -722,10 +722,10 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         const tierDiff = mentorTier - pupilTier;
         if (tierDiff >= 1 && tierDiff <= 3) {
           score += 30;
-          reasons.push(`教わるのに最適な実力差（${mentor.current_rank} ✕ ${pupil.rank}）`);
+          reasons.push(`指導・上達に最適な実力差（${mentor.current_rank} ✕ ${pupil.rank}）`);
         } else if (tierDiff >= 4) {
           score += 20;
-          reasons.push(`上位ティアの先輩（+${tierDiff}ティア）`);
+          reasons.push(`上位ランク帯指導（+${tierDiff}ティア差）`);
         } else if (tierDiff === 0) {
           score += 10;
           reasons.push('同格マッチアップ');
