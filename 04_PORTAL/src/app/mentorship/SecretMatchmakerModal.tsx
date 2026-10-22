@@ -489,7 +489,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                 <div className="py-12 text-center text-foreground-subtle text-xs bg-surface-subtle/40 rounded-2xl border border-dashed border-border">
                   該当するまとめ便候補はありません
                 </div>
-              ) : filteredBatches.slice(0, 15).map((batch, bIdx) => {
+              ) : filteredBatches.map((batch, bIdx) => {
                 const isSending = sendingId === batch.pupil.discordId;
                 const hasPending = batch.mentors.some((m) => m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING');
                 const hasMatched = batch.mentors.some((m) => m.offerStatus === 'ACTIVE' || m.offerStatus === 'MATCHED');
@@ -765,7 +765,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                 <div className="py-12 text-center text-foreground-subtle text-xs bg-surface-subtle/40 rounded-2xl border border-dashed border-border">
                   該当する個別ペア候補はありません
                 </div>
-              ) : filteredProposals.slice(0, 20).map((proposal, idx) => {
+              ) : filteredProposals.map((proposal, idx) => {
                 const isPending = proposal.offerStatus === 'PENDING' || proposal.offerStatus === 'PROPOSAL_PENDING';
                 const isMatched = proposal.offerStatus === 'ACTIVE' || proposal.offerStatus === 'MATCHED';
                 const isDeclined = proposal.offerStatus === 'DECLINED';

@@ -830,16 +830,29 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       }
     }
 
-    // スコア降順（見送り済みは下位に回し、同点なら教わりたいロール優先）
+        // 表示優先度順ソート:
+    // 1. 見送り（DECLINED）は最下位へ
+    // 2. 成立済み（ACTIVE/MATCHED）も下位へ（進行中のため新規提案より後ろ）
+    // 3. 【最重要】掲示板に自発的に登録した本物の後輩（isRegistered: true）を最優先！
+    // 4. 「教わりたい」ロール所持者（hasLearnRole）を優先
+    // 5. 相性スコア降順
     return proposals.sort((a, b) => {
       const aDeclined = a.offerStatus === 'DECLINED';
       const bDeclined = b.offerStatus === 'DECLINED';
-      if (aDeclined !== bDeclined) {
-        return aDeclined ? 1 : -1;
+      if (aDeclined !== bDeclined) return aDeclined ? 1 : -1;
+
+      const aMatched = a.offerStatus === 'ACTIVE' || a.offerStatus === 'MATCHED';
+      const bMatched = b.offerStatus === 'ACTIVE' || b.offerStatus === 'MATCHED';
+      if (aMatched !== bMatched) return aMatched ? 1 : -1;
+
+      if (b.pupil.isRegistered !== a.pupil.isRegistered) {
+        return b.pupil.isRegistered ? 1 : -1;
       }
+
       if (b.pupil.hasLearnRole !== a.pupil.hasLearnRole) {
         return b.pupil.hasLearnRole ? 1 : -1;
       }
+
       return b.matchScore - a.matchScore;
     });
   } catch (err) {
@@ -908,12 +921,32 @@ export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatc
     }
   }
 
-  // 「教わりたい」ロール所持者を最優先、次いで最高スコア順にソート
+    // 表示優先度順ソート:
+  // 1. 【最重要】掲示板に自発的に登録した本物の後輩（isRegistered: true）を最優先！
+  // 2. 見送り済み（hasDeclined）は下位へ
+  // 3. 成立済み（全先輩がMATCHED/ACTIVE）は下位へ
+  // 4. 「教わりたい」ロール所持者（hasLearnRole）を優先
+  // 5. 最高相性スコア降順
   const batches = Array.from(pupilMap.values());
   return batches.sort((a, b) => {
+    if (b.pupil.isRegistered !== a.pupil.isRegistered) {
+      return b.pupil.isRegistered ? 1 : -1;
+    }
+
+    if (a.hasDeclined !== b.hasDeclined) {
+      return a.hasDeclined ? 1 : -1;
+    }
+
+    const aAllMatched = a.mentors.length > 0 && a.mentors.every(m => m.offerStatus === 'ACTIVE' || m.offerStatus === 'MATCHED');
+    const bAllMatched = b.mentors.length > 0 && b.mentors.every(m => m.offerStatus === 'ACTIVE' || m.offerStatus === 'MATCHED');
+    if (aAllMatched !== bAllMatched) {
+      return aAllMatched ? 1 : -1;
+    }
+
     if (b.pupil.hasLearnRole !== a.pupil.hasLearnRole) {
       return b.pupil.hasLearnRole ? 1 : -1;
     }
+
     const maxScoreA = Math.max(...a.mentors.map((m) => m.matchScore), 0);
     const maxScoreB = Math.max(...b.mentors.map((m) => m.matchScore), 0);
     return maxScoreB - maxScoreA;
