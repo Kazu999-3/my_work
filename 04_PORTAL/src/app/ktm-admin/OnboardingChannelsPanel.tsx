@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Send, ExternalLink } from "lucide-react";
+import { RefreshCw, Send, ExternalLink, ShieldAlert, Target } from "lucide-react";
+import { getRankTier, RANK_TIERS } from "@/lib/periodicCustomCard";
 
 // 管理画面「個別案内」タブ: 各メンバーの個別案内チャンネルの発言状況と、一斉連絡（2026-10-17）。
 // 本人からの新着は pg_cron の1時間おきチェック（migration 107）で管理者のアプリ（ポータルのプッシュ）にも通知される。
@@ -9,9 +10,14 @@ import { RefreshCw, Send, ExternalLink } from "lucide-react";
 interface CustomEntryDetail {
   discordId: string;
   lanes: string[];
+  rank?: string | null;
+  tier?: number | null;
+  playerName?: string | null;
   isLate: boolean;
   isSingle: boolean;
 }
+
+type RankTolerance = 0 | 1 | 2 | 'all';
 
 interface NextCustom {
   title: string;
@@ -167,6 +173,8 @@ export default function OnboardingChannelsPanel() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sortKey, setSortKey] = useState<SortKey>('status');
   const [query, setQuery] = useState('');
+  // 実力差（Tier差）許容幅: 0=完全同格, 1=±1ティア(推奨), 2=±2ティア, 'all'=実力不問
+  const [rankTolerance, setRankTolerance] = useState<RankTolerance>(1);
   // 「直近60日」などの判定の基準時刻。描画中に Date.now() を呼ばないよう、読み込んだ時点の時刻を使う
   const [loadedAt, setLoadedAt] = useState(0);
 
@@ -203,31 +211,93 @@ export default function OnboardingChannelsPanel() {
     return u === t;
   };
 
-  // 未エントリーかつアクティブな候補者
+  // 候補者の基本判定（エントリー済み・観戦希望は除外）
+  // ※ ktm_players.is_active はバランサーの一時チェックフラグのため退会判定には使わない
   const isCandidate = (r: Row) => {
-    if (r.isActive === false) return false;
     if (entrySet.has(r.ownerUserId)) return false;
     if (spectatorSet.has(r.ownerUserId)) return false;
     return true;
   };
 
-  // 指定レーンの対面候補判定
-  const isLaneOpponent = (r: Row, lane: string) => {
-    if (!isCandidate(r)) return false;
-    return matchesLane(r.primaryLane, lane) || matchesLane(r.secondaryLane, lane);
+  // 実力差（Tier差）判定ヘルパー
+  const isSkillMatch = (rowRank: string | null | undefined, targetTier: number | null, tolerance: RankTolerance): boolean => {
+    if (tolerance === 'all') return true;
+    if (targetTier === null) return true; // 対象者のランクが不明なら全許可
+    const rowTier = getRankTier(rowRank);
+    if (rowTier === null) {
+      // 候補者のランクが不明な場合: tolerance が 1 以上のときは含め、0（完全同格）のときは除外
+      return tolerance >= 1;
+    }
+    return Math.abs(rowTier - targetTier) <= tolerance;
   };
 
-  // 不足対面（2人未満のレーン）の候補判定
-  const isNeededOpponent = (r: Row) => {
+  // 指定レーンの対面候補判定（実力差連動）
+  const isLaneOpponent = (r: Row, lane: string, tolerance: RankTolerance = rankTolerance): boolean => {
+    if (!isCandidate(r)) return false;
+    if (!matchesLane(r.primaryLane, lane) && !matchesLane(r.secondaryLane, lane)) return false;
+    if (tolerance === 'all') return true;
+
+    // そのレーンに現在エントリーしている人たちのティアを取得
+    const laneEntries = (nextCustom?.entries || []).filter((e) => {
+      const p = e.lanes?.[0];
+      const s = e.lanes?.[1];
+      return matchesLane(p, lane) || matchesLane(s, lane);
+    });
+
+    // まだ誰もエントリーしていないレーンは、レーン適性があればOK
+    if (laneEntries.length === 0) return true;
+
+    // エントリーしているいずれかのメンバーと実力が釣り合っていればOK
+    const rowTier = getRankTier(r.rank);
+    return laneEntries.some((entry) => {
+      const eTier = entry.tier ?? getRankTier(entry.rank);
+      if (eTier === null || rowTier === null) return tolerance >= 1;
+      return Math.abs(rowTier - eTier) <= tolerance;
+    });
+  };
+
+  // 特定メンバーの指名対面候補判定（実力差連動）
+  const isPlayerOpponent = (r: Row, entry: CustomEntryDetail, tolerance: RankTolerance = rankTolerance): boolean => {
+    if (!isCandidate(r)) return false;
+    const primary = entry.lanes?.[0] || 'TOP';
+    if (!matchesLane(r.primaryLane, primary) && !matchesLane(r.secondaryLane, primary)) return false;
+
+    if (tolerance === 'all') return true;
+    const targetTier = entry.tier ?? getRankTier(entry.rank);
+    return isSkillMatch(r.rank, targetTier, tolerance);
+  };
+
+  // 不足対面（2人未満のレーン）の候補判定（実力差連動）
+  const isNeededOpponent = (r: Row, tolerance: RankTolerance = rankTolerance): boolean => {
     if (!isCandidate(r)) return false;
     const needed = nextCustom?.neededLanes || [];
-    return needed.some((lane) => matchesLane(r.primaryLane, lane) || matchesLane(r.secondaryLane, lane));
+    return needed.some((lane) => isLaneOpponent(r, lane, tolerance));
+  };
+
+  // 実力差（許容幅）切り替えハンドラ（現在フィルター中なら即座に再絞り込み＆再選択）
+  const handleToleranceChange = (newTol: RankTolerance) => {
+    setRankTolerance(newTol);
+    if (filter === 'neededOpponents') {
+      const matched = rows.filter((r) => isNeededOpponent(r, newTol));
+      setSelected(new Set(matched.map((r) => r.channelId)));
+    } else if (filter.startsWith('laneOpponent_')) {
+      const lane = filter.replace('laneOpponent_', '');
+      const matched = rows.filter((r) => isLaneOpponent(r, lane, newTol));
+      setSelected(new Set(matched.map((r) => r.channelId)));
+    } else if (filter.startsWith('playerOpponent_')) {
+      const dId = filter.replace('playerOpponent_', '');
+      const entry = (nextCustom?.entries || []).find((e) => e.discordId === dId);
+      if (entry) {
+        const matched = rows.filter((r) => isPlayerOpponent(r, entry, newTol));
+        setSelected(new Set(matched.map((r) => r.channelId)));
+      }
+    }
   };
 
   // 選択 ＆ フィルター連動ヘルパー
   const selectNeededOpponents = () => {
     setFilter('neededOpponents');
-    const matched = rows.filter(isNeededOpponent);
+    const matched = rows.filter((r) => isNeededOpponent(r, rankTolerance));
     setSelected(new Set(matched.map((r) => r.channelId)));
     if (nextCustom) {
       setContent(MESSAGE_TEMPLATES.find((t) => t.key === 'laneOpponentNudge')?.build(nextCustom) || '');
@@ -237,7 +307,7 @@ export default function OnboardingChannelsPanel() {
   const selectLaneOpponents = (lane: string) => {
     const key = `laneOpponent_${lane}`;
     setFilter(key);
-    const matched = rows.filter((r) => isLaneOpponent(r, lane));
+    const matched = rows.filter((r) => isLaneOpponent(r, lane, rankTolerance));
     setSelected(new Set(matched.map((r) => r.channelId)));
     if (nextCustom) {
       setContent([
@@ -254,14 +324,15 @@ export default function OnboardingChannelsPanel() {
     const key = `playerOpponent_${entry.discordId}`;
     setFilter(key);
     const primary = entry.lanes?.[0] || 'TOP';
-    const matched = rows.filter((r) => isLaneOpponent(r, primary));
+    const matched = rows.filter((r) => isPlayerOpponent(r, entry, rankTolerance));
     setSelected(new Set(matched.map((r) => r.channelId)));
     if (nextCustom) {
       const entryRow = rows.find((r) => r.ownerUserId === entry.discordId);
-      const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || 'メンバー';
+      const name = entry.playerName || entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || 'メンバー';
+      const rankBadge = entry.rank ? `【${entry.rank}】` : '';
       setContent([
         `👋 **${formatCustomStart(nextCustom.startAt)}から週末の定期カスタムです！**`,
-        `今週末、${name}さんが【${primary}】でエントリーしてくれています！対面で勝負してみませんか？⚔️`,
+        `今週末、${name}さん${rankBadge}が【${primary}】でエントリーしてくれています！対面で勝負してみませんか？⚔️`,
         '1戦のみや途中参加も大歓迎ですので、予定が合えばぜひ一緒にやりましょう🙌',
         `👉 ${nextCustom.messageUrl}`,
         '当日の流れなど気になることがあれば、ここに気軽に書き込んでくださいね🤝',
@@ -273,27 +344,29 @@ export default function OnboardingChannelsPanel() {
     { key: 'all', label: '全員', test: () => true },
     { key: 'unread', label: '未読', test: (r) => !!r.unread },
     { key: 'needsReply', label: '要返信', test: (r) => !!r.needsReply },
-    // 今週末のカスタムで対面が不足しているレーンの希望者（未エントリー）
-    { key: 'neededOpponents', label: '⚔️ 不足対面の候補（未エントリー）', test: isNeededOpponent },
+    // 今週末のカスタムで対面が不足しているレーンの希望者（未エントリー・実力連動）
+    { key: 'neededOpponents', label: '⚔️ 不足対面の候補（未エントリー）', test: (r) => isNeededOpponent(r, rankTolerance) },
     // 入って60日以内で、まだ一度もカスタムに出ていない人（通算試合数0または最終出場なし）
     { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => (!r.playCount || r.playCount === 0 || !r.lastPlayedAt) && !!r.joinedAt && now - new Date(r.joinedAt).getTime() <= 60 * DAY },
     // 初めて出た夜から60日以内で、まだ2晩目に来ていない人
     { key: 'firstTimeOnly', label: '初参加して2回目がまだ（初参加から60日以内）', test: (r) => r.playNights === 1 && !!r.firstPlayedAt && now - new Date(r.firstPlayedAt).getTime() <= 60 * DAY },
-    // 以前は3晩以上出ていたのに、直近30日は出ていない人（現在アクティブな人に限定）
-    { key: 'lapsedRegular', label: '来なくなった常連（3晩以上出場・30日以上出ていない）', test: (r) => r.isActive !== false && (r.playNights || 0) >= 3 && !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
+    // 以前は3晩以上出ていたのに、直近30日は出ていない人
+    { key: 'lapsedRegular', label: '来なくなった常連（3晩以上出場・30日以上出ていない）', test: (r) => (r.playNights || 0) >= 3 && !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
     { key: 'nextSpectator', label: '次の定期カスタム: 観戦希望', test: (r) => spectatorSet.has(r.ownerUserId) },
     { key: 'nextEntry', label: '次の定期カスタム: エントリー', test: (r) => entrySet.has(r.ownerUserId) },
     { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
     { key: 'silent30', label: '30日以上発言なし', test: (r) => !r.lastMessageAt || now - new Date(r.lastMessageAt).getTime() > 30 * DAY },
   ];
 
+  const toleranceLabel = rankTolerance === 0 ? '同格(±0)' : rankTolerance === 1 ? '近い実力(±1)' : rankTolerance === 2 ? '広め(±2)' : '実力不問';
+
   // 動的対面フィルターを含む判定
   const getFilterTest = (fKey: string): { label: string; test: (r: Row) => boolean } => {
     if (fKey.startsWith('laneOpponent_')) {
       const lane = fKey.replace('laneOpponent_', '');
       return {
-        label: `⚔️ ${lane}対面候補（未エントリー）`,
-        test: (r) => isLaneOpponent(r, lane),
+        label: `⚔️ ${lane}対面候補（${toleranceLabel}）`,
+        test: (r) => isLaneOpponent(r, lane, rankTolerance),
       };
     }
     if (fKey.startsWith('playerOpponent_')) {
@@ -301,14 +374,46 @@ export default function OnboardingChannelsPanel() {
       const entry = nextCustom?.entries?.find((e) => e.discordId === dId);
       const primary = entry?.lanes?.[0] || 'TOP';
       const entryRow = rows.find((r) => r.ownerUserId === dId);
-      const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${dId.slice(-4)}`;
+      const name = entry?.playerName || entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${dId.slice(-4)}`;
+      const rankStr = entry?.rank ? `【${entry.rank}】` : '';
       return {
-        label: `⚔️ ${name}さん【${primary}】の対面候補`,
-        test: (r) => isLaneOpponent(r, primary),
+        label: `⚔️ ${name}さん${rankStr}の対面候補（${toleranceLabel}）`,
+        test: (r) => (entry ? isPlayerOpponent(r, entry, rankTolerance) : isLaneOpponent(r, primary, rankTolerance)),
       };
     }
     const found = FILTERS.find((f) => f.key === fKey);
     return found ? { label: found.label, test: found.test } : { label: '全員', test: () => true };
+  };
+
+  // 対面フィルター適用時、行の対面相性・実力差バッジを算出
+  const getMatchBadge = (r: Row): { text: string; cls: string } | null => {
+    const rowTier = getRankTier(r.rank);
+
+    if (filter.startsWith('playerOpponent_')) {
+      const dId = filter.replace('playerOpponent_', '');
+      const entry = nextCustom?.entries?.find((e) => e.discordId === dId);
+      if (!entry) return null;
+      const eTier = entry.tier ?? getRankTier(entry.rank);
+      if (rowTier !== null && eTier !== null) {
+        const diff = rowTier - eTier;
+        if (diff === 0) return { text: '🎯 完全同格', cls: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' };
+        if (Math.abs(diff) === 1) return { text: `⚔️ 実力差±1 (${diff > 0 ? '+1' : '-1'})`, cls: 'bg-primary-500/10 text-primary-700 border-primary-500/20' };
+        return { text: `実力差: ${diff > 0 ? `+${diff}` : diff}`, cls: 'bg-amber-500/10 text-amber-700 border-amber-500/20' };
+      }
+    } else if (filter.startsWith('laneOpponent_') || filter === 'neededOpponents') {
+      const lane = filter.startsWith('laneOpponent_') ? filter.replace('laneOpponent_', '') : null;
+      const laneEntries = (nextCustom?.entries || []).filter((e) => !lane || matchesLane(e.lanes?.[0], lane) || matchesLane(e.lanes?.[1], lane));
+      if (laneEntries.length > 0 && rowTier !== null) {
+        const diffs = laneEntries.map((e) => {
+          const t = e.tier ?? getRankTier(e.rank);
+          return t !== null ? Math.abs(rowTier - t) : 99;
+        });
+        const minDiff = Math.min(...diffs);
+        if (minDiff === 0) return { text: '🎯 完全同格', cls: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' };
+        if (minDiff === 1) return { text: '⚔️ 実力差±1', cls: 'bg-primary-500/10 text-primary-700 border-primary-500/20' };
+      }
+    }
+    return null;
   };
 
   const activeFilterInfo = getFilterTest(filter);
@@ -429,6 +534,41 @@ export default function OnboardingChannelsPanel() {
               </div>
             </div>
 
+            {/* 🎯 実力差（Tier差）セレクター */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/40 pb-1">
+              <span className="text-muted-strong flex items-center gap-1 font-bold">
+                <Target className="h-3.5 w-3.5 text-primary-600" /> 実力判定:
+              </span>
+              <div className="inline-flex rounded-lg border border-border bg-surface p-0.5">
+                {[
+                  { value: 0 as RankTolerance, label: '🎯 完全同格 (±0)', hint: '同じランクのみ' },
+                  { value: 1 as RankTolerance, label: '⚔️ 近い実力 (±1) [推奨]', hint: '±1ティア（例: プラチナならゴールド〜エメラルド）' },
+                  { value: 2 as RankTolerance, label: '🥋 広め (±2)', hint: '±2ティア' },
+                  { value: 'all' as RankTolerance, label: '🌐 実力不問', hint: 'ランク関係なくレーン適性のみ' },
+                ].map((opt) => (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => handleToleranceChange(opt.value)}
+                    title={opt.hint}
+                    className={`px-2 py-0.5 text-[11px] rounded font-medium transition ${
+                      rankTolerance === opt.value
+                        ? 'bg-primary-600 text-white font-bold shadow-2xs'
+                        : 'text-muted-strong hover:text-foreground hover:bg-black/5'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px] text-faint">
+                {rankTolerance === 0 && '※ 同ランクのエントリー者と完全に釣り合う相手のみ抽出'}
+                {rankTolerance === 1 && '※ エントリー者の±1ティア以内（実力が拮抗する良マッチング）を抽出'}
+                {rankTolerance === 2 && '※ エントリー者の±2ティア以内まで対象を広げて抽出'}
+                {rankTolerance === 'all' && '※ 実力差を無視し、レーンができる全員を抽出'}
+              </span>
+            </div>
+
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-muted-strong">一発抽出:</span>
               <button
@@ -439,13 +579,13 @@ export default function OnboardingChannelsPanel() {
                     ? 'bg-amber-600 text-white font-black shadow-sm ring-2 ring-amber-400 ring-offset-1'
                     : 'bg-amber-700/80 hover:bg-amber-700 text-white font-bold shadow-2xs'
                 }`}
-                title="現在2名揃っていない（対面相手が不足している）レーンが得意な未エントリー者をすべて選択し、一覧を絞り込みます"
+                title="現在2名揃っていない（対面相手が不足している）レーンが得意で、かつ実力が釣り合う未エントリー者をすべて選択し、一覧を絞り込みます"
               >
-                ⚔️ 不足対面をまとめて抽出（{rows.filter(isNeededOpponent).length}件）
+                ⚔️ 不足対面をまとめて抽出（{rows.filter((r) => isNeededOpponent(r, rankTolerance)).length}件）
               </button>
 
               {['TOP', 'JG', 'MID', 'BOT', 'SUP'].map((lane) => {
-                const count = rows.filter((r) => isLaneOpponent(r, lane)).length;
+                const count = rows.filter((r) => isLaneOpponent(r, lane, rankTolerance)).length;
                 const currentCount = nextCustom.laneCounts?.[lane] || 0;
                 const isActive = filter === `laneOpponent_${lane}`;
                 return (
@@ -458,7 +598,7 @@ export default function OnboardingChannelsPanel() {
                         ? 'bg-primary-600 text-white font-black border-primary-600 shadow-sm ring-2 ring-primary-400 ring-offset-1'
                         : 'border border-border bg-surface hover:bg-surface-subtle text-foreground font-medium'
                     }`}
-                    title={`${lane}希望（第1または第2）の未エントリー者を選択し一覧を絞り込み（現在エントリー: ${currentCount}名）`}
+                    title={`${lane}希望（第1または第2）で実力が釣り合う未エントリー者を選択し一覧を絞り込み（現在エントリー: ${currentCount}名）`}
                   >
                     {lane}対面 ({count}件)
                   </button>
@@ -472,9 +612,10 @@ export default function OnboardingChannelsPanel() {
                 <span className="text-muted-strong">指名対面:</span>
                 {nextCustom.entries.map((entry) => {
                   const entryRow = rows.find((r) => r.ownerUserId === entry.discordId);
-                  const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${entry.discordId.slice(-4)}`;
+                  const name = entry.playerName || entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${entry.discordId.slice(-4)}`;
                   const primary = entry.lanes?.[0] || 'TOP';
-                  const matchCount = rows.filter((r) => isLaneOpponent(r, primary)).length;
+                  const rankBadge = entry.rank ? `【${entry.rank}】` : '';
+                  const matchCount = rows.filter((r) => isPlayerOpponent(r, entry, rankTolerance)).length;
                   const isActive = filter === `playerOpponent_${entry.discordId}`;
 
                   return (
@@ -487,9 +628,12 @@ export default function OnboardingChannelsPanel() {
                           ? 'bg-primary-600 text-white font-black border border-primary-600 shadow-xs ring-2 ring-primary-400 ring-offset-1'
                           : 'border border-border bg-surface hover:bg-surface-subtle text-[11px] text-muted-strong hover:text-foreground'
                       }`}
-                      title={`${name}さん (${primary}) と同じレーンができる未エントリー者（${matchCount}名）を選択し一覧を絞り込み`}
+                      title={`${name}さん${rankBadge} (${primary}) と実力が釣り合う対面候補（${matchCount}名）を選択し一覧を絞り込み`}
                     >
                       <span>{name}</span>
+                      {entry.rank && (
+                        <span className={`text-[10px] font-bold ${isActive ? 'text-amber-200' : 'text-amber-600'}`}>{entry.rank}</span>
+                      )}
                       <span className={`font-bold text-[10px] ${isActive ? 'text-white' : 'text-primary-600'}`}>【{primary}】</span>
                       <span className={isActive ? 'text-white/80' : 'text-faint'}>({matchCount})</span>
                     </button>
@@ -637,10 +781,19 @@ export default function OnboardingChannelsPanel() {
                         </span>
                       )}
                       {r.rank && (
-                        <span className="text-[10px] text-faint">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-black/5 text-foreground border border-border">
                           {r.rank}
                         </span>
                       )}
+                      {(() => {
+                        const mb = getMatchBadge(r);
+                        if (!mb) return null;
+                        return (
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${mb.cls}`}>
+                            {mb.text}
+                          </span>
+                        );
+                      })()}
                     </div>
                     {r.playerName && <div className="text-[11px] text-faint">#{r.channelName}</div>}
                     {/* スマホでは「最後の試合・入った日」の列を隠すので、名前の下にまとめて出す */}

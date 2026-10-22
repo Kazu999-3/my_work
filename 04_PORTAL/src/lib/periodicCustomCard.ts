@@ -13,8 +13,65 @@ const PERIODIC_RECRUIT_CHANNEL_ID = process.env.PERIODIC_RECRUIT_CHANNEL_ID || '
 export interface CustomEntryDetail {
   discordId: string;
   lanes: string[]; // ['TOP', 'JG'] など
+  rank?: string | null; // 'PLATINUM', 'GOLD' など
+  tier?: number | null; // 1〜10
+  playerName?: string | null;
   isLate: boolean;
   isSingle: boolean;
+}
+
+export const RANK_TIERS: Record<string, number> = {
+  IRON: 1,
+  BRONZE: 2,
+  SILVER: 3,
+  GOLD: 4,
+  PLATINUM: 5,
+  EMERALD: 6,
+  DIAMOND: 7,
+  MASTER: 8,
+  GRANDMASTER: 9,
+  CHALLENGER: 10,
+};
+
+const CARD_RANK_MAP: Record<string, string> = {
+  アイアン: 'IRON',
+  アイ: 'IRON',
+  ブロンズ: 'BRONZE',
+  ブロ: 'BRONZE',
+  シルバー: 'SILVER',
+  シル: 'SILVER',
+  ゴールド: 'GOLD',
+  ゴル: 'GOLD',
+  プラチナ: 'PLATINUM',
+  プラ: 'PLATINUM',
+  エメラルド: 'EMERALD',
+  エメ: 'EMERALD',
+  ダイヤモンド: 'DIAMOND',
+  ダイア: 'DIAMOND',
+  ダイヤ: 'DIAMOND',
+  マスター: 'MASTER',
+  マス: 'MASTER',
+  グランドマスター: 'GRANDMASTER',
+  グラマス: 'GRANDMASTER',
+  チャレンジャー: 'CHALLENGER',
+  チャレ: 'CHALLENGER',
+};
+
+export function getRankTier(rankStr: string | null | undefined): number | null {
+  if (!rankStr) return null;
+  const u = rankStr.toUpperCase();
+  for (const [k, v] of Object.entries(RANK_TIERS)) {
+    if (u.includes(k)) return v;
+  }
+  return null;
+}
+
+function extractRankFromLine(line: string): string | null {
+  const match = line.match(/【(アイアン|アイ|ブロンズ|ブロ|シルバー|シル|ゴールド|ゴル|プラチナ|プラ|エメラルド|エメ|ダイヤモンド|ダイア|ダイヤ|マスター|マス|グラマス|チャレンジャー|チャレ)】/i);
+  if (match) {
+    return CARD_RANK_MAP[match[1]] || null;
+  }
+  return null;
 }
 
 export interface PeriodicCustomEntries {
@@ -121,11 +178,14 @@ export async function loadNextPeriodicCustomEntries(now = new Date()): Promise<P
     } else {
       entryIds.push(id);
       const lanes = extractLanesFromLine(l);
+      const cardRank = extractRankFromLine(l);
       const isLate = /2戦目|合流|🌙/.test(l);
       const isSingle = /1戦のみ|⏱️/.test(l);
       entries.push({
         discordId: id,
         lanes,
+        rank: cardRank,
+        tier: getRankTier(cardRank),
         isLate,
         isSingle,
       });

@@ -3,7 +3,7 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { syncOnboardingChannels } from '../../../../lib/onboardingChannels';
-import { loadNextPeriodicCustomEntries } from '../../../../lib/periodicCustomCard';
+import { loadNextPeriodicCustomEntries, getRankTier } from '../../../../lib/periodicCustomCard';
 
 // 管理画面「個別案内」タブの一覧。開いた時点の最新状態に更新してから返す（2026-10-17）。
 export const dynamic = 'force-dynamic';
@@ -136,6 +136,23 @@ export async function GET(req: Request) {
       console.warn('[admin/onboarding-channels] 次の定期カスタムの読み込みに失敗:', e);
       return null;
     });
+
+    if (nextCustom && nextCustom.entries && nextCustom.entries.length > 0) {
+      const entryIds = nextCustom.entries.map((e) => e.discordId);
+      const { data: entryPlayers } = await supabase
+        .from('ktm_players')
+        .select('discord_id, highest_rank, name')
+        .in('discord_id', entryIds);
+      const entryPlayerMap = new Map<string, any>((entryPlayers || []).map((p: any) => [p.discord_id, p]));
+      for (const ent of nextCustom.entries) {
+        const ep = entryPlayerMap.get(ent.discordId);
+        if (!ent.rank && ep?.highest_rank) {
+          ent.rank = ep.highest_rank;
+          ent.tier = getRankTier(ep.highest_rank);
+        }
+        ent.playerName = ep?.name || null;
+      }
+    }
 
     return NextResponse.json({ success: true, channels: rows, nextCustom });
   } catch (err: any) {
