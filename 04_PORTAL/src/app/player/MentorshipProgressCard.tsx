@@ -136,7 +136,7 @@ export default function MentorshipProgressCard({
   const handleStartEdit = (match: any) => {
     setEditingMatchId(match.id);
     setEditNotes(match.meta?.progressNotes || '');
-    setEditTargetRank(match.meta?.targetRank || match.pupil?.target_rank || 'GOLD IV');
+    setEditTargetRank(match.meta?.targetRank || match.pupil?.target_rank || '');
   };
 
   const handleSaveProgress = async (matchId: string) => {
@@ -185,7 +185,7 @@ export default function MentorshipProgressCard({
     return null;
   }
 
-  // 師弟関係がない場合（本人のみ案内バナーを表示）
+  // 教えて先輩関係がない場合（本人のみ案内バナーを表示）
   if (matches.length === 0) {
     if (!isCurrentUser) return null;
     return (
@@ -198,14 +198,14 @@ export default function MentorshipProgressCard({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm md:text-base text-foreground dark:text-stone-100">
-                  師弟ハブで共闘パートナーを探しませんか？
+                  教えて先輩！で相談パートナーを探しませんか？
                 </span>
                 <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-success-500/20 text-success-600 dark:text-success-400 border border-success-edge-strong/30">
                   募集中
                 </span>
               </div>
               <p className="text-xs text-muted mt-1 leading-relaxed">
-                目標ランク到達に向けた1対1のコーチングや、気軽にデュオ・反省会ができる師匠・弟子とマッチングできます。
+                レーン戦の立ち回りやCS、チャンピオンプールなどの相談・コーチングができる先輩・後輩とマッチングできます。
               </p>
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function MentorshipProgressCard({
             href="/mentorship"
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm hover:scale-105 shrink-0"
           >
-            <span>師弟掲示板を見る</span>
+            <span>教えて掲示板を見る</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -226,24 +226,27 @@ export default function MentorshipProgressCard({
       {saveSuccess && (
         <div className="p-3 rounded-2xl bg-success-500/20 border border-success-edge-strong/40 text-success-600 dark:text-success-300 text-xs font-bold flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-success-500" />
-          <span>指導メモ・目標ランクの進捗を更新しました！</span>
+          <span>相談メモ・活動進捗を更新しました！</span>
         </div>
       )}
 
       {matches.map((match) => {
         const isUserMentor = (discordId && match.mentor_discord_id === discordId) || (match.mentor?.player_name === playerName);
         const partner = isUserMentor ? match.pupil : match.mentor;
-        const partnerRole = isUserMentor ? '弟子' : '師匠';
+        const partnerRole = isUserMentor ? '後輩' : '先輩';
 
         const pupilCurrentRank = match.pupil?.current_rank || 'SILVER IV';
-        const targetRank = match.meta?.targetRank || match.pupil?.target_rank || 'GOLD IV';
+        const targetRank = match.meta?.targetRank || match.pupil?.target_rank || '';
 
-        // ランク進捗計算
+        // ランク進捗計算（目標ランクが設定されている場合のみ）
+        const hasTargetRank = Boolean(targetRank && targetRank.trim());
         const currentScore = getRankScore(pupilCurrentRank);
-        const targetScore = getRankScore(targetRank);
+        const targetScore = hasTargetRank ? getRankScore(targetRank) : currentScore;
         const minScore = Math.max(0, currentScore - 4);
         const maxScore = Math.max(targetScore, currentScore + 1);
-        const progressPct = Math.min(100, Math.max(10, Math.round(((currentScore - minScore) / (maxScore - minScore)) * 100)));
+        const progressPct = hasTargetRank
+          ? Math.min(100, Math.max(10, Math.round(((currentScore - minScore) / (maxScore - minScore)) * 100)))
+          : 100;
         const diffDivisions = Math.max(0, targetScore - currentScore);
 
         const isEditing = editingMatchId === match.id;
@@ -262,10 +265,10 @@ export default function MentorshipProgressCard({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black px-2 py-0.5 rounded-md bg-success-500/10 text-success-600 dark:text-success-400 border border-success-edge-strong/20">
-                      {isUserMentor ? '👑 師匠として指導中' : '🌱 弟子として修行中'}
+                      {isUserMentor ? '🎓 先輩としてサポート中' : '🎒 後輩として相談・学習中'}
                     </span>
                     <span className="text-xs text-faint font-bold">
-                      {match.meta?.durationLabel || '2週間育成コース'}
+                      {match.meta?.durationLabel || '相談・活動中'}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
@@ -297,7 +300,7 @@ export default function MentorshipProgressCard({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-primary-600 hover:bg-primary-500 text-white shadow-2xs transition cursor-pointer"
-                    title="Discordの専用指導スレッド（🎓コーチング・質問）を開く"
+                    title="Discordの専用相談スレッド（🎓コーチング・質問）を開く"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>専用チャット</span>
@@ -308,7 +311,7 @@ export default function MentorshipProgressCard({
                     onClick={() => handleCreateThread(match.id)}
                     disabled={creatingThreadMatchId === match.id}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 border border-primary-edge-soft dark:border-primary-edge-strong transition cursor-pointer disabled:opacity-50"
-                    title="Discord (🎓コーチング・質問) に専用指導チャットを作成"
+                    title="Discord (🎓コーチング・質問) に専用相談チャットを作成"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>{creatingThreadMatchId === match.id ? '作成中...' : 'チャット作成'}</span>
@@ -324,48 +327,50 @@ export default function MentorshipProgressCard({
               </div>
             </div>
 
-            {/* 目標ランク進捗バー */}
-            <div className="bg-background dark:bg-stone-900/50 border border-border/80 dark:border-stone-800/80 rounded-2xl p-4 space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 font-extrabold text-foreground-soft dark:text-stone-200">
-                  <Target className="w-4 h-4 text-danger-500" />
-                  <span>目標ランクへの成長ステップ</span>
+            {/* 目標ランク進捗バー（目標ランクが設定されている場合のみ表示） */}
+            {hasTargetRank && (
+              <div className="bg-background dark:bg-stone-900/50 border border-border/80 dark:border-stone-800/80 rounded-2xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-extrabold text-foreground-soft dark:text-stone-200">
+                    <Target className="w-4 h-4 text-danger-500" />
+                    <span>目標ランクへのステップ</span>
+                  </div>
+                  <div className="text-[11px] font-black text-success-600 dark:text-success-400">
+                    {diffDivisions === 0 ? (
+                      <span className="flex items-center gap-1 text-success-500">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        目標ランク到達！🎉
+                      </span>
+                    ) : (
+                      <span>目標まであと {diffDivisions} ディビジョン 🔥</span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-[11px] font-black text-success-600 dark:text-success-400">
-                  {diffDivisions === 0 ? (
-                    <span className="flex items-center gap-1 text-success-500">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      目標ランク達成！🎉
+
+                {/* 進捗ゲージ */}
+                <div className="space-y-1.5">
+                  <div className="w-full bg-surface-hover dark:bg-stone-800 h-3 rounded-full overflow-hidden p-0.5 border border-border dark:border-stone-700/60">
+                    <div
+                      className="bg-gradient-to-r from-success-500 to-secondary-400 h-full rounded-full transition-all duration-500 shadow-sm"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] font-bold text-muted-strong px-0.5">
+                    <span>現在: {pupilCurrentRank}</span>
+                    <span className="text-primary-600 dark:text-primary-400 font-extrabold">
+                      🎯 目標: {targetRank}
                     </span>
-                  ) : (
-                    <span>目標まであと {diffDivisions} ディビジョン 🔥</span>
-                  )}
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* 進捗ゲージ */}
-              <div className="space-y-1.5">
-                <div className="w-full bg-surface-hover dark:bg-stone-800 h-3 rounded-full overflow-hidden p-0.5 border border-border dark:border-stone-700/60">
-                  <div
-                    className="bg-gradient-to-r from-success-500 to-secondary-400 h-full rounded-full transition-all duration-500 shadow-sm"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] font-bold text-muted-strong px-0.5">
-                  <span>現在: {pupilCurrentRank}</span>
-                  <span className="text-primary-600 dark:text-primary-400 font-extrabold">
-                    🎯 目標: {targetRank}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 指導メモ ＆ 反省ノート */}
+            {/* 相談メモ ＆ 練習テーマ */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-extrabold text-foreground-soft dark:text-stone-200">
                   <MessageSquare className="w-3.5 h-3.5 text-primary-500" />
-                  <span>指導メモ ＆ 今週の練習テーマ</span>
+                  <span>相談メモ ＆ 今週の練習テーマ</span>
                 </div>
                 {isCurrentUser && !isEditing && (
                   <button
@@ -383,19 +388,19 @@ export default function MentorshipProgressCard({
                 <div className="space-y-3 bg-background dark:bg-stone-900/60 p-3.5 rounded-2xl border border-primary-edge-strong/30">
                   <div>
                     <label className="block text-[11px] font-bold text-muted-strong mb-1">
-                      目標ランク
+                      目標ランク（任意）
                     </label>
                     <input
                       type="text"
                       value={editTargetRank}
                       onChange={(e) => setEditTargetRank(e.target.value)}
-                      placeholder="例: GOLD IV, EMERALD IV"
+                      placeholder="例: GOLD IV, EMERALD IV（未設定可）"
                       className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-primary-edge-strong"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-muted-strong mb-1">
-                      指導メモ / 今週のフォーカス / 気付き
+                      相談メモ / 今週のフォーカス / 気付き
                     </label>
                     <textarea
                       value={editNotes}
@@ -431,7 +436,7 @@ export default function MentorshipProgressCard({
                     <p className="whitespace-pre-wrap">{match.meta.progressNotes}</p>
                   ) : (
                     <p className="text-faint italic text-[11px]">
-                      まだ指導メモは登録されていません。「メモを編集」から今週の目標や反省を記録しましょう。
+                      まだメモは登録されていません。「メモを編集」から今週のテーマや振り返りを記録しましょう。
                     </p>
                   )}
                 </div>

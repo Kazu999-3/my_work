@@ -341,12 +341,12 @@ export async function handleModalSubmit(interaction, env, ctx) {
       : [];
 
     const bio = getVal('bio');
-    const targetRank = isMentor ? undefined : (getVal('target_rank') || undefined);
+    const targetRank = undefined; // 目標ランクは撤廃
     const activeHours = isMentor ? (getVal('active_hours') || undefined) : undefined;
 
     const discordName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || "Player";
 
-    const roleName = isMentor ? '師匠（指導者）' : '弟子（修行希望）';
+    const roleName = isMentor ? '先輩（サポーター）' : '後輩（相談希望）';
     const mAppId = interaction.application_id;
     const mToken = interaction.token;
 
@@ -365,7 +365,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
           player_name: discordName,
         });
         await patchInteractionResponse(mAppId, mToken, {
-          content: `✅ **${roleName}として師弟掲示板にエントリーしました！**\n<#1550159520687325205> のダッシュボードと新着カードに反映されます。相性の良いペアが見つかるのをお楽しみに！`
+          content: `✅ **${roleName}として「教えて先輩」掲示板にエントリーしました！**\n<#1550159520687325205> のダッシュボードに反映されます。相性の良い相手が見つかるのをお楽しみに！`
         });
       } catch (err) {
         // ⚠️ 2026-09-29 是正: 以前はここが console.error だけで、**保存に失敗しても

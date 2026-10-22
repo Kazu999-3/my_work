@@ -87,12 +87,12 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
     });
   }
 
-  // 🎓 師弟マッチング：弟子登録モーダル
+  // 🎒 教えて先輩：後輩登録モーダル
   if (customId === 'mentorship_apply_pupil') {
     return Response.json({
       type: 9,
       data: {
-        title: "🌱 師弟マッチング：弟子入り登録 (修行希望)",
+        title: "🎒 教えて先輩：相談希望 (後輩登録)",
         custom_id: "mentorship_pupil_modal",
         components: [
           {
@@ -106,20 +106,6 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
                 placeholder: "TOP / JG / MID / BOT / SUP のいずれか1つ",
                 required: true,
                 max_length: 10
-              }
-            ]
-          },
-          {
-            type: 1,
-            components: [
-              {
-                type: 4,
-                custom_id: "target_rank",
-                label: "目標ランク (目指したいランク)",
-                style: 1,
-                placeholder: "例: ゴールド / プラチナ / エメラルド",
-                required: false,
-                max_length: 20
               }
             ]
           },
@@ -156,12 +142,12 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
     });
   }
 
-  // 🥋 師弟マッチング：師匠登録モーダル
+  // 🎓 教えて先輩：先輩登録モーダル
   if (customId === 'mentorship_apply_mentor') {
     return Response.json({
       type: 9,
       data: {
-        title: "🥋 師弟マッチング：師匠登録 (指導者)",
+        title: "🎓 教えて先輩：先輩登録 (サポーター)",
         custom_id: "mentorship_mentor_modal",
         components: [
           {
