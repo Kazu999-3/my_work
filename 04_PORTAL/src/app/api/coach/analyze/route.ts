@@ -430,17 +430,6 @@ Vision/min傾向: 直近${visionTrend.recent} ← 以前${visionTrend.older}
       }
       const currentAbs = toAbsLp(solo.tier, solo.rank, solo.leaguePoints);
 
-      // 当日のスナップショットをupsert（サービスロールが必要な場合もあるが、coach用clientはservice roleキー優先）
-      const jstDate = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-      try {
-        await supabase.from('soloq_lp_history').upsert({
-          puuid, tier: solo.tier, division: solo.rank, lp: solo.leaguePoints,
-          abs_lp: currentAbs, snapshot_date: jstDate,
-        }, { onConflict: 'puuid,snapshot_date' });
-      } catch (e) {
-        console.warn('[coach/analyze goal] LPスナップショット保存に失敗（続行）:', e);
-      }
-
       // 目標の解釈
       const targetTier = String(body.targetTier || '').toUpperCase();
       const targetDivision = String(body.targetDivision || 'IV').toUpperCase();
@@ -454,14 +443,8 @@ Vision/min傾向: 直近${visionTrend.recent} ← 以前${visionTrend.older}
       }
       const targetAbs = toAbsLp(targetTier, targetDivision, targetLp);
 
-      // 履歴から LP/日 の傾きを算出
-      const { data: hist } = await supabase
-        .from('soloq_lp_history')
-        .select('abs_lp, snapshot_date')
-        .eq('puuid', puuid)
-        .order('snapshot_date', { ascending: true })
-        .limit(120);
-      const points = (hist || []).map((h: any) => ({ abs: Number(h.abs_lp), date: h.snapshot_date }));
+      // LPスナップショット履歴(soloq_lp_history)は廃止
+      const points: { abs: number; date: string }[] = [];
 
       let lpPerDay: number | null = null;
       let daySpan = 0;
@@ -711,18 +694,7 @@ ${matchContext.advice ? `・前回の添削要約: ${matchContext.advice.slice(0
     ]);
     const soloRank = (rankData as any[]).find((r: any) => r.queueType === 'RANKED_SOLO_5x5');
 
-    // シーズン目標トラッカー用に、その日のLPスナップショットを記録（1日1件・上書き）。
-    if (soloRank) {
-      try {
-        const jstDate = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-        await supabase.from('soloq_lp_history').upsert({
-          puuid, tier: soloRank.tier, division: soloRank.rank, lp: soloRank.leaguePoints,
-          abs_lp: toAbsLp(soloRank.tier, soloRank.rank, soloRank.leaguePoints), snapshot_date: jstDate,
-        }, { onConflict: 'puuid,snapshot_date' });
-      } catch (e) {
-        console.warn('[coach/analyze pre] LPスナップショット保存に失敗（続行）:', e);
-      }
-    }
+    // シーズン目標トラッカー用LPスナップショットは廃止（2026-10-23）
 
     const matchDetails = await Promise.all(
       matchIds.slice(0, 5).map((id) => fetchMatchDetails(id, apiKey).catch(() => null))

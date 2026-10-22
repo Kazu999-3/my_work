@@ -11,7 +11,7 @@ const PROFIT_GAMES = [
   { key: 'mines', label: '🌿 ブッシュ・スカウト', reasons: ['mines'] },
   { key: 'baccarat', label: '🃏 バカラ', reasons: ['baccarat'] },
   { key: 'slot', label: '🎰 スロット', reasons: ['slot'] },
-  { key: 'crash', label: '🚀 クラッシュ', reasons: ['crash'] },
+
   { key: 'scratch', label: '🎟️ スクラッチ', reasons: ['scratch_card'] },
   { key: 'bet', label: '🎯 勝敗予想', reasons: ['bet_place', 'bet_win', 'bet_payout'] },
 ] as const;
