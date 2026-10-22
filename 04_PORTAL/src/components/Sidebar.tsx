@@ -277,13 +277,14 @@ export default function Sidebar() {
     };
   }, [showMobileDrawer]);
 
-  // 師弟募集中のプロフィール数（リアルタイムバッジ用）
+  // 相談待ちの後輩（PUPIL）プロフィール数（リアルタイムバッジ用: 後輩がペア成立済みの時は0になる）
   const [mentorshipCount, setMentorshipCount] = useState<number>(0);
 
-  // 全員の全ページに出るので、表示中だけ5分おき（以前は45秒おき・裏に隠れても動き続けていた。2026-10-19）
+  // 全員の全ページに出るので、表示中だけ5分おき
   useVisiblePolling(async () => {
     try {
-      const res = await fetch('/api/mentorship/profiles?status=OPEN');
+      // ユーザー指摘(2026-10-22): 先輩の登録数ではなく、相談相手を探している後輩（PUPIL）の未マッチ数をバッジにする
+      const res = await fetch('/api/mentorship/profiles?status=OPEN&roleType=PUPIL');
       if (!res.ok) return;
       const data = await res.json();
       if (data.ok && Array.isArray(data.profiles)) {
