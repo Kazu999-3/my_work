@@ -444,6 +444,12 @@ export async function GET(req: Request) {
             if (!notes.isSecretProposal) continue;
             const isMentor = m.mentor_discord_id === discordId;
             const myStatus = isMentor ? notes.mentorStatus : notes.pupilStatus;
+
+            // 【後輩ファースト設計】先輩側には、後輩が「話してみたい」を押して指名・承諾（ACCEPTED）した時のみ表示する
+            if (isMentor && notes.pupilStatus !== 'ACCEPTED') {
+              continue;
+            }
+
             if (myStatus === 'PENDING') {
               myProposals.push({
                 matchId: m.id,

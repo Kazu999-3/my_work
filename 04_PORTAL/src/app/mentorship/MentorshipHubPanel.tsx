@@ -849,8 +849,12 @@ export default function MentorshipHubPanel() {
                   <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black">
                     <Sparkles size={13} className="text-secondary-600" />
                     {myProposals.length > 1
-                      ? `あなたへのお見合い便が届いています！（${myProposals.length}名の${targetRole}をご紹介）`
-                      : 'あなたへのお見合い便が届いています！'}
+                      ? isUserMentor
+                        ? `あなたへ後輩からの相談リクエストが届いています！（${myProposals.length}名）`
+                        : `あなたへのお見合い便が届いています！（${myProposals.length}名の先輩をご紹介）`
+                      : isUserMentor
+                        ? '後輩から「教えてほしい」リクエストが届いています！'
+                        : 'あなたへのお見合い便が届いています！'}
                   </div>
                   {myProposals[0]?.proposedAt && (() => {
                     const dateInfo = formatOfferDate(myProposals[0].proposedAt);
@@ -865,9 +869,11 @@ export default function MentorshipHubPanel() {
                 <h3 className="text-base md:text-lg font-black text-foreground">
                   {myProposals.length > 1
                     ? isUserMentor
-                      ? 'あなたを頼りにしている後輩がピックアップされました！気になる後輩を選んでみてください✨'
+                      ? '後輩たちから「話してみたい」のリクエストが届きました！相談に乗る後輩を選んでみてください✨'
                       : '相性の良い先輩がピックアップされました！気になる先輩を選んでみてください✨'
-                    : `${isUserMentor ? 'おすすめの後輩候補' : 'おすすめの先輩'}：${myProposals[0].partnerName?.endsWith('さん') ? myProposals[0].partnerName : `${myProposals[0].partnerName} さん`}`}
+                    : isUserMentor
+                      ? `${myProposals[0].partnerName?.endsWith('さん') ? myProposals[0].partnerName : `${myProposals[0].partnerName} さん`} から相談リクエストが届きました！`
+                      : `おすすめの先輩：${myProposals[0].partnerName?.endsWith('さん') ? myProposals[0].partnerName : `${myProposals[0].partnerName} さん`}`}
                 </h3>
               </div>
 
@@ -915,7 +921,7 @@ export default function MentorshipHubPanel() {
                     className="px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <HeartHandshake size={14} />
-                    <span>🤝 ちょっと話してみたい</span>
+                    <span>{isUserMentor ? '🤝 相談に乗る（マッチング成立）' : '🤝 ちょっと話してみたい'}</span>
                   </button>
                   <button
                     type="button"
@@ -978,7 +984,7 @@ export default function MentorshipHubPanel() {
                           className="flex-1 py-2 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <HeartHandshake size={13} />
-                          <span>🤝 話してみたい</span>
+                          <span>{p.isMentor ? '🤝 相談に乗る（マッチング成立）' : '🤝 話してみたい'}</span>
                         </button>
                         <button
                           type="button"
@@ -999,7 +1005,7 @@ export default function MentorshipHubPanel() {
             <div className="pt-2 border-t border-border/50 flex items-center gap-2 text-xs text-emerald-800 font-medium">
               <Shield size={14} className="text-emerald-600 shrink-0" />
               <span>
-                <strong>🔒 安心ルール:</strong> 「今回は見送る」を選んでも、相手には一切通知されません。双方が「話してみたい」を選んだ時だけ専用チャットが開きます。
+                <strong>🔒 安心ルール:</strong> 「今回は見送る」を選んでも、相手には一切通知されません。{isUserMentor ? '「相談に乗る」を選ぶと専用チャットが開きます。' : '双方が「話してみたい」を選んだ時だけ専用チャットが開きます。'}
               </span>
             </div>
           </div>
