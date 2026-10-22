@@ -232,10 +232,18 @@ export async function findBestSeniorMentor(
       // 後輩のプロフィールは "SUPPORT" / "JUNGLE"、名簿は "SUP" / "JG" と書き方が違うので揃えてから比べる
       const playerLanes = [mainLane, subLane].map((l) => normalizeRole(l)).filter(Boolean);
 
+      const isPupilSpecificLane = pupilLanes.length > 0 && !pupilLanes.some((pl) => pl.toUpperCase() === 'ALL');
       const hasSharedLane = pupilLanes.some((pl) => pl.toUpperCase() === 'ALL' || playerLanes.includes(normalizeRole(pl)));
+
+      // 弟子が特定レーンを希望している場合、レーンが不一致の先輩にはスカウト打診しない
+      if (isPupilSpecificLane && !hasSharedLane) {
+        continue;
+      }
+
       if (hasSharedLane) {
         score += 35;
-        reasons.push(`メイン/得意レーン一致（${mainLane || subLane}）`);
+        const matchedLane = playerLanes.find((l) => pupilLanes.map(normalizeRole).includes(l)) || mainLane || subLane;
+        reasons.push(`メイン/得意レーン一致（${matchedLane}）`);
       } else {
         score += 5;
       }
@@ -248,7 +256,7 @@ export async function findBestSeniorMentor(
       }
     }
 
-    if (bestSenior && bestScore >= 45) {
+    if (bestSenior && bestScore >= 50) {
       return {
         seniorPlayer: bestSenior,
         reasons: bestReasons,
