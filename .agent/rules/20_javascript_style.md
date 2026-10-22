@@ -1,6 +1,5 @@
 ---
-trigger: glob
-globs: ["**/*.js", "**/*.json", "**/*.npmrc", "**/package.json"]
+trigger: model_decision
 description: JavaScript、npm、および Node.js 関連のファイルを扱う際に適用する。
 ---
 

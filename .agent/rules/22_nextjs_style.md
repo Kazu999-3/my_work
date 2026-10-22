@@ -1,6 +1,5 @@
 ---
-trigger: glob
-globs: ["04_PORTAL/**/*.ts", "04_PORTAL/**/*.tsx"]
+trigger: model_decision
 description: 04_PORTAL(Next.js)配下のTypeScript/TSXファイルを扱う際に適用する。
 ---
 

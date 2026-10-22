@@ -1,6 +1,5 @@
 ---
-trigger: glob
-globs: ["**/*.ps1"]
+trigger: model_decision
 description: PowerShell スクリプトの作成や実行、セキュリティスキャンを行う際に適用する。
 ---
 

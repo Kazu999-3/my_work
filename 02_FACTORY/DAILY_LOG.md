@@ -10,6 +10,18 @@
 
 ## 🗓️ 2026-10-22（木）
 
+### 🔧 Antigravityルール設定（.agent/rules/*.md）のフロントマターパースエラー解消
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーよりIDE上の「3 customizations failed to load (20_javascript_style.md, 21_powershell_style.md, 22_nextjs_style.md) failed to parse frontmatter yaml: cannot unmarshal !!seq into string」というエラー通知について問い合わせを受領。
+   - Antigravity のルールパーサーにおいて、`trigger: glob` および `globs: [...]`（配列構文）が型不一致を起こしていたため、ルールが正しくロードできていなかった。
+2. **実施内容**:
+   - `20_javascript_style.md`, `21_powershell_style.md`, `22_nextjs_style.md` のフロントマターを、Antigravity 標準の `trigger: model_decision` に統一。
+   - これにより、IDEのロードエラーが解消され、AIが必要なコーディング作業時に自律参照する条件付きルールとして正常化。
+
+---
+
 ### 🎒 「教えて先輩」メニューバッジのカウント対象を「相談待ちの後輩（PUPIL）」に是正（ペア成立時は0）
 
 **概要**:
