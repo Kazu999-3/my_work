@@ -269,114 +269,16 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
 }
 
 /**
- * 新規募集または大幅更新時に個別の紹介カードEmbedをDiscordに速報投稿
+ * 新規募集時にAI仲人チェック（お見合い提案）を実行
+ * ※ 2026-10-23: 個別の巨大Embedカード連投は廃止し、ピン留めダッシュボード（syncMentorshipDashboard）への自動集約に一本化。
  */
 export async function notifyNewMentorshipProfile(params: {
   profile: any;
   isUpdate?: boolean;
 }): Promise<boolean> {
-  const { profile, isUpdate } = params;
-  const channelId = await ensureMentorshipChannel();
-  if (!channelId || !DISCORD_BOT_TOKEN) return false;
+  const { profile } = params;
 
   try {
-    const isMentor = profile.role_type === 'MENTOR';
-    const isPupil = profile.role_type === 'PUPIL';
-    const roleLabel = isMentor ? '師匠（指導者）' : '弟子（修行希望）';
-    const icon = isMentor ? '🥋' : '🌱';
-    const color = isMentor ? 0xf59e0b : 0x10b981; // 師匠: Gold, 弟子: Emerald
-
-    const mention = profile.discord_id ? `<@${profile.discord_id}>` : `**${profile.player_name}**`;
-    const lanes = Array.isArray(profile.lanes) && profile.lanes.length > 0 ? profile.lanes.join(', ') : '未指定';
-    const champs =
-      Array.isArray(profile.champions) && profile.champions.length > 0 ? profile.champions.join(', ') : '全般';
-    const tags =
-      Array.isArray(profile.tags) && profile.tags.length > 0
-        ? profile.tags.map((t: string) => `\`#${t}\``).join(' ')
-        : 'なし';
-
-    const actionText = isUpdate ? '募集内容を更新しました！' : '新しい募集を開始しました！';
-
-    const embed = {
-      title: `${icon} 【${roleLabel}募集】${profile.player_name} さんが${actionText}`,
-      color,
-      fields: [
-        {
-          name: isMentor ? '📈 ランク' : '📈 ランク / 目標',
-          value: isMentor
-            ? `**${profile.current_rank || 'UNRANKED'}**`
-            : `現在: **${profile.current_rank || 'UNRANKED'}** ➔ 目標: **${profile.target_rank || '未設定'}**`,
-          inline: true,
-        },
-        {
-          name: isMentor ? '🛡️ 指導レーン ＆ 得意' : '🛡️ 希望レーン ＆ 練習中',
-          value: `\`${lanes}\` | ${champs}`,
-          inline: true,
-        },
-        {
-          name: '💬 ひとことPR',
-          value: profile.bio ? `> ${profile.bio.replace(/\n/g, '\n> ').slice(0, 150)}` : '*自己PRの登録はありません*',
-          inline: false,
-        },
-      ],
-      footer: {
-        text: `KTM Mentorship Hub • 活動時間: ${profile.active_hours || '未指定'} | ポータルからオファー送信可能`,
-      },
-    };
-
-    const content = `📢 **${roleLabel}の新着募集！** ${mention} さんが掲示板にエントリーしました！\n👉 [ポータルでプロフィールを見る・オファーを送る](${PORTAL_BASE_URL}/mentorship)`;
-
-    const postRes = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        content,
-        embeds: [embed],
-        components: isPupil
-          ? [
-              {
-                type: 1,
-                components: [
-                  {
-                    type: 2,
-                    style: 3, // Green
-                    label: '🤝 師匠を引き受ける (+300🪙)',
-                    custom_id: `mentorship_claim_pupil:${profile.id}`,
-                  },
-                  {
-                    type: 2,
-                    style: 5, // Link
-                    label: '🌐 ポータルでプロフィールを見る',
-                    url: `${PORTAL_BASE_URL}/mentorship`,
-                  },
-                ],
-              },
-            ]
-          : [
-              {
-                type: 1,
-                components: [
-                  {
-                    type: 2,
-                    style: 1, // Blurple
-                    label: '🙋 弟子入りをお願いする',
-                    url: `${PORTAL_BASE_URL}/mentorship`,
-                  },
-                  {
-                    type: 2,
-                    style: 5, // Link
-                    label: '🌐 ポータルでプロフィールを見る',
-                    url: `${PORTAL_BASE_URL}/mentorship`,
-                  },
-                ],
-              },
-            ],
-      }),
-    });
-
     // 🤖 AI仲人チェック: 登録されたプロフィールと相性の良い相手（70%以上）がいれば自動推薦（お見合い提案）
     // ※ 2026-10-23: 未登録の先輩への個別自動スカウト打診はユーザー判断（案C）により廃止。お見合い便・掲示板に一本化。
     try {
@@ -393,7 +295,7 @@ export async function notifyNewMentorshipProfile(params: {
       console.warn('[discordMentorship] AI matchmaker warning:', matchErr);
     }
 
-    return postRes.ok;
+    return true;
   } catch (err) {
     console.error('[discordMentorship] Error in notifyNewMentorshipProfile:', err);
     return false;
