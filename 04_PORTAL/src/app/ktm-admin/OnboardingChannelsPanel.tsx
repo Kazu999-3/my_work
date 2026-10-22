@@ -231,20 +231,20 @@ export default function OnboardingChannelsPanel() {
     return Math.abs(rowTier - targetTier) <= tolerance;
   };
 
-  // 指定レーンの対面候補判定（実力差連動）
+  // 指定レーンの対面候補判定（第1希望のみ・実力差連動）
   const isLaneOpponent = (r: Row, lane: string, tolerance: RankTolerance = rankTolerance): boolean => {
     if (!isCandidate(r)) return false;
-    if (!matchesLane(r.primaryLane, lane) && !matchesLane(r.secondaryLane, lane)) return false;
+    // ユーザー指定: 第1希望のみを対象とする（第2希望は除外、ALL/FILLは全ロール第1希望扱い）
+    if (!matchesLane(r.primaryLane, lane)) return false;
     if (tolerance === 'all') return true;
 
-    // そのレーンに現在エントリーしている人たちのティアを取得
+    // そのレーンに現在エントリーしている人たちのティアを取得（エントリー者側も第1希望で判定）
     const laneEntries = (nextCustom?.entries || []).filter((e) => {
       const p = e.lanes?.[0];
-      const s = e.lanes?.[1];
-      return matchesLane(p, lane) || matchesLane(s, lane);
+      return matchesLane(p, lane);
     });
 
-    // まだ誰もエントリーしていないレーンは、レーン適性があればOK
+    // まだ誰もエントリーしていないレーンは、第1希望適性があればOK
     if (laneEntries.length === 0) return true;
 
     // エントリーしているいずれかのメンバーと実力が釣り合っていればOK
@@ -256,11 +256,12 @@ export default function OnboardingChannelsPanel() {
     });
   };
 
-  // 特定メンバーの指名対面候補判定（実力差連動）
+  // 特定メンバーの指名対面候補判定（第1希望のみ・実力差連動）
   const isPlayerOpponent = (r: Row, entry: CustomEntryDetail, tolerance: RankTolerance = rankTolerance): boolean => {
     if (!isCandidate(r)) return false;
     const primary = entry.lanes?.[0] || 'TOP';
-    if (!matchesLane(r.primaryLane, primary) && !matchesLane(r.secondaryLane, primary)) return false;
+    // ユーザー指定: 第1希望のみを対象とする
+    if (!matchesLane(r.primaryLane, primary)) return false;
 
     if (tolerance === 'all') return true;
     const targetTier = entry.tier ?? getRankTier(entry.rank);
@@ -402,7 +403,7 @@ export default function OnboardingChannelsPanel() {
       }
     } else if (filter.startsWith('laneOpponent_') || filter === 'neededOpponents') {
       const lane = filter.startsWith('laneOpponent_') ? filter.replace('laneOpponent_', '') : null;
-      const laneEntries = (nextCustom?.entries || []).filter((e) => !lane || matchesLane(e.lanes?.[0], lane) || matchesLane(e.lanes?.[1], lane));
+      const laneEntries = (nextCustom?.entries || []).filter((e) => !lane || matchesLane(e.lanes?.[0], lane));
       if (laneEntries.length > 0 && rowTier !== null) {
         const diffs = laneEntries.map((e) => {
           const t = e.tier ?? getRankTier(e.rank);
@@ -579,7 +580,7 @@ export default function OnboardingChannelsPanel() {
                     ? 'bg-amber-600 text-white font-black shadow-sm ring-2 ring-amber-400 ring-offset-1'
                     : 'bg-amber-700/80 hover:bg-amber-700 text-white font-bold shadow-2xs'
                 }`}
-                title="現在2名揃っていない（対面相手が不足している）レーンが得意で、かつ実力が釣り合う未エントリー者をすべて選択し、一覧を絞り込みます"
+                title="現在2名揃っていない（対面相手が不足している）レーンが第1希望で、かつ実力が釣り合う未エントリー者をすべて選択し、一覧を絞り込みます"
               >
                 ⚔️ 不足対面をまとめて抽出（{rows.filter((r) => isNeededOpponent(r, rankTolerance)).length}件）
               </button>
@@ -598,7 +599,7 @@ export default function OnboardingChannelsPanel() {
                         ? 'bg-primary-600 text-white font-black border-primary-600 shadow-sm ring-2 ring-primary-400 ring-offset-1'
                         : 'border border-border bg-surface hover:bg-surface-subtle text-foreground font-medium'
                     }`}
-                    title={`${lane}希望（第1または第2）で実力が釣り合う未エントリー者を選択し一覧を絞り込み（現在エントリー: ${currentCount}名）`}
+                    title={`${lane}が第1希望で実力が釣り合う未エントリー者を選択し一覧を絞り込み（現在エントリー: ${currentCount}名）`}
                   >
                     {lane}対面 ({count}件)
                   </button>
@@ -628,7 +629,7 @@ export default function OnboardingChannelsPanel() {
                           ? 'bg-primary-600 text-white font-black border border-primary-600 shadow-xs ring-2 ring-primary-400 ring-offset-1'
                           : 'border border-border bg-surface hover:bg-surface-subtle text-[11px] text-muted-strong hover:text-foreground'
                       }`}
-                      title={`${name}さん${rankBadge} (${primary}) と実力が釣り合う対面候補（${matchCount}名）を選択し一覧を絞り込み`}
+                      title={`${name}さん${rankBadge}の第1希望(${primary})と実力が釣り合う対面候補（${matchCount}名）を選択し一覧を絞り込み`}
                     >
                       <span>{name}</span>
                       {entry.rank && (
