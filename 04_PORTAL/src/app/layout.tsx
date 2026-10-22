@@ -83,7 +83,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased bg-background text-foreground flex min-h-screen">
+      <body className="antialiased bg-background text-foreground flex flex-col md:flex-row min-h-screen">
         <ThemeProvider>
           <PwaRegister />
           <Toaster />

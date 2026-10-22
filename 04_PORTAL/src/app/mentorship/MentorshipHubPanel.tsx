@@ -8,7 +8,7 @@ import { MentorshipRequestModal } from './MentorshipRequestModal';
 import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
 import { MentorshipReviewModal } from './MentorshipReviewModal';
-import { formatOfferDate } from './SecretMatchmakerModal';
+import { SecretMatchmakerModal, formatOfferDate } from './SecretMatchmakerModal';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
 import { toast } from '../../components/Toaster';
 import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
@@ -56,6 +56,7 @@ export default function MentorshipHubPanel() {
   const [selectedReviewMatch, setSelectedReviewMatch] = useState<any | null>(null);
 
   // 🤖 シークレットお見合い便モーダル管理
+  const [isSecretMatchmakerOpen, setIsSecretMatchmakerOpen] = useState(false);
   const [myProposals, setMyProposals] = useState<any[]>([]);
   const [isRespondingProposal, setIsRespondingProposal] = useState(false);
 
@@ -774,6 +775,15 @@ export default function MentorshipHubPanel() {
 
             {isAdmin && (
               <>
+                <button
+                  type="button"
+                  onClick={() => setIsSecretMatchmakerOpen(true)}
+                  className="px-3 py-2.5 rounded-xl bg-secondary-500/15 hover:bg-secondary-500/25 text-secondary-700 dark:text-secondary-300 font-bold text-xs transition border border-secondary-500/30 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="未登録メンバーを含むお見合い候補を自動算出し、個別案内チャンネルへ案内を送信します"
+                >
+                  <Sparkles size={13} className="text-secondary-600 dark:text-secondary-400" />
+                  <span>🤖 お見合い便</span>
+                </button>
                 <button
                   type="button"
                   onClick={handleSyncDiscord}
@@ -1597,6 +1607,12 @@ export default function MentorshipHubPanel() {
       <MentorshipGuidelinesModal
         isOpen={isGuidelinesModalOpen}
         onClose={() => setIsGuidelinesModalOpen(false)}
+      />
+
+      {/* 🤖 シークレットお見合い便モーダル */}
+      <SecretMatchmakerModal
+        isOpen={isSecretMatchmakerOpen}
+        onClose={() => setIsSecretMatchmakerOpen(false)}
       />
 
       {/* ⭐ 匿名レビューモーダル */}

@@ -411,7 +411,7 @@ export default function Sidebar() {
       </aside>
 
       {/* 📱 スマホ用 ボトム固定ナビゲーションバー (5項目) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 dark:bg-background/95 backdrop-blur-md border-t border-border dark:border-border z-40 px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 transform-gpu will-change-transform bg-[#f7f5f0]/95 dark:bg-background/95 backdrop-blur-md border-t border-border dark:border-border px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
         {mobileBottomBarItems.map((item) => {
           const Icon = item.icon;
           const isActive = isItemActive(item, pathname);
