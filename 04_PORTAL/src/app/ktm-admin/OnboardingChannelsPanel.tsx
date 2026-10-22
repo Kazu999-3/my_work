@@ -50,7 +50,19 @@ interface Row {
 
 const DAY = 86400e3;
 
-type FilterKey = 'all' | 'unread' | 'needsReply' | 'newNoPlay' | 'firstTimeOnly' | 'lapsedRegular' | 'nextSpectator' | 'nextEntry' | 'neededOpponents' | 'recent60' | 'silent30';
+type FilterKey =
+  | 'all'
+  | 'unread'
+  | 'needsReply'
+  | 'newNoPlay'
+  | 'firstTimeOnly'
+  | 'lapsedRegular'
+  | 'nextSpectator'
+  | 'nextEntry'
+  | 'neededOpponents'
+  | 'recent60'
+  | 'silent30'
+  | string;
 
 /** 定期カスタムの開始日時を「10/25（土）21:00」の形にする（日本時間） */
 function formatCustomStart(iso: string): string {
@@ -212,19 +224,49 @@ export default function OnboardingChannelsPanel() {
     return needed.some((lane) => matchesLane(r.primaryLane, lane) || matchesLane(r.secondaryLane, lane));
   };
 
-  // 選択ヘルパー
+  // 選択 ＆ フィルター連動ヘルパー
   const selectNeededOpponents = () => {
-    const ids = rows.filter(isNeededOpponent).map((r) => r.channelId);
-    setSelected(new Set(ids));
+    setFilter('neededOpponents');
+    const matched = rows.filter(isNeededOpponent);
+    setSelected(new Set(matched.map((r) => r.channelId)));
+    if (nextCustom) {
+      setContent(MESSAGE_TEMPLATES.find((t) => t.key === 'laneOpponentNudge')?.build(nextCustom) || '');
+    }
   };
+
   const selectLaneOpponents = (lane: string) => {
-    const ids = rows.filter((r) => isLaneOpponent(r, lane)).map((r) => r.channelId);
-    setSelected(new Set(ids));
+    const key = `laneOpponent_${lane}`;
+    setFilter(key);
+    const matched = rows.filter((r) => isLaneOpponent(r, lane));
+    setSelected(new Set(matched.map((r) => r.channelId)));
+    if (nextCustom) {
+      setContent([
+        `👋 **${formatCustomStart(nextCustom.startAt)}から週末の定期カスタムです！**`,
+        `現在【${lane}】の対面枠を特に募集中です！⚔️`,
+        '1戦のみや途中参加も大歓迎ですので、予定が合えばぜひ一緒にやりましょう🙌',
+        `👉 ${nextCustom.messageUrl}`,
+        '当日の流れやレーン調整など質問があれば、ここに気軽に書き込んでくださいね🤝',
+      ].join('\n'));
+    }
   };
+
   const selectPlayerOpponents = (entry: CustomEntryDetail) => {
+    const key = `playerOpponent_${entry.discordId}`;
+    setFilter(key);
     const primary = entry.lanes?.[0] || 'TOP';
-    const ids = rows.filter((r) => isLaneOpponent(r, primary)).map((r) => r.channelId);
-    setSelected(new Set(ids));
+    const matched = rows.filter((r) => isLaneOpponent(r, primary));
+    setSelected(new Set(matched.map((r) => r.channelId)));
+    if (nextCustom) {
+      const entryRow = rows.find((r) => r.ownerUserId === entry.discordId);
+      const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || 'メンバー';
+      setContent([
+        `👋 **${formatCustomStart(nextCustom.startAt)}から週末の定期カスタムです！**`,
+        `今週末、${name}さんが【${primary}】でエントリーしてくれています！対面で勝負してみませんか？⚔️`,
+        '1戦のみや途中参加も大歓迎ですので、予定が合えばぜひ一緒にやりましょう🙌',
+        `👉 ${nextCustom.messageUrl}`,
+        '当日の流れなど気になることがあれば、ここに気軽に書き込んでくださいね🤝',
+      ].join('\n'));
+    }
   };
 
   const FILTERS: { key: FilterKey; label: string; test: (r: Row) => boolean }[] = [
@@ -244,14 +286,39 @@ export default function OnboardingChannelsPanel() {
     { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
     { key: 'silent30', label: '30日以上発言なし', test: (r) => !r.lastMessageAt || now - new Date(r.lastMessageAt).getTime() > 30 * DAY },
   ];
-  const activeFilter = FILTERS.find((f) => f.key === filter) || FILTERS[0];
+
+  // 動的対面フィルターを含む判定
+  const getFilterTest = (fKey: string): { label: string; test: (r: Row) => boolean } => {
+    if (fKey.startsWith('laneOpponent_')) {
+      const lane = fKey.replace('laneOpponent_', '');
+      return {
+        label: `⚔️ ${lane}対面候補（未エントリー）`,
+        test: (r) => isLaneOpponent(r, lane),
+      };
+    }
+    if (fKey.startsWith('playerOpponent_')) {
+      const dId = fKey.replace('playerOpponent_', '');
+      const entry = nextCustom?.entries?.find((e) => e.discordId === dId);
+      const primary = entry?.lanes?.[0] || 'TOP';
+      const entryRow = rows.find((r) => r.ownerUserId === dId);
+      const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${dId.slice(-4)}`;
+      return {
+        label: `⚔️ ${name}さん【${primary}】の対面候補`,
+        test: (r) => isLaneOpponent(r, primary),
+      };
+    }
+    const found = FILTERS.find((f) => f.key === fKey);
+    return found ? { label: found.label, test: found.test } : { label: '全員', test: () => true };
+  };
+
+  const activeFilterInfo = getFilterTest(filter);
 
   const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
   // 状態順 = 未読 → 既読・未返信 → それ以外（同じ中では最後の発言が新しい順）
   const rank = (r: Row) => (r.unread ? 0 : r.needsReply ? 1 : 2);
   const q = query.trim().toLowerCase();
   const visible = rows
-    .filter((r) => activeFilter.test(r) && (!q || `${r.playerName || ''} ${r.channelName}`.toLowerCase().includes(q)))
+    .filter((r) => activeFilterInfo.test(r) && (!q || `${r.playerName || ''} ${r.channelName}`.toLowerCase().includes(q)))
     .sort((a, b) => {
       switch (sortKey) {
         case 'messageNew': return time(b.lastMessageAt) - time(a.lastMessageAt);
@@ -367,8 +434,12 @@ export default function OnboardingChannelsPanel() {
               <button
                 type="button"
                 onClick={selectNeededOpponents}
-                className="px-2.5 py-1 rounded-md font-bold bg-primary-600 hover:bg-primary-500 text-white shadow-2xs transition"
-                title="現在2名揃っていない（対面相手が不足している）レーンが得意な未エントリー者をすべて選択します"
+                className={`px-2.5 py-1 rounded-md transition ${
+                  filter === 'neededOpponents'
+                    ? 'bg-amber-600 text-white font-black shadow-sm ring-2 ring-amber-400 ring-offset-1'
+                    : 'bg-amber-700/80 hover:bg-amber-700 text-white font-bold shadow-2xs'
+                }`}
+                title="現在2名揃っていない（対面相手が不足している）レーンが得意な未エントリー者をすべて選択し、一覧を絞り込みます"
               >
                 ⚔️ 不足対面をまとめて抽出（{rows.filter(isNeededOpponent).length}件）
               </button>
@@ -376,13 +447,18 @@ export default function OnboardingChannelsPanel() {
               {['TOP', 'JG', 'MID', 'BOT', 'SUP'].map((lane) => {
                 const count = rows.filter((r) => isLaneOpponent(r, lane)).length;
                 const currentCount = nextCustom.laneCounts?.[lane] || 0;
+                const isActive = filter === `laneOpponent_${lane}`;
                 return (
                   <button
                     key={lane}
                     type="button"
                     onClick={() => selectLaneOpponents(lane)}
-                    className="px-2 py-1 rounded-md border border-border bg-surface hover:bg-surface-subtle text-foreground font-medium transition"
-                    title={`${lane}希望（第1または第2）の未エントリー者を選択（現在エントリー: ${currentCount}名）`}
+                    className={`px-2 py-1 rounded-md transition ${
+                      isActive
+                        ? 'bg-primary-600 text-white font-black border-primary-600 shadow-sm ring-2 ring-primary-400 ring-offset-1'
+                        : 'border border-border bg-surface hover:bg-surface-subtle text-foreground font-medium'
+                    }`}
+                    title={`${lane}希望（第1または第2）の未エントリー者を選択し一覧を絞り込み（現在エントリー: ${currentCount}名）`}
                   >
                     {lane}対面 ({count}件)
                   </button>
@@ -399,18 +475,23 @@ export default function OnboardingChannelsPanel() {
                   const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${entry.discordId.slice(-4)}`;
                   const primary = entry.lanes?.[0] || 'TOP';
                   const matchCount = rows.filter((r) => isLaneOpponent(r, primary)).length;
+                  const isActive = filter === `playerOpponent_${entry.discordId}`;
 
                   return (
                     <button
                       key={entry.discordId}
                       type="button"
                       onClick={() => selectPlayerOpponents(entry)}
-                      className="px-2 py-0.5 rounded-full border border-border bg-surface hover:bg-surface-subtle text-[11px] text-muted-strong hover:text-foreground transition flex items-center gap-1"
-                      title={`${name}さん (${primary}) と同じレーンができる未エントリー者（${matchCount}名）を選択`}
+                      className={`px-2 py-0.5 rounded-full transition flex items-center gap-1 ${
+                        isActive
+                          ? 'bg-primary-600 text-white font-black border border-primary-600 shadow-xs ring-2 ring-primary-400 ring-offset-1'
+                          : 'border border-border bg-surface hover:bg-surface-subtle text-[11px] text-muted-strong hover:text-foreground'
+                      }`}
+                      title={`${name}さん (${primary}) と同じレーンができる未エントリー者（${matchCount}名）を選択し一覧を絞り込み`}
                     >
                       <span>{name}</span>
-                      <span className="font-bold text-primary-600 text-[10px]">【{primary}】</span>
-                      <span className="text-faint">({matchCount})</span>
+                      <span className={`font-bold text-[10px] ${isActive ? 'text-white' : 'text-primary-600'}`}>【{primary}】</span>
+                      <span className={isActive ? 'text-white/80' : 'text-faint'}>({matchCount})</span>
                     </button>
                   );
                 })}
@@ -467,6 +548,19 @@ export default function OnboardingChannelsPanel() {
       {/* 絞り込み・並べ替え */}
       <div className="space-y-2">
         <div className="flex flex-wrap gap-1.5 text-xs">
+          {(filter.startsWith('laneOpponent_') || filter.startsWith('playerOpponent_')) && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-600 text-white font-bold border border-primary-700 shadow-xs">
+              <span>{activeFilterInfo.label}（{visible.length}）</span>
+              <button
+                type="button"
+                onClick={() => setFilter('all')}
+                className="ml-1 px-1.5 py-0.2 rounded-full bg-black/20 hover:bg-black/30 text-white text-[10px]"
+                title="対面フィルターを解除して全員表示に戻す"
+              >
+                ✕ 解除
+              </button>
+            </div>
+          )}
           {FILTERS.map((f) => (
             <button
               key={f.key}
