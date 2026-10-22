@@ -278,11 +278,24 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
       }
     })());
 
+    const oldEmbeds = interaction.message?.embeds || [];
+    const updatedEmbeds = oldEmbeds.map((e) => ({
+      ...e,
+      fields: [
+        ...(e.fields || []),
+        {
+          name: '📋 回答ステータス',
+          value: '🤝 **「話してみたい」を選択しました！**\nお相手もOKされた場合、自動的に専用スレッドが作成されます✨\n（※相手が見送った場合や辞退された場合でも何も通知されませんのでご安心ください）',
+          inline: false,
+        },
+      ],
+    }));
+
     return Response.json({
-      type: 4,
+      type: 7, // UPDATE_MESSAGE（元のメッセージを更新してボタンをクローズ）
       data: {
-        content: '🤝 **「話してみたい」をお伝えしました！**\nお相手もOKされた場合、自動的に専用スレッドが作成されます✨\n（※相手が見送った場合や辞退された場合でも何も通知されませんのでご安心ください）',
-        flags: 64, // 非公開
+        embeds: updatedEmbeds.length > 0 ? updatedEmbeds : undefined,
+        components: [], // ボタンを撤去してクローズ
       },
     });
   }
@@ -302,11 +315,24 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
       }
     })());
 
+    const oldEmbeds = interaction.message?.embeds || [];
+    const updatedEmbeds = oldEmbeds.map((e) => ({
+      ...e,
+      fields: [
+        ...(e.fields || []),
+        {
+          name: '📋 回答ステータス',
+          value: '🍃 **見送りを記録しました（クローズ完了）**\n相手には一切通知されませんのでご安心ください。また次回良いタイミングがあればお届けします！',
+          inline: false,
+        },
+      ],
+    }));
+
     return Response.json({
-      type: 4,
+      type: 7, // UPDATE_MESSAGE（元のメッセージを更新してボタンをクローズ）
       data: {
-        content: '🍃 **見送りを記録しました。**\n相手には一切通知されませんのでご安心ください。また次回良いタイミングがあればお届けします！',
-        flags: 64, // 非公開
+        embeds: updatedEmbeds.length > 0 ? updatedEmbeds : undefined,
+        components: [], // ボタンを撤去してクローズ
       },
     });
   }
@@ -328,11 +354,24 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
       }
     })());
 
+    const oldEmbeds = interaction.message?.embeds || [];
+    const updatedEmbeds = oldEmbeds.map((e) => ({
+      ...e,
+      fields: [
+        ...(e.fields || []),
+        {
+          name: '📋 回答ステータス',
+          value: '🍃 **見送りを記録しました（クローズ完了）**\n相手には一切通知されませんのでご安心ください。',
+          inline: false,
+        },
+      ],
+    }));
+
     return Response.json({
-      type: 4,
+      type: 7, // UPDATE_MESSAGE（元のメッセージを更新してボタンをクローズ）
       data: {
-        content: '🍃 **見送りを記録しました。**\n相手には一切通知されませんのでご安心ください。',
-        flags: 64, // 非公開
+        embeds: updatedEmbeds.length > 0 ? updatedEmbeds : undefined,
+        components: [], // ボタンを撤去してクローズ
       },
     });
   }

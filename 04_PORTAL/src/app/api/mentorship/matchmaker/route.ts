@@ -65,7 +65,8 @@ async function sendMentorRequestDm(params: {
       (reasons && reasons.length > 0 ? `**💡 マッチ理由**:\n${reasons.slice(0, 2).map((r: string) => `・${r}`).join('\n')}\n\n` : '\n') +
       `一度チャットでお話ししてみませんか？\n\n` +
       `🔒 **安心ルール（完全非公開）**:\n` +
-      `**「今回は見送る」を選んでも、相手には一切通知されません。**`,
+      `・**「見送る」を選んでも、相手には一切通知されません。**\n` +
+      `・**不要な場合や今回はスキップしたい場合は、遠慮なく下の「🍃 今回は見送る」を押してください！**`,
     color: 0x8b5cf6, // Purple
     footer: {
       text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
@@ -612,7 +613,8 @@ export async function POST(req: Request) {
             `少しコツを聞いてみたり、質問してみたいですか？\n` +
             `👉 **[Webポータルでお見合いに回答する](${PORTAL_BASE_URL}/mentorship)**\n\n` +
             `🔒 **安心ルール（完全非公開）**:\n` +
-            `**「今回は見送る」を選んでも、相手には一切通知されません。**\n` +
+            `・**「見送る」を選んでも、相手には一切通知されません。**\n` +
+            `・**不要な場合や今回はスキップしたい場合は、遠慮なく下の「🍃 今回は見送る」を押してください！**\n` +
             `双方が「話してみたい」を選んだ時だけ、静かに専用チャットが作成されます。`,
           color: 0x10b981, // Emerald
           footer: {
@@ -620,8 +622,35 @@ export async function POST(req: Request) {
           },
         };
 
+        const pupilComponents = [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 3, // Green
+                label: `🤝 ${proposal.mentor.name}先輩と話す`,
+                custom_id: `secret_match_accept:${matchId}`,
+              },
+              {
+                type: 2,
+                style: 2, // Grey
+                label: '🍃 今回は見送る',
+                custom_id: `secret_match_decline:${matchId}`,
+              },
+              {
+                type: 2,
+                style: 5, // Link
+                label: '🌐 ポータルで見る',
+                url: `${PORTAL_BASE_URL}/mentorship`,
+              },
+            ],
+          },
+        ];
+
         pupilDmSent = await sendToMemberChannel(pupilDiscordId, {
           embeds: [pupilEmbed],
+          components: pupilComponents,
         });
       }
 
@@ -742,8 +771,9 @@ export async function POST(req: Request) {
             mentorBlocks +
             `\n\n━━━━━━━━━━━━━━━━━━━━\n` +
             `🔒 **安心ルール（完全非公開）**:\n` +
-            `**「見送る」を押しても、相手には一切通知されません。**\n` +
-            `気になる先輩がいたら、下のボタンからワンタップで繋がれます！`,
+            `・**「見送る」を押しても、相手には一切通知されません。**\n` +
+            `・**不要な場合や今回はスキップしたい場合は、遠慮なく下の「🍃 今回はすべて見送る」を押してください！**\n` +
+            `・気になる先輩がいたら、下のボタンからワンタップで繋がれます！`,
           color: 0x10b981, // Emerald
           footer: {
             text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
