@@ -377,9 +377,10 @@ export async function notifyNewMentorshipProfile(params: {
       }),
     });
 
-    // 🤖 AI仲人チェック: 登録されたプロフィールと相性の良い相手（70%以上）がいれば自動推薦
+    // 🤖 AI仲人チェック: 登録されたプロフィールと相性の良い相手（70%以上）がいれば自動推薦（お見合い提案）
+    // ※ 2026-10-23: 未登録の先輩への個別自動スカウト打診はユーザー判断（案C）により廃止。お見合い便・掲示板に一本化。
     try {
-      const { findBestMentorshipMatch, findBestSeniorMentor } = await import('./mentorshipMatchmaker');
+      const { findBestMentorshipMatch } = await import('./mentorshipMatchmaker');
       const matchData = await findBestMentorshipMatch(profile);
       if (matchData && matchData.matchResult.score >= 70) {
         await notifyAiMentorshipMatch({
@@ -387,16 +388,6 @@ export async function notifyNewMentorshipProfile(params: {
           profileB: matchData.bestPartner,
           matchResult: matchData.matchResult,
         });
-      } else if (isPupil) {
-        // 既存の師匠登録者がいない場合、ktm_players 全体から最適な先輩をスカウト！
-        const seniorData = await findBestSeniorMentor(profile);
-        if (seniorData) {
-          await notifySeniorScout({
-            pupilProfile: profile,
-            seniorPlayer: seniorData.seniorPlayer,
-            reasons: seniorData.reasons,
-          });
-        }
       }
     } catch (matchErr) {
       console.warn('[discordMentorship] AI matchmaker warning:', matchErr);
