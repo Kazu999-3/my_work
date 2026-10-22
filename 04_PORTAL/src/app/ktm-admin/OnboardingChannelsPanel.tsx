@@ -6,11 +6,32 @@ import { RefreshCw, Send, ExternalLink } from "lucide-react";
 // 管理画面「個別案内」タブ: 各メンバーの個別案内チャンネルの発言状況と、一斉連絡（2026-10-17）。
 // 本人からの新着は pg_cron の1時間おきチェック（migration 107）で管理者のアプリ（ポータルのプッシュ）にも通知される。
 
+interface CustomEntryDetail {
+  discordId: string;
+  lanes: string[];
+  isLate: boolean;
+  isSingle: boolean;
+}
+
+interface NextCustom {
+  title: string;
+  startAt: string;
+  messageUrl: string;
+  entryIds: string[];
+  spectatorIds: string[];
+  entries?: CustomEntryDetail[];
+  laneCounts?: Record<string, number>;
+  neededLanes?: string[];
+}
+
 interface Row {
   channelId: string;
   channelName: string;
   ownerUserId: string;
   playerName: string | null;
+  primaryLane?: string | null;
+  secondaryLane?: string | null;
+  rank?: string | null;
   lastMessageAt: string | null;
   lastAuthorKind: 'member' | 'admin' | 'bot' | 'other' | null;
   needsReply: boolean;
@@ -29,9 +50,7 @@ interface Row {
 
 const DAY = 86400e3;
 
-interface NextCustom { title: string; startAt: string; messageUrl: string; entryIds: string[]; spectatorIds: string[] }
-
-type FilterKey = 'all' | 'unread' | 'needsReply' | 'newNoPlay' | 'firstTimeOnly' | 'lapsedRegular' | 'nextSpectator' | 'nextEntry' | 'recent60' | 'silent30';
+type FilterKey = 'all' | 'unread' | 'needsReply' | 'newNoPlay' | 'firstTimeOnly' | 'lapsedRegular' | 'nextSpectator' | 'nextEntry' | 'neededOpponents' | 'recent60' | 'silent30';
 
 /** 定期カスタムの開始日時を「10/25（土）21:00」の形にする（日本時間） */
 function formatCustomStart(iso: string): string {
@@ -85,6 +104,25 @@ const MESSAGE_TEMPLATES: { key: string; label: string; hint: string; filter?: Fi
       next ? `👉 ${next.messageUrl}` : '👉 <#1528646515533287497> の募集カードからエントリーできます',
       '「最近こういうところが参加しにくい」などあれば、ここに一言もらえると助かります🤝',
     ].join('\n'),
+  },
+  {
+    key: 'laneOpponentNudge',
+    label: '⚔️ 対面募集のお誘い',
+    hint: '今週末のエントリー状況に合わせて、不足している対面枠を募集するお誘い。押すと一覧が「不足対面の候補」に切り替わる',
+    filter: 'neededOpponents',
+    build: (next) => {
+      const needed = next?.neededLanes || [];
+      const laneStr = needed.length > 0 ? needed.join('・') : '各レーン';
+      return [
+        next
+          ? `👋 **${formatCustomStart(next.startAt)}から週末の定期カスタムです！**`
+          : '👋 **週末の定期カスタム（毎週土日 21:00〜）のお誘いです！**',
+        `現在【${laneStr}】の対面枠を特に募集中です！⚔️`,
+        '1戦のみや途中参加も大歓迎ですので、予定が合えばぜひ一緒にやりましょう🙌',
+        next ? `👉 ${next.messageUrl}` : '👉 <#1528646515533287497> の募集カードからエントリーできます',
+        '当日の流れやレーン調整など質問があれば、ここに気軽に書き込んでくださいね🤝',
+      ].join('\n');
+    },
   },
 ];
 type SortKey = 'status' | 'messageNew' | 'messageOld' | 'played' | 'joined' | 'name';
@@ -142,10 +180,59 @@ export default function OnboardingChannelsPanel() {
   const now = loadedAt || Date.now();
   const spectatorSet = useMemo(() => new Set(nextCustom?.spectatorIds || []), [nextCustom]);
   const entrySet = useMemo(() => new Set(nextCustom?.entryIds || []), [nextCustom]);
+
+  // レーンの一致判定（BOTとADCを同一視、ALL/FILLは全マッチ）
+  const matchesLane = (rowLane: string | null | undefined, targetLane: string) => {
+    if (!rowLane) return false;
+    const u = rowLane.toUpperCase();
+    const t = targetLane.toUpperCase();
+    if (u === 'ALL' || u === 'FILL') return true;
+    if ((u === 'ADC' || u === 'BOT') && (t === 'ADC' || t === 'BOT')) return true;
+    return u === t;
+  };
+
+  // 未エントリーかつアクティブな候補者
+  const isCandidate = (r: Row) => {
+    if (r.isActive === false) return false;
+    if (entrySet.has(r.ownerUserId)) return false;
+    if (spectatorSet.has(r.ownerUserId)) return false;
+    return true;
+  };
+
+  // 指定レーンの対面候補判定
+  const isLaneOpponent = (r: Row, lane: string) => {
+    if (!isCandidate(r)) return false;
+    return matchesLane(r.primaryLane, lane) || matchesLane(r.secondaryLane, lane);
+  };
+
+  // 不足対面（2人未満のレーン）の候補判定
+  const isNeededOpponent = (r: Row) => {
+    if (!isCandidate(r)) return false;
+    const needed = nextCustom?.neededLanes || [];
+    return needed.some((lane) => matchesLane(r.primaryLane, lane) || matchesLane(r.secondaryLane, lane));
+  };
+
+  // 選択ヘルパー
+  const selectNeededOpponents = () => {
+    const ids = rows.filter(isNeededOpponent).map((r) => r.channelId);
+    setSelected(new Set(ids));
+  };
+  const selectLaneOpponents = (lane: string) => {
+    const ids = rows.filter((r) => isLaneOpponent(r, lane)).map((r) => r.channelId);
+    setSelected(new Set(ids));
+  };
+  const selectPlayerOpponents = (entry: CustomEntryDetail) => {
+    const primary = entry.lanes?.[0] || 'TOP';
+    const ids = rows.filter((r) => isLaneOpponent(r, primary)).map((r) => r.channelId);
+    setSelected(new Set(ids));
+  };
+
   const FILTERS: { key: FilterKey; label: string; test: (r: Row) => boolean }[] = [
     { key: 'all', label: '全員', test: () => true },
     { key: 'unread', label: '未読', test: (r) => !!r.unread },
     { key: 'needsReply', label: '要返信', test: (r) => !!r.needsReply },
+    // 今週末のカスタムで対面が不足しているレーンの希望者（未エントリー）
+    { key: 'neededOpponents', label: '⚔️ 不足対面の候補（未エントリー）', test: isNeededOpponent },
     // 入って60日以内で、まだ一度もカスタムに出ていない人（通算試合数0または最終出場なし）
     { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => (!r.playCount || r.playCount === 0 || !r.lastPlayedAt) && !!r.joinedAt && now - new Date(r.joinedAt).getTime() <= 60 * DAY },
     // 初めて出た夜から60日以内で、まだ2晩目に来ていない人
@@ -256,6 +343,81 @@ export default function OnboardingChannelsPanel() {
           <button onClick={selectVisible} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">表示中の{visible.length}件をすべて選択</button>
           <button onClick={() => setSelected(new Set())} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">選択解除</button>
         </div>
+
+        {/* ⚔️ 定期カスタム対面抽出バー */}
+        {nextCustom && (
+          <div className="rounded-lg border border-primary-500/30 bg-primary-500/5 p-3 space-y-2 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="font-bold text-foreground flex items-center gap-1.5">
+                <span>⚔️</span>
+                <span>定期カスタム対面抽出（{nextCustom.title}）:</span>
+              </div>
+              <div className="text-muted-strong">
+                エントリー済: <strong className="text-foreground">{nextCustom.entryIds?.length || 0}名</strong>
+                {nextCustom.neededLanes && nextCustom.neededLanes.length > 0 && (
+                  <span className="ml-2 text-amber-600 font-bold">
+                    不足対面: {nextCustom.neededLanes.join('・')}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-muted-strong">一発抽出:</span>
+              <button
+                type="button"
+                onClick={selectNeededOpponents}
+                className="px-2.5 py-1 rounded-md font-bold bg-primary-600 hover:bg-primary-500 text-white shadow-2xs transition"
+                title="現在2名揃っていない（対面相手が不足している）レーンが得意な未エントリー者をすべて選択します"
+              >
+                ⚔️ 不足対面をまとめて抽出（{rows.filter(isNeededOpponent).length}件）
+              </button>
+
+              {['TOP', 'JG', 'MID', 'BOT', 'SUP'].map((lane) => {
+                const count = rows.filter((r) => isLaneOpponent(r, lane)).length;
+                const currentCount = nextCustom.laneCounts?.[lane] || 0;
+                return (
+                  <button
+                    key={lane}
+                    type="button"
+                    onClick={() => selectLaneOpponents(lane)}
+                    className="px-2 py-1 rounded-md border border-border bg-surface hover:bg-surface-subtle text-foreground font-medium transition"
+                    title={`${lane}希望（第1または第2）の未エントリー者を選択（現在エントリー: ${currentCount}名）`}
+                  >
+                    {lane}対面 ({count}件)
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* エントリー中の人ごとの指名対面抽出 */}
+            {nextCustom.entries && nextCustom.entries.length > 0 && (
+              <div className="pt-2 border-t border-border/60 flex flex-wrap items-center gap-1.5">
+                <span className="text-muted-strong">指名対面:</span>
+                {nextCustom.entries.map((entry) => {
+                  const entryRow = rows.find((r) => r.ownerUserId === entry.discordId);
+                  const name = entryRow?.playerName || entryRow?.channelName?.replace(/^🔒・|-案内$/g, '') || `ID:${entry.discordId.slice(-4)}`;
+                  const primary = entry.lanes?.[0] || 'TOP';
+                  const matchCount = rows.filter((r) => isLaneOpponent(r, primary)).length;
+
+                  return (
+                    <button
+                      key={entry.discordId}
+                      type="button"
+                      onClick={() => selectPlayerOpponents(entry)}
+                      className="px-2 py-0.5 rounded-full border border-border bg-surface hover:bg-surface-subtle text-[11px] text-muted-strong hover:text-foreground transition flex items-center gap-1"
+                      title={`${name}さん (${primary}) と同じレーンができる未エントリー者（${matchCount}名）を選択`}
+                    >
+                      <span>{name}</span>
+                      <span className="font-bold text-primary-600 text-[10px]">【{primary}】</span>
+                      <span className="text-faint">({matchCount})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-strong">📝 定型文:</span>
           {MESSAGE_TEMPLATES.map((t) => (
@@ -373,7 +535,19 @@ export default function OnboardingChannelsPanel() {
                     <input type="checkbox" checked={selected.has(r.channelId)} onChange={() => toggle(r.channelId)} />
                   </td>
                   <td className="p-2">
-                    <div className="font-bold text-foreground">{r.playerName || r.channelName}</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-foreground">{r.playerName || r.channelName}</span>
+                      {r.primaryLane && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-500/10 text-primary-700 border border-primary-500/20">
+                          {r.primaryLane}{r.secondaryLane && r.secondaryLane !== r.primaryLane ? `/${r.secondaryLane}` : ''}
+                        </span>
+                      )}
+                      {r.rank && (
+                        <span className="text-[10px] text-faint">
+                          {r.rank}
+                        </span>
+                      )}
+                    </div>
                     {r.playerName && <div className="text-[11px] text-faint">#{r.channelName}</div>}
                     {/* スマホでは「最後の試合・入った日」の列を隠すので、名前の下にまとめて出す */}
                     <div className="sm:hidden text-[11px] text-muted-strong">試合: {r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'} ／ 入: {r.joinedAt ? ago(r.joinedAt) : '-'}</div>

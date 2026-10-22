@@ -26,7 +26,10 @@ export async function GET(req: Request) {
     const ownerIdSet = new Set(ownerIds);
 
     const { data: players } = ownerIds.length
-      ? await supabase.from('ktm_players').select('name,discord_id,created_at,metadata,is_active').in('discord_id', ownerIds)
+      ? await supabase
+          .from('ktm_players')
+          .select('name,discord_id,created_at,metadata,is_active,role_preferences,initial_prefs,highest_rank')
+          .in('discord_id', ownerIds)
       : { data: [] as any[] };
     const playerMap = new Map<string, any>((players || []).map((p: any) => [p.discord_id, p]));
     const nameOf = new Map((players || []).map((p: any) => [p.discord_id, p.name]));
@@ -93,18 +96,38 @@ export async function GET(req: Request) {
       nights.set(dId, set);
     }
 
+    const normLane = (v: any): string | null => {
+      if (!v || typeof v !== 'string') return null;
+      const u = v.toUpperCase().trim();
+      if (u === 'JG' || u === 'JUNGLE') return 'JG';
+      if (u === 'MID' || u === 'MIDDLE') return 'MID';
+      if (u === 'ADC' || u === 'BOT' || u === 'BOTTOM') return 'BOT';
+      if (u === 'SUP' || u === 'SUPPORT') return 'SUP';
+      if (u === 'TOP') return 'TOP';
+      if (u === 'ALL' || u === 'FILL') return 'ALL';
+      return u;
+    };
+
     const rows = channels.map((c) => {
       const lastMs = lastPlayedMsMap.get(c.ownerUserId);
       const firstMs = firstPlayedMsMap.get(c.ownerUserId);
+      const p = playerMap.get(c.ownerUserId);
+      const primaryLane = normLane(p?.role_preferences?.primary || p?.initial_prefs?.primary);
+      const secondaryLane = normLane(p?.role_preferences?.secondary || p?.initial_prefs?.secondary);
+      const rank = p?.highest_rank || null;
+
       return {
         ...c,
         playerName: nameOf.get(c.ownerUserId) || null,
+        primaryLane,
+        secondaryLane,
+        rank,
         lastPlayedAt: lastMs ? new Date(lastMs).toISOString() : null,
         joinedAt: joinedOf.get(c.ownerUserId) || null,
         playCount: playCount.get(c.ownerUserId) || 0,
         playNights: nights.get(c.ownerUserId)?.size || 0,
         firstPlayedAt: firstMs ? new Date(firstMs).toISOString() : null,
-        isActive: playerMap.get(c.ownerUserId)?.is_active !== false,
+        isActive: p?.is_active !== false,
       };
     });
 
