@@ -106,7 +106,6 @@ export function MentorshipProfileModal({
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [isChampDropdownOpen, setIsChampDropdownOpen] = useState(false);
   const [currentRank, setCurrentRank] = useState('SILVER');
-  const [targetRank, setTargetRank] = useState('GOLD');
   const [selectedCommStyles, setSelectedCommStyles] = useState<string[]>(['VC通話']);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [bio, setBio] = useState('');
@@ -125,7 +124,6 @@ export function MentorshipProfileModal({
       setLanes(profile.lanes || []);
       setSelectedChampions(profile.champions || []);
       setCurrentRank(profile.current_rank || 'SILVER');
-      setTargetRank(profile.target_rank || (targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎'));
       
       // コミュニケーションスタイルとその他タグの分離・正規化
       const rawTags = profile.tags || [];
@@ -180,7 +178,6 @@ export function MentorshipProfileModal({
       setLanes(userLane);
       setSelectedChampions([]);
       setCurrentRank(RANKS.includes(userRank) ? userRank : 'SILVER');
-      setTargetRank(targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎');
       setSelectedCommStyles(['VC通話']);
       setSelectedTags([]);
       setBio('');
@@ -263,7 +260,6 @@ export function MentorshipProfileModal({
         lanes,
         champions: selectedChampions,
         current_rank: currentRank,
-        target_rank: targetRank || undefined,
         tags: finalTags,
         bio,
         active_hours: activeHours,
@@ -388,18 +384,6 @@ export function MentorshipProfileModal({
                       🏆 {currentRank}
                     </span>
                   </h3>
-                  {roleType === 'PUPIL' && targetRank && (
-                    <div className="text-xs text-success-700 font-bold flex items-center gap-1">
-                      <span>🎯 目標ランク:</span>
-                      <span className="font-black underline">{targetRank}</span>
-                    </div>
-                  )}
-                  {roleType === 'MENTOR' && targetRank && (
-                    <div className="text-xs text-primary-800 font-bold flex items-center gap-1">
-                      <span>👥 歓迎生徒:</span>
-                      <span className="font-black underline">{targetRank}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* メインレーン */}

@@ -52,8 +52,8 @@ export function calculateMentorshipCompatibility(mentor: any, pupil: any): Match
       reasons.push('ハイレベル師匠');
     }
   } else if (mentorTier === pupilTier) {
-    score += 10;
-    reasons.push('同格（切磋琢磨）');
+    score += 20;
+    reasons.push('同格（切磋琢磨・同レーン研究）');
   } else {
     score -= 30; // 弟子の方が高ランクの場合は減点
   }
@@ -627,7 +627,7 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
     }
 
     // 6-b. 名簿（ktm_players）の未登録初中級者
-    const targetRanks = new Set(['IRON', 'BRONZE', 'SILVER', 'UNRANKED']);
+    const targetRanks = new Set(['IRON', 'BRONZE', 'SILVER', 'GOLD', 'UNRANKED']);
     for (const player of allPlayers || []) {
       if (!player.discord_id || addedDiscordIds.has(player.discord_id)) continue;
 
@@ -735,8 +735,8 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
           score += 20;
           reasons.push(`上位ランク帯指導（+${tierDiff}ティア差）`);
         } else if (tierDiff === 0) {
-          score += 10;
-          reasons.push('同格マッチアップ');
+          score += 20;
+          reasons.push('同格マッチアップ（切磋琢磨）');
         } else {
           // 先輩よりランクが高い場合は除外
           continue;

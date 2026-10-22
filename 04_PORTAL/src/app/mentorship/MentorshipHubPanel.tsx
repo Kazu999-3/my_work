@@ -640,24 +640,11 @@ export default function MentorshipHubPanel() {
         reasons.push('ハイレベル師匠');
       }
     } else if (mentorTier === pupilTier) {
-      score += 5; // 同格（切磋琢磨）
+      score += 20; // 同格（切磋琢磨・同レーン研究）
+      reasons.push('同格（切磋琢磨・同レーン研究）');
     } else {
       // 弟子の方が師匠より高ランクの場合は大幅減点
       score -= 40;
-    }
-
-    // 師匠側の歓迎帯域の照合（配点: 最大10点）
-    const welcomeText = mentorProf.target_rank || '';
-    if (
-      (welcomeText.includes('シルバー') && pupilTier <= 3) ||
-      (welcomeText.includes('ゴールド') && pupilTier <= 4) ||
-      (welcomeText.includes('プラチナ') && pupilTier <= 5) ||
-      (welcomeText.includes('エメラルド') && pupilTier <= 6)
-    ) {
-      score += 10;
-      reasons.push('募集対象ランク帯合致');
-    } else if (welcomeText.includes('全ランク') || welcomeText.includes('初心者歓迎')) {
-      score += 5;
     }
 
     // 2. レーン適合度（配点: 最大35点 / 完全不一致は -10点）

@@ -263,16 +263,6 @@ export function MentorshipCard({
               <span className={`px-2 py-0.5 rounded-md text-[11px] font-black ${rankBadge.bg} ${rankBadge.color} border ${rankBadge.border} shadow-2xs`}>
                 {profile.current_rank || 'UNRANKED'}
               </span>
-              {profile.target_rank && !isMentor && (
-                <span className="text-[11px] text-success-700 dark:text-success-300 font-bold bg-success-50 dark:bg-success-950/40 px-1.5 py-0.5 rounded border border-success-edge-soft dark:border-success-edge-strong">
-                  ➔ 目標: {profile.target_rank}
-                </span>
-              )}
-              {profile.target_rank && isMentor && (
-                <span className="text-[11px] text-primary-800 dark:text-primary-300 font-bold bg-primary-50 dark:bg-primary-950/40 px-1.5 py-0.5 rounded border border-primary-edge-soft dark:border-primary-edge-strong">
-                  👥 歓迎: {profile.target_rank}
-                </span>
-              )}
             </div>
 
             {/* 師匠が現在指導中の弟子（兄弟弟子）一覧 */}
