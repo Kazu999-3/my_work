@@ -61,7 +61,7 @@ export async function GET(req: Request) {
         .not('job', 'like', 'noop%')
         .order('started_at', { ascending: false })
         .limit(30),
-      supabase.from('ktm_players').select('name, highest_rank, role_preferences, created_at, metadata'),
+      supabase.from('ktm_players').select('name, highest_rank, role_preferences, created_at, metadata, is_active'),
       // 出場記録は1,000件を超えているため分けて読む。出場記録の created_at は記録を作り直すと変わるため、日付は試合側を使う
       fetchAllRows((from, to) =>
         supabase.from('ktm_match_participants').select('player_name, match_id').order('id').range(from, to)
@@ -139,9 +139,14 @@ export async function GET(req: Request) {
       monthly.set(m, row);
     }
 
-    // 来なくなった常連: 3日以上出場し、最後の出場から30日以上
+    // アクティブな名簿メンバーの名前（退会者・非アクティブ者を除外するため）
+    const activePlayerNames = new Set(
+      (players as any[]).filter((p) => p.is_active !== false).map((p) => p.name)
+    );
+
+    // 来なくなった常連: 3日以上出場し、最後の出場から30日以上（現在アクティブなメンバーのみ）
     const lapsed = [...daysOf.entries()]
-      .filter(([, days]) => days.length >= 3 && now - dayMs(days[days.length - 1]) >= 30 * DAY)
+      .filter(([name, days]) => activePlayerNames.has(name) && days.length >= 3 && now - dayMs(days[days.length - 1]) >= 30 * DAY)
       .map(([name, days]) => ({ name, days: days.length, lastDay: days[days.length - 1] }))
       .sort((a, b) => b.lastDay.localeCompare(a.lastDay));
 

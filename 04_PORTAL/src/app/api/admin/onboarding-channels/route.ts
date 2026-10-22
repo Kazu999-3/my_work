@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     const ownerIdSet = new Set(ownerIds);
 
     const { data: players } = ownerIds.length
-      ? await supabase.from('ktm_players').select('name,discord_id,created_at,metadata').in('discord_id', ownerIds)
+      ? await supabase.from('ktm_players').select('name,discord_id,created_at,metadata,is_active').in('discord_id', ownerIds)
       : { data: [] as any[] };
     const playerMap = new Map<string, any>((players || []).map((p: any) => [p.discord_id, p]));
     const nameOf = new Map((players || []).map((p: any) => [p.discord_id, p.name]));
@@ -104,6 +104,7 @@ export async function GET(req: Request) {
         playCount: playCount.get(c.ownerUserId) || 0,
         playNights: nights.get(c.ownerUserId)?.size || 0,
         firstPlayedAt: firstMs ? new Date(firstMs).toISOString() : null,
+        isActive: playerMap.get(c.ownerUserId)?.is_active !== false,
       };
     });
 

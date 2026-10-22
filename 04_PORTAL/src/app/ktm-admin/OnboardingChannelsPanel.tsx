@@ -24,6 +24,7 @@ interface Row {
   playNights: number;
   firstPlayedAt: string | null;
   url: string;
+  isActive?: boolean;
 }
 
 const DAY = 86400e3;
@@ -149,8 +150,8 @@ export default function OnboardingChannelsPanel() {
     { key: 'newNoPlay', label: '未出場の新しい人（入って60日以内）', test: (r) => (!r.playCount || r.playCount === 0 || !r.lastPlayedAt) && !!r.joinedAt && now - new Date(r.joinedAt).getTime() <= 60 * DAY },
     // 初めて出た夜から60日以内で、まだ2晩目に来ていない人
     { key: 'firstTimeOnly', label: '初参加して2回目がまだ（初参加から60日以内）', test: (r) => r.playNights === 1 && !!r.firstPlayedAt && now - new Date(r.firstPlayedAt).getTime() <= 60 * DAY },
-    // 以前は3晩以上出ていたのに、直近30日は出ていない人（夜数で正確に判定）
-    { key: 'lapsedRegular', label: '来なくなった常連（3晩以上出場・30日以上出ていない）', test: (r) => (r.playNights || 0) >= 3 && !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
+    // 以前は3晩以上出ていたのに、直近30日は出ていない人（現在アクティブな人に限定）
+    { key: 'lapsedRegular', label: '来なくなった常連（3晩以上出場・30日以上出ていない）', test: (r) => r.isActive !== false && (r.playNights || 0) >= 3 && !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() > 30 * DAY },
     { key: 'nextSpectator', label: '次の定期カスタム: 観戦希望', test: (r) => spectatorSet.has(r.ownerUserId) },
     { key: 'nextEntry', label: '次の定期カスタム: エントリー', test: (r) => entrySet.has(r.ownerUserId) },
     { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && now - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
