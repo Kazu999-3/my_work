@@ -223,6 +223,7 @@ export async function broadcastToOnboardingChannels(
   const owners = new Map((await listOnboardingChannels()).map((c) => [c.channelId, c.userId]));
   let sent = 0;
   const failed: { channelId: string; status: number }[] = [];
+  const successfulChannelIds: string[] = [];
   for (const id of [...new Set(channelIds)]) {
     const owner = owners.get(id);
     if (!owner) { failed.push({ channelId: id, status: 0 }); continue; }
@@ -234,18 +235,29 @@ export async function broadcastToOnboardingChannels(
         allowed_mentions: mention ? { users: [owner] } : { parse: [] },
       }),
     });
-    if (res.ok) sent++; else failed.push({ channelId: id, status: res.status });
+    if (res.ok) {
+      sent++;
+      successfulChannelIds.push(id);
+    } else {
+      failed.push({ channelId: id, status: res.status });
+    }
     // Discord の送信制限に余裕を持たせる
     await new Promise((r) => setTimeout(r, 300));
   }
   // カスタム募集案内だった場合、送信成功したチャンネルの last_custom_nudge_at を即時更新（再送防止）
-  if (isCustomNudgeMessage(content) && channelIds.length > 0) {
+  if (isCustomNudgeMessage(content) && successfulChannelIds.length > 0) {
     const nowIso = new Date().toISOString();
-    await supabase
-      .from('onboarding_channel_state')
-      .update({ last_custom_nudge_at: nowIso })
-      .in('channel_id', channelIds)
-      .catch((err: any) => console.warn('[onboardingChannels] last_custom_nudge_at 更新スキップ:', err.message));
+    try {
+      const { error: updateErr } = await supabase
+        .from('onboarding_channel_state')
+        .update({ last_custom_nudge_at: nowIso })
+        .in('channel_id', successfulChannelIds);
+      if (updateErr) {
+        console.warn('[onboardingChannels] last_custom_nudge_at 更新スキップ:', updateErr.message);
+      }
+    } catch (err: any) {
+      console.warn('[onboardingChannels] last_custom_nudge_at 更新スキップ:', err?.message || err);
+    }
   }
   return { sent, failed };
 }
