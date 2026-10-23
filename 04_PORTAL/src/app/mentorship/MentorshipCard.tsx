@@ -6,18 +6,7 @@ import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getRankBadgeStyle } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../lib/championConstants';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
-
-export interface MentorshipComment {
-  id: string;
-  profile_id: string;
-  author_id: string;
-  author_name: string;
-  author_avatar?: string | null;
-  content: string;
-  created_at: string;
-}
+import { Clock, Sparkles, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface MentorshipCardProps {
   profile: MentorshipProfile;
@@ -25,7 +14,6 @@ interface MentorshipCardProps {
   isAdmin?: boolean;
   currentUserId?: string | null;
   currentUserName?: string | null;
-  reviewSummary?: MentorshipReviewSummary | null;
   onOffer: (profile: MentorshipProfile) => void;
   onEdit?: (profile: MentorshipProfile) => void;
   onDelete?: (profileId: string) => void;
@@ -48,7 +36,6 @@ export function MentorshipCard({
   isAdmin,
   currentUserId,
   currentUserName,
-  reviewSummary,
   onOffer,
   onEdit,
   onDelete,
@@ -58,87 +45,7 @@ export function MentorshipCard({
 }: MentorshipCardProps) {
   const isMentor = profile.role_type === 'MENTOR';
   const rankBadge = getRankBadgeStyle(profile.current_rank);
-
-
-  // コメント機能用のステート
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<MentorshipComment[]>([]);
-  const [commentsCount, setCommentsCount] = useState<number>(0);
-  const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [commentInput, setCommentInput] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
-
-  // コメント一覧の取得
-  const loadComments = async () => {
-    setIsLoadingComments(true);
-    try {
-      const res = await fetch(`/api/mentorship/comments?profileId=${profile.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setComments(data.comments || []);
-        setCommentsCount(data.comments ? data.comments.length : 0);
-      }
-    } catch (e) {
-      console.error('Failed to load comments:', e);
-    } finally {
-      setIsLoadingComments(false);
-    }
-  };
-
-  const handleToggleComments = () => {
-    if (!showComments && comments.length === 0) {
-      loadComments();
-    }
-    setShowComments(!showComments);
-  };
-
-  const handlePostComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentInput.trim() || isSubmittingComment) return;
-
-    setIsSubmittingComment(true);
-    try {
-      const res = await fetch('/api/mentorship/comments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profileId: profile.id,
-          content: commentInput.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        setCommentInput('');
-        loadComments();
-      } else {
-        const err = await res.json();
-        toast.error(`コメント投稿に失敗しました: ${err.error || '不明なエラー'}`);
-      }
-    } catch (e) {
-      console.error('Failed to post comment:', e);
-      toast.error('通信エラーが発生しました');
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  };
-
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('このコメントを削除しますか？')) return;
-    try {
-      const res = await fetch(`/api/mentorship/comments?id=${commentId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        setComments(prev => prev.filter(c => c.id !== commentId));
-        setCommentsCount(prev => Math.max(0, prev - 1));
-      } else {
-        toast.error('コメント削除に失敗しました');
-      }
-    } catch (e) {
-      console.error('Failed to delete comment:', e);
-    }
-  };
 
   return (
     <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-surface/95 dark:bg-surface dark:border-border backdrop-blur-sm shadow-md ${
@@ -174,15 +81,6 @@ export function MentorshipCard({
               <span>{isMentor ? '🧑‍🏫' : '🙋‍♂️'}</span>
               <span>{isMentor ? '教えるよ (先輩)' : '教えてほしい (後輩)'}</span>
             </div>
-
-            {/* ⭐ 匿名レビュー評価バッジ */}
-            {reviewSummary && reviewSummary.totalReviews > 0 ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-primary-50 dark:bg-primary-950/40 text-primary-900 dark:text-primary-300 border border-primary-edge dark:border-primary-edge-strong flex items-center gap-1 shadow-2xs">
-                <span>⭐ {reviewSummary.averageRating}</span>
-                <span className="text-[10px] text-muted-strong font-normal">({reviewSummary.totalReviews}件)</span>
-              </span>
-            ) : null}
-
             {/* ステータスバッジ */}
             {isMentor ? (
               (profile.active_pupils_count || 0) >= (profile.max_pupils || 2) ? (
@@ -284,26 +182,6 @@ export function MentorshipCard({
             )}
           </div>
         </div>
-
-        {/* 🌟 匿名レビュー上位推薦タグ */}
-        {reviewSummary && reviewSummary.topTags && reviewSummary.topTags.length > 0 && (
-          <div className="p-2.5 bg-primary-50/70 dark:bg-primary-950/20 rounded-2xl border border-primary-edge-soft/80 dark:border-primary-edge-strong/40 space-y-1">
-            <div className="text-[10px] font-black text-primary-950 dark:text-primary-200 flex items-center gap-1">
-              <span>✨</span>
-              <span>バディからの推薦ポイント:</span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {reviewSummary.topTags.map((t) => (
-                <span
-                  key={t.tag}
-                  className="px-2 py-0.5 rounded-lg bg-surface dark:bg-background border border-primary-edge dark:border-primary-edge-strong text-[10px] font-bold text-primary-950 dark:text-primary-200 shadow-2xs"
-                >
-                  {t.tag} <strong className="text-primary-600 dark:text-primary-400">×{t.count}</strong>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* レーンピル一覧 */}
         {profile.lanes && profile.lanes.length > 0 && (
@@ -462,21 +340,7 @@ export function MentorshipCard({
       </div>
 
       {/* 下部アクションバー */}
-      <div className="p-3 bg-background border-t border-border/80 flex items-center justify-between gap-2">
-        {/* 💬 コメント開閉ボタン (モーダル起動) */}
-        <button
-          type="button"
-          onClick={handleToggleComments}
-          className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle dark:text-stone-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-border"
-        >
-          <MessageSquare size={13} className="text-secondary-600 dark:text-secondary-400" />
-          <span>コメント</span>
-          {commentsCount > 0 && (
-            <span className="bg-secondary-100 dark:bg-secondary-950 text-secondary-800 dark:text-secondary-300 text-[10px] px-1.5 py-0.2 rounded-full font-black">
-              {commentsCount}
-            </span>
-          )}
-        </button>
+      <div className="p-3 bg-background border-t border-border/80 flex items-center justify-end gap-2">
 
         {isMine ? (
           <span className="text-xs text-muted-strong font-bold">（あなたのカード）</span>
@@ -505,116 +369,6 @@ export function MentorshipCard({
           </button>
         )}
       </div>
-
-      {/* 💬 コメントモーダル (シンプル化: カード本体から独立) */}
-      {showComments && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
-          onClick={() => setShowComments(false)}
-        >
-          <div
-            className="bg-surface dark:bg-surface border border-border rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* モーダルヘッダー */}
-            <div className="flex items-center justify-between border-b border-border/80 dark:border-border pb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-secondary-600 dark:text-secondary-400" />
-                <h3 className="font-black text-sm text-foreground dark:text-white">
-                  {profile.player_name} さんへのワンポイント相談・コメント
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowComments(false)}
-                className="text-faint hover:text-foreground dark:hover:text-white p-1 rounded-lg hover:bg-surface-subtle transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* コメント一覧 */}
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[120px]">
-              {isLoadingComments ? (
-                <div className="text-center py-8 text-xs text-muted-strong font-medium">
-                  コメントを読み込み中...
-                </div>
-              ) : comments.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-strong font-medium">
-                  まだコメントはありません。気軽に「このチャンプ教えられます！」「1試合だけやりませんか？」と書き込んでみましょう！
-                </div>
-              ) : (
-                comments.map((comment) => {
-                  const isMyComment = currentUserId === comment.author_id;
-                  return (
-                    <div
-                      key={comment.id}
-                      className="p-3 rounded-2xl bg-surface-subtle dark:bg-background border border-border/80 dark:border-border text-xs space-y-1 shadow-2xs"
-                    >
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-foreground dark:text-white flex items-center gap-1">
-                          <span>💬</span>
-                          <span>{comment.author_name}</span>
-                          {isMyComment && (
-                            <span className="text-[9px] bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-1.5 py-0.2 rounded font-normal">
-                              あなた
-                            </span>
-                          )}
-                        </span>
-                        <div className="flex items-center gap-2 text-faint">
-                          <span>
-                            {new Date(comment.created_at).toLocaleDateString('ja-JP', {
-                              month: 'numeric',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          {(isMyComment || isAdmin) && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteComment(comment.id)}
-                              className="text-danger-500 hover:text-danger-700 p-0.5 cursor-pointer"
-                              title="コメントを削除"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-foreground-soft dark:text-stone-200 leading-relaxed whitespace-pre-wrap font-medium">
-                        {comment.content}
-                      </p>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* コメント投稿フォーム */}
-            <form onSubmit={handlePostComment} className="flex gap-2 pt-2 border-t border-border/80 dark:border-border shrink-0">
-              <input
-                type="text"
-                value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
-                placeholder="質問・アドバイス・一言応援を書く..."
-                maxLength={300}
-                className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-border bg-surface dark:bg-background focus:outline-none focus:ring-2 focus:ring-secondary-500 text-foreground dark:text-white placeholder-stone-400"
-              />
-              <button
-                type="submit"
-                disabled={!commentInput.trim() || isSubmittingComment}
-                className="px-4 py-2 bg-secondary-600 hover:bg-secondary-500 disabled:bg-stone-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
-              >
-                <Send size={13} />
-                <span>送信</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

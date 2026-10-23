@@ -7,9 +7,7 @@ import { MentorshipProfileModal } from './MentorshipProfileModal';
 import { MentorshipRequestModal } from './MentorshipRequestModal';
 import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
-import { MentorshipReviewModal } from './MentorshipReviewModal';
 import { SecretMatchmakerModal, formatOfferDate } from './SecretMatchmakerModal';
-import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
 import { toast } from '../../components/Toaster';
 import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
 
@@ -31,7 +29,6 @@ export default function MentorshipHubPanel() {
   const [matches, setMatches] = useState<any[]>([]);
   const [pendingReceived, setPendingReceived] = useState<any[]>([]);
   const [pendingSent, setPendingSent] = useState<any[]>([]);
-  const [reviewSummaries, setReviewSummaries] = useState<Record<string, MentorshipReviewSummary>>({});
   const [myDiscordId, setMyDiscordId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,8 +49,6 @@ export default function MentorshipHubPanel() {
   const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false);
 
   // ⭐ 匿名レビューモーダル管理
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [selectedReviewMatch, setSelectedReviewMatch] = useState<any | null>(null);
 
   // 🤖 シークレットお見合い便モーダル管理
   const [isSecretMatchmakerOpen, setIsSecretMatchmakerOpen] = useState(false);
@@ -209,17 +204,6 @@ export default function MentorshipHubPanel() {
   };
 
   // 匿名レビュー集計の取得
-  const fetchReviewSummaries = async () => {
-    try {
-      const res = await fetch('/api/mentorship/reviews');
-      const data = await res.json();
-      if (data.ok) {
-        setReviewSummaries(data.summaries || {});
-      }
-    } catch (err) {
-      console.error('Failed to fetch review summaries:', err);
-    }
-  };
 
   // 自分宛てのお見合いオファー取得
   const fetchMyProposal = async () => {
@@ -243,7 +227,6 @@ export default function MentorshipHubPanel() {
   useEffect(() => {
     fetchProfiles();
     fetchMatches();
-    fetchReviewSummaries();
     fetchMyProposal();
   }, []);
 
@@ -1218,7 +1201,6 @@ export default function MentorshipHubPanel() {
                       isMine={p.discord_id === myDiscordId}
                       isAdmin={isAdmin}
                       currentUserId={myDiscordId}
-                      reviewSummary={reviewSummaries[revKey] || null}
                       matchScore={score}
                       matchReason={reason}
                       isPendingSent={isPendingSent}
@@ -1434,19 +1416,6 @@ export default function MentorshipHubPanel() {
                   <div className="pt-2.5 border-t border-border/80 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {/* ⭐ 匿名レビューボタン */}
-                        <button
-                          type="button"
-                          title="相手に星評価と推薦タグを匿名で送ります。送信で+100コイン"
-                          onClick={() => {
-                            setSelectedReviewMatch(match);
-                            setIsReviewModalOpen(true);
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-primary-50 hover:bg-primary-100 text-primary-900 transition flex items-center gap-1 cursor-pointer border border-primary-edge shadow-2xs"
-                        >
-                          <Star size={13} className="text-primary-600 fill-primary-400" />
-                          <span>⭐ フィードバックを送る (+100🪙)</span>
-                        </button>
 
                         {!isCompleted && (
                           <>
@@ -1563,7 +1532,6 @@ export default function MentorshipHubPanel() {
                 isMine={p.discord_id === myDiscordId}
                 isAdmin={isAdmin}
                 currentUserId={myDiscordId}
-                reviewSummary={reviewSummaries[revKey] || null}
                 matchScore={matchInfo.score}
                 matchReason={matchInfo.reason}
                 isPendingSent={isPendingSent}
@@ -1634,16 +1602,6 @@ export default function MentorshipHubPanel() {
       />
 
       {/* ⭐ 匿名レビューモーダル */}
-      <MentorshipReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={() => {
-          setIsReviewModalOpen(false);
-          setSelectedReviewMatch(null);
-        }}
-        match={selectedReviewMatch}
-        myDiscordId={myDiscordId}
-        onSubmitted={() => fetchReviewSummaries()}
-      />
 
     </div>
   );
