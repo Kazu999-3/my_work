@@ -289,27 +289,7 @@ export default function GuidePortalTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1">
-                <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
-                  <span>⭐</span> 師弟の匿名評価制度 (+100🪙)
-                </div>
-                <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium">
-                  ペア活動終了時や活動中に匿名で満足度や推薦タグを送信。相手のカードに「⭐ 4.9」「🏷️ 丁寧な指導」として安全に集約されます。
-                </p>
-              </div>
-
-              <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1">
-                <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
-                  <span>🌟</span> メンバー匿名評判・栄誉 (+50🪙)
-                </div>
-                <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium">
-                  個別カルテから1日1回「👑 キャリー力」「💖 ナイスマナー」などの称賛タグを匿名で贈れます。管理者相談窓口も完備。
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1">
+            <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1 mt-3">
               <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                 <span>📜</span> 師弟の心得（ポジティブ指導文化）
               </div>
