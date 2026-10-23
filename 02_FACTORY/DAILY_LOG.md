@@ -10,6 +10,44 @@
 
 ## 🗓️ 2026-10-23（金）
 
+### 🧹 称賛タグ機能・旧管理リダイレクト・孤立API4本・note記事テーブルの完全パージ
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーからの追加調査依頼に基づき、未稼働機能・孤立API・DB放置テーブルを精査。
+   - ユーザーの意思決定（「称賛タグは要らない」「1,4は消したい」「2は影響なければ残す」「3は流用不可なら消す」）に基づき、安全性の検証を行った上で一括クリーンアップを実施。
+2. **実施内容**:
+   - **【称賛タグ（Kudos）機能の完全撤去】**:
+     - `src/app/player/[id]/page.tsx`: `PlayerReputationCard` のインポートおよびマウントを削除。
+     - `src/app/player/PlayerReputationCard.tsx`: ファイル物理削除。
+     - `src/app/api/player/reputation/route.ts`: APIエンドポイント物理削除。
+   - **【旧管理リダイレクト残骸の削除】**:
+     - `src/app/admin/` ディレクトリ配下（`/admin`, `/admin/dashboard`, `/admin/dict-health`, `/admin/youtube`）のダミーページ4本を完全削除。
+   - **【孤立API 4本の削除】**:
+     - `/api/admin/champion-facts/merge`: note記事管理停止に伴う不要API。物理削除。
+     - `/api/admin/champions/queue`: CLIから直接確認可能なためWeb APIとしては不要。物理削除。
+     - `/api/admin/pipeline-status`: 旧ダッシュボード用。物理削除。
+     - `/api/admin/players/ai-profile`: 生成結果を画面表示するUI自体が存在しない完全な実験エンドポイント。物理削除。
+   - **【DBマイグレーション配備】(`04_PORTAL/supabase/migrations/122_drop_kudos_and_note_articles.sql`)**:
+     - `player_reputations`, `note_articles` の2テーブルを `DROP TABLE` するマイグレーションを新設。
+3. **判断経緯と捨てた案（Decisions Over Artifacts）**:
+   - **`saved_simulations` と `gemini_response_cache` の削除を見送り（保持決定）**:
+     - 0件テーブルであったがコード参照を精密走査した結果、`saved_simulations` は管理アプリ（`05_PILOT`）の `/api/match/simulation` でクエリされており、`gemini_response_cache` はポータルの `geminiClient.ts` で自動キャッシュテーブルとして常時クエリされていた。
+     - テーブルを削除すると既存機能で500エラーや警告が噴出するリスクが高いため、「安易な0件削除案」を却下し、安全に保持することを決定した。
+4. **機械的実値検証**:
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `04_PORTAL` 単体テスト (`npm test`): **全142件 PASS (100%)**
+   - Git commit & push: **`a220dc41` master 反映完了**
+5. **再利用可能な3行ナレッジ**:
+   - DBレコード数が0件であっても、別アプリ（PILOT等）や共通ライブラリのキャッシュ機構から参照されている場合があるため、DROP前に必ず全コードベース横断の `git grep` 走査を行う。
+   - 実験的に作られたAPI（ai-profile等）は画面側の表示受け皿が未実装のまま放置されがちなため、UI側の参照パスの有無を同時に確認することで真の孤立コードを正確に特定できる。
+6. **思考・アイデアのストック**:
+   - `[要検証]`: 次回Supabaseマイグレーション適用時に `122_drop_kudos_and_note_articles.sql` がエラーなく適用されること。
+   - `[継続ウォッチ]`: 称賛タグ撤去後のプレイヤー詳細画面の表示速度・レイアウトのすっきり感。
+   - `[発信候補]`: なし。
+
+---
+
 ### 🩺 GitHub CI 失敗・健康診断アラート（OnboardingChannelsPanel）の修復完了
 
 **概要**:
