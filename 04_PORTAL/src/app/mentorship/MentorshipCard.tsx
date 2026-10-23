@@ -44,7 +44,8 @@ export function MentorshipCard({
   isPendingSent,
 }: MentorshipCardProps) {
   const isMentor = profile.role_type === 'MENTOR';
-  const rankBadge = getRankBadgeStyle(profile.current_rank);
+  const displayRank = profile.latest_rank || profile.current_rank;
+  const rankBadge = getRankBadgeStyle(displayRank);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
 
   return (
@@ -82,6 +83,12 @@ export function MentorshipCard({
               <span>{isMentor ? '教えるよ (先輩)' : '教えてほしい (後輩)'}</span>
             </div>
             {/* ステータスバッジ */}
+            {profile.is_inactive && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-300 dark:border-stone-700 flex items-center gap-1">
+                <span>💤</span>
+                <span>休止中</span>
+              </span>
+            )}
             {isMentor ? (
               (profile.active_pupils_count || 0) >= (profile.max_pupils || 2) ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-100 dark:bg-primary-950/50 text-primary-800 dark:text-primary-300 border border-primary-edge-soft dark:border-primary-edge-strong flex items-center gap-1">

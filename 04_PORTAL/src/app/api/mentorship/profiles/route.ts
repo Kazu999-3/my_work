@@ -34,6 +34,9 @@ export interface MentorshipProfile {
   tier?: ExperienceTier;
   tier_label?: string;
   total_games?: number;
+  days_since_last_match?: number | null;
+  latest_rank?: string;
+  is_inactive?: boolean;
 }
 
 export const JUNK_MENTORSHIP_TAGS = new Set([
@@ -62,7 +65,7 @@ export function sanitizeMentorshipTags(tags?: string[] | null): string[] {
 export async function resolvePlayerTier(discordId: string, playerName?: string) {
   const { data: player } = await supabase
     .from('ktm_players')
-    .select('id, name, games_top, games_jg, games_mid, games_adc, games_sup, metadata')
+    .select('id, name, highest_rank, is_active, games_top, games_jg, games_mid, games_adc, games_sup, metadata')
     .eq('discord_id', discordId)
     .maybeSingle();
 
@@ -107,6 +110,9 @@ export async function resolvePlayerTier(discordId: string, playerName?: string) 
     ...tierInfo,
     totalGames,
     isEligibleMentor: tierInfo.tier === 'regular' || tierInfo.tier === 'experienced',
+    highestRank: player?.highest_rank || null,
+    isActive: player?.is_active !== false,
+    daysAgo,
   };
 }
 
@@ -186,6 +192,9 @@ export async function GET(request: Request) {
           tier: pTierInfo?.tier,
           tier_label: pTierInfo?.label,
           total_games: pTierInfo?.totalGames,
+          days_since_last_match: pTierInfo?.daysAgo ?? null,
+          latest_rank: pTierInfo?.highestRank || p.current_rank,
+          is_inactive: p.status === 'PAUSED' || (pTierInfo?.daysAgo !== null && pTierInfo?.daysAgo !== undefined && pTierInfo.daysAgo > 60) || pTierInfo?.isActive === false,
         };
       })
     );

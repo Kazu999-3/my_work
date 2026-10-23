@@ -295,7 +295,34 @@ export async function GET() {
       .in('status', ['ACTIVE', 'COMPLETED'])
       .order('started_at', { ascending: false });
 
-    // メタデータの展開と残り日数の計算
+    // 師弟ペアのカスタム同伴実績（同一match_idでの参加）の集計
+    const matchParticipantsMap = new Map<number, Set<string>>(); // match_id -> Set of player keys
+    const matchDateMap = new Map<number, Date>(); // match_id -> Date
+
+    try {
+      const { data: ptRows } = await supabase
+        .from('ktm_match_participants')
+        .select('match_id, discord_id, player_name, created_at')
+        .order('id', { ascending: false })
+        .limit(3000);
+
+      if (ptRows) {
+        for (const row of ptRows) {
+          const mId = row.match_id;
+          if (!matchParticipantsMap.has(mId)) {
+            matchParticipantsMap.set(mId, new Set());
+            if (row.created_at) matchDateMap.set(mId, new Date(row.created_at));
+          }
+          const set = matchParticipantsMap.get(mId)!;
+          if (row.discord_id) set.add(row.discord_id);
+          if (row.player_name) set.add(row.player_name);
+        }
+      }
+    } catch (ptErr) {
+      console.warn('[mentorship/matches] participants fetch warning:', ptErr);
+    }
+
+    // メタデータの展開と残り日数・同伴出撃数の計算
     const parsedMatches = (rawMatches || []).map((m: any) => {
       const meta = parseNotesMeta(m.notes);
       const started = m.started_at ? new Date(m.started_at) : new Date(m.created_at);
@@ -308,12 +335,43 @@ export async function GET() {
       const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const isExpired = remainingDays <= 0 && m.status === 'ACTIVE';
 
+      // カスタム同伴試合数の集計
+      const mDiscord = m.mentor?.discord_id || m.mentor_discord_id;
+      const mName = m.mentor?.player_name;
+      const pDiscord = m.pupil?.discord_id || m.pupil_discord_id;
+      const pName = m.pupil?.player_name;
+
+      let togetherMatchesCount = 0;
+      let latestTogetherDate: Date | null = null;
+
+      if (matchParticipantsMap.size > 0) {
+        for (const [matchId, pSet] of matchParticipantsMap.entries()) {
+          const mentorPresent = (mDiscord && pSet.has(mDiscord)) || (mName && pSet.has(mName));
+          const pupilPresent = (pDiscord && pSet.has(pDiscord)) || (pName && pSet.has(pName));
+          if (mentorPresent && pupilPresent) {
+            togetherMatchesCount++;
+            const matchDate = matchDateMap.get(matchId);
+            if (matchDate && (!latestTogetherDate || matchDate > latestTogetherDate)) {
+              latestTogetherDate = matchDate;
+            }
+          }
+        }
+      }
+
+      let lastTogetherDaysAgo: number | null = null;
+      if (latestTogetherDate) {
+        lastTogetherDaysAgo = Math.floor((now.getTime() - latestTogetherDate.getTime()) / (24 * 60 * 60 * 1000));
+      }
+
       return {
         ...m,
         meta,
         expiresAt: expiresAt.toISOString(),
         remainingDays,
         isExpired,
+        togetherMatchesCount,
+        lastTogetherAt: latestTogetherDate ? latestTogetherDate.toISOString() : null,
+        lastTogetherDaysAgo,
       };
     });
 

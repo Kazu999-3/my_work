@@ -25,6 +25,7 @@ export default function MentorshipHubPanel() {
   const [activeTab, setActiveTab] = useState<'PUPIL' | 'MENTOR' | 'MATCHES'>('PUPIL');
   const [laneFilter, setLaneFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeOnly, setActiveOnly] = useState(true);
   const [profiles, setProfiles] = useState<MentorshipProfile[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
   const [pendingReceived, setPendingReceived] = useState<any[]>([]);
@@ -692,6 +693,7 @@ export default function MentorshipHubPanel() {
   // フィルタリング処理
   const filteredProfiles = profiles.filter((p) => {
     if (activeTab !== 'MATCHES' && p.role_type !== activeTab) return false;
+    if (activeOnly && p.is_inactive) return false;
     if (laneFilter !== 'ALL' && !(p.lanes || []).includes(laneFilter)) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -702,6 +704,15 @@ export default function MentorshipHubPanel() {
       if (!matchName && !matchBio && !matchChampions && !matchTags) return false;
     }
     return true;
+  });
+
+  const sortedFilteredProfiles = [...filteredProfiles].sort((a, b) => {
+    if (Boolean(a.is_inactive) !== Boolean(b.is_inactive)) {
+      return Number(Boolean(a.is_inactive)) - Number(Boolean(b.is_inactive));
+    }
+    const aDays = a.days_since_last_match ?? 999;
+    const bDays = b.days_since_last_match ?? 999;
+    return aDays - bDays;
   });
 
   // おすすめピックアップ（厳格化: 80点以上の真の相性抜群のみ抽出）
@@ -1054,6 +1065,20 @@ export default function MentorshipHubPanel() {
         {activeTab !== 'MATCHES' && (
           <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 border-t border-surface-subtle scrollbar-none flex-wrap">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            {/* 🟢 アクティブのみトグル */}
+            <button
+              type="button"
+              onClick={() => setActiveOnly((v) => !v)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                activeOnly
+                  ? 'bg-success-100 dark:bg-success-950/40 text-success-800 dark:text-success-300 border-success-edge-strong shadow-2xs'
+                  : 'bg-surface-subtle text-muted border-border hover:bg-surface-hover'
+              }`}
+              title="直近60日以内にカスタム参加や活動があるメンバーのみを表示します"
+            >
+              <span>{activeOnly ? '🟢' : '⚪'}</span>
+              <span>アクティブのみ (60日以内)</span>
+            </button>
               <span className="text-[11px] font-bold text-faint shrink-0 mr-1">レーン:</span>
               {LANE_FILTERS.map((f) => (
                 <button
@@ -1354,6 +1379,25 @@ export default function MentorshipHubPanel() {
                     )}
                   </div>
 
+                                    {/* ⚔️ カスタム同伴実績バッジ */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {match.togetherMatchesCount && match.togetherMatchesCount > 0 ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-primary-100 dark:bg-primary-950/40 text-primary-900 dark:text-primary-300 font-black text-xs border border-primary-edge shadow-2xs">
+                        <span>⚔️ カスタム同伴: {match.togetherMatchesCount}試合</span>
+                        {match.lastTogetherDaysAgo !== null && match.lastTogetherDaysAgo !== undefined && (
+                          <span className="text-[10px] text-primary-700 dark:text-primary-400 font-medium">
+                            ({match.lastTogetherDaysAgo === 0 ? '本日' : `${match.lastTogetherDaysAgo}日前`})
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-surface-subtle text-muted text-xs font-medium border border-border">
+                        <span>🌱 まだカスタム同伴なし</span>
+                        <span className="text-[10px] text-faint">（まずは一緒に参加してみよう！）</span>
+                      </span>
+                    )}
+                  </div>
+
                   {match.meta?.threadUrl && (
                     <div className="pt-0.5">
                       <a
@@ -1518,7 +1562,7 @@ export default function MentorshipHubPanel() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredProfiles.map((p) => {
+          {sortedFilteredProfiles.map((p) => {
             const matchInfo = calculateMatchScore(p);
             const isPendingSent = pendingSent.some(
               (s) => s.mentor_profile_id === p.id || s.pupil_profile_id === p.id
@@ -1545,7 +1589,7 @@ export default function MentorshipHubPanel() {
             );
           })}
 
-          {filteredProfiles.length === 0 && (
+          {sortedFilteredProfiles.length === 0 && (
             <div className="col-span-full py-12 text-center text-faint text-xs font-bold bg-surface rounded-2xl border border-border">
               該当する自己紹介カードが見つかりませんでした。
             </div>
