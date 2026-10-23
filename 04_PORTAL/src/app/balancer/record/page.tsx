@@ -53,6 +53,12 @@ const saveOcrAlias = (ocrExtractedName: string, registeredName: string) => {
     const current = getOcrAliases();
     current[cleanExtracted] = registeredName;
     localStorage.setItem(OCR_ALIAS_STORAGE_KEY, JSON.stringify(current));
+    // クラウド（DB）へも非同期で自動同期
+    fetch('/api/admin/ocr-aliases', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: cleanExtracted, target: registeredName }),
+    }).catch(() => {});
   } catch (err) {
     console.warn('OCRエイリアスの保存に失敗:', err);
   }
@@ -70,6 +76,20 @@ const parseDurationText = (text: string): number | undefined => {
 
 function CustomRecordPageContent() {
   const searchParams = useSearchParams();
+  // OCR学習データのクラウド同期
+  useEffect(() => {
+    fetch('/api/admin/ocr-aliases')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ok && data.aliases && typeof data.aliases === 'object') {
+          const local = getOcrAliases();
+          const merged = { ...local, ...data.aliases };
+          localStorage.setItem(OCR_ALIAS_STORAGE_KEY, JSON.stringify(merged));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const router = useRouter();
   const pendingId = searchParams.get('pending_id');
 
@@ -988,11 +1008,18 @@ function CustomRecordPageContent() {
                 placeholder="28:14"
                 className="w-20 px-2 py-1.5 rounded-md bg-surface border border-border text-sm font-mono text-foreground"
               />
-              <span className="text-[10px] text-muted-strong max-w-44 leading-tight">
-                {durationText && parseDurationText(durationText) === undefined
-                  ? '「分:秒」で入力（例 28:14）'
-                  : '任意。18分未満の敗北は減少が半分'}
-              </span>
+              <div className="flex flex-col gap-0.5 max-w-48 leading-tight">
+                <span className="text-[10px] text-muted-strong">
+                  {durationText && parseDurationText(durationText) === undefined
+                    ? '「分:秒」で入力（例 28:14）'
+                    : '試合時間（18分未満は敗北緩和）'}
+                </span>
+                {durationText && parseDurationText(durationText) !== undefined && parseDurationText(durationText)! < 18 * 60 && (
+                  <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse">
+                    ⚡ 早期投了緩和(-50%)が適用されます
+                  </span>
+                )}
+              </div>
             </label>
 
             <button

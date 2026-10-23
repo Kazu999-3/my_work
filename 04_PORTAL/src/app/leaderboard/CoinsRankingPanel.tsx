@@ -13,6 +13,7 @@ interface CoinRankingPlayer {
   coins: number;
   highestRank: string;
   rankBadge: { name: string; color: string; bg: string };
+  isActive?: boolean;
 }
 
 interface Stats {
@@ -28,6 +29,7 @@ export default function CoinsRankingPanel() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE'>('ALL');
 
   const fetchCoinsRanking = async () => {
     setLoading(true);
@@ -53,14 +55,16 @@ export default function CoinsRankingPanel() {
   }, []);
 
   const filteredPlayers = useMemo(() => {
-    const list = players.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const list = players.filter((p) => {
+      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === 'ALL' || (statusFilter === 'ACTIVE' && p.isActive !== false);
+      return matchSearch && matchStatus;
+    });
     if (sortDir === 'asc') {
       return [...list].sort((a, b) => a.coins - b.coins);
     }
     return [...list].sort((a, b) => b.coins - a.coins);
-  }, [players, search, sortDir]);
+  }, [players, search, sortDir, statusFilter]);
 
   if (loading) {
     return (
@@ -254,6 +258,25 @@ export default function CoinsRankingPanel() {
               クリア
             </button>
           )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-surface-subtle p-0.5 rounded-xl border border-border text-xs">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${statusFilter === 'ALL' ? 'bg-primary-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
+            >
+              全員 ({players.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ACTIVE')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${statusFilter === 'ACTIVE' ? 'bg-primary-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
+            >
+              アクティブのみ
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-bold text-muted-strong">

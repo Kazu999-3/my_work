@@ -97,7 +97,7 @@ function LeaderboardContent() {
     })();
   }, [activeTab, metaData, metaLoading]);
 
-  const [minGames, setMinGames] = useState<number>(1);
+  const [minGames, setMinGames] = useState<number>(3);
   const [search, setSearch] = useState('');
   const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
   const [mobileRole, setMobileRole] = useState<Role | 'ALL'>('ALL');

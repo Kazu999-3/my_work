@@ -20,6 +20,7 @@ export default function RosterPanel() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [sortKey, setSortKey] = useState<"lastPlayed" | "games" | "name" | "rank">("lastPlayed");
 
   useEffect(() => {
     async function fetchPlayers() {
@@ -62,8 +63,21 @@ export default function RosterPanel() {
         secondary === roleFilter;
 
       return matchSearch && matchStatus && matchRole;
+    }).sort((a, b) => {
+      if (sortKey === "lastPlayed") {
+        const timeA = a.last_played_at ? new Date(a.last_played_at).getTime() : 0;
+        const timeB = b.last_played_at ? new Date(b.last_played_at).getTime() : 0;
+        return timeB - timeA || (b.total_games || 0) - (a.total_games || 0);
+      }
+      if (sortKey === "games") {
+        return (b.total_games || 0) - (a.total_games || 0) || String(a.name).localeCompare(String(b.name), 'ja');
+      }
+      if (sortKey === "rank") {
+        return (b.highest_rank || "").localeCompare(a.highest_rank || "") || String(a.name).localeCompare(String(b.name), 'ja');
+      }
+      return String(a.name || "").localeCompare(String(b.name || ""), 'ja');
     });
-  }, [players, search, roleFilter, statusFilter]);
+  }, [players, search, roleFilter, statusFilter, sortKey]);
 
   if (loading) {
     return (
@@ -119,6 +133,17 @@ export default function RosterPanel() {
             <option value="ACTIVE">アクティブのみ</option>
             <option value="INACTIVE">休止中のみ</option>
           </select>
+
+          <select
+            value={sortKey}
+            onChange={(e: any) => setSortKey(e.target.value)}
+            className="bg-surface-subtle border border-border text-primary-700 dark:text-primary-400 text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none shrink-0"
+          >
+            <option value="lastPlayed">⚡ 最近出場した順</option>
+            <option value="games">🎮 試合数が多い順</option>
+            <option value="name">🔤 名前順</option>
+            <option value="rank">🏆 ランク順</option>
+          </select>
         </div>
       </div>
 
@@ -161,16 +186,33 @@ export default function RosterPanel() {
                 </div>
 
                 {/* レーン希望バッジ */}
-                <div className="flex items-center gap-1.5 text-[11px] font-bold">
-                  <span className="text-muted-strong">希望:</span>
-                  <span className="px-2 py-0.5 rounded-md bg-surface-subtle text-foreground-soft font-mono">
-                    {primaryRole}
-                  </span>
-                  {secondaryRole !== "FILL" && (
-                    <span className="px-2 py-0.5 rounded-md bg-background text-muted font-mono">
-                      / {secondaryRole}
+                <div className="flex items-center justify-between gap-1.5 text-[11px] font-bold">
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-strong">希望:</span>
+                    <span className="px-2 py-0.5 rounded-md bg-surface-subtle text-foreground-soft font-mono">
+                      {primaryRole}
                     </span>
-                  )}
+                    {secondaryRole !== "FILL" && (
+                      <span className="px-2 py-0.5 rounded-md bg-background text-muted font-mono">
+                        / {secondaryRole}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-muted-strong">
+                    {player.total_games > 0 ? `${player.total_games}戦` : '未出場'}
+                  </span>
+                </div>
+
+                {/* 最終出場日 */}
+                <div className="flex items-center justify-between text-[10px] text-muted border-t border-border/40 pt-1.5">
+                  <span className="text-faint">最終出場:</span>
+                  <span className="font-medium">
+                    {player.days_since_last_match === 0
+                      ? '🔥 今日'
+                      : player.days_since_last_match !== null
+                        ? `${player.days_since_last_match}日前`
+                        : '未記録'}
+                  </span>
                 </div>
               </div>
 

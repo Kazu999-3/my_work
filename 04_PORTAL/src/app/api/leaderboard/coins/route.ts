@@ -13,6 +13,7 @@ export interface CoinRankingPlayer {
   coins: number;
   highestRank: string;
   rankBadge: { name: string; color: string; bg: string };
+  isActive?: boolean;
 }
 
 export interface CoinRankingResponse {
@@ -52,6 +53,7 @@ export async function GET() {
       discordId: string;
       coins: number;
       highestRank: string;
+      isActive: boolean;
     }>();
 
     // 登録者・非アクティブ関係なく全行を格納
@@ -69,6 +71,7 @@ export async function GET() {
         discordId,
         coins,
         highestRank,
+        isActive: p.is_active !== false,
       });
     }
 
@@ -92,6 +95,7 @@ export async function GET() {
               discordId,
               coins: 1000, // 初期コイン
               highestRank: 'UNRANKED',
+              isActive: true,
             });
           }
         }
@@ -111,6 +115,7 @@ export async function GET() {
       coins: p.coins,
       highestRank: p.highestRank,
       rankBadge: getKtmRank(1200),
+      isActive: p.isActive,
     }));
 
     const totalCoins = players.reduce((sum: number, p: CoinRankingPlayer) => sum + p.coins, 0);
