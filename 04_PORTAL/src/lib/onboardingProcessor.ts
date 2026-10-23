@@ -1,7 +1,7 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from './riot';
-import { RANKS } from './mmr';
+import { RANKS, performFullMmrRebuild } from './mmr';
 import { updateMemberDiscordRankRole, getRankRoleName } from './discordRoleSync';
 
 export const INTRO_CHANNEL_ID = '1485646578621616209'; // #📝自己紹介
@@ -707,6 +707,7 @@ export async function processPendingIntros(options: {
   skipped: number;
   errors: number;
   details: any[];
+  rebuild?: { success: boolean; message?: string; error?: string };
 }> {
   const limit = options.limit || 20;
   const minTime = options.allowHistorical
@@ -796,7 +797,20 @@ export async function processPendingIntros(options: {
     }
   }
 
-  return { processed, skipped, errors, details };
+  let rebuildResult: { success: boolean; message?: string; error?: string } | undefined = undefined;
+  if (processed > 0) {
+    try {
+      console.log(`[processPendingIntros] 新メンバー ${processed} 名が名簿に追加されたため、MMR自動リビルドを開始します...`);
+      const res = await performFullMmrRebuild(supabase);
+      rebuildResult = res;
+      console.log(`[processPendingIntros] MMR自動リビルド完了:`, res.message);
+    } catch (rebuildErr: any) {
+      console.error('[processPendingIntros] MMR自動リビルド失敗:', rebuildErr);
+      rebuildResult = { success: false, error: rebuildErr.message };
+    }
+  }
+
+  return { processed, skipped, errors, details, rebuild: rebuildResult };
 }
 
 

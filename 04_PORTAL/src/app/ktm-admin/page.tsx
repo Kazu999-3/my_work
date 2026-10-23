@@ -76,11 +76,15 @@ export default function KtmAdminPage() {
         throw new Error(data.message || data.error || '取り込み処理に失敗しました');
       }
       if (data.processed > 0) {
+        const rebuildNote = data.rebuild?.success
+          ? '（MMR自動リビルド完了⚡）'
+          : (data.rebuild ? '（※MMR自動リビルド失敗）' : '');
         setMessage({
           type: "success",
-          text: `🎉 新メンバー ${data.processed} 名の自己紹介を取り込み、名簿登録・ロール付与・個別案内部屋を開通しました！`
+          text: `🎉 新メンバー ${data.processed} 名の自己紹介を取り込み、名簿登録・ロール付与・個別案内部屋を開通しました！${rebuildNote}`
         });
         roster.fetchPlayers();
+        roster.checkIntegrity();
       } else {
         setMessage({
           type: "info",

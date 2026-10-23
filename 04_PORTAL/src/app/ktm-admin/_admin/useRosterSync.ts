@@ -205,17 +205,35 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
         setMessage({ type: "success", text: "✅ Discord同期が完了しました。Riot API同期が必要な新規・未同期プレイヤーはいません。" });
       }
 
+      // 新規プレイヤーが追加された場合は初期MMR計算値を反映するため自動Rebuildを実行
+      let rebuildSuccess = false;
+      if (addedDiscordIds.length > 0 || (syncData.toAdd && syncData.toAdd.length > 0)) {
+        setMessage({ type: "info", text: "⚡ 新規プレイヤーの初期MMR計算値を反映するため、自動Rebuildを実行中..." });
+        try {
+          const rbRes = await fetchWithTimeout('/api/mmr/rebuild', { method: 'POST', timeout: 60000 });
+          if (rbRes.ok) {
+            rebuildSuccess = true;
+          }
+        } catch (rbErr) {
+          console.warn('Discord同期後の自動Rebuild失敗:', rbErr);
+        }
+      }
+
+      const rebuildNote = rebuildSuccess
+        ? '\n⚡ 新規プレイヤーの初期MMR計算値も自動Rebuildにより正常に反映されました。'
+        : (addedDiscordIds.length > 0 ? '\n（※自動Rebuildに失敗した場合は、名簿上部の「🔄 Rebuild」を手動実行してください）' : '');
+
       if (riotErrors.length > 0) {
         const errorDetails = riotErrors.slice(0, 10).join('\n') + (riotErrors.length > 10 ? `\n...他 ${riotErrors.length - 10} 件` : '');
         setMessage({
           type: "success",
-          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotErrors.length}件）。${channelNote}\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。\n\n【エラー詳細（サモナー名不一致など）】\n${errorDetails}`
+          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotErrors.length}件）。${channelNote}${rebuildNote}\n\n【エラー詳細（サモナー名不一致など）】\n${errorDetails}`
         });
         parseRiotErrors(riotErrors);
       } else {
         setMessage({
           type: "success",
-          text: `✅ Discord & Riot情報の同期がすべて正常に完了しました！${channelNote}\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。`
+          text: `✅ Discord & Riot情報の同期がすべて正常に完了しました！${channelNote}${rebuildNote}`
         });
         setRiotSyncErrors([]);
       }
