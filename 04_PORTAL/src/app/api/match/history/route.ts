@@ -18,6 +18,7 @@ export async function GET(req: Request) {
         id,
         created_at,
         winning_team,
+        game_duration,
         ktm_match_participants (
           player_name, team, role, champion_name, kills, deaths, assists,
           player_mmr, kda_score, mmr_delta, mmr_breakdown, cs, gold, damage_dealt, vision_score
@@ -31,6 +32,7 @@ export async function GET(req: Request) {
       id: m.id,
       created_at: m.created_at,
       winning_team: m.winning_team,
+      game_duration: m.game_duration || 0,
       participants: m.ktm_match_participants || [],
     }));
 

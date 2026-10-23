@@ -10,6 +10,7 @@ interface Match {
   id: string;
   created_at: string;
   winning_team: 'BLUE' | 'RED';
+  game_duration?: number | null;
   participants: Participant[];
 }
 
@@ -97,6 +98,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [playerFilter, setPlayerFilter] = useState('');
+  const [winFilter, setWinFilter] = useState<'ALL' | 'WIN' | 'LOSS'>('ALL');
+  const [limit, setLimit] = useState(30);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   // アコーディオン開閉状態（デフォルトで直近3試合を展開）
   const [expandedMatchIds, setExpandedMatchIds] = useState<Set<string>>(new Set());
 
@@ -116,6 +121,26 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    const nextLimit = limit + 30;
+    try {
+      const res = await fetch(`/api/match/history?limit=${nextLimit}`);
+      const data = await res.json();
+      if (res.ok && data.matches) {
+        setMatches(data.matches);
+        if (data.matches.length < nextLimit) {
+          setHasMore(false);
+        }
+        setLimit(nextLimit);
+      }
+    } catch (err: any) {
+      toast.error('過去試合の取得に失敗しました');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -338,15 +363,16 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       )}
 
       {/* 検索・アコーディオン一括開閉コントロールバー */}
-      <div className="bg-surface/80 backdrop-blur-md border border-border/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 max-w-md">
-          <div className="relative flex-1">
+      <div className="bg-surface/80 backdrop-blur-md border border-border/80 rounded-2xl p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 flex-1">
+          {/* テキスト入力 */}
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={playerFilter}
               onChange={(e) => setPlayerFilter(e.target.value)}
-              placeholder="参加プレイヤー名で試合を検索..."
+              placeholder="プレイヤー名で検索..."
               className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-foreground placeholder:text-faint focus:outline-none focus:border-primary-edge-strong transition"
             />
             {playerFilter && (
@@ -359,6 +385,49 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               </button>
             )}
           </div>
+
+          {/* 名簿から選択セレクトボックス */}
+          {playersPool.length > 0 && (
+            <select
+              value={playerFilter}
+              onChange={(e) => setPlayerFilter(e.target.value)}
+              className="bg-background border border-border rounded-xl px-3 py-2 text-xs font-bold text-foreground focus:outline-none focus:border-primary-edge-strong transition cursor-pointer"
+            >
+              <option value="">👤 名簿から選択...</option>
+              {playersPool.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* 勝敗フィルター */}
+          {playerFilter && (
+            <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setWinFilter('ALL')}
+                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'ALL' ? 'bg-primary-500 text-stone-950 shadow-2xs' : 'text-muted hover:text-foreground'}`}
+              >
+                全戦
+              </button>
+              <button
+                type="button"
+                onClick={() => setWinFilter('WIN')}
+                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'WIN' ? 'bg-success-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
+              >
+                勝利のみ
+              </button>
+              <button
+                type="button"
+                onClick={() => setWinFilter('LOSS')}
+                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'LOSS' ? 'bg-danger-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
+              >
+                敗北のみ
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
@@ -384,7 +453,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           .filter(match => {
             if (!playerFilter.trim()) return true;
             const q = playerFilter.trim().toLowerCase();
-            return match.participants.some(p => p.player_name.toLowerCase().includes(q));
+            const pt = match.participants.find(p => p.player_name.toLowerCase().includes(q));
+            if (!pt) return false;
+            if (winFilter === 'WIN') return pt.team === match.winning_team;
+            if (winFilter === 'LOSS') return pt.team !== match.winning_team;
+            return true;
           })
           .map(match => {
           const isExpanded = expandedMatchIds.has(match.id);
@@ -429,6 +502,17 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
                       Score: <span className="text-secondary-400">{blueKills}</span> - <span className="text-danger-400">{redKills}</span>
                     </span>
+                    {match.game_duration && match.game_duration > 0 && (
+                      <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
+                        ⏱️ {Math.floor(match.game_duration / 60)}分{match.game_duration % 60}秒
+                      </span>
+                    )}
+                    {match.game_duration && match.game_duration < 18 * 60 && match.game_duration > 0 && (
+                      <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span>⚡</span>
+                        <span>早期投了 ({Math.round(match.game_duration / 60)}分)</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -585,6 +669,20 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         })}
         {matches.length === 0 && (
           <div className="text-center p-12 text-muted-strong font-bold border border-border border-dashed rounded-xl">試合履歴がありません</div>
+        )}
+
+        {/* 過去試合の追加読み込み */}
+        {hasMore && matches.length >= limit && (
+          <div className="text-center pt-2 pb-4">
+            <button
+              type="button"
+              disabled={loadingMore}
+              onClick={handleLoadMore}
+              className="px-6 py-2.5 rounded-xl bg-surface hover:bg-surface-hover border border-border text-xs font-black text-foreground shadow-xs transition cursor-pointer disabled:opacity-50"
+            >
+              {loadingMore ? '読み込み中...' : 'さらに過去の試合を読み込む (+30件) ➔'}
+            </button>
+          </div>
         )}
       </div>
 

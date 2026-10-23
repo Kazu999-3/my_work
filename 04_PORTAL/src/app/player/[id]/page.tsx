@@ -331,10 +331,20 @@ export default function PlayerMyPage() {
 
   // 味方プレイヤー別の勝率集計（シナジー計算用）。
   // /api/player/chemistry が ktm_match_participants を正しくJOINして集計済みなので、
-  // それをそのまま使う（3戦以上のペアに絞り込んで偏りを防止）。
+  // それをそのまま使う（2戦以上のペアを優先し、新メンバーでも相性が即座に表示されるよう緩和）。
   const qualifiedChemistry = useMemo(() => {
-    return (chemistry || []).filter((t: any) => t.games >= 3);
+    const atLeast2 = (chemistry || []).filter((t: any) => t.games >= 2);
+    if (atLeast2.length > 0) return atLeast2;
+    return (chemistry || []).filter((t: any) => t.games >= 1);
   }, [chemistry]);
+
+  // 相性抜群パートナー TOP3
+  const topPartners = useMemo(() => {
+    if (qualifiedChemistry.length === 0) return [];
+    return [...qualifiedChemistry]
+      .sort((a, b) => b.winRate - a.winRate || b.games - a.games)
+      .slice(0, 3);
+  }, [qualifiedChemistry]);
 
   // チームシナジー分析 (最強のチーム相性 vs 課題のあるチーム相性)
   const synergyPair = useMemo(() => {
@@ -941,6 +951,16 @@ export default function PlayerMyPage() {
                       Main: {mainDisplayTag}
                     </span>
                   )}
+                  {playstyle?.tags && playstyle.tags.length > 0 && playstyle.tags.map((tag: any) => (
+                    <span
+                      key={tag.id}
+                      title={tag.reason || tag.description}
+                      className="bg-secondary-500/25 border border-secondary-400/40 text-secondary-200 text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-md whitespace-nowrap flex items-center gap-1 shadow-2xs"
+                    >
+                      <Sparkles size={10} className="text-secondary-300" />
+                      <span>{tag.name}</span>
+                    </span>
+                  ))}
                 </div>
                 <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 pt-1">
                   {/* 🎮 ソロキュー情報 */}
@@ -1203,33 +1223,38 @@ export default function PlayerMyPage() {
               <span className="text-[9px] font-bold text-faint">同チーム時</span>
             </div>
 
-            <div className="pt-0.5">
-              {synergyPair?.best ? (
-                <Link
-                  href={`/player/${encodeURIComponent(synergyPair.best.name)}`}
-                  className="flex items-center justify-between group p-1.5 rounded-xl hover:bg-success-50/60 transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-success-100 text-success-700 flex items-center justify-center text-xs font-black">
-                      🥇
-                    </div>
-                    <div>
-                      <div className="text-xs font-black text-foreground group-hover:text-success-700 transition">
-                        {synergyPair.best.name}
+            <div className="pt-0.5 space-y-1.5">
+              {topPartners && topPartners.length > 0 ? (
+                topPartners.map((partner: any, idx: number) => (
+                  <Link
+                    key={partner.name}
+                    href={`/player/${encodeURIComponent(partner.name)}`}
+                    className="flex items-center justify-between group p-1.5 rounded-xl hover:bg-success-50/60 dark:hover:bg-success-950/30 transition"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                        idx === 0 ? 'bg-amber-100 text-amber-800' : idx === 1 ? 'bg-stone-200 text-stone-700' : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
                       </div>
-                      <div className="text-[10px] text-muted-strong font-medium">
-                        {synergyPair.best.games}試合 共にプレイ
+                      <div className="min-w-0">
+                        <div className="text-xs font-black text-foreground group-hover:text-success-700 dark:group-hover:text-success-400 transition truncate max-w-[120px]">
+                          {partner.name}
+                        </div>
+                        <div className="text-[10px] text-muted-strong font-medium">
+                          {partner.games}試合 共にプレイ
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right font-mono">
-                    <span className="text-xs font-black text-success-600 bg-success-50 border border-success-edge-soft px-2 py-0.5 rounded-md">
-                      {synergyPair.best.winRate}%
-                    </span>
-                  </div>
-                </Link>
+                    <div className="text-right font-mono shrink-0">
+                      <span className="text-xs font-black text-success-600 dark:text-success-400 bg-success-50 dark:bg-success-950/40 border border-success-edge-soft px-2 py-0.5 rounded-md">
+                        {partner.winRate}%
+                      </span>
+                    </div>
+                  </Link>
+                ))
               ) : (
-                <div className="text-xs text-faint font-bold py-1">相性データ収集中（3戦以上）</div>
+                <div className="text-xs text-faint font-bold py-1">相性データ収集中（カスタム参加で随時反映）</div>
               )}
             </div>
           </div>
