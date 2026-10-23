@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Send, ExternalLink, ShieldAlert, Target } from "lucide-react";
-import { getRankTier, RANK_TIERS } from "@/lib/periodicCustomCard";
+import { getRankTier, RANK_TIERS } from "../../lib/periodicCustomCard";
 
 // 管理画面「個別案内」タブ: 各メンバーの個別案内チャンネルの発言状況と、一斉連絡（2026-10-17）。
 // 本人からの新着は pg_cron の1時間おきチェック（migration 107）で管理者のアプリ（ポータルのプッシュ）にも通知される。
@@ -176,7 +176,7 @@ export default function OnboardingChannelsPanel() {
   // 実力差（Tier差）許容幅: 0=完全同格, 1=±1ティア(推奨), 2=±2ティア, 'all'=実力不問
   const [rankTolerance, setRankTolerance] = useState<RankTolerance>(1);
   // 「直近60日」などの判定の基準時刻。描画中に Date.now() を呼ばないよう、読み込んだ時点の時刻を使う
-  const [loadedAt, setLoadedAt] = useState(0);
+  const [loadedAt, setLoadedAt] = useState<number>(() => Date.now());
 
   const load = async () => {
     setLoading(true);
@@ -196,8 +196,8 @@ export default function OnboardingChannelsPanel() {
   };
   useEffect(() => { load(); }, []);
 
-  // 基準時刻: loadedAt が 0 の場合でも現在時刻で評価し判定狂いを防止
-  const now = loadedAt || Date.now();
+  // 基準時刻: loadedAt を使用（描画中の Date.now 呼び出し禁止対策）
+  const now = loadedAt;
   const spectatorSet = useMemo(() => new Set(nextCustom?.spectatorIds || []), [nextCustom]);
   const entrySet = useMemo(() => new Set(nextCustom?.entryIds || []), [nextCustom]);
 

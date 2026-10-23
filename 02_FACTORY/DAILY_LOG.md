@@ -10,6 +10,33 @@
 
 ## 🗓️ 2026-10-23（金）
 
+### 🩺 GitHub CI 失敗・健康診断アラート（OnboardingChannelsPanel）の修復完了
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーより Discord `#🚨エラーログ` に届いた毎朝9時の健康診断アラート「🚨 定期ワークフロー（16本を確認）: CI（型・lint・テスト）直近の実行が failure」について相談を受領。
+   - GitHub Actions ログおよびローカル ESLint を調査した結果、`04_PORTAL/src/app/ktm-admin/OnboardingChannelsPanel.tsx` において以下の2点のエラーが発生していたことを特定：
+     1. 5行目: `@/lib/periodicCustomCard` の絶対パスインポート禁止違反（`no-restricted-imports`）。
+     2. 200行目: レンダリング中の純粋関数違反 `const now = loadedAt || Date.now();`（`react-hooks/purity`）。
+2. **実施内容**:
+   - **【インポートパスの相対化】(`OnboardingChannelsPanel.tsx`)**:
+     - `@/lib/periodicCustomCard` ➔ `../../lib/periodicCustomCard` へ是正。
+   - **【レンダリング時 Date.now() の安全化】(`OnboardingChannelsPanel.tsx`)**:
+     - `const [loadedAt, setLoadedAt] = useState<number>(() => Date.now());` の初期化関数形式に改修し、レンダリング中には純粋な State 値 `const now = loadedAt;` のみを参照するよう修正。
+3. **機械的実値検証**:
+   - `04_PORTAL` ESLint (`npx eslint src/app`): **0 errors PASS**（該当エラー2件完全解消）
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `04_PORTAL` 単体テスト (`npm test`): **全142件 PASS (100%)**
+4. **再利用可能な3行ナレッジ**:
+   - React 19 / Next.js の新 Linter 規則では、コンポーネント関数本体で `Date.now()` や `Math.random()` などの非純粋関数を直接呼ぶとビルド・CIでエラーになるため、`useState(() => Date.now())` または `useEffect` 内で呼び出して State 経由で参照する。
+   - プロジェクト規約の `no-restricted-imports` は Vercel 環境特有の module-not-found 障害を予防する最重要ガードであるため、必ず相対パス（`../../lib/...`）を使用する。
+5. **思考・アイデアのストック**:
+   - `[要検証]`: GitHub Actions にて今回のコミットで「CI (04_PORTAL / ktm_bot)」が緑色（Success）に復旧することの確認。
+   - `[継続ウォッチ]`: 毎朝の健康診断ワークフローが翌朝すべて「✅」で通過することの観測。
+   - `[発信候補]`: なし。
+
+---
+
 ### 🗑️ 「教えて先輩」コメント・レビュー機能 ＆ 初期プロトタイプテーブルの完全削除（案A・案B対応）
 
 **概要**:
