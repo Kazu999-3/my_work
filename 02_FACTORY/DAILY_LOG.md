@@ -8587,3 +8587,32 @@
 - **[継続ウォッチ]**: 他のYouTubeチャンネル（海外・国内）の新規登録時に同様のBot検知によるスタックが発生しないかの監視。
 - **[発信候補]**: 「yt-dlpのBotブロック（Sign in to confirm）を回避してYouTubeチャンネルIDを0.5秒で高速特定するPython設計」。
 
+
+---
+
+## 🗓️ 2026-10-23 (金)
+### 🐛 個別案内一斉連絡APIのSupabase更新エラー (.catch未定義) 修正 & 本番デプロイ
+
+**概要**:
+1. **背景と目的**:
+   - 管理画面 (`/ktm-admin`) の「個別案内チャンネル一斉連絡」からメッセージ送信を実行した際、API `POST /api/admin/onboarding-channels/broadcast` が 500 エラーを返し、Discord の `#エラーログ` チャンネルに検知アラートが発報された。
+   - Vercel 本番ログを調査したところ、`TypeError: t.supabaseAdmin.from(...).update(...).in(...).catch is not a function` によるクラッシュであることを特定。
+2. **実施内容**:
+   - **Supabase QueryBuilder のエラーハンドリング改修 (`onboardingChannels.ts`)**:
+     - Supabase クライアント (`PostgrestFilterBuilder`) は `PromiseLike`（`then` のみ実装）であり、Promise の `.catch()` メソッドを持たないため、`.catch(...)` チェーンを削除し、安全な `try-catch` および Supabase 標準の `{ error }` 判定に改修。
+     - あわせて、Discord へのメッセージ送信に成功したチャンネル（`successfulChannelIds`）のみを対象として `last_custom_nudge_at`（再送防止日時）を更新するよう送信判定を適正化。
+3. **機械的実値検証**:
+   - TypeScript 型チェック (`npx tsc --noEmit`): エラー 0 件 PASS
+   - Portal 単体テスト (`npm test`): 144 件全件 PASS
+   - Next.js Turbopack 本番ビルド (`npm run build`): 正常完了（Exit code 0）
+   - Git commit & push (`0434bbb2`): master ブランチへ反映完了
+
+### 💡 再利用可能なナレッジ（3行抽出）
+1. **Supabase-js のクエリビルダーは Promise ではなく PromiseLike である**: `supabase.from(...).update(...)` の戻り値には `.catch()` メソッドが実装されていないため、`.catch()` を直接チェーンすると実行時に即死する。必ず `try { const { data, error } = await ... } catch` で受けること。
+2. **外部API送信成功とDB更新の後続処理は整合性を保つ**: 一斉送信処理では、Discord API への送信に成功した ID のみを追跡・配列化し、実際に届いた対象だけ DB の再送防止タイムスタンプを更新することで、失敗したチャンネルが次回以降も再試行対象に残る堅牢な設計とする。
+3. **Vercel CLI の runtime logs で本番の真実を最速特定する**: エラー通知の監視アラートを受け取ったら、推測で直すのではなく `vercel logs --environment production --query ...` で直近の例外スタックトレースを機械的に引き出し、1発で根本原因を仕留める。
+
+### 🔮 今後のタスク ＆ 着想の3分類
+- **[要検証]**: 管理画面（`/ktm-admin`）から再度個別案内一斉連絡を実行し、エラーログ通知が飛ばず画面上に「◯件に送信しました」と正常表示されることの実機確認
+- **[継続ウォッチ]**: `onboarding_channel_state` テーブルの `last_custom_nudge_at` に各チャンネルの送信日時が正しく書き込まれているかの定期確認
+- **[発信候補]**: 「Next.js + Supabase でありがちな落とし穴：PromiseLike と .catch() 未定義エラーの安全な防御パターン」
