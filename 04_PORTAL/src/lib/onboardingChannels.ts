@@ -19,6 +19,8 @@ export interface ChannelActivity {
   ownerUserId: string;
   lastMessageAt: string | null;
   lastAuthorKind: AuthorKind | null;
+  /** 最後にカスタム募集案内（対面募集含む）を送った日時（直近4日以内の再送防止用） */
+  lastCustomNudgeAt: string | null;
   /** 本人が最後に話していて、まだ誰も返していない */
   needsReply: boolean;
   /** 要返信のうち、管理画面の「開く」でまだ見ていない（Discord の既読は Bot から読めないため独自に記録） */
@@ -36,6 +38,20 @@ const botHeaders = () => {
 const snowflakeTime = (id: string) => new Date(Number((BigInt(id) >> BigInt(22)) + BigInt(1420070400000))).toISOString();
 
 export const channelUrl = (channelId: string) => `https://discord.com/channels/${GUILD_ID}/${channelId}`;
+
+/**
+ * メッセージ内容が「定期カスタムの募集・案内（対面募集含む）」に該当するか判定する。
+ * 通常の個別会話・相談返信、お見合い便、入会初期ウェルカムなどは除外する。
+ */
+export function isCustomNudgeMessage(content: string): boolean {
+  if (!content) return false;
+  // 初期ウェルカム・名簿登録完了メッセージは除外
+  if (content.includes('KTMサーバーへようこそ') || content.includes('名簿への登録が完了しました')) return false;
+  // お見合い便・師弟連絡は除外
+  if (content.includes('お見合い') || content.includes('師弟')) return false;
+  // 定期カスタムの案内・対面募集・募集カードURL/ID
+  return /定期カスタム|対面.*募集|対面で勝負|募集カード|1528646515533287497/.test(content);
+}
 
 function kindOf(author: any, ownerUserId: string): AuthorKind {
   if (!author) return 'other';
@@ -57,6 +73,47 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
   const states = new Map<string, any>((stateRows || []).map((r: any) => [String(r.channel_id), r]));
   const isFirstRun = states.size === 0;
 
+  // DBマイグレーション前でも落ちないようカラム存在チェック（migration 123）
+  let hasCustomNudgeCol = false;
+  try {
+    const { error: colErr } = await supabase.from('onboarding_channel_state').select('last_custom_nudge_at').limit(1);
+    hasCustomNudgeCol = !colErr;
+  } catch {
+    hasCustomNudgeCol = false;
+  }
+
+  const customNudgeMap = new Map<string, string>();
+  for (const [chId, st] of states.entries()) {
+    if (st.last_custom_nudge_at) {
+      customNudgeMap.set(chId, st.last_custom_nudge_at);
+    }
+  }
+
+  // 直近4日以内の発言でBot/Admin発言かつcustomNudgeMapに未登録のものをDiscordから補完判定
+  const fourDaysAgoMs = Date.now() - 4 * 86400e3;
+  const recentAdminChannels = list.filter((ch) => {
+    if (customNudgeMap.has(ch.channelId)) return false;
+    const prev = states.get(ch.channelId);
+    if (!prev?.last_message_at) return false;
+    const at = new Date(prev.last_message_at).getTime();
+    return at >= fourDaysAgoMs && prev.last_author_kind !== 'member';
+  });
+  if (recentAdminChannels.length > 0) {
+    for (const ch of recentAdminChannels) {
+      try {
+        const res = await discordFetch(`https://discord.com/api/v10/channels/${ch.channelId}/messages?limit=1`, { headers });
+        const msgs = res.ok ? await res.json().catch(() => []) : [];
+        const msg = Array.isArray(msgs) ? msgs[0] : null;
+        if (msg && isCustomNudgeMessage(String(msg.content || ''))) {
+          const at = msg.timestamp || snowflakeTime(msg.id);
+          customNudgeMap.set(ch.channelId, at);
+        }
+      } catch {
+        // Discord API エラー時はスキップ
+      }
+    }
+  }
+
   const upserts: any[] = [];
   const newMemberMessages: { channelId: string; channelName: string; ownerUserId: string; messageId: string; content: string }[] = [];
 
@@ -75,6 +132,9 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
       reply_dismissed_message_id: prev?.reply_dismissed_message_id ?? null,
       updated_at: new Date().toISOString(),
     };
+    if (hasCustomNudgeCol) {
+      row.last_custom_nudge_at = prev?.last_custom_nudge_at ?? null;
+    }
     if (ch.lastMessageId && ch.lastMessageId !== prev?.last_message_id) {
       // 変化したチャンネルだけ最新1件を取りに行く（発言者の判定のため）
       const res = await discordFetch(`https://discord.com/api/v10/channels/${ch.channelId}/messages?limit=1`, { headers });
@@ -82,10 +142,15 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
       const msg = Array.isArray(msgs) ? msgs[0] : null;
       if (msg) {
         const kind = kindOf(msg.author, ch.userId);
+        const at = msg.timestamp || snowflakeTime(msg.id);
         row.last_message_id = msg.id;
-        row.last_message_at = msg.timestamp || snowflakeTime(msg.id);
+        row.last_message_at = at;
         row.last_author_id = msg.author?.id ?? null;
         row.last_author_kind = kind;
+        if (kind !== 'member' && isCustomNudgeMessage(String(msg.content || ''))) {
+          if (hasCustomNudgeCol) row.last_custom_nudge_at = at;
+          customNudgeMap.set(ch.channelId, at);
+        }
         if (kind === 'member' && !isFirstRun && prev?.notified_message_id !== msg.id) {
           newMemberMessages.push({ channelId: ch.channelId, channelName: ch.name, ownerUserId: ch.userId, messageId: msg.id, content: String(msg.content || '') });
         }
@@ -136,6 +201,7 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
     ownerUserId: r.owner_user_id,
     lastMessageAt: r.last_message_at,
     lastAuthorKind: r.last_author_kind,
+    lastCustomNudgeAt: r.last_custom_nudge_at || customNudgeMap.get(r.channel_id) || null,
     // 「返信不要」にした発言のままなら要返信から外す（本人が新しく発言すれば戻る）
     needsReply: r.last_author_kind === 'member' && r.reply_dismissed_message_id !== r.last_message_id,
     unread: r.last_author_kind === 'member' && r.reply_dismissed_message_id !== r.last_message_id && r.read_message_id !== r.last_message_id,
@@ -171,6 +237,15 @@ export async function broadcastToOnboardingChannels(
     if (res.ok) sent++; else failed.push({ channelId: id, status: res.status });
     // Discord の送信制限に余裕を持たせる
     await new Promise((r) => setTimeout(r, 300));
+  }
+  // カスタム募集案内だった場合、送信成功したチャンネルの last_custom_nudge_at を即時更新（再送防止）
+  if (isCustomNudgeMessage(content) && channelIds.length > 0) {
+    const nowIso = new Date().toISOString();
+    await supabase
+      .from('onboarding_channel_state')
+      .update({ last_custom_nudge_at: nowIso })
+      .in('channel_id', channelIds)
+      .catch((err: any) => console.warn('[onboardingChannels] last_custom_nudge_at 更新スキップ:', err.message));
   }
   return { sent, failed };
 }

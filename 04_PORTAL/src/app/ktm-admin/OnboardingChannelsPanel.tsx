@@ -40,6 +40,8 @@ interface Row {
   rank?: string | null;
   lastMessageAt: string | null;
   lastAuthorKind: 'member' | 'admin' | 'bot' | 'other' | null;
+  /** 最後にカスタム募集案内（対面募集含む）を送った日時（直近4日以内の再送防止用） */
+  lastCustomNudgeAt?: string | null;
   needsReply: boolean;
   unread: boolean;
   lastPlayedAt: string | null;
@@ -175,6 +177,8 @@ export default function OnboardingChannelsPanel() {
   const [query, setQuery] = useState('');
   // 実力差（Tier差）許容幅: 0=完全同格, 1=±1ティア(推奨), 2=±2ティア, 'all'=実力不問
   const [rankTolerance, setRankTolerance] = useState<RankTolerance>(1);
+  // 直近4日以内にカスタム募集案内を送った人を対面抽出から除外する（デフォルト: true、通常の会話やお見合い便は除外しない）
+  const [excludeRecentCustomNudge, setExcludeRecentCustomNudge] = useState<boolean>(true);
   // 「直近60日」などの判定の基準時刻。描画中に Date.now() を呼ばないよう、読み込んだ時点の時刻を使う
   const [loadedAt, setLoadedAt] = useState<number>(() => Date.now());
 
@@ -211,11 +215,16 @@ export default function OnboardingChannelsPanel() {
     return u === t;
   };
 
-  // 候補者の基本判定（エントリー済み・観戦希望は除外）
+  // 候補者の基本判定（エントリー済み・観戦希望・直近4日以内のカスタム案内済は除外）
   // ※ ktm_players.is_active はバランサーの一時チェックフラグのため退会判定には使わない
-  const isCandidate = (r: Row) => {
+  const isCandidate = (r: Row, excludeRecent: boolean = excludeRecentCustomNudge) => {
     if (entrySet.has(r.ownerUserId)) return false;
     if (spectatorSet.has(r.ownerUserId)) return false;
+    // 直近4日以内にカスタム募集案内（対面募集含む）を送った人は除外（通常の会話やお見合い便は除外しない）
+    if (excludeRecent && r.lastCustomNudgeAt) {
+      const diff = now - new Date(r.lastCustomNudgeAt).getTime();
+      if (diff >= 0 && diff <= 4 * DAY) return false;
+    }
     return true;
   };
 
@@ -231,9 +240,9 @@ export default function OnboardingChannelsPanel() {
     return Math.abs(rowTier - targetTier) <= tolerance;
   };
 
-  // 指定レーンの対面候補判定（第1希望のみ・実力差連動）
-  const isLaneOpponent = (r: Row, lane: string, tolerance: RankTolerance = rankTolerance): boolean => {
-    if (!isCandidate(r)) return false;
+  // 指定レーンの対面候補判定（第1希望のみ・実力差連動・直近4日除外連動）
+  const isLaneOpponent = (r: Row, lane: string, tolerance: RankTolerance = rankTolerance, excludeRecent: boolean = excludeRecentCustomNudge): boolean => {
+    if (!isCandidate(r, excludeRecent)) return false;
     // ユーザー指定: 第1希望のみを対象とする（第2希望は除外、ALL/FILLは全ロール第1希望扱い）
     if (!matchesLane(r.primaryLane, lane)) return false;
     if (tolerance === 'all') return true;
@@ -256,9 +265,9 @@ export default function OnboardingChannelsPanel() {
     });
   };
 
-  // 特定メンバーの指名対面候補判定（第1希望のみ・実力差連動）
-  const isPlayerOpponent = (r: Row, entry: CustomEntryDetail, tolerance: RankTolerance = rankTolerance): boolean => {
-    if (!isCandidate(r)) return false;
+  // 特定メンバーの指名対面候補判定（第1希望のみ・実力差連動・直近4日除外連動）
+  const isPlayerOpponent = (r: Row, entry: CustomEntryDetail, tolerance: RankTolerance = rankTolerance, excludeRecent: boolean = excludeRecentCustomNudge): boolean => {
+    if (!isCandidate(r, excludeRecent)) return false;
     const primary = entry.lanes?.[0] || 'TOP';
     // ユーザー指定: 第1希望のみを対象とする
     if (!matchesLane(r.primaryLane, primary)) return false;
@@ -268,28 +277,48 @@ export default function OnboardingChannelsPanel() {
     return isSkillMatch(r.rank, targetTier, tolerance);
   };
 
-  // 不足対面（2人未満のレーン）の候補判定（実力差連動）
-  const isNeededOpponent = (r: Row, tolerance: RankTolerance = rankTolerance): boolean => {
-    if (!isCandidate(r)) return false;
+  // 不足対面（2人未満のレーン）の候補判定（実力差連動・直近4日除外連動）
+  const isNeededOpponent = (r: Row, tolerance: RankTolerance = rankTolerance, excludeRecent: boolean = excludeRecentCustomNudge): boolean => {
+    if (!isCandidate(r, excludeRecent)) return false;
     const needed = nextCustom?.neededLanes || [];
-    return needed.some((lane) => isLaneOpponent(r, lane, tolerance));
+    return needed.some((lane) => isLaneOpponent(r, lane, tolerance, excludeRecent));
   };
 
   // 実力差（許容幅）切り替えハンドラ（現在フィルター中なら即座に再絞り込み＆再選択）
   const handleToleranceChange = (newTol: RankTolerance) => {
     setRankTolerance(newTol);
     if (filter === 'neededOpponents') {
-      const matched = rows.filter((r) => isNeededOpponent(r, newTol));
+      const matched = rows.filter((r) => isNeededOpponent(r, newTol, excludeRecentCustomNudge));
       setSelected(new Set(matched.map((r) => r.channelId)));
     } else if (filter.startsWith('laneOpponent_')) {
       const lane = filter.replace('laneOpponent_', '');
-      const matched = rows.filter((r) => isLaneOpponent(r, lane, newTol));
+      const matched = rows.filter((r) => isLaneOpponent(r, lane, newTol, excludeRecentCustomNudge));
       setSelected(new Set(matched.map((r) => r.channelId)));
     } else if (filter.startsWith('playerOpponent_')) {
       const dId = filter.replace('playerOpponent_', '');
       const entry = (nextCustom?.entries || []).find((e) => e.discordId === dId);
       if (entry) {
-        const matched = rows.filter((r) => isPlayerOpponent(r, entry, newTol));
+        const matched = rows.filter((r) => isPlayerOpponent(r, entry, newTol, excludeRecentCustomNudge));
+        setSelected(new Set(matched.map((r) => r.channelId)));
+      }
+    }
+  };
+
+  // 直近4日除外トグル切り替えハンドラ
+  const handleExcludeRecentChange = (checked: boolean) => {
+    setExcludeRecentCustomNudge(checked);
+    if (filter === 'neededOpponents') {
+      const matched = rows.filter((r) => isNeededOpponent(r, rankTolerance, checked));
+      setSelected(new Set(matched.map((r) => r.channelId)));
+    } else if (filter.startsWith('laneOpponent_')) {
+      const lane = filter.replace('laneOpponent_', '');
+      const matched = rows.filter((r) => isLaneOpponent(r, lane, rankTolerance, checked));
+      setSelected(new Set(matched.map((r) => r.channelId)));
+    } else if (filter.startsWith('playerOpponent_')) {
+      const dId = filter.replace('playerOpponent_', '');
+      const entry = (nextCustom?.entries || []).find((e) => e.discordId === dId);
+      if (entry) {
+        const matched = rows.filter((r) => isPlayerOpponent(r, entry, rankTolerance, checked));
         setSelected(new Set(matched.map((r) => r.channelId)));
       }
     }
@@ -570,6 +599,24 @@ export default function OnboardingChannelsPanel() {
               </span>
             </div>
 
+            {/* 🛡️ 再送防止（直近4日除外） */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/40 pb-1">
+              <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-muted-strong hover:text-foreground">
+                <input
+                  type="checkbox"
+                  checked={excludeRecentCustomNudge}
+                  onChange={(e) => handleExcludeRecentChange(e.target.checked)}
+                  className="rounded border-border text-primary-600 focus:ring-primary-500"
+                />
+                <span>直近4日以内にカスタム案内済の人を除外する（再送防止）</span>
+              </label>
+              {rows.some((r) => r.lastCustomNudgeAt && now - new Date(r.lastCustomNudgeAt).getTime() <= 4 * DAY) && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20 font-bold">
+                  {rows.filter((r) => r.lastCustomNudgeAt && now - new Date(r.lastCustomNudgeAt).getTime() <= 4 * DAY).length}名を除外中（通常の会話やお見合い便は除外されません）
+                </span>
+              )}
+            </div>
+
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-muted-strong">一発抽出:</span>
               <button
@@ -784,6 +831,14 @@ export default function OnboardingChannelsPanel() {
                       {r.rank && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-black/5 text-foreground border border-border">
                           {r.rank}
+                        </span>
+                      )}
+                      {r.lastCustomNudgeAt && now - new Date(r.lastCustomNudgeAt).getTime() <= 4 * DAY && (
+                        <span
+                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 whitespace-nowrap"
+                          title={`直近に定期カスタムの案内を送信済み（${ago(r.lastCustomNudgeAt)}）- 対面抽出から自動除外中`}
+                        >
+                          📨 案内済({ago(r.lastCustomNudgeAt)})
                         </span>
                       )}
                       {(() => {
