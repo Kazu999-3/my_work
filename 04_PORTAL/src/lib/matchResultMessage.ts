@@ -11,6 +11,8 @@ export interface ResultMessageRow {
   assists: number;
   mmrDelta: number;
   hasVictoryDoubler?: boolean;
+  coinReward?: number;
+  allRoleBonusCoins?: number;
 }
 
 const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const;
@@ -25,9 +27,15 @@ export function buildMatchupField(rows: ResultMessageRow[], winningTeam: string,
     const delta = isExhibition ? `±0 (お祭り保護)` : (p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`);
     const kda = `${p.kills}/${p.deaths}/${p.assists}`;
     const champ = p.champion_name ? p.champion_name : 'Unknown';
-    const coinsEarned = p.hasVictoryDoubler
-      ? '🔥+600🪙(激闘ボーナス!)'
-      : (p.team === winningTeam ? '+250🪙' : '+100🪙');
+    let coinsEarned: string;
+    if (p.hasVictoryDoubler) {
+      coinsEarned = '🔥+600🪙(激闘ボーナス!)';
+    } else if (p.coinReward !== undefined) {
+      const allBonusText = (p.allRoleBonusCoins || 0) > 0 ? '(ALL+50含む)' : '';
+      coinsEarned = `+${p.coinReward}🪙${allBonusText}`;
+    } else {
+      coinsEarned = p.team === winningTeam ? '+250🪙' : '+100🪙';
+    }
     return `\`${p.name}\` (${champ}) - **${kda}** (MMR: ${delta} | ${coinsEarned})`;
   };
   const value = ROLES.map((role) => {

@@ -19,6 +19,16 @@ interface CustomEntryDetail {
 
 type RankTolerance = 0 | 1 | 2 | 'all';
 
+interface BroadcastHistoryEntry {
+  id: string;
+  sentAt: string;
+  sentCount: number;
+  failedCount: number;
+  channelCount: number;
+  mention: boolean;
+  contentSnippet: string;
+}
+
 interface NextCustom {
   title: string;
   startAt: string;
@@ -172,6 +182,9 @@ export default function OnboardingChannelsPanel() {
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [nextCustom, setNextCustom] = useState<NextCustom | null>(null);
+  const [broadcastHistory, setBroadcastHistory] = useState<BroadcastHistoryEntry[]>([]);
+  const [cleaningDeparted, setCleaningDeparted] = useState(false);
+
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sortKey, setSortKey] = useState<SortKey>('status');
   const [query, setQuery] = useState('');
@@ -191,6 +204,7 @@ export default function OnboardingChannelsPanel() {
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
       setRows(data.channels || []);
       setNextCustom(data.nextCustom || null);
+      setBroadcastHistory(data.broadcastHistory || []);
       setLoadedAt(Date.now());
     } catch (e: any) {
       setError(e.message);
@@ -498,6 +512,26 @@ export default function OnboardingChannelsPanel() {
     return next;
   });
 
+  const handleCleanupDeparted = async () => {
+    if (!window.confirm('Discordサーバーを既に退出したメンバーの個別案内チャンネルを検知して削除します。よろしいですか？')) return;
+    setCleaningDeparted(true);
+    try {
+      const res = await fetch('/api/admin/onboarding-channels/cleanup-departed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'クリーンアップに失敗しました');
+      const delCount = data.deleted?.length || 0;
+      alert(`クリーンアップ完了: ${delCount}件の退出者チャンネルを削除しました（スキップ: ${data.skipped || 0}件）`);
+      load();
+    } catch (e: any) {
+      alert(`エラー: ${e.message}`);
+    } finally {
+      setCleaningDeparted(false);
+    }
+  };
+
   const send = async () => {
     if (!content.trim() || selected.size === 0) return;
     const preview = content.trim().slice(0, 200);
@@ -532,9 +566,20 @@ export default function OnboardingChannelsPanel() {
             未読 <span className="font-bold text-danger-700">{unreadCount}件</span> ／ 既読・未返信 <span className="font-bold text-primary-700">{readNoReplyCount}件</span>。「開く」で既読になります。本人からの新着は1時間おきに確認し、アプリにも通知します（タブを開いた時点でも最新に更新します）
           </p>
         </div>
-        <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-border bg-black/5 text-foreground hover:bg-black/5 disabled:opacity-50">
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> 更新
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCleanupDeparted}
+            disabled={cleaningDeparted}
+            title="Discordサーバーから抜けた退会者の個別部屋を検知して安全に削除します"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 transition"
+          >
+            <ShieldAlert className={`h-3.5 w-3.5 ${cleaningDeparted ? 'animate-spin' : ''}`} />
+            {cleaningDeparted ? '退出者確認中...' : '退出者の部屋を整理'}
+          </button>
+          <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-border bg-black/5 text-foreground hover:bg-black/10 disabled:opacity-50 transition">
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> 更新
+          </button>
+        </div>
       </div>
 
       {/* 一斉連絡 */}
@@ -731,6 +776,30 @@ export default function OnboardingChannelsPanel() {
         {result && (
           <div className={`text-xs rounded-lg border px-3 py-2 ${result.ok ? 'bg-success-100 text-success-700 border-success-edge' : 'bg-danger-100 text-danger-700 border-danger-edge-soft'}`}>
             {result.text}
+          </div>
+        )}
+        {/* 📜 直近の送信履歴 */}
+        {broadcastHistory.length > 0 && (
+          <div className="rounded-lg border border-border bg-black/2 p-3 space-y-2 text-xs">
+            <div className="font-bold text-foreground flex items-center gap-1.5">
+              <span>📜</span>
+              <span>直近の配信履歴（最新{Math.min(broadcastHistory.length, 5)}件）</span>
+            </div>
+            <div className="space-y-1.5">
+              {broadcastHistory.slice(0, 5).map((h, i) => (
+                <div key={h.id || i} className="flex flex-wrap items-center justify-between gap-1 p-2 rounded bg-surface border border-border">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-muted-strong">
+                      {new Date(h.sentAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="font-bold text-primary-600">{h.sentCount}件送信</span>
+                    {h.failedCount > 0 && <span className="text-danger-600 font-bold">({h.failedCount}件失敗)</span>}
+                    {h.mention && <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-600 font-bold">メンション有</span>}
+                  </div>
+                  <div className="text-muted-strong truncate max-w-xs">{h.contentSnippet}…</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

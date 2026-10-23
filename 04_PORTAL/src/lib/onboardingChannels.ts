@@ -214,6 +214,29 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
  * 指定した個別案内チャンネルへ同じ文面を投稿する。個別案内カテゴリのチャンネル以外には送らない。
  * mention=true なら先頭で持ち主にメンションする（その人だけ通知が鳴る）。
  */
+export interface BroadcastHistoryEntry {
+  id: string;
+  sentAt: string;
+  sentCount: number;
+  failedCount: number;
+  channelCount: number;
+  mention: boolean;
+  contentSnippet: string;
+}
+
+export async function getBroadcastHistory(): Promise<BroadcastHistoryEntry[]> {
+  try {
+    const { data } = await supabase
+      .from('ktm_settings')
+      .select('value')
+      .eq('key', 'onboarding_broadcast_history')
+      .maybeSingle();
+    return Array.isArray(data?.value) ? data.value : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function broadcastToOnboardingChannels(
   channelIds: string[],
   content: string,
@@ -258,6 +281,23 @@ export async function broadcastToOnboardingChannels(
     } catch (err: any) {
       console.warn('[onboardingChannels] last_custom_nudge_at 更新スキップ:', err?.message || err);
     }
+  }
+  // 配信ログを ktm_settings に直近20件保存
+  try {
+    const prevHistory = await getBroadcastHistory();
+    const newEntry: BroadcastHistoryEntry = {
+      id: new Date().toISOString(),
+      sentAt: new Date().toISOString(),
+      sentCount: sent,
+      failedCount: failed.length,
+      channelCount: channelIds.length,
+      mention,
+      contentSnippet: content.slice(0, 100),
+    };
+    const updatedHistory = [newEntry, ...prevHistory].slice(0, 20);
+    await supabase.from('ktm_settings').upsert({ key: 'onboarding_broadcast_history', value: updatedHistory }, { onConflict: 'key' });
+  } catch (err: any) {
+    console.warn('[onboardingChannels] broadcast history 保存スキップ:', err?.message || err);
   }
   return { sent, failed };
 }

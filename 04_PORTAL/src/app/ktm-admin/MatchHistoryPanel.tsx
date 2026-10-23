@@ -56,6 +56,9 @@ function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
   if (b.placement) {
     parts.push('プレースメント×1.5');
   }
+  if ((b as any).surrenderMitigated) {
+    parts.push('早期投了緩和(-50%)');
+  }
   parts.push(`計 ${b.final > 0 ? '+' : ''}${b.final ?? delta ?? 0}`);
   return parts.join(' / ');
 }

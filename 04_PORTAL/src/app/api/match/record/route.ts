@@ -508,6 +508,7 @@ export async function POST(request: Request) {
       };
 
       (r as any).coinReward = coinReward;
+      (r as any).allRoleBonusCoins = allRoleBonusCoins;
       (r as any).hasVictoryDoubler = hasVictoryDoubler;
 
       const { error: uError } = await supabase

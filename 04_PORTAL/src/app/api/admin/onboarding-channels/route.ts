@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
-import { syncOnboardingChannels } from '../../../../lib/onboardingChannels';
+import { syncOnboardingChannels, getBroadcastHistory } from '../../../../lib/onboardingChannels';
 import { loadNextPeriodicCustomEntries, getRankTier } from '../../../../lib/periodicCustomCard';
 
 // 管理画面「個別案内」タブの一覧。開いた時点の最新状態に更新してから返す（2026-10-17）。
@@ -154,7 +154,8 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, channels: rows, nextCustom });
+    const broadcastHistory = await getBroadcastHistory();
+    return NextResponse.json({ success: true, channels: rows, nextCustom, broadcastHistory });
   } catch (err: any) {
     console.error('[admin/onboarding-channels] error:', err);
     return NextResponse.json({ error: '個別案内チャンネルの取得に失敗しました。' }, { status: 500 });
