@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import PlayerSettingsPanel from "../PlayerSettingsPanel";
 import ScoutingReport from "../../../components/ScoutingReport";
-import PlayerReputationCard from "../PlayerReputationCard";
 import MentorshipProgressCard from "../MentorshipProgressCard";
 import confetti from "canvas-confetti";
 import { 
@@ -1275,13 +1274,6 @@ export default function PlayerMyPage() {
             </div>
           </div>
         </div>
-
-        {/* 🌟 メンバーの匿名評判 ＆ KTM 栄誉カード */}
-        <PlayerReputationCard
-          playerName={player.name}
-          isMe={Boolean(isMe)}
-          currentUser={currentUser}
-        />
 
         {/* Tab Controls (横スライド対応、洗練されたグラスデザイン) */}
         <div className="flex gap-1 bg-surface/60 backdrop-blur-md p-1.5 rounded-2xl border border-black/10 overflow-x-auto scrollbar-none shadow-lg">
