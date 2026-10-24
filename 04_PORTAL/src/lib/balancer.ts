@@ -34,6 +34,8 @@ export interface Player {
   fixedRole?: Role | null;
   todayStreak?: number; // ⑦ 当日モメンタム（連勝+1,+2 / 連敗-1,-2）
   // 計算用
+  isFirstTimer?: boolean; // 通算0戦の初参加者（最優先で希望レーンに配属）
+  isLightTier?: boolean;  // 通算1〜14戦のライト層（優先的に第1・第2希望に配属）
   isNewbie?: boolean;
   avgMMR?: number;
   isOutlierLow?: boolean;
@@ -201,8 +203,13 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
   const globalAvgMMR = players.reduce((s, p) => s + (p.avgMMR || 1200), 0) / 10;
 
   players.forEach((p) => {
+    const totalG = (p as any).total_games ?? p.games ?? 0;
+    // 初参加（通算0戦）判定: 最優先で希望レーンを確保
+    p.isFirstTimer = totalG === 0;
+    // ライト層（通算1〜14戦）判定: オフロールを極限まで回避
+    p.isLightTier = totalG > 0 && totalG <= 14;
     // 初参加・新規判定: 試合数が3試合未満、またはUnrankedで5試合未満
-    p.isNewbie = (p.games < 3 || (p.rank === 'UNRANKED' && p.games < 5));
+    p.isNewbie = (totalG < 3 || (p.rank === 'UNRANKED' && totalG < 5));
     const avgP = p.avgMMR || 1200;
     p.isOutlierLow = (avgP < globalAvgMMR - 350);
     p.isOutlierHigh = (avgP > globalAvgMMR + 500);
@@ -249,23 +256,32 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     const assigned = new Array(5).fill(-1);
     const roleUsed = new Array(5).fill(false);
     
+    // 希望ロール割り当て順（初参戦 > ライト層 > 新規 > 一般）
+    const priorityOrder = [0, 1, 2, 3, 4].sort((ia, ib) => {
+      const pa = team[ia];
+      const pb = team[ib];
+      const sA = pa.isFirstTimer ? 4 : pa.isLightTier ? 3 : pa.isNewbie ? 2 : (pa.pity || 0);
+      const sB = pb.isFirstTimer ? 4 : pb.isLightTier ? 3 : pb.isNewbie ? 2 : (pb.pity || 0);
+      return sB - sA;
+    });
+
     // 1. 固定ロール
-    for (let i = 0; i < 5; i++) {
+    for (const i of priorityOrder) {
       if (team[i].isFixed && team[i].fixedRole) {
         const ri = ROLES.indexOf(team[i].fixedRole!);
         if (ri !== -1 && !roleUsed[ri]) { assigned[i] = ri; roleUsed[ri] = true; }
       }
     }
-    // 2. メインロール
-    for (let i = 0; i < 5; i++) {
+    // 2. メインロール（初参戦・ライト層が最優先）
+    for (const i of priorityOrder) {
       if (assigned[i] !== -1) continue;
       const ri = ROLES.indexOf(team[i].pref1 as Role);
       if (ri !== -1 && !roleUsed[ri] && ROLES[ri] !== team[i].ng1 && ROLES[ri] !== team[i].ng2) {
         assigned[i] = ri; roleUsed[ri] = true;
       }
     }
-    // 3. サブロール
-    for (let i = 0; i < 5; i++) {
+    // 3. サブロール（初参戦・ライト層が優先）
+    for (const i of priorityOrder) {
       if (assigned[i] !== -1) continue;
       const ri = ROLES.indexOf(team[i].pref2 as Role);
       if (ri !== -1 && !roleUsed[ri] && ROLES[ri] !== team[i].ng1 && ROLES[ri] !== team[i].ng2) {
@@ -411,21 +427,31 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           // ★ 項目1: 固定ロール指定されているのに別のロールに配属された場合は完全除外
           rolePenalty = 2000000;
         } else if (isFixed || player.pref1 === 'ALL' || player.pref1 === role) {
-          rolePenalty = player.isNewbie ? -30000 : 0;
+          // メインロール希望通りに配置された場合（初参戦・ライト層へ強力なボーナス）
+          let bonus = 0;
+          if (player.isFirstTimer) bonus = -50000;      // 初参戦は大幅優先ボーナス
+          else if (player.isLightTier) bonus = -25000;  // ライト層も優先ボーナス
+          else if (player.isNewbie) bonus = -30000;
+          rolePenalty = bonus;
           mainCount++;
         } else if (player.pref2 && player.pref2 !== 'なし' && player.pref2 !== '-' && player.pref2 === role) {
+          // 第2希望に配置された場合
           rolePenalty = 500 + (player.pity * 10000);
-          if (player.isNewbie) rolePenalty += 80000;
+          if (player.isFirstTimer) rolePenalty += 300000;    // 初参戦は第2希望でも大きなペナルティ（第1希望を最優先）
+          else if (player.isLightTier) rolePenalty += 120000; // ライト層も第1希望を優先探索
+          else if (player.isNewbie) rolePenalty += 80000;
           if (player.pity >= 4) rolePenalty += 40000;
           if (isSpecialist) rolePenalty *= 2;
           if (w === 1) rolePenalty *= 10;
           if (w === 3) rolePenalty *= 0.5;
           rolePenalty += player.off_role_pity * 30000;
         } else {
-          // pref2が未設定のプレイヤーは、pref2設定者と比べて過度にペナルティが跳ね上がらないよう基準を微調整
+          // 完全オフロールに配置された場合
           const hasPref2 = !!(player.pref2 && player.pref2 !== 'なし' && player.pref2 !== '-');
           rolePenalty = (hasPref2 ? 5000 : 3000) + (player.pity * 20000);
-          if (player.isNewbie) rolePenalty += 120000;
+          if (player.isFirstTimer) rolePenalty += 1500000;   // ★ 初参戦の完全オフロールは事実上の絶対禁止
+          else if (player.isLightTier) rolePenalty += 500000; // ★ ライト層の完全オフロールも極大ペナルティで回避
+          else if (player.isNewbie) rolePenalty += 120000;
           if (player.pity >= 4) rolePenalty += 60000;
           if (isSpecialist) rolePenalty *= 3;
           if (w === 1) rolePenalty *= 20;
@@ -433,13 +459,15 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           rolePenalty += player.off_role_pity * 50000;
         }
 
-        if ((player.isNewbie || player.isOutlierLow) && (role === 'JG' || role === 'MID') && player.pref1 !== role) {
-          rolePenalty += 15000;
+        if ((player.isFirstTimer || player.isLightTier || player.isNewbie || player.isOutlierLow) && (role === 'JG' || role === 'MID') && player.pref1 !== role) {
+          rolePenalty += 20000;
         }
 
-        // ★ 項目2: JGオフロール時のセーフティ（初心者のJG配属防止 & 高ランクJG担当優遇）
+        // ★ 項目2: JGオフロール時のセーフティ（初参戦・ライト・初心者のJG配属防止 & 高ランクJG担当優遇）
         if (role === 'JG' && player.pref1 !== 'JG' && player.pref2 !== 'JG') {
-          if (player.isNewbie || player.isOutlierLow) {
+          if (player.isFirstTimer || player.isLightTier) {
+            rolePenalty += 500000; // 初参戦・ライト層が希望していないJGに回されるのを鉄壁ガード
+          } else if (player.isNewbie || player.isOutlierLow) {
             rolePenalty += 45000;
           } else if (HIGH_RANKS.includes((player.rank || '').trim().toUpperCase().split(/\s+/)[0])) {
             rolePenalty -= 15000;

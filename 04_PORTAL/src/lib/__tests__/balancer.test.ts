@@ -423,3 +423,43 @@ test('selectMatchParticipants: 11人以上でも初参加者（games=0）は100%
   }
 });
 
+
+test('初参戦者（games=0）およびライト層は最優先で希望レーンに配属されること', () => {
+  // 常連8名、ライト層1名（games=5）、初参戦者1名（games=0）の10名編成
+  const players: Player[] = [
+    makePlayer('Reg_TOP1', 'TOP', 'MID', 1300, { games: 50 }),
+    makePlayer('Reg_TOP2', 'TOP', 'JG', 1300, { games: 40 }),
+    makePlayer('Reg_JG1', 'JG', 'TOP', 1300, { games: 30 }),
+    makePlayer('Reg_JG2', 'JG', 'MID', 1300, { games: 25 }),
+    makePlayer('Reg_MID', 'MID', 'ADC', 1300, { games: 60 }),
+    makePlayer('Reg_ADC1', 'ADC', 'SUP', 1300, { games: 35 }),
+    makePlayer('Reg_ADC2', 'ADC', 'MID', 1300, { games: 20 }),
+    makePlayer('Reg_SUP', 'SUP', 'MID', 1300, { games: 45 }),
+    // ライト層（games=5、第1希望MID、第2希望SUP）
+    makePlayer('Light_Player', 'MID', 'SUP', 1200, { games: 5 }),
+    // 初参戦者（games=0、第1希望SUP）
+    makePlayer('Newbie_Player', 'SUP', '-', 1200, { games: 0 }),
+  ];
+
+  const ctx: BalanceContext = {
+    history: new Set(),
+    teammateHistory: new Map(),
+    winStreakTeam: null,
+    sideHistory: {},
+    searchDepth: 10,
+  };
+
+  const result = coreBalanceTeams(players, ctx);
+  const allAssigned = [...result.teamBlue, ...result.teamRed];
+
+  const newbieAssigned = allAssigned.find(p => p.name === 'Newbie_Player');
+  assert.ok(newbieAssigned, '初参戦者がチームに割り当てられていること');
+  assert.equal(newbieAssigned.currentRole, 'SUP', '初参戦者は第1希望のSUPに100%配属されること');
+
+  const lightAssigned = allAssigned.find(p => p.name === 'Light_Player');
+  assert.ok(lightAssigned, 'ライト層がチームに割り当てられていること');
+  assert.ok(
+    lightAssigned.currentRole === 'MID' || lightAssigned.currentRole === 'SUP',
+    `ライト層は第1希望(MID)または第2希望(SUP)に配属されること (実際: ${lightAssigned.currentRole})`
+  );
+});
