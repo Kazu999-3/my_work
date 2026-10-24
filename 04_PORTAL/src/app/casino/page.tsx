@@ -32,7 +32,7 @@ export default function CasinoPage() {
   const [activeTab, setActiveTab] = useState<CasinoTab>('bet');
   const {
     ranking, activeMatch, loading, inventory, lastRescueMonth, userStreak, userMaxStreak, allPlayersList, betStats,
-    timeLeftSeconds, isBetLocked, fetchBetData, fetchInventory,
+    timeLeftSeconds, isBetLocked, myBet, fetchBetData, fetchInventory,
   } = useCasinoData(user);
 
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -40,6 +40,12 @@ export default function CasinoPage() {
   const [betMessage, setBetMessage] = useState<string | null>(null);
   const [shopMessage, setShopMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  // 🎯 すでに投票済みのチームがあれば、両建てを防ぐために betTeam を自動選択
+  React.useEffect(() => {
+    if (myBet?.team && (myBet.team === 'BLUE' || myBet.team === 'RED')) {
+      setBetTeam(myBet.team);
+    }
+  }, [myBet?.team]);
 
   // 🎰 おみくじモーダル用ステート
   const [isOmikujiOpen, setIsOmikujiOpen] = useState<boolean>(false);
@@ -346,7 +352,7 @@ export default function CasinoPage() {
             activeMatch={activeMatch} betTeam={betTeam} setBetTeam={setBetTeam} betAmount={betAmount} setBetAmount={setBetAmount}
             betMessage={betMessage} isSubmitting={isSubmitting} timeLeftSeconds={timeLeftSeconds} isBetLocked={isBetLocked}
             calculatedOdds={calculatedOdds} isParticipant={isParticipant} handlePlaceBet={handlePlaceBet} ranking={ranking}
-            activePlayerName={activePlayerName}
+            activePlayerName={activePlayerName} myBet={myBet}
           />
         )}
 

@@ -12,7 +12,7 @@ const formatTimeLeft = (sec: number) => {
 
 // タブ1: 勝敗予想（投票比率・締め切り・対戦カード・ベットフォーム・長者番付）
 // 2026-10-07: app/casino/page.tsx（1,635行）から分割。表示内容・動作は分割前と同じ。
-export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOpen, loginWithDiscord, activeMatch, betTeam, setBetTeam, betAmount, setBetAmount, betMessage, isSubmitting, timeLeftSeconds, isBetLocked, calculatedOdds, isParticipant, handlePlaceBet, ranking, activePlayerName }: {
+export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOpen, loginWithDiscord, activeMatch, betTeam, setBetTeam, betAmount, setBetAmount, betMessage, isSubmitting, timeLeftSeconds, isBetLocked, calculatedOdds, isParticipant, handlePlaceBet, ranking, activePlayerName, myBet }: {
   user: any;
   betStats: BetStats;
   setTipToPlayer: (v: string) => void;
@@ -32,6 +32,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
   handlePlaceBet: (e: React.FormEvent) => void;
   ranking: RankingPlayer[];
   activePlayerName: string;
+  myBet?: { team: 'BLUE' | 'RED'; amount: number } | null;
 }) {
   return (
     <>
@@ -282,6 +283,29 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                     </div>
                   ) : (
                     <form onSubmit={handlePlaceBet} className="space-y-5">
+                      {/* 🎯 投票中ステータス ＆ 両建て防止ガード案内 */}
+                      {myBet && (
+                        <div className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-3 shadow-xs ${
+                          myBet.team === 'BLUE'
+                            ? 'bg-primary-50/90 border-primary-edge text-primary-950'
+                            : 'bg-danger-50/90 border-danger-edge text-danger-950'
+                        }`}>
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-xl">{myBet.team === 'BLUE' ? '🟦' : '🟥'}</span>
+                            <div>
+                              <div className="text-xs font-black">
+                                あなたは現在【{myBet.team} TEAM】に投票中です！
+                              </div>
+                              <div className="text-[11px] text-muted-strong font-medium">
+                                同一試合で両方のチームに投票（両建て）することはできません。同じチームへの追加ベットが可能です。
+                              </div>
+                            </div>
+                          </div>
+                          <span className="font-mono font-black text-xs px-2.5 py-1 rounded-xl bg-surface border border-border shrink-0 shadow-xs">
+                            投票済: {myBet.amount.toLocaleString()} pt
+                          </span>
+                        </div>
+                      )}
                       {isBetLocked ? (
                         <div className="p-4 rounded-2xl bg-primary-500/10 border-2 border-primary-edge-strong/30 text-primary-900 flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -302,34 +326,52 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                             <div className="grid grid-cols-2 gap-2 md:gap-4">
                               <button
                                 type="button"
-                                onClick={() => setBetTeam('BLUE')}
-                                className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
-                                  betTeam === 'BLUE'
-                                    ? 'border-primary-edge-strong bg-primary-50 text-primary-700 shadow-md scale-102'
-                                    : 'border-border hover:border-primary-edge-soft text-muted'
+                                onClick={() => (!myBet || myBet.team === 'BLUE') && setBetTeam('BLUE')}
+                                disabled={Boolean(myBet && myBet.team === 'RED')}
+                                className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 ${
+                                  myBet && myBet.team === 'RED'
+                                    ? 'opacity-40 cursor-not-allowed border-dashed border-border bg-black/5 text-muted'
+                                    : betTeam === 'BLUE'
+                                    ? 'border-primary-edge-strong bg-primary-50 text-primary-700 shadow-md scale-102 cursor-pointer'
+                                    : 'border-border hover:border-primary-edge-soft text-muted cursor-pointer'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟦</span>
                                 <span className="truncate max-w-full">BLUE TEAM</span>
-                                <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 font-mono font-black">
-                                  x{calculatedOdds.blue}倍
-                                </span>
+                                {myBet && myBet.team === 'RED' ? (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-200 text-stone-600 font-bold">
+                                    🚫 両建て不可
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 font-mono font-black">
+                                    x{calculatedOdds.blue}倍
+                                  </span>
+                                )}
                               </button>
 
                               <button
                                 type="button"
-                                onClick={() => setBetTeam('RED')}
-                                className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
-                                  betTeam === 'RED'
-                                    ? 'border-danger-edge-strong bg-danger-50 text-danger-700 shadow-md scale-102'
-                                    : 'border-border hover:border-danger-edge-soft text-muted'
+                                onClick={() => (!myBet || myBet.team === 'RED') && setBetTeam('RED')}
+                                disabled={Boolean(myBet && myBet.team === 'BLUE')}
+                                className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 ${
+                                  myBet && myBet.team === 'BLUE'
+                                    ? 'opacity-40 cursor-not-allowed border-dashed border-border bg-black/5 text-muted'
+                                    : betTeam === 'RED'
+                                    ? 'border-danger-edge-strong bg-danger-50 text-danger-700 shadow-md scale-102 cursor-pointer'
+                                    : 'border-border hover:border-danger-edge-soft text-muted cursor-pointer'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟥</span>
                                 <span className="truncate max-w-full">RED TEAM</span>
-                                <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-danger-100 text-danger-800 font-mono font-black">
-                                  x{calculatedOdds.red}倍
-                                </span>
+                                {myBet && myBet.team === 'BLUE' ? (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-200 text-stone-600 font-bold">
+                                    🚫 両建て不可
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-danger-100 text-danger-800 font-mono font-black">
+                                    x{calculatedOdds.red}倍
+                                  </span>
+                                )}
                               </button>
                             </div>
                           </div>
@@ -374,14 +416,29 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                             />
                           </div>
 
-                          <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="w-full bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 hover:from-primary-500 hover:to-primary-400 text-white py-4 rounded-2xl font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transform active:scale-98"
-                          >
-                            <Coins size={20} />
-                            {isSubmitting ? '処理中...' : `🪙 ${betAmount}コイン を ${betTeam} の勝利にベット！`}
-                          </button>
+                          {(() => {
+                            const isOpposite = Boolean(myBet && myBet.team !== betTeam);
+                            return (
+                              <button
+                                type="submit"
+                                disabled={isSubmitting || isOpposite}
+                                className={`w-full text-white py-4 rounded-2xl font-black text-base transition-all shadow-lg flex items-center justify-center gap-2 transform active:scale-98 ${
+                                  isOpposite
+                                    ? 'bg-stone-400 cursor-not-allowed opacity-60'
+                                    : 'bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 hover:from-primary-500 hover:to-primary-400 hover:shadow-xl cursor-pointer disabled:opacity-50'
+                                }`}
+                              >
+                                <Coins size={20} />
+                                {isSubmitting
+                                  ? '処理中...'
+                                  : isOpposite
+                                  ? `🚫 すでに【${myBet?.team}】に投票済みです（両建て不可）`
+                                  : myBet && myBet.team === betTeam
+                                  ? `➕ ${betAmount}コイン を ${betTeam} に追加ベット！`
+                                  : `🪙 ${betAmount}コイン を ${betTeam} の勝利にベット！`}
+                              </button>
+                            );
+                          })()}
                         </>
                       )}
                     </form>

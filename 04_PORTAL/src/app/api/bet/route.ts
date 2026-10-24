@@ -66,6 +66,7 @@ export async function GET(req: Request) {
     let redAmount = 0;
     let blueCount = 0;
     let redCount = 0;
+    let myBet: { team: 'BLUE' | 'RED'; amount: number } | null = null;
 
     try {
       const { data: betTasks } = await supabase
@@ -80,6 +81,11 @@ export async function GET(req: Request) {
         redAmount = bets.filter((b: any) => b.team === 'RED').reduce((s: number, b: any) => s + (b.amount || 0), 0);
         blueCount = bets.filter((b: any) => b.team === 'BLUE').length;
         redCount = bets.filter((b: any) => b.team === 'RED').length;
+
+        if (discordId || name) {
+          const { summarizeUserBet } = await import('../../../lib/betValidation');
+          myBet = summarizeUserBet(bets, { discordId, name });
+        }
       }
     } catch {}
 
@@ -99,6 +105,7 @@ export async function GET(req: Request) {
       userStreak,
       userMaxStreak,
       jackpot,
+      myBet,
       betStats: {
         blueAmount,
         redAmount,
@@ -407,6 +414,49 @@ export async function POST(req: Request) {
       console.warn('[bet POST] Participant check warning:', chkErr);
     }
 
+    // 🎯 このベットが属する「ラウンド」を特定
+    let roundId: string | number | null = null;
+    try {
+      const { data: liveRound } = await supabase
+        .from('balancer_predictions')
+        .select('id')
+        .is('match_id', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      roundId = liveRound?.id ?? null;
+    } catch (rErr) {
+      console.warn('[bet POST] round linkage lookup warning:', rErr);
+    }
+
+    // 🚫 両建て（同一試合で BLUE と RED の両方に投票する行為）の防止
+    try {
+      const { data: openBetTasks } = await supabase
+        .from('edge_tasks')
+        .select('payload')
+        .eq('task_type', 'custom_bet')
+        .eq('status', 'pending');
+
+      if (openBetTasks && openBetTasks.length > 0) {
+        const { checkHedgeBet } = await import('../../../lib/betValidation');
+        const existingBets = openBetTasks.map((t: any) => t.payload).filter(Boolean);
+        const hedgeCheck = checkHedgeBet(
+          existingBets,
+          { discordId: player.discord_id || discordId, name: player.name },
+          team,
+          roundId
+        );
+
+        if (hedgeCheck.isHedge) {
+          return NextResponse.json({
+            error: `すでに【${hedgeCheck.oppositeTeam}】チームに投票済みです！同一の試合で両方のチームに投票（両建て）することはできません。`,
+          }, { status: 409 });
+        }
+      }
+    } catch (hedgeErr) {
+      console.warn('[bet POST] Hedge check warning:', hedgeErr);
+    }
+
     const currentCoins = getPlayerCoins(player);
     const betAmount = Math.min(parsedAmount, currentCoins);
     if (betAmount <= 0 || currentCoins < betAmount) {
@@ -426,27 +476,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'コインの控除に失敗しました。' }, { status: 500 });
     }
 
-    // ベートレコードを edge_tasks に保存（試合確定時の自動精算・配当払い戻し用）
-    // ⚠️ オッズは「このベットを投入する直前の投票状況」からサーバーが算出する。
-    // クライアントが申告してきた odds は一切使わない（任意倍率の払い戻しを防ぐため）。
-    // このベットが属する「ラウンド」を特定する。精算(match/record)は balancer_predictions の
-    // 未確定(match_id=null)行を1ラウンドとみなすため、同じIDを payload に持たせて紐付ける。
-    // これが無いと、2ラウンド同時進行時に別ラウンドの結果で精算されてしまう（試合を問わず
-    // pending を全件精算していたため）。取得できなければ null（レガシー動作へ縮退）。
-    let roundId: string | number | null = null;
-    try {
-      const { data: liveRound } = await supabase
-        .from('balancer_predictions')
-        .select('id')
-        .is('match_id', null)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      roundId = liveRound?.id ?? null;
-    } catch (rErr) {
-      console.warn('[bet POST] round linkage lookup warning:', rErr);
-    }
-
+    // ベットレコードを edge_tasks に保存（試合確定時の自動精算・配当払い出し用）
+    // ⚠️ オッズは「このベットを投入する直前の投票状況」からサーバーが算出する（クライアント申告oddsは不使用）。
     const { calculateBetOdds, fetchPendingBetTotals } = await import('../../../lib/betOdds');
     const totalsBefore = await fetchPendingBetTotals(supabase, roundId);
     const serverOdds = calculateBetOdds(totalsBefore.blueAmount, totalsBefore.redAmount);

@@ -47,6 +47,7 @@ export function useCasinoData(user: any) {
     blueAmount: 0, redAmount: 0, blueCount: 0, redCount: 0, totalAmount: 0, blueRatio: 50, redRatio: 50,
   });
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number | null>(null);
+  const [myBet, setMyBet] = useState<{ team: 'BLUE' | 'RED'; amount: number } | null>(null);
 
   // ⏱️ 勝敗予想の締め切りカウントダウン:
   // 観戦投票はDiscordへチーム発表を送信した時刻（announcedAt）を起点とする（15分間）
@@ -139,6 +140,7 @@ export function useCasinoData(user: any) {
         if (data.lastRescueMonth) setLastRescueMonth(data.lastRescueMonth);
         if (data.userStreak !== undefined) setUserStreak(Number(data.userStreak) || 0);
         if (data.userMaxStreak !== undefined) setUserMaxStreak(Number(data.userMaxStreak) || 0);
+        setMyBet(data.myBet || null);
       }
     } catch (e) {
       console.error('Failed to fetch bet data:', e);
@@ -191,6 +193,6 @@ export function useCasinoData(user: any) {
 
   return {
     ranking, activeMatch, loading, inventory, lastRescueMonth, userStreak, userMaxStreak, allPlayersList, betStats,
-    timeLeftSeconds, isBetLocked, fetchBetData, fetchActiveMatch, fetchInventory,
+    timeLeftSeconds, isBetLocked, myBet, fetchBetData, fetchActiveMatch, fetchInventory,
   };
 }
