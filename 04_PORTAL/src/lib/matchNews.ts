@@ -118,8 +118,7 @@ export async function generateMatchNews(matchData: {
   const sortedLosers = [...loserParts].sort((a, b) => scorePlayer(b, loserTotalKills, loserTotalDmg) - scorePlayer(a, loserTotalKills, loserTotalDmg));
   const bestLoser = sortedLosers[0] || loserParts[0];
 
-  // 🎭 芸人枠候補（チームを最も揺らした人）
-  // 単なる最多デスではなく、「運ばれ芸人」「特攻ロマン砲」「格上大乱調」「ダメージシェアとデスのギャップ」を総合評価
+  // 🎭 芸人枠候補（チームを最も揺らした人・悪い意味でのやらかし/肝冷やし大賞）
   const entertainerCandidates = participants.filter((p) => p.name !== bestWinner?.name);
   const scoreEntertainer = (p: typeof participants[0]) => {
     const deaths = Number(p.deaths) || 0;
@@ -130,34 +129,35 @@ export async function generateMatchNews(matchData: {
     const dmgShare = teamTotalDmg > 0 ? dmg / teamTotalDmg : 0;
     const opp = opponentMap.get(p.name);
 
-    // ① デス数基礎点
-    const deathBase = deaths * 10;
-    // ② 逆KDA（キルアシストに対してデスがどれだけ先行しているか）
-    const kdaInv = (deaths / Math.max(1, kills + assists)) * 8;
+    // ① デス数基礎点（デスを重ねるほどチームは揺れる）
+    const deathBase = deaths * 15;
+    // ② 逆KDA（キルやアシストに対してデスが圧倒的に先行＝相手への大盤振る舞い）
+    const netFeeder = Math.max(0, deaths - kills) * 8;
+    const kdaInv = (deaths / Math.max(1, kills + assists)) * 10;
 
-    // ③ 運ばれ芸人ボーナス（勝利陣営なのにデス連発、またはダメージシェアが極端に低いのに勝利）
+    // ③ 味方の背骨破壊・胃痛ボーナス（勝ったチームなのに1人だけデス量産で冷や汗をかかせた）
     const isWinner = p.team === winningTeam;
-    let carryMeBonus = 0;
-    if (isWinner && deaths >= 5) {
-      carryMeBonus += deaths * 8 + 20;
+    let carryMeStumbleBonus = 0;
+    if (isWinner && deaths >= 4) {
+      carryMeStumbleBonus += deaths * 12 + 35; // 勝ったのに死にまくり＝味方の胃に穴を開けた大賞
     }
     if (isWinner && teamTotalDmg > 0 && dmgShare < 0.12 && deaths >= 3) {
-      carryMeBonus += 25; // チーム総ダメの12%未満でデス先行＝完全な愛され運ばれ枠
+      carryMeStumbleBonus += 30; // ダメージも出さずにデス先行＝完全な土下座案件
     }
 
-    // ④ 特攻ロマン砲ボーナス（ダメージ量はチームトップクラスなのにデスも異次元の突撃狂）
-    const recklessAssaultBonus = (dmgShare >= 0.22 && deaths >= 7) ? 35 : (kills >= 3 && deaths >= 7 ? 20 : 0);
+    // ④ 突撃大自爆ボーナス（キルも取っているが、それ以上にデスして敵にシャットダウンを献上）
+    const throwBountyBonus = (kills >= 3 && deaths >= 7) ? 30 : 0;
 
-    // ⑤ 大物の大乱調ドラマ（高MMRなのに格下相手に崩壊、または慣れないロールで迷走）
-    let upsetBonus = 0;
+    // ⑤ 格上崩壊ドラマ（高MMRなのに格下にソロキルされまくって味方を絶望させた）
+    let upsetThrowBonus = 0;
     if (opp && opp.playerMmr && p.playerMmr) {
       const mmrDiff = p.playerMmr - opp.playerMmr;
-      if (mmrDiff >= 60 && deaths > kills) {
-        upsetBonus = Math.min(25, (mmrDiff / 40) * 5);
+      if (mmrDiff >= 50 && deaths > kills) {
+        upsetThrowBonus = Math.min(35, (mmrDiff / 30) * 8);
       }
     }
 
-    return deathBase + kdaInv + carryMeBonus + recklessAssaultBonus + upsetBonus;
+    return deathBase + netFeeder + kdaInv + carryMeStumbleBonus + throwBountyBonus + upsetThrowBonus;
   };
   const sortedEntertainers = [...entertainerCandidates].sort((a, b) => scoreEntertainer(b) - scoreEntertainer(a));
   const bestEntertainer = sortedEntertainers[0] || entertainerCandidates[0];
@@ -226,10 +226,11 @@ ${participantSummary}
 - mvp.comment: キル数だけでなく、チームダメージシェア、格上を制したジャイアントキリング、サポートの視界・鉄壁での盤石な貢献など、スタッツの文脈を踏まえて熱狂的に称える寸評（60文字以内）
 - fighterOfTheMatch.comment: 敗戦側で孤軍奮闘した選手（高ダメージやキル関与）を称える敢闘寸評（60文字以内）
 - entertainer.comment:
-  - 勝利チームなのにデスが先行した選手なら「仲間への全力感謝＆激闘の運ばれ大賞」
-  - ダメージは出しているのにデスも爆発した選手なら「前に出続けたロマン特攻ファイター」
-  - 格下に挑まれて散った選手や格上相手に玉砕した選手なら「果敢な挑戦と熱戦の爪痕」
-  として、本人がクスッと笑えて自慢・ネタにしたくなる愛あるユーモア寸評（60文字以内）
+  - 「チームを最もグラグラと揺らした（悪い意味でのやらかし・味方の胃に穴を開けた）張本人」としてのピリッと辛口なユーモア寸評（60文字以内）。
+  - 勝利チームなのにデスを量産して味方の背骨を折りかけた選手なら「味方の胃薬を激しく消費させた冷や汗運ばれ枠（味方全員への土下座確定）」
+  - デスがキルを大幅に上回って相手を怪獣に育ててしまった選手なら「敵への大盤振る舞い・魔境への招待状」
+  - 高MMRなのに格下に崩壊して味方を絶望させた選手なら「まさかの大乱調・チームを大混乱に陥れた歩く時限爆弾」
+  - 単なる罵倒や冷たい悪口ではなく、「味方の肝を冷やしまくったやらかし」を仲間内でネタとしてイジって笑える絶妙なピリ辛トーンにすること。
 - turningPoint: 単にキル数が多い対面を読み上げるだけでなく、レーン対面のMMR格差（格上が順当にゲームを支配したか、あるいは格下が番狂わせを起こしたか）、集団戦の総ダメージ差などの本質的な構造から勝敗の決定打を解説（80文字以内）
 - keyMatchup: 最も激戦となった対面レーンのスタッツ比較とレート格差・ダメージ差を踏まえた寸評（70文字以内）
 - sideStory: MMR変動（大幅UPや悔しい降格）やサポートの視界・タンクの被ダメ等の隠れた貢献（60文字以内）
@@ -257,7 +258,7 @@ ${participantSummary}
     "champion": "${bestEntertainer?.champion_name || 'チャンプ'}",
     "kda": "${bestEntertainer?.kills || 0}/${bestEntertainer?.deaths || 0}/${bestEntertainer?.assists || 0}",
     "role": "${bestEntertainer?.role || 'TOP'}",
-    "comment": "運ばれ感謝・ロマン特攻・熱戦の爪痕など、愛あるユーモア寸評（60文字以内）"
+    "comment": "味方の胃に穴を開けたやらかし・土下座運ばれ・魔境への招待など、ピリ辛ユーモア寸評（60文字以内）"
   },
   "turningPoint": "MMR格差やダメージ・キルシェアから読み取れる試合の決定打（80文字以内）",
   "keyMatchup": "最も激戦となった対面レーンのスタッツ比較と寸評（70文字以内）",
