@@ -99,10 +99,14 @@ export async function POST(req: Request) {
             error: 'Discordのレートリミット（10分間に2回まで）に達しました。'
           }, { status: 429 });
         }
+        // 外部Discord APIのエラー（チャンネル不存在404等）をそのままNext.jsルートの404にせず、502 Bad Gatewayで正規化
+        const errorMsg = discordRes.status === 404
+          ? '指定のDiscordボイスチャンネルが見つかりませんでした（チャンネルIDまたはBotの権限を確認してください）。'
+          : (errData.message || 'Discord VCステータスの更新に失敗しました。');
         return NextResponse.json({
           success: false,
-          error: errData.message || 'Discord VCステータスの更新に失敗しました。'
-        }, { status: discordRes.status });
+          error: errorMsg
+        }, { status: 502 });
       }
     }
 

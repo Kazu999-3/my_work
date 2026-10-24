@@ -112,21 +112,23 @@ export async function findOrCreatePlayer(params: {
 
       if (byExactName && byExactName.length > 0) {
         const p = byExactName[0];
-        // 別の Discord ID に紐づいた人は返さない（2026-10-19）。以前は「自分の Discord ID（未登録）＋他人の名前」を送ると
-        // Discord ID で見つからず名前で他人が返り、本人確認（Discord ID で照合）を通ったまま他人のコインで賭け・購入・チップができた
-        if (cleanDiscordId && p.discord_id && p.discord_id !== cleanDiscordId) return null;
-        if (cleanDiscordId && !p.discord_id) {
-          await supabase
-            .from('ktm_players')
-            .update({ discord_id: cleanDiscordId })
-            .eq('id', p.id);
-          p.discord_id = cleanDiscordId;
+        // 別の Discord ID に紐づいた人は他人のアカウントなのでスキップ（成りすまし防止）
+        if (cleanDiscordId && p.discord_id && p.discord_id !== cleanDiscordId) {
+          // 他人のアカウントなので一致と見なさず、新規作成（autoCreate）へフォールスルーする
+        } else {
+          if (cleanDiscordId && !p.discord_id) {
+            await supabase
+              .from('ktm_players')
+              .update({ discord_id: cleanDiscordId })
+              .eq('id', p.id);
+            p.discord_id = cleanDiscordId;
+          }
+          return {
+            ...p,
+            coins: getPlayerCoins(p),
+            inventory: getPlayerInventory(p),
+          };
         }
-        return {
-          ...p,
-          coins: getPlayerCoins(p),
-          inventory: getPlayerInventory(p),
-        };
       }
 
       // 大文字小文字無視の完全一致 (ilike はワイルドカードなし)
@@ -138,21 +140,23 @@ export async function findOrCreatePlayer(params: {
 
       if (byIlike && byIlike.length > 0) {
         const p = byIlike[0];
-        // 別の Discord ID に紐づいた人は返さない（2026-10-19）。以前は「自分の Discord ID（未登録）＋他人の名前」を送ると
-        // Discord ID で見つからず名前で他人が返り、本人確認（Discord ID で照合）を通ったまま他人のコインで賭け・購入・チップができた
-        if (cleanDiscordId && p.discord_id && p.discord_id !== cleanDiscordId) return null;
-        if (cleanDiscordId && !p.discord_id) {
-          await supabase
-            .from('ktm_players')
-            .update({ discord_id: cleanDiscordId })
-            .eq('id', p.id);
-          p.discord_id = cleanDiscordId;
+        // 別の Discord ID に紐づいた人は他人のアカウントなのでスキップ（成りすまし防止）
+        if (cleanDiscordId && p.discord_id && p.discord_id !== cleanDiscordId) {
+          // 他人のアカウントなので一致と見なさず、新規作成（autoCreate）へフォールスルーする
+        } else {
+          if (cleanDiscordId && !p.discord_id) {
+            await supabase
+              .from('ktm_players')
+              .update({ discord_id: cleanDiscordId })
+              .eq('id', p.id);
+            p.discord_id = cleanDiscordId;
+          }
+          return {
+            ...p,
+            coins: getPlayerCoins(p),
+            inventory: getPlayerInventory(p),
+          };
         }
-        return {
-          ...p,
-          coins: getPlayerCoins(p),
-          inventory: getPlayerInventory(p),
-        };
       }
     } catch (e) {
       console.warn('[playerCoins] name query warning:', e);
@@ -191,7 +195,7 @@ export async function findOrCreatePlayer(params: {
       .maybeSingle();
 
     if (insErr) {
-      // 名前のユニーク衝突などの場合、既存行を再検索
+      // 名前のユニーク衝突などの場合、既存行を確認
       const { data: existing } = await supabase
         .from('ktm_players')
         .select('*')
@@ -200,10 +204,32 @@ export async function findOrCreatePlayer(params: {
 
       if (existing && existing.length > 0) {
         const p = existing[0];
+        // 自分のアカウント（未紐付け、または同一ID）ならそのまま返す
+        if (!p.discord_id || p.discord_id === cleanDiscordId) {
+          if (cleanDiscordId && !p.discord_id) {
+            await supabase.from('ktm_players').update({ discord_id: cleanDiscordId }).eq('id', p.id);
+            p.discord_id = cleanDiscordId;
+          }
+          return {
+            ...p,
+            coins: getPlayerCoins(p),
+            inventory: getPlayerInventory(p),
+          };
+        }
+      }
+
+      // 他人と名前が衝突した場合は、固有の名前で新規登録を試みる
+      const uniqueName = `${newPlayerName}_${cleanDiscordId?.slice(-4) || Math.floor(Math.random() * 1000)}`;
+      const { data: uniqueInserted } = await supabase
+        .from('ktm_players')
+        .insert({ ...newPlayerData, name: uniqueName })
+        .select('*')
+        .maybeSingle();
+      if (uniqueInserted) {
         return {
-          ...p,
-          coins: getPlayerCoins(p),
-          inventory: getPlayerInventory(p),
+          ...uniqueInserted,
+          coins: getPlayerCoins(uniqueInserted),
+          inventory: getPlayerInventory(uniqueInserted),
         };
       }
 

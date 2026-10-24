@@ -144,7 +144,7 @@ export async function PUT(req: Request) {
     });
 
     if (!player) {
-      return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 404 });
+      return NextResponse.json({ error: 'プレイヤー情報の取得・初期化に失敗しました。時間をおいて再ログインしてください。' }, { status: 500 });
     }
 
     // 日本時間（JST = UTC+9）基準で今日の日付（YYYY-MM-DD）を取得
