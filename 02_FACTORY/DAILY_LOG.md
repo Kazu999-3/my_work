@@ -10,6 +10,37 @@
 
 ## 🗓️ 2026-10-24（土）
 
+### 🩺 健康診断アラート（定期ワークフロー・スモークテスト）の完全復旧
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーより「健康診断でエラー発生してる」との相談を受領。
+   - 毎朝の健康診断（`Daily Health Report`）ログを調査した結果、前日（2026-10-23）のクリーンアップ作業（孤立APIパージ・旧ダミーリダイレクト削除）に起因する以下の2点のワークフロー失敗を特定：
+     1. **`SoloQ History Sync`**: 前日削除した `04_PORTAL/src/app/api/soloq/history-sync` へ GitHub Actions から POST しており HTTP 404 failure。
+     2. **`Production Smoke Test`**: 前日削除した 04 旧画面（`/synergy`, `/lane-guides`, `/coach`, `/champions`, `/library`）を `scripts/smoke_test.mjs` が巡回対象に含めており 404 failure。
+2. **実施内容**:
+   - **【ソロQ定期同期APIの復旧】(`04_PORTAL/src/app/api/soloq/history-sync/route.ts`)**:
+     - 04側の裏方バッチエンドポイント（Bearer CRON_SECRET 認証、直近20試合取得）を安全に復元。
+   - **【スモークテスト巡回リストの最新化】(`scripts/smoke_test.mjs`)**:
+     - 05へ移管・削除済みの旧個人機能5画面を `PORTAL_PAGES` から除外。04側13画面・05側5画面（全18画面）の構成に是正。
+3. **機械的実値検証**:
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - 既存単体テスト (`npm test`): **全144件 PASS (100%)**
+   - Git commit & push: **`81db0d9d` master 反映完了**
+   - Vercel デプロイ疎通確認: **401 Unauthorized（認証正常稼働、404解消確認）**
+   - GitHub Actions `SoloQ History Sync` 手動実行: **✓ Success (4s, status=200)**
+   - GitHub Actions `Production Smoke Test` 手動実行: **✓ Success (1m53s, 全18ページ正常)**
+   - GitHub Actions `Daily Health Report` 手動実行: **✓ Success (28s, 🩺 毎朝の健康診断: ✅ 異常なし / 直近の実行はすべて正常)**
+4. **再利用可能な3行ナレッジ**:
+   - **クリーンアップ時の外部監視・CI巡回リスト連動**: ルーティングやエンドポイントを削除・リファクタリングした際は、コード本体だけでなく「外部から定期的に叩くCron（GitHub Actions）」や「本番巡回テスト（Playwright/スモークテスト）」の巡回リストも同一ターンで同時に追従させる。
+   - **裏方バッチの移行境界の明確化**: 画面側が他アプリ（05）へ移管されても、定期バッチ（04側Vercel環境変数依存）が稼働し続けている場合は、完全停止またはバッチ自体の移管完了までAPIを安易にパージしない。
+5. **思考・アイデアのストック**:
+   - `[要検証]`: 翌朝の健康診断（JST 06:30）が Discord `#エラーログ` に自動で「✅ 異常なし」として届くことの観測。
+   - `[継続ウォッチ]`: 05_PILOT へのソロQ定期同期バッチの将来的な一本化計画。
+   - `[発信候補]`: なし。
+
+---
+
 ### 📜 試合履歴検索の多軸化 ＆ 選手個人カルテの相性TOP3・プレイスタイル前面配置
 
 **概要**:
