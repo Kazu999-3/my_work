@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-23T18:00:55.447664+00:00",
+  "updated_at": "2026-10-24T05:11:32.967370+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -139,21 +139,21 @@
     },
     "Cassiopeia": {
       "name": "カシオペア",
-      "status": "pending",
-      "updated_at": "2026-10-21T10:29:53.578339+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T00:08:20.637270+00:00",
       "error": null,
       "note": "Patch 16.20.1 modified: ['hp', 'mp']"
     },
     "Chogath": {
       "name": "チョ＝ガス",
-      "status": "pending",
-      "updated_at": "2026-10-15T09:54:28.344096+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T04:01:52.623027+00:00",
       "error": null
     },
     "Corki": {
       "name": "コーキ",
-      "status": "pending",
-      "updated_at": "2026-10-15T09:55:26.047019+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T04:03:17.956743+00:00",
       "error": null
     },
     "Darius": {

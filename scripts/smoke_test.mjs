@@ -22,10 +22,10 @@ const PILOT = (process.env.PILOT_URL || 'https://ktm-pilot.vercel.app').replace(
 const NO_NOTIFY = process.argv.includes('--no-notify');
 
 // 04: ログイン無しで開ける主要画面（/admin はログインへ転送されるのが正常）
+// ※旧個人機能・ダミーリダイレクト（synergy, lane-guides, coach, champions, library）は05へ移管・削除済み
 const PORTAL_PAGES = [
   '/', '/balancer', '/casino', '/mentorship', '/guide', '/leaderboard', '/history',
-  '/mypage', '/player', '/synergy', '/analyzer', '/ktm-admin', '/lane-guides',
-  '/coach', '/champions', '/library', '/login', '/admin',
+  '/mypage', '/player', '/analyzer', '/ktm-admin', '/login', '/admin',
 ];
 // 05: ログイン画面と、ログイン必須ページの転送
 const PILOT_PAGES = ['/login', '/', '/coach', '/library', '/admin/dashboard'];
