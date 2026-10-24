@@ -855,6 +855,7 @@ export async function POST(request: Request) {
             assists: r.assists || 0,
             penta_kills: Number(r.penta_kills) || 0,
             mmrDelta: r.mmrDelta || 0,
+            playerMmr: r.currentMmr || 1200,
           })),
         };
         const saveNews = (article: any) =>
