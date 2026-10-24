@@ -10,15 +10,26 @@ import {
 } from '../betOdds';
 
 // 2026-09-22 のセキュリティ修正（クライアント申告オッズで任意倍率の払い戻しが可能だった件）が
-// 将来サイレントに戻らないようにするための回帰テスト。
-// オッズの上限が外れると、総流通量15,000コイン規模の経済が一撃で壊れる。
+// 再びサイレントに戻らないようにするための回帰テスト。
+// オッズの上限が外れると、総流通量15,000コイン規模の経済が一発で壊れる。
 
 test('calculateBetOdds: 誰もベットしていなければ初期オッズを返す', () => {
   assert.deepEqual(calculateBetOdds(0, 0), BET_ODDS_INITIAL);
 });
 
+test('calculateBetOdds: 1人目が100pt賭けた直後でも、2人目の逆側オッズが10倍に跳ね上がらず安定する (ベイズ平滑化)', () => {
+  // BLUEに100pt、REDに0pt（1人目投入直後）
+  const odds = calculateBetOdds(100, 0);
+  // 仮想プール各1,000pt加算により、BLUE比率は 1100 / 2100 = 0.5238、RED比率は 1000 / 2100 = 0.4762
+  // オッズは 1.81 vs 2.00 前後に収まり、10.0倍などの異常値にならない
+  assert.ok(odds.red < 2.5, `red(${odds.red}) は平滑化されて2.5未満に収まるはず`);
+  assert.ok(odds.blue > 1.5, `blue(${odds.blue}) は平滑化されて1.5以上に収まるはず`);
+  assert.equal(odds.blue, 1.81);
+  assert.equal(odds.red, 2.0);
+});
+
 test('calculateBetOdds: 投票比率に反比例する（人気のない側ほど高配当）', () => {
-  // BLUEに9割、REDに1割 → REDの方が高オッズ
+  // BLUEに9割、REDに1割 ➔ REDの方が高オッズ
   const odds = calculateBetOdds(9000, 1000);
   assert.ok(odds.red > odds.blue, `red(${odds.red}) は blue(${odds.blue}) より大きいはず`);
 });
@@ -31,7 +42,7 @@ test('calculateBetOdds: 五分五分なら両者ほぼ同じオッズになる',
 });
 
 test('calculateBetOdds: どんなに偏っても上限を超えない', () => {
-  // 片側が1コイン、もう片側が10億コイン という極端なケース
+  // 片側1コイン、もう片側10億コイン という極端なケース
   const odds = calculateBetOdds(1_000_000_000, 1);
   assert.ok(odds.red <= BET_ODDS_MAX, `red(${odds.red}) が上限 ${BET_ODDS_MAX} を超えている`);
   assert.ok(odds.blue >= BET_ODDS_MIN, `blue(${odds.blue}) が下限 ${BET_ODDS_MIN} を下回っている`);
@@ -79,7 +90,7 @@ test('sanitizeStoredOdds: 下限未満の倍率も下限へ引き上げる', () 
   assert.equal(sanitizeStoredOdds(0.01), BET_ODDS_MIN);
 });
 
-// 2026-09-29 修正: 精算が「試合」を特定せず pending の custom_bet を全件対象にしていたため、
+// 2026-09-29 修正: 精算が「試合」を特定せずpending の custom_bet を全件対象にしていたため、
 // 2ラウンド同時進行時に2試合目の賭けが1試合目の結果で精算されて消える不具合があった。
 // filterBetsByRound がその紐付け規則の単一の真実。ここが緩むと再発する。
 
