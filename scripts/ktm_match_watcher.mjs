@@ -222,6 +222,20 @@ function parseEogStats(eogData) {
       // タグ付き（例: 名前#JP1）の場合はサモナー名のみを優先
       const cleanName = rawName.split('#')[0].trim();
 
+      const items = [
+        Number(stats.ITEM0 || 0),
+        Number(stats.ITEM1 || 0),
+        Number(stats.ITEM2 || 0),
+        Number(stats.ITEM3 || 0),
+        Number(stats.ITEM4 || 0),
+        Number(stats.ITEM5 || 0),
+        Number(stats.ITEM6 || 0), // トリンケット
+      ];
+      const spells = [
+        Number(p.spell1Id || stats.SPELL1_ID || 0),
+        Number(p.spell2Id || stats.SPELL2_ID || 0),
+      ];
+
       allPlayers.push({
         name: cleanName,
         team: teamSide,
@@ -235,9 +249,17 @@ function parseEogStats(eogData) {
         damage_taken: Number(stats.TOTAL_DAMAGE_TAKEN || stats.totalDamageTaken || 0),
         heal_shield: Number((stats.TOTAL_HEAL || 0) + (stats.TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES || 0)),
         objective_damage: Number(stats.DAMAGE_DEALT_TO_OBJECTIVES || stats.damageDealtToObjectives || 0),
+        building_damage: Number(stats.DAMAGE_DEALT_TO_BUILDINGS || stats.damageDealtToBuildings || 0),
+        damage_mitigated: Number(stats.DAMAGE_SELF_MITIGATED || stats.damageSelfMitigated || 0),
+        cc_time: Number(stats.TIME_CCING_OTHERS || stats.timeCCingOthers || 0),
         cs: Number((stats.MINIONS_KILLED || 0) + (stats.NEUTRAL_MINIONS_KILLED || 0)),
         gold: Number(stats.GOLD_EARNED || stats.goldEarned || 0),
         penta_kills: Number(stats.LARGEST_MULTI_KILL === 5 ? 1 : (stats.PENTA_KILLS || 0)),
+        solo_kills: Number(stats.SOLO_KILLS || stats.soloKills || 0),
+        time_dead: Number(stats.TOTAL_TIME_SPENT_DEAD || stats.totalTimeSpentDead || 0),
+        turrets_killed: Number(stats.TURRETS_KILLED || stats.turretsKilled || 0),
+        items,
+        spells,
       });
     }
   }

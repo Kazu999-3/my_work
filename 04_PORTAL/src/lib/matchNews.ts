@@ -56,6 +56,12 @@ export async function generateMatchNews(matchData: {
     vision?: number;
     cs?: number;
     gold?: number;
+    time_dead?: number;
+    solo_kills?: number;
+    cc_time?: number;
+    building_damage?: number;
+    items?: number[];
+    spells?: number[];
   }>;
 }, options: { maxRetries?: number } = {}): Promise<MatchNewsArticle> {
   const { winningTeam, gameDuration, participants } = matchData;
@@ -157,7 +163,11 @@ export async function generateMatchNews(matchData: {
       }
     }
 
-    return deathBase + netFeeder + kdaInv + carryMeStumbleBonus + throwBountyBonus + upsetThrowBonus;
+    // ⑥ 白黒画面時間（長時間味方を4v5にして危険に晒した不在・キャッチやらかし）
+    const timeDead = Number(p.time_dead) || 0;
+    const timeDeadBonus = timeDead >= 120 ? Math.min(25, (timeDead / 60) * 5) : 0;
+
+    return deathBase + netFeeder + kdaInv + carryMeStumbleBonus + throwBountyBonus + upsetThrowBonus + timeDeadBonus;
   };
   const sortedEntertainers = [...entertainerCandidates].sort((a, b) => scoreEntertainer(b) - scoreEntertainer(a));
   const bestEntertainer = sortedEntertainers[0] || entertainerCandidates[0];
@@ -187,6 +197,8 @@ export async function generateMatchNews(matchData: {
       if (Number(p.damage_taken) > 0) richDetails.push(`被ダメ:${(p.damage_taken! / 1000).toFixed(1)}k`);
       if (Number(p.vision) > 0) richDetails.push(`視界:${p.vision}`);
       if (Number(p.cs) > 0) richDetails.push(`CS:${p.cs}`);
+      if (Number(p.solo_kills) > 0) richDetails.push(`ソロキル:${p.solo_kills}`);
+      if (Number(p.time_dead) > 0) richDetails.push(`白黒時間:${Math.round(p.time_dead!)}秒`);
       const richText = richDetails.length > 0 ? ` [${richDetails.join(', ')}]` : '';
       return `- [${p.team}] [${p.role}] ${p.name}${mmrText} (${p.champion_name || '未定'}) KDA: ${p.kills}/${p.deaths}/${p.assists}${richText}${extraStats} (MMR変動: ${delta})`;
     })
@@ -226,11 +238,11 @@ ${participantSummary}
 - mvp.comment: キル数だけでなく、チームダメージシェア、格上を制したジャイアントキリング、サポートの視界・鉄壁での盤石な貢献など、スタッツの文脈を踏まえて熱狂的に称える寸評（60文字以内）
 - fighterOfTheMatch.comment: 敗戦側で孤軍奮闘した選手（高ダメージやキル関与）を称える敢闘寸評（60文字以内）
 - entertainer.comment:
-  - 「チームを最もグラグラと揺らした（悪い意味でのやらかし・味方の胃に穴を開けた）張本人」としてのピリッと辛口なユーモア寸評（60文字以内）。
-  - 勝利チームなのにデスを量産して味方の背骨を折りかけた選手なら「味方の胃薬を激しく消費させた冷や汗運ばれ枠（味方全員への土下座確定）」
+  - 「一人でキャッチされたり、大きなミスをしてチームをグラグラと揺らした（味方の胃に穴を開けた）張本人」としてのピリッと辛口なユーモア寸評（60文字以内）。
+  - 単独行動で敵にキャッチされたり、デスを量産して味方の背骨を折りかけた選手なら「味方の胃薬を激しく消費させた冷や汗運ばれ枠（味方全員への土下座確定）」
   - デスがキルを大幅に上回って相手を怪獣に育ててしまった選手なら「敵への大盤振る舞い・魔境への招待状」
   - 高MMRなのに格下に崩壊して味方を絶望させた選手なら「まさかの大乱調・チームを大混乱に陥れた歩く時限爆弾」
-  - 単なる罵倒や冷たい悪口ではなく、「味方の肝を冷やしまくったやらかし」を仲間内でネタとしてイジって笑える絶妙なピリ辛トーンにすること。
+  - 単なる罵倒や冷たい悪口ではなく、「一人でキャッチされた大ミスや、味方の肝を冷やしまくったやらかし」を仲間内でネタとしてイジって笑える絶妙なピリ辛トーンにすること。
 - turningPoint: 単にキル数が多い対面を読み上げるだけでなく、レーン対面のMMR格差（格上が順当にゲームを支配したか、あるいは格下が番狂わせを起こしたか）、集団戦の総ダメージ差などの本質的な構造から勝敗の決定打を解説（80文字以内）
 - keyMatchup: 最も激戦となった対面レーンのスタッツ比較とレート格差・ダメージ差を踏まえた寸評（70文字以内）
 - sideStory: MMR変動（大幅UPや悔しい降格）やサポートの視界・タンクの被ダメ等の隠れた貢献（60文字以内）
@@ -296,7 +308,7 @@ export function buildMatchNewsField(article: MatchNewsArticle) {
     lines.push(`🛡️ **敢闘賞(敗軍の将)**: **${article.fighterOfTheMatch.name}** (${article.fighterOfTheMatch.champion || ''} / ${article.fighterOfTheMatch.role} / KDA: ${article.fighterOfTheMatch.kda})\n📝 **寸評**: ${article.fighterOfTheMatch.comment}`);
   }
   if (article.entertainer) {
-    lines.push(`🎭 **本日の芸人枠（チーム揺らした大賞）**: **${article.entertainer.name}** (${article.entertainer.champion || ''} / ${article.entertainer.role} / KDA: ${article.entertainer.kda})\n📝 **寸評**: ${article.entertainer.comment}`);
+    lines.push(`🎭 **本日の芸人枠**: **${article.entertainer.name}** (${article.entertainer.champion || ''} / ${article.entertainer.role} / KDA: ${article.entertainer.kda})\n📝 **寸評**: ${article.entertainer.comment}`);
   }
   if (article.turningPoint) {
     lines.push(`🎯 **勝負の決め手**: ${article.turningPoint}`);

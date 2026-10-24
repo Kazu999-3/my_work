@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildMatchNewsField, MatchNewsArticle } from '../matchNews';
 
-test('buildMatchNewsField: 芸人枠（チーム揺らした大賞）が含まれている場合、正しくDiscordフィールドに反映される', () => {
+test('buildMatchNewsField: 芸人枠が含まれている場合、正しくDiscordフィールドに反映される', () => {
   const article: MatchNewsArticle = {
     headline: '大熱戦の末にBLUEが逆転勝利！',
     subheadline: '一進一退の攻防を制したのは怒涛の連携',
@@ -37,7 +37,7 @@ test('buildMatchNewsField: 芸人枠（チーム揺らした大賞）が含ま�
   assert.ok(field.name.includes('大熱戦の末にBLUEが逆転勝利！'));
   assert.ok(field.value.includes('本日のMVP'));
   assert.ok(field.value.includes('敢闘賞(敗軍の将)'));
-  assert.ok(field.value.includes('🎭 **本日の芸人枠（チーム揺らした大賞）**: **PlayerEntertainer**'));
+  assert.ok(field.value.includes('🎭 **本日の芸人枠**: **PlayerEntertainer**'));
   assert.ok(field.value.includes('怒涛の特攻で戦場を大いに沸かせ、敵も味方もハラハラさせた！'));
 });
 

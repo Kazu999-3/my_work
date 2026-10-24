@@ -861,6 +861,12 @@ export async function POST(request: Request) {
             vision: r.vision_score || 0,
             cs: r.cs || 0,
             gold: r.gold || 0,
+            time_dead: r.time_dead || 0,
+            solo_kills: r.solo_kills || 0,
+            cc_time: r.cc_time || 0,
+            building_damage: r.building_damage || 0,
+            items: r.items || [],
+            spells: r.spells || [],
           })),
         };
         const saveNews = (article: any) =>
@@ -874,6 +880,48 @@ export async function POST(request: Request) {
           newsArticle = await generateMatchNews(newsInput);
           // edge_tasks へ保存（履歴での閲覧用）
           await saveNews(newsArticle);
+
+        // 試合の生・詳細スタッツ（ビルド、サモスペ、詳細ダメージ、白黒時間、CC秒数等）を安全に永続化
+        try {
+          await supabase.from('edge_tasks').insert({
+            task_type: 'ktm_match_detail_stats',
+            payload: {
+              matchId: newMatchId,
+              winningTeam,
+              gameDuration,
+              participants: results.map((r: any) => ({
+                name: r.name,
+                team: r.team,
+                role: r.role,
+                champion_name: r.champion_name,
+                kills: r.kills || 0,
+                deaths: r.deaths || 0,
+                assists: r.assists || 0,
+                damage_dealt: r.damage_dealt || 0,
+                damage_taken: r.damage_taken || 0,
+                damage_mitigated: r.damage_mitigated || 0,
+                objective_damage: r.objective_damage || 0,
+                building_damage: r.building_damage || 0,
+                heal_shield: r.heal_shield || 0,
+                cc_time: r.cc_time || 0,
+                cs: r.cs || 0,
+                gold: r.gold || 0,
+                vision: r.vision_score || 0,
+                solo_kills: r.solo_kills || 0,
+                time_dead: r.time_dead || 0,
+                turrets_killed: r.turrets_killed || 0,
+                items: r.items || [],
+                spells: r.spells || [],
+                penta_kills: r.penta_kills || 0,
+                playerMmr: r.currentMmr || 1200,
+                mmrDelta: r.mmrDelta || 0,
+              })),
+            },
+            status: 'completed',
+          });
+        } catch (detailErr) {
+          console.warn('[match/record] 詳細スタッツの保存に失敗（続行）:', detailErr);
+        }
         } catch (newsErr) {
           console.warn('[match/record] AIニュース生成スキップ（続行・応答後に再試行）:', newsErr);
         }
