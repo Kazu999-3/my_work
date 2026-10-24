@@ -148,6 +148,13 @@ ${participantSummary}
     "role": "${bestLoser?.role || 'TOP'}",
     "comment": "敗戦側で孤軍奮闘した選手を称える敢闘寸評（60文字以内）"
   },
+  "entertainer": {
+    "name": "${bestEntertainer?.name || '芸人枠'}",
+    "champion": "${bestEntertainer?.champion_name || 'チャンプ'}",
+    "kda": "${bestEntertainer?.kills || 0}/${bestEntertainer?.deaths || 0}/${bestEntertainer?.assists || 0}",
+    "role": "${bestEntertainer?.role || 'TOP'}",
+    "comment": "最多デスや派手な特攻でチームを最も揺らし、試合を最高に盛り上げた選手への愛あるユーモア寸評（60文字以内）"
+  },
   "turningPoint": "対面マッチアップやダメージ差から読み取れる試合の決定打（80文字以内）",
   "keyMatchup": "最も激戦となった対面レーンのスタッツ比較と寸評（70文字以内）",
   "sideStory": "MMR変動（大幅UPや悔しい降格）やサポートの視界・タンクの被ダメ等の隠れた貢献（60文字以内）"
