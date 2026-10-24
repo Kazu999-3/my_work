@@ -201,11 +201,19 @@ export async function POST(request: Request) {
     if (balanceCandidates.length <= 10) {
       selectedPatterns.push({ selected: balanceCandidates, spectators: forcedSpectators });
     } else {
-      // Pity順（固定枠 > 待機Pity降順 > レーンPity降順 > ランダム）でソート
+      // Pity順（固定枠 > 初参加優先枠 > 待機Pity降順 > レーンPity降順 > ランダム）でソート
       const fixedPlayers = balanceCandidates.filter(p => p.isFixed);
       const candidatesPool = balanceCandidates.filter(p => !p.isFixed);
+
+      // ★ 初参加枠（通算0戦）: 募集案内「初参加枠あり！初めて参加される方は優先的に枠を確保します」に基づき、
+      // 手動で固定チェックを入れなくても100%自動で最優先選出する（2026-10-24配備）。
+      const firstTimeCandidates = candidatesPool.filter(p => (p.games ?? 0) === 0);
+      if (firstTimeCandidates.length > 0) {
+        console.log(`[Balancer] 初参加者を自動優先選出: ${firstTimeCandidates.map(p => p.name).join(', ')}`);
+      }
+      const normalPool = candidatesPool.filter(p => (p.games ?? 0) > 0);
       
-      const candidateInfo = candidatesPool.map(p => ({
+      const candidateInfo = normalPool.map(p => ({
         player: p,
         pity: p.pity || 0,
         spectator_pity: p.spectator_pity || 0,
@@ -241,11 +249,14 @@ export async function POST(request: Request) {
       const highPityCandidates = selectionMode === 'fair' ? candidateInfo.filter(c => c.spectator_pity >= 10).map(c => c.player) : [];
       const otherCandidates = candidateInfo.filter(c => !highPityCandidates.includes(c.player)).map(c => c.player);
 
+      // 最優先選出枠（手動固定枠 + 初参加自動枠 + 待機Pity強制枠）
+      const priorityPlayers = [...fixedPlayers, ...firstTimeCandidates, ...highPityCandidates];
+
       // 対面に必要な残り人数
-      const needed = Math.max(0, 10 - fixedPlayers.length - highPityCandidates.length);
+      const needed = Math.max(0, 10 - priorityPlayers.length);
 
       if (needed === 0) {
-        const selected = [...fixedPlayers, ...highPityCandidates].slice(0, 10);
+        const selected = priorityPlayers.slice(0, 10);
         const selectedNames = new Set(selected.map(p => p.name));
         const spectators = [...forcedSpectators, ...balanceCandidates.filter(p => !selectedNames.has(p.name))];
         selectedPatterns.push({ selected, spectators });
@@ -274,7 +285,7 @@ export async function POST(request: Request) {
 
         // 各組み合わせに対してパターンを作成（最大2パターンに制限し、計算時間の爆発・タイムアウトを防止）
         for (const combo of combos.slice(0, 2)) {
-          const selected = [...fixedPlayers, ...highPityCandidates, ...combo];
+          const selected = [...priorityPlayers, ...combo];
           const selectedNames = new Set(selected.map(p => p.name));
           const spectators = [...forcedSpectators, ...balanceCandidates.filter(p => !selectedNames.has(p.name))];
           selectedPatterns.push({ selected, spectators });

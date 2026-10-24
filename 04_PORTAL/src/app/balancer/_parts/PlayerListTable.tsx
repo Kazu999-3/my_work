@@ -139,7 +139,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
                   <SortableHeader label="希望の強さ" sortKey="weight" className="px-1.5 text-center" />
                   <SortableHeader label="⚔️挑戦" sortKey="allow_higher" className="px-1.5 text-center" />
-                  <SortableHeader label="Pity (正/負/観)" sortKey="pity" className="px-2 text-center" />
+                  <SortableHeader label="優先度 (希望/譲り/出場)" sortKey="pity" className="px-2 text-center" />
                   <th className="px-2 py-3 font-medium">備考</th>
                 </tr>
               </thead>
@@ -294,10 +294,10 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-danger-700 focus:ring-danger-500/50 cursor-pointer transition-transform hover:scale-110" />
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <div className="flex items-center justify-center gap-1 w-24 mx-auto">
-                            <span className="px-1.5 py-0.5 rounded bg-success-100 border border-success-edge-soft text-success-700 text-[10px] font-mono font-bold" title="Pity">{p.pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-primary-100 border border-primary-edge-soft text-primary-700 text-[10px] font-mono font-bold" title="OffPity">{p.off_role_pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-primary-100 border border-primary-edge-soft text-primary-700 text-[10px] font-mono font-bold" title="観戦Pity">{p.spectator_pity || 0}</span>
+                          <div className="flex items-center justify-center gap-1 min-w-[110px] mx-auto">
+                            <span className="px-1.5 py-0.5 rounded bg-success-100 border border-success-edge-soft text-success-700 text-[10px] font-bold inline-flex items-center gap-0.5" title="希望優先度: 希望外に回された時に溜まり、次回メイン希望に入りやすくなります">🎯{p.pity || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-primary-100 border border-primary-edge-soft text-primary-700 text-[10px] font-bold inline-flex items-center gap-0.5" title="譲り合い度: メイン希望が続いた時に溜まり、他人に希望を譲る指標になります">🔄{p.off_role_pity || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 text-[10px] font-bold inline-flex items-center gap-0.5" title="出場優先度: 10人からあふれて見学した時に溜まり、次回最優先で試合に出場できます">🎟️{p.spectator_pity || 0}</span>
                           </div>
                         </td>
                         <td className="px-2 py-1.5">
@@ -425,10 +425,10 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             {p.ng_lane_2 && <span className="flex items-center gap-0.5"><RoleIcon role={p.ng_lane_2} className="w-3 h-3" />{p.ng_lane_2}</span>}
                           </div>
                         )}
-                        <div className="flex items-center gap-0.5 ml-auto">
-                          <span className="px-1 py-0.5 rounded bg-success-100 text-success-700 text-[9px] font-mono" title="Pity">{p.pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-primary-100 text-primary-700 text-[9px] font-mono" title="OffPity">{p.off_role_pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-primary-100 text-primary-700 text-[9px] font-mono" title="観戦Pity">{p.spectator_pity || 0}</span>
+                        <div className="flex items-center gap-1 ml-auto">
+                          <span className="px-1 py-0.5 rounded bg-success-100 text-success-700 text-[9px] font-bold" title="希望優先度">🎯{p.pity || 0}</span>
+                          <span className="px-1 py-0.5 rounded bg-primary-100 text-primary-700 text-[9px] font-bold" title="譲り合い度">🔄{p.off_role_pity || 0}</span>
+                          <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-800 text-[9px] font-bold" title="出場優先度">🎟️{p.spectator_pity || 0}</span>
                         </div>
                       </div>
                     </div>

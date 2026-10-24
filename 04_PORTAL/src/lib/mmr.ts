@@ -174,7 +174,9 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   if (p === 'ALL' || p === 'FILL' || p === '-') {
     return baseMmr - 80;
   }
-  if (s === r || s === 'ALL' || s === 'FILL' || s === '-') {
+  // 第2希望と一致、または第2希望が ALL/FILL（第2希望おまかせ）ならサブレーン扱い（-80）
+  // ※ s === '-'（第2希望なし）の場合はここに入らず、下の完全オフロール（-120）へ進むのが正しい挙動
+  if (s === r || s === 'ALL' || s === 'FILL') {
     return baseMmr - 80; // サブレーン（旧-100から緩和）
   }
   

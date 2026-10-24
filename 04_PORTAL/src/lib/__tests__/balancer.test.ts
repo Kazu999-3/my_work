@@ -356,3 +356,70 @@ test('splitTables: 22名時は上位10名・最下位10名・待機枠2名に正
   assert.ok(split.spectators.members.some((m: any) => m.name === 'P11'), 'P11が待機枠に含まれること');
 });
 
+test('calculateInitialMmr: 第2希望なし(-)の人はオフロールが正しく-120されること（-80の底上げバグ防止）', async () => {
+  const { calculateInitialMmr } = await import('../mmr');
+  
+  // GOLD (baseMmr = 1440)
+  // メインJG、第2希望なし('-')
+  const mmrJg = calculateInitialMmr('GOLD', 'JG', { primary: 'JG', secondary: '-' });
+  const mmrTop = calculateInitialMmr('GOLD', 'TOP', { primary: 'JG', secondary: '-' });
+  
+  assert.equal(mmrJg, 1440, 'メインは1440');
+  assert.equal(mmrTop, 1320, '第2希望なしのオフロールは1320（-120）であること');
+
+  // 第2希望がSUPの場合
+  const mmrSup = calculateInitialMmr('GOLD', 'SUP', { primary: 'JG', secondary: 'SUP' });
+  const mmrMid = calculateInitialMmr('GOLD', 'MID', { primary: 'JG', secondary: 'SUP' });
+  assert.equal(mmrSup, 1360, '第2希望は1360（-80）');
+  assert.equal(mmrMid, 1320, '完全オフロールは1320（-120）');
+});
+
+test('selectMatchParticipants: 11人以上でも初参加者（games=0）は100%自動で選出されること', async () => {
+  const { selectMatchParticipants } = await import('../balancer/playerSelection');
+
+  // 12人作成（常連11名、初参加者1名）
+  const players: any[] = [];
+  for (let i = 1; i <= 11; i++) {
+    players.push({
+      name: `Regular${i}`,
+      games: 10,
+      pity: 0,
+      spectator_pity: 0,
+      isFixed: false,
+      isSpectatorFixed: false,
+      pref1: 'JG',
+      pref2: 'TOP',
+      rates: { TOP: 1300, JG: 1400, MID: 1300, ADC: 1300, SUP: 1300 }
+    });
+  }
+  // 初参加者（games=0）
+  const newbie = {
+    name: 'NewbiePlayer',
+    games: 0,
+    pity: 0,
+    spectator_pity: 0,
+    isFixed: false,
+    isSpectatorFixed: false,
+    pref1: 'MID',
+    pref2: '-',
+    rates: { TOP: 1200, JG: 1200, MID: 1200, ADC: 1200, SUP: 1200 }
+  };
+  players.push(newbie);
+
+  // 100回試行しても、NewbiePlayerが100%選出枠に含まれることを検証
+  for (let t = 0; t < 20; t++) {
+    const patterns = selectMatchParticipants(players, 'fair');
+    assert.ok(patterns.length > 0);
+    const firstPattern = patterns[0];
+    assert.equal(firstPattern.selected.length, 10, '選出はちょうど10名');
+    assert.ok(
+      firstPattern.selected.some((p: any) => p.name === 'NewbiePlayer'),
+      '初参加者が必ず選出枠に含まれること'
+    );
+    assert.ok(
+      !firstPattern.spectators.some((p: any) => p.name === 'NewbiePlayer'),
+      '初参加者が見学枠に入らないこと'
+    );
+  }
+});
+

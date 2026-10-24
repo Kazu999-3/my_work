@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-24T05:11:32.967370+00:00",
+  "updated_at": "2026-10-24T11:01:41.292434+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -158,118 +158,118 @@
     },
     "Darius": {
       "name": "ダリウス",
-      "status": "pending",
-      "updated_at": "2026-10-15T09:56:25.276980+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:31:41.729844+00:00",
       "error": null,
       "note": "Patch 16.21.1 core monitoring."
     },
     "Diana": {
       "name": "ダイアナ",
-      "status": "pending",
-      "updated_at": "2026-10-15T09:57:46.883191+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:33:42.773334+00:00",
       "error": null
     },
     "Draven": {
       "name": "ドレイヴン",
-      "status": "pending",
-      "updated_at": "2026-10-15T09:59:19.408937+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:34:40.558547+00:00",
       "error": null
     },
     "DrMundo": {
       "name": "ドクター・ムンド",
-      "status": "pending",
-      "updated_at": "2026-10-15T10:02:49.344549+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:35:40.052833+00:00",
       "error": null
     },
     "Ekko": {
       "name": "エコー",
-      "status": "pending",
-      "updated_at": "2026-10-15T10:04:16.736555+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:36:43.961804+00:00",
       "error": null
     },
     "Elise": {
       "name": "エリス",
-      "status": "pending",
-      "updated_at": "2026-10-15T10:05:33.622405+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:38:39.862553+00:00",
       "error": null
     },
     "Evelynn": {
       "name": "イブリン",
-      "status": "pending",
-      "updated_at": "2026-10-15T10:06:37.229278+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:39:45.102386+00:00",
       "error": null
     },
     "Ezreal": {
       "name": "エズリアル",
-      "status": "pending",
-      "updated_at": "2026-10-15T10:08:37.671134+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:40:46.541001+00:00",
       "error": null
     },
     "Fiddlesticks": {
       "name": "フィドルスティックス",
-      "status": "pending",
-      "updated_at": "2026-10-15T20:38:50.561522+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:41:54.429215+00:00",
       "error": null
     },
     "Fiora": {
       "name": "フィオラ",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:47:33.472246+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:44:03.585997+00:00",
       "error": null,
       "note": "Patch 16.21.1 core monitoring."
     },
     "Fizz": {
       "name": "フィズ",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:48:54.103763+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:45:03.499247+00:00",
       "error": null
     },
     "Galio": {
       "name": "ガリオ",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:50:20.240077+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T08:31:57.505228+00:00",
       "error": null
     },
     "Gangplank": {
       "name": "ガングプランク",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:51:35.014630+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:47:20.802132+00:00",
       "error": null
     },
     "Garen": {
       "name": "ガレン",
-      "status": "pending",
-      "updated_at": "2026-10-16T08:46:56.596228+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:48:24.636901+00:00",
       "error": null
     },
     "Gnar": {
       "name": "ナー",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:54:54.465035+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:49:22.257320+00:00",
       "error": null
     },
     "Gragas": {
       "name": "グラガス",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:56:09.042204+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:50:26.976400+00:00",
       "error": null
     },
     "Graves": {
       "name": "グレイブス",
-      "status": "pending",
-      "updated_at": "2026-10-16T07:58:20.785907+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:51:32.824718+00:00",
       "error": null
     },
     "Gwen": {
       "name": "グウェン",
-      "status": "pending",
-      "updated_at": "2026-10-16T08:48:39.574639+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T07:53:17.769799+00:00",
       "error": null
     },
     "Hecarim": {
       "name": "ヘカリム",
-      "status": "pending",
-      "updated_at": "2026-10-16T08:49:48.176250+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-24T09:32:27.976503+00:00",
       "error": null
     },
     "Heimerdinger": {

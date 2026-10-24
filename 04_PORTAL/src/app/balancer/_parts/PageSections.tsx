@@ -137,12 +137,16 @@ export function MatchingGlossary() {
           <p className="text-faint">MMR差が大きい相手（差200以上、シルバーvsプラチナ等）とレーンで当たってよいか。「🛡️守ってほしい」の人は、チーム分けでなるべくMMRの近い相手と対面させます。</p>
         </div>
         <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-success-700 mb-1 block">PITY (ピティ)</span>
-          <p className="text-faint">「希望外レーン」に飛ばされた人に貯まる同情ポイント。高いほど次回優先的にメインレーンへ。</p>
+          <span className="font-bold text-success-700 mb-1 block">🎯 希望優先度（旧Pity）</span>
+          <p className="text-faint">「希望外レーン」に回された人に貯まるポイント。高いほど次回優先的に第1希望レーンへ配分されます。</p>
         </div>
         <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-primary-700 mb-1 block">OFF PITY (オフピティ)</span>
-          <p className="text-faint">「希望レーン」を連続でやっている人に貯まるポイント。一時的に他レーンへ飛ばされる確率が上がります。</p>
+          <span className="font-bold text-primary-700 mb-1 block">🔄 譲り合い度（旧OffPity）</span>
+          <p className="text-faint">「希望レーン」が連続している人に貯まる指標。たまに他の人へ席を譲り合うための目安です。</p>
+        </div>
+        <div className="bg-surface-subtle p-4 rounded border border-border md:col-span-2">
+          <span className="font-bold text-amber-700 dark:text-amber-400 mb-1 block">🎟️ 試合出場優先度（待機救済）</span>
+          <p className="text-faint">10人以上集まった際に「見学・待機枠」に回った人に貯まるポイント。次回、最優先で10人の出場枠へ選出されます（※初参加の方は0ポイントでも100%最優先で自動選出されます）。</p>
         </div>
       </div>
     </details>
