@@ -245,9 +245,13 @@ function CustomRecordPageContent() {
             const data = resData.data;
             
             // スタッツ＆勝敗の反映
-            // スクショの上5行＝勝利チーム(VICTORY BLOCK)
+            // スクショの上5行＝勝利チーム(VICTORY BLOCK) または team プロパティで直接指定
             // 勝利ブロックのプレイヤー名と、名簿(stats)のBLUE/REDチーム名を照合して勝者を確定する。
             if (data.players && Array.isArray(data.players)) {
+              // OCR結果から BLUE / RED が明示されているかをチェック（インゲーム観戦TAB画面への対応）
+              const ocrBlue = data.players.filter((p: any) => p.team === 'BLUE');
+              const ocrRed = data.players.filter((p: any) => p.team === 'RED');
+
               const winnerBlock = data.players.slice(0, 5);
               const loserBlock = data.players.slice(5, 10);
 
@@ -284,8 +288,15 @@ function CustomRecordPageContent() {
                 setDurationText(`${Math.floor(durSec / 60)}:${String(Math.round(durSec % 60)).padStart(2, '0')}`);
               }
 
-              const bluePlayers = resolvedWinner === 'BLUE' ? winnerBlock : loserBlock;
-              const redPlayers = resolvedWinner === 'RED' ? winnerBlock : loserBlock;
+              // チームプレイヤーの決定：
+              // ocrBlue と ocrRed がそれぞれ5名ずつ綺麗に分かれている場合はそれを最優先
+              // （観戦・インゲーム画面でもBLUE/REDの配置ミスを構造的に防止）
+              const bluePlayers = (ocrBlue.length === 5 && ocrRed.length === 5)
+                ? ocrBlue
+                : (resolvedWinner === 'BLUE' ? winnerBlock : loserBlock);
+              const redPlayers = (ocrBlue.length === 5 && ocrRed.length === 5)
+                ? ocrRed
+                : (resolvedWinner === 'RED' ? winnerBlock : loserBlock);
 
               let resolvedCount = 0;
               let aliasHitCount = 0;
@@ -297,7 +308,11 @@ function CustomRecordPageContent() {
                   const isBlue = currentStat.team === 'BLUE';
                   const teamPlayers = isBlue ? bluePlayers : redPlayers;
                   const playerIdx = isBlue ? idx : idx - 5;
-                  const found = teamPlayers[playerIdx];
+                  const targetRole = ROLES[playerIdx];
+
+                  // ロール一致するプレイヤーを優先検索（見つからなければ index 順）
+                  const found = teamPlayers.find((p: any) => p.role && p.role.toUpperCase() === targetRole)
+                    || teamPlayers[playerIdx];
                   
                   if (found) {
                     const rawOcr = (found.name || '').trim();
@@ -333,7 +348,10 @@ function CustomRecordPageContent() {
                 });
               });
 
-              let msgText = `画像の解析結果を反映しました（10名中 ${resolvedCount} 名照合完了）。`;
+              const isSpectator = data.sourceType === 'INGAME_TAB_SPECTATOR';
+              let msgText = isSpectator
+                ? `観戦スコアボード（TAB画面）から反映しました（10名中 ${resolvedCount} 名照合完了）。`
+                : `リザルト画面の解析結果を反映しました（10名中 ${resolvedCount} 名照合完了）。`;
               if (aliasHitCount > 0) {
                 msgText += ` 💡 過去の誤認識学習辞書から ${aliasHitCount} 名を自動補正しました。`;
               }
@@ -769,8 +787,11 @@ function CustomRecordPageContent() {
                 <p className="font-bold text-foreground mb-1 text-base">
                   スクリーンショット画像を貼り付け (Ctrl+V)
                 </p>
-                <p className="text-xs text-muted-strong">
+                <p className="text-xs text-muted-strong mb-1">
                   または、ここにファイルをドラッグ＆ドロップ / クリックして選択
+                </p>
+                <p className="text-[11px] text-primary font-semibold">
+                  💡 対戦後リザルト画面のほか、インゲーム観戦スコアボード（TAB画面）のスクショもそのまま貼り付け可能です
                 </p>
               </div>
             )}
