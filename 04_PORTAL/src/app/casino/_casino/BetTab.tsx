@@ -105,52 +105,71 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                 </div>
 
                 {/* ⏱️ 受付カウントダウン・ステータスバナー */}
-                <div className={`p-4 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all ${
-                  isBetLocked
-                    ? 'bg-surface-subtle border-border text-foreground-subtle'
-                    : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
-                    ? 'bg-danger-50 border-danger-edge text-danger-950 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
-                    : 'bg-gradient-to-r from-success-50 via-secondary-50 to-success-50 border-success-edge text-success-950 shadow-[0_0_15px_rgba(16,185,129,0.12)]'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs ${
-                      isBetLocked
-                        ? 'bg-surface-hover text-muted'
+                {(() => {
+                  const isWaitingAnnounce = Boolean(activeMatch && activeMatch.isAnnounced === false && !activeMatch.announcedAt);
+                  return (
+                    <div className={`p-4 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all ${
+                      isWaitingAnnounce
+                        ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-[0_0_15px_rgba(245,158,11,0.12)]'
+                        : isBetLocked
+                        ? 'bg-surface-subtle border-border text-foreground-subtle'
                         : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
-                        ? 'bg-danger-500 text-white animate-bounce'
-                        : 'bg-success-500 text-white'
+                        ? 'bg-danger-50 border-danger-edge text-danger-950 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
+                        : 'bg-gradient-to-r from-success-50 via-secondary-50 to-success-50 border-success-edge text-success-950 shadow-[0_0_15px_rgba(16,185,129,0.12)]'
                     }`}>
-                      {isBetLocked ? '🔒' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '🔥' : '⏳'}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[11px] font-black tracking-wider uppercase px-2 py-0.5 rounded-lg ${
-                          isBetLocked
-                            ? 'bg-stone-300 text-foreground-soft'
+                      <div className="flex items-center gap-3">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs ${
+                          isWaitingAnnounce
+                            ? 'bg-amber-500 text-white animate-pulse'
+                            : isBetLocked
+                            ? 'bg-surface-hover text-muted'
                             : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
-                            ? 'bg-danger-600 text-white'
-                            : 'bg-success-600 text-white'
+                            ? 'bg-danger-500 text-white animate-bounce'
+                            : 'bg-success-500 text-white'
                         }`}>
-                          {isBetLocked ? '締切済み' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '締切直前' : '予想受付中'}
-                        </span>
-                        <span className="text-xs sm:text-sm font-black text-foreground">
-                          {isBetLocked
-                            ? '勝敗予想の受付は締め切られました（試合進行中）'
-                            : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
-                            ? '🔥 まもなく投票締め切り！投票を急いでください！'
-                            : 'LIVE MATCH 投票受付中'}
-                        </span>
+                          {isWaitingAnnounce ? '📢' : isBetLocked ? '🔒' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '🔥' : '⏳'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[11px] font-black tracking-wider uppercase px-2 py-0.5 rounded-lg ${
+                              isWaitingAnnounce
+                                ? 'bg-amber-500 text-white'
+                                : isBetLocked
+                                ? 'bg-stone-300 text-foreground-soft'
+                                : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
+                                ? 'bg-danger-600 text-white'
+                                : 'bg-success-600 text-white'
+                            }`}>
+                              {isWaitingAnnounce ? '発表待ち' : isBetLocked ? '締切済み' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '締切直前' : '予想受付中'}
+                            </span>
+                            <span className="text-xs sm:text-sm font-black text-foreground">
+                              {isWaitingAnnounce
+                                ? '📢 Discordでのチーム発表をお待ちください'
+                                : isBetLocked
+                                ? '勝敗予想の受付は締め切られました（試合進行中）'
+                                : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
+                                ? '🔥 まもなく投票締め切り！投票を急いでください！'
+                                : 'LIVE MATCH 投票受付中'}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-muted-strong font-medium mt-0.5">
+                            {isWaitingAnnounce
+                              ? 'DiscordのKTMチャンネルへチーム発表が送信されると、そこから15分間の投票受付が自動でスタートします！'
+                              : isBetLocked
+                              ? '試合終了後に勝敗が記録されると自動で配当コインが精算されます。観戦をお楽しみください！'
+                              : '試合開始と同時に受付終了となります。どちらが勝つか予想して投票しよう！'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-[11px] text-muted-strong font-medium mt-0.5">
-                        {isBetLocked
-                          ? '試合終了後に勝敗が記録されると自動で配当コインが精算されます。観戦をお楽しみください！'
-                          : '試合開始と同時に受付終了となります。どちらが勝つか予想して投票しよう！'}
-                      </div>
-                    </div>
-                  </div>
 
                   {/* カウントダウンタイマー表示 */}
-                  {!isBetLocked && timeLeftSeconds !== null && (
+                  {isWaitingAnnounce ? (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl border shadow-xs ml-auto bg-amber-100 border-amber-300 text-amber-900">
+                      <Clock size={16} className="text-amber-600 animate-spin" />
+                      <span className="text-xs font-black">締切:</span>
+                      <span className="font-mono text-xs sm:text-sm font-black">発表から15分</span>
+                    </div>
+                  ) : (!isBetLocked && timeLeftSeconds !== null && (
                     <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl border shadow-xs ml-auto ${
                       timeLeftSeconds <= 180
                         ? 'bg-danger-100 border-danger-edge text-danger-800 animate-pulse'
@@ -164,8 +183,10 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                         {formatTimeLeft(timeLeftSeconds)}
                       </span>
                     </div>
-                  )}
+                  ))}
                 </div>
+                  );
+                })()}
 
                 {/* 対戦カード表示 */}
                 <div className="p-5 rounded-3xl bg-surface/95 text-foreground space-y-4 border border-border shadow-sm">

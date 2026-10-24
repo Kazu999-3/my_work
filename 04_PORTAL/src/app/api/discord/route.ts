@@ -228,23 +228,55 @@ export async function POST(request: Request) {
     }
 
     // 🎲 勝敗予想受付用: edge_tasks に pending マッチを自動保存/更新
+    // ★ 観戦投票（勝敗予想）の締め切りカウントダウンは、Discordにチーム発表を送信した時刻（announcedAt）を起点とする
     try {
+      const nowIso = new Date().toISOString();
       const balanceResultPayload = {
         teamBlue,
         teamRed,
         spectators,
         blueWinRate: Number(pBlue.toFixed(4)),
         isExhibition: false,
-        announcedAt: new Date().toISOString()
+        announcedAt: nowIso
       };
 
-      await supabase
+      // 直近の未処理 balancer_pending があれば、最新のチーム構成と発表時刻で更新する
+      // （バランサー下書き時の古い initialCreatedAt を Discord発表時刻でリセットし、ここから15分とする）
+      const { data: existingPending } = await supabase
         .from('edge_tasks')
-        .insert({
-          task_type: 'balancer_pending',
-          payload: { balanceResult: balanceResultPayload },
-          status: 'pending'
-        });
+        .select('id, payload')
+        .eq('task_type', 'balancer_pending')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPending) {
+        await supabase
+          .from('edge_tasks')
+          .update({
+            payload: {
+              ...existingPending.payload,
+              balanceResult: balanceResultPayload,
+              announcedAt: nowIso,
+              initialCreatedAt: nowIso, // Discord送信時刻で締め切りカウントダウンの起点を確定
+            },
+            status: 'pending'
+          })
+          .eq('id', existingPending.id);
+      } else {
+        await supabase
+          .from('edge_tasks')
+          .insert({
+            task_type: 'balancer_pending',
+            payload: {
+              balanceResult: balanceResultPayload,
+              announcedAt: nowIso,
+              initialCreatedAt: nowIso,
+            },
+            status: 'pending'
+          });
+      }
     } catch (pendErr) {
       console.warn('[discord route] Failed to auto-save balancer_pending:', pendErr);
     }

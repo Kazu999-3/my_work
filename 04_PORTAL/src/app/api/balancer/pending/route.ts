@@ -41,10 +41,11 @@ export async function POST(request: Request) {
       .lt('created_at', new Date(Date.now() - EXPIRE_MS).toISOString())
       .then(({ error }: { error: any }) => { if (error) console.warn('[balancer/pending] 期限切れデータの削除に失敗:', error); });
 
-    // チーム分けやり直し時の勝敗予想締め切り固定（2026-10-19 ユーザー判断）:
-    // 同一試合（直近3時間以内の未処理 pending）で既に保存されたものがあれば、その初回保存時刻を引き継ぐ。
+    // 観戦投票（勝敗予想）の締め切り固定:
+    // Discordへチーム発表した時刻（announcedAt）を優先。同一試合で既に保存されたものがあれば引き継ぐ。
     const nowIso = new Date().toISOString();
     let initialCreatedAt = nowIso;
+    let announcedAt: string | null = null;
     try {
       const { data: oldestPending } = await supabase
         .from('edge_tasks')
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
 
       if (oldestPending) {
         initialCreatedAt = oldestPending.payload?.initialCreatedAt || oldestPending.created_at || nowIso;
+        announcedAt = oldestPending.payload?.announcedAt || oldestPending.payload?.balanceResult?.announcedAt || null;
       }
     } catch (e) {
       console.warn('[balancer/pending] 初回保存時刻の取得に失敗（現在時刻でフォールバック）:', e);
@@ -72,6 +74,7 @@ export async function POST(request: Request) {
           submittedBy,
           submittedAt: nowIso,
           initialCreatedAt,
+          announcedAt,
         },
         status: 'pending'
       })
@@ -152,9 +155,12 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: true, activeMatch: null });
       }
 
-      // 締め切り基準時刻: チーム分けをやり直しても延びないよう、初回保存時刻を使う（2026-10-19 ユーザー判断）
-      let matchCreatedAt = latestTask.payload?.initialCreatedAt || latestTask.created_at;
-      if (!latestTask.payload?.initialCreatedAt) {
+      // 締め切り基準時刻: Discordへチーム発表した時刻（announcedAt）を最優先。
+      // 観戦投票（勝敗予想）の15分カウントダウンは、Discordにチーム発表を送信した瞬間から開始する。
+      const announcedAt = latestTask.payload?.announcedAt || latestTask.payload?.balanceResult?.announcedAt || null;
+      const isAnnounced = Boolean(announcedAt);
+      let matchCreatedAt = announcedAt || latestTask.payload?.initialCreatedAt || latestTask.created_at;
+      if (!announcedAt && !latestTask.payload?.initialCreatedAt) {
         try {
           const { data: oldest } = await supabase
             .from('edge_tasks')
@@ -175,10 +181,14 @@ export async function GET(request: Request) {
         success: true,
         pendingId: latestTask.id,
         createdAt: matchCreatedAt,
+        announcedAt,
+        isAnnounced,
         balanceResult: latestTask.payload?.balanceResult,
         activeMatch: {
           ...(latestTask.payload?.balanceResult || {}),
           createdAt: matchCreatedAt,
+          announcedAt,
+          isAnnounced,
           pendingId: latestTask.id,
         },
       });

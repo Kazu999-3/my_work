@@ -30,4 +30,15 @@ describe('betDeadline tests', () => {
     assert.equal(is10MinOpen, true, '10分前作成はまだ受付中');
     assert.equal(is16MinOpen, false, '16分前作成は締め切り超過');
   });
+
+  test('Discord発表時刻（announcedAt）を渡して15分後判定ができること', () => {
+    const now = Date.now();
+    const announcedAtJustNow = new Date(now).toISOString();
+    const announcedAt14MinAgo = new Date(now - 14 * 60 * 1000).toISOString();
+    const announcedAt15Min1SecAgo = new Date(now - (15 * 60 + 1) * 1000).toISOString();
+
+    assert.equal(now <= betDeadlineMs(announcedAtJustNow), true, '発表直後は受付中');
+    assert.equal(now <= betDeadlineMs(announcedAt14MinAgo), true, '発表14分後は受付中');
+    assert.equal(now <= betDeadlineMs(announcedAt15Min1SecAgo), false, '発表15分1秒後は締め切り');
+  });
 });

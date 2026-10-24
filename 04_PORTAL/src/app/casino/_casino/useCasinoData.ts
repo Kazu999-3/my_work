@@ -48,13 +48,21 @@ export function useCasinoData(user: any) {
   });
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number | null>(null);
 
+  // ⏱️ 勝敗予想の締め切りカウントダウン:
+  // 観戦投票はDiscordへチーム発表を送信した時刻（announcedAt）を起点とする（15分間）
   useEffect(() => {
-    if (!activeMatch?.createdAt) {
+    const effectiveTime = activeMatch?.announcedAt || activeMatch?.createdAt;
+    if (!effectiveTime) {
+      setTimeLeftSeconds(null);
+      return;
+    }
+    // まだDiscordでチーム発表されていない場合はタイマーを動かさない（発表待機中）
+    if (activeMatch && activeMatch.isAnnounced === false && !activeMatch.announcedAt) {
       setTimeLeftSeconds(null);
       return;
     }
     const calculateRemaining = () => {
-      const deadlineMs = new Date(activeMatch.createdAt).getTime() + BET_DEADLINE_MINUTES * 60 * 1000;
+      const deadlineMs = new Date(effectiveTime).getTime() + BET_DEADLINE_MINUTES * 60 * 1000;
       return Math.max(0, Math.floor((deadlineMs - Date.now()) / 1000));
     };
     setTimeLeftSeconds(calculateRemaining());
@@ -64,11 +72,13 @@ export function useCasinoData(user: any) {
       if (remaining <= 0) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [activeMatch?.createdAt]);
+  }, [activeMatch?.announcedAt, activeMatch?.createdAt, activeMatch?.isAnnounced]);
 
   const isBetLocked = useMemo(() => {
     if (!activeMatch) return true;
     if (activeMatch.isLocked || activeMatch.status === 'IN_PROGRESS') return true;
+    // Discord発表前はロック扱い（発表を待つ）
+    if (activeMatch.isAnnounced === false && !activeMatch.announcedAt) return true;
     if (timeLeftSeconds !== null && timeLeftSeconds <= 0) return true;
     return false;
   }, [activeMatch, timeLeftSeconds]);

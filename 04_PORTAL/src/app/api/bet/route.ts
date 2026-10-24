@@ -350,8 +350,21 @@ export async function POST(req: Request) {
       if (!latestPending) {
         return NextResponse.json({ error: '現在、予想を受け付けている試合はありません。' }, { status: 409 });
       }
-      let matchCreatedAt = latestPending.payload?.initialCreatedAt || latestPending.created_at;
-      if (!latestPending.payload?.initialCreatedAt) {
+      // 観戦投票（勝敗予想）の締め切り判定: Discordへチーム発表した時刻（announcedAt）を起点とする
+      const announcedAt = latestPending.payload?.announcedAt || latestPending.payload?.balanceResult?.announcedAt;
+
+      // まだDiscordでチーム発表されていない場合（バランサーで案を検討中）のフライング防止
+      if (!announcedAt) {
+        const draftElapsedMs = Date.now() - new Date(latestPending.created_at).getTime();
+        if (draftElapsedMs < 15 * 60 * 1000) {
+          return NextResponse.json({
+            error: 'この試合はまだDiscordでチーム発表されていません。発表後に予想受付が開始されます（発表から15分間）。'
+          }, { status: 409 });
+        }
+      }
+
+      let matchCreatedAt = announcedAt || latestPending.payload?.initialCreatedAt || latestPending.created_at;
+      if (!announcedAt && !latestPending.payload?.initialCreatedAt) {
         try {
           const { data: oldest } = await supabase
             .from('edge_tasks')
@@ -367,7 +380,7 @@ export async function POST(req: Request) {
       }
       const { betDeadlineMs } = await import('../../../lib/betDeadline');
       if (Date.now() > betDeadlineMs(matchCreatedAt)) {
-        return NextResponse.json({ error: 'この試合の予想受付は締め切られました（チーム確定から15分）。' }, { status: 409 });
+        return NextResponse.json({ error: 'この試合の予想受付は締め切られました（チーム発表から15分）。' }, { status: 409 });
       }
     }
 
