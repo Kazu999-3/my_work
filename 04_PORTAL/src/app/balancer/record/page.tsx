@@ -301,6 +301,7 @@ function CustomRecordPageContent() {
               let resolvedCount = 0;
               let aliasHitCount = 0;
               let unresolvedCount = 0;
+              let preservedBalancerCount = 0;
               const currentAliases = getOcrAliases();
 
               setStats(prev => {
@@ -321,7 +322,13 @@ function CustomRecordPageContent() {
                     const matchedName = matchPlayer(found.name, playersPool);
                     const matchedChamp = matchChampion(found.champion_name, championsList);
                     
-                    if (matchedName) {
+                    // ★ ユーザー指示: チーム分け時の名前を最優先でそのまま参照（OCR読み込みで上書きしない）
+                    const finalName = currentStat.name || matchedName;
+                    
+                    if (currentStat.name) {
+                      preservedBalancerCount++;
+                      resolvedCount++;
+                    } else if (matchedName) {
                       resolvedCount++;
                       if (isAliasMatch) aliasHitCount++;
                     } else {
@@ -337,7 +344,7 @@ function CustomRecordPageContent() {
                       ...currentStat,
                       raw_ocr_name: rawOcr,
                       currentRole: assignedRole,
-                      name: matchedName,
+                      name: finalName,
                       champion_name: matchedChamp,
                       kills: Number(found.kills) || 0,
                       deaths: Number(found.deaths) || 0,
@@ -350,13 +357,18 @@ function CustomRecordPageContent() {
 
               const isSpectator = data.sourceType === 'INGAME_TAB_SPECTATOR';
               let msgText = isSpectator
-                ? `観戦スコアボード（TAB画面）から反映しました（10名中 ${resolvedCount} 名照合完了）。`
-                : `リザルト画面の解析結果を反映しました（10名中 ${resolvedCount} 名照合完了）。`;
-              if (aliasHitCount > 0) {
+                ? `観戦スコアボード（TAB画面）からスタッツを反映しました。`
+                : `リザルト画面からスタッツを反映しました。`;
+              if (preservedBalancerCount > 0) {
+                msgText += ` 👥 チーム分け時の名前（${preservedBalancerCount}名）をそのまま維持しました。`;
+              } else if (resolvedCount > 0) {
+                msgText += ` （10名中 ${resolvedCount} 名照合完了）`;
+              }
+              if (aliasHitCount > 0 && preservedBalancerCount === 0) {
                 msgText += ` 💡 過去の誤認識学習辞書から ${aliasHitCount} 名を自動補正しました。`;
               }
               if (unresolvedCount > 0) {
-                msgText += ` ⚠️ 未照合が ${unresolvedCount} 名あります。ドロップダウンから選択してください（修正内容は次回以降自動学習されます）。`;
+                msgText += ` ⚠️ 名前が未設定の枠が ${unresolvedCount} 名あります。ドロップダウンから選択してください。`;
               }
               setMessage({ type: unresolvedCount > 0 ? 'error' : 'success', text: msgText });
             }
