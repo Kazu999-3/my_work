@@ -74,6 +74,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 404 });
     }
 
+    // 最大所持数の上限チェック（激闘チケット最大3枚など）
+    if (item.maxHold) {
+      const currentInventory = getPlayerInventory(player);
+      const currentHoldCount = currentInventory.filter((it: any) => it.id === item.id).length;
+      if (currentHoldCount + parsedQty > item.maxHold) {
+        const remainCanBuy = Math.max(0, item.maxHold - currentHoldCount);
+        if (remainCanBuy === 0) {
+          return NextResponse.json({
+            error: `「${item.name}」は最大${item.maxHold}枚までしか所持できません（現在 ${currentHoldCount}枚 所持中）。`
+          }, { status: 400 });
+        } else {
+          return NextResponse.json({
+            error: `「${item.name}」は最大${item.maxHold}枚までしか所持できません（現在 ${currentHoldCount}枚 所持中 / あと${remainCanBuy}枚のみ購入可能）。`
+          }, { status: 400 });
+        }
+      }
+    }
+
     const totalPrice = item.price * parsedQty;
     const currentCoins = getPlayerCoins(player);
     if (currentCoins < totalPrice) {

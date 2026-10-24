@@ -407,7 +407,7 @@ export default function CasinoPage() {
           </div>
         )}
 
-        {activeTab === 'shop' && <ShopTab shopMessage={shopMessage} handleBuyItem={handleBuyItem} />}
+        {activeTab === 'shop' && <ShopTab shopMessage={shopMessage} handleBuyItem={handleBuyItem} inventory={inventory} />}
         {activeTab === 'profit' && <ProfitRankingTab myDiscordId={user?.discordId} />}
 
         <CoinGuide />

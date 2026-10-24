@@ -1,7 +1,15 @@
 // KTMショップの商品一覧（価格・説明）。カジノ画面の表示と /api/bet/shop の購入処理の両方がここを読む。
 // 2026-10-07: 以前は app/casino と app/api/bet/shop/route.ts に同じ11品が別々に定義されていた（価格がずれると表示と請求額が食い違う）。
 
-export interface ShopItem { id: string; name: string; price: number; icon: string; badge: string; desc: string }
+export interface ShopItem {
+  id: string;
+  name: string;
+  price: number;
+  icon: string;
+  badge: string;
+  desc: string;
+  maxHold?: number; // 最大所持数（未指定なら無制限）
+}
 
 export const SHOP_ITEM_LIST: ShopItem[] = [
   {
@@ -33,8 +41,9 @@ export const SHOP_ITEM_LIST: ShopItem[] = [
     name: '⚔️ 勝利ボーナス激闘チケット',
     price: 150,
     icon: '⚔️',
-    badge: '勝利時 +600pt獲得',
-    desc: '【選手専用ブースター】次回カスタムに選手として出場し勝利した際、通常ボーナス(+250pt)が【合計+600pt】へ大幅爆増！(差引純利益 +450pt)'
+    badge: '勝利時 +600pt獲得 (上限3枚)',
+    maxHold: 3,
+    desc: '【選手専用ブースター / 最大所持3枚まで】次回カスタムに選手として出場し勝利した際、通常ボーナス(+250pt)が【合計+600pt】へ大幅爆増！(差引純利益 +450pt)'
   }
 ];
 

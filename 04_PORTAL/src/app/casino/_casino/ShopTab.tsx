@@ -5,9 +5,10 @@ import { SHOP_ITEM_LIST } from '../../../lib/shopItems';
 
 // タブ5: KTMショップ
 // 2026-10-07: app/casino/page.tsx（1,635行）から分割。表示内容・動作は分割前と同じ。
-export default function ShopTab({ shopMessage, handleBuyItem }: {
+export default function ShopTab({ shopMessage, handleBuyItem, inventory = [] }: {
   shopMessage: string | null;
   handleBuyItem: (itemId: string, itemName: string, price: number, quantity?: number) => void;
+  inventory?: Array<{ id: string; name: string; icon: string; boughtAt: string }>;
 }) {
   return (
     <>
@@ -88,14 +89,29 @@ export default function ShopTab({ shopMessage, handleBuyItem }: {
                         <span>🥠</span>
                         <span>今すぐ削る！</span>
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => handleBuyItem(item.id, item.name, item.price, 1)}
-                        className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-primary-600 text-white text-xs font-black transition-colors cursor-pointer shadow-sm"
-                      >
-                        交換する
-                      </button>
-                    )}
+                    ) : (() => {
+                      const holdCount = inventory.filter((it: any) => it.id === item.id).length;
+                      const isMax = Boolean(item.maxHold && holdCount >= item.maxHold);
+                      if (isMax) {
+                        return (
+                          <button
+                            disabled
+                            className="px-4 py-2 rounded-xl bg-surface-subtle border border-border text-foreground-soft text-xs font-black cursor-not-allowed opacity-75"
+                            title={`最大${item.maxHold}枚までしか所持できません（現在: ${holdCount}/${item.maxHold}枚）`}
+                          >
+                            所持上限 ({holdCount}/{item.maxHold})
+                          </button>
+                        );
+                      }
+                      return (
+                        <button
+                          onClick={() => handleBuyItem(item.id, item.name, item.price, 1)}
+                          className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-primary-600 text-white text-xs font-black transition-colors cursor-pointer shadow-sm"
+                        >
+                          {item.maxHold ? `交換する (${holdCount}/${item.maxHold})` : '交換する'}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
