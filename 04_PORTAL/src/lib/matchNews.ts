@@ -21,6 +21,13 @@ export interface MatchNewsArticle {
     role: string;
     comment: string;
   };
+  entertainer?: {
+    name: string;
+    champion?: string;
+    kda: string;
+    role: string;
+    comment: string;
+  };
   turningPoint: string;
   keyMatchup: string;
   sideStory: string;
@@ -68,6 +75,20 @@ export async function generateMatchNews(matchData: {
   // 敗戦側の敢闘賞（Fighter of the Match: 敗軍の中で最も高いKDAやキル関与）
   const sortedLosers = [...loserParts].sort((a, b) => scorePlayer(b, loserTotalKills) - scorePlayer(a, loserTotalKills));
   const bestLoser = sortedLosers[0] || loserParts[0];
+
+  // 🎭 芸人枠候補（チームを最も揺らした人: 最多デスまたは派手に特攻して戦場を盛り上げた選手）
+  const entertainerCandidates = participants.filter((p) => p.name !== bestWinner?.name);
+  const scoreEntertainer = (p: typeof participants[0]) => {
+    const deaths = Number(p.deaths) || 0;
+    const kills = Number(p.kills) || 0;
+    const assists = Number(p.assists) || 0;
+    const deathWeight = deaths * 10;
+    const deathMinusKills = Math.max(0, deaths - kills) * 5;
+    const kdaInv = deaths / Math.max(1, kills + assists);
+    return deathWeight + deathMinusKills + kdaInv * 10;
+  };
+  const sortedEntertainers = [...entertainerCandidates].sort((a, b) => scoreEntertainer(b) - scoreEntertainer(a));
+  const bestEntertainer = sortedEntertainers[0] || entertainerCandidates[0];
 
   // 各レーンの対面比較サマリー（KDA・チャンピオン対面）
   const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -160,7 +181,10 @@ export function buildMatchNewsField(article: MatchNewsArticle) {
   lines.push(article.lead);
   lines.push(`\n👑 **本日のMVP**: **${article.mvp?.name}** (${article.mvp?.champion || ''} / ${article.mvp?.role} / KDA: ${article.mvp?.kda})\n📝 **寸評**: ${article.mvp?.comment || ''}`);
   if (article.fighterOfTheMatch) {
-    lines.push(`🛡️ **敢闘賞 (敗軍の将)**: **${article.fighterOfTheMatch.name}** (${article.fighterOfTheMatch.champion || ''} / ${article.fighterOfTheMatch.role} / KDA: ${article.fighterOfTheMatch.kda})\n📝 **寸評**: ${article.fighterOfTheMatch.comment}`);
+    lines.push(`🛡️ **敢闘賞(敗軍の将)**: **${article.fighterOfTheMatch.name}** (${article.fighterOfTheMatch.champion || ''} / ${article.fighterOfTheMatch.role} / KDA: ${article.fighterOfTheMatch.kda})\n📝 **寸評**: ${article.fighterOfTheMatch.comment}`);
+  }
+  if (article.entertainer) {
+    lines.push(`🎭 **本日の芸人枠（チーム揺らした大賞）**: **${article.entertainer.name}** (${article.entertainer.champion || ''} / ${article.entertainer.role} / KDA: ${article.entertainer.kda})\n📝 **寸評**: ${article.entertainer.comment}`);
   }
   if (article.turningPoint) {
     lines.push(`🎯 **勝負の決め手**: ${article.turningPoint}`);

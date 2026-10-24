@@ -152,7 +152,8 @@ function getPermutations(arr: number[]): number[][] {
 // 共通バランスエンジン (探索フェーズ)
 // ==========================================
 interface RawBalanceCandidate {
-  score: number;       // 総合スコア（小さいほど良い）
+  score: number;
+  totalLaneDiff: number;       // 総合スコア（小さいほど良い）
   mmrDiffVal: number;  // チーム間MMR差の絶対値（ハンデ込）
   mainCount: number;   // 第一希望配属人数
   pA: number[];
@@ -466,7 +467,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         // ★ 項目2: JGオフロール時のセーフティ（初参戦・ライト・初心者のJG配属防止 & 高ランクJG担当優遇）
         if (role === 'JG' && player.pref1 !== 'JG' && player.pref2 !== 'JG') {
           if (player.isFirstTimer || player.isLightTier) {
-            rolePenalty += 500000; // 初参戦・ライト層が希望していないJGに回されるのを鉄壁ガード
+            rolePenalty += 250000; // 初参戦・ライト層が希望していないJGに回されるのを鉄壁ガード
           } else if (player.isNewbie || player.isOutlierLow) {
             rolePenalty += 45000;
           } else if (HIGH_RANKS.includes((player.rank || '').trim().toUpperCase().split(/\s+/)[0])) {
@@ -669,13 +670,13 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
           const laneMmrDiff = Math.abs(mmrA - mmrB);
           const weakerSide = mmrA < mmrB ? pLayerA : pLayerB;
-          const gapScale = weakerSide.allowHigher ? 0.15 : 1;
+          const gapScale = weakerSide.allowHigher ? 0.25 : 1.0;
           if (laneMmrDiff >= 300) {
-            penalty += 60000 * gapScale * roleGapMultiplier;
+            penalty += 120000 * gapScale * roleGapMultiplier;
           } else if (laneMmrDiff >= 200) {
-            penalty += 25000 * gapScale * roleGapMultiplier;
+            penalty += 60000 * gapScale * roleGapMultiplier;
           } else if (laneMmrDiff >= 150) {
-            penalty += 8000 * gapScale * roleGapMultiplier;
+            penalty += 20000 * gapScale * roleGapMultiplier;
           }
 
           // ★ 2ティア差以上の対面禁止ガード (例: エメラルド vs シルバー、プラチナ vs ブロンズ等)
@@ -758,8 +759,18 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         const totalA = eA.totalEffWeighted;
         const totalB = eB.totalEffWeighted;
 
-        const score = penalty + Math.abs(totalA - totalB - baseHandicap);
         const mmrDiffVal = Math.abs(totalA - totalB - baseHandicap);
+        // ⚖️ チーム間MMR差の重み付け強化:
+        // 以前は単に +mmrDiffVal していたため、数十万点の希望ペナルティの前で戦力差がほぼ無力化していた。
+        // MMR差に適切な指数重みを与え、戦力差が100〜200点開いた候補をしっかり弾く
+        const mmrDiffPenalty = Math.pow(mmrDiffVal / 25, 1.6) * 1200;
+        const score = penalty + mmrDiffPenalty;
+
+        // 5レーン対面MMR格差の合計（案E用）
+        let totalLaneDiff = 0;
+        for (let rIdx = 0; rIdx < 5; rIdx++) {
+          totalLaneDiff += Math.abs(eA.roleMmrs[rIdx] - eB.roleMmrs[rIdx]);
+        }
 
         const teamANames = teamAIndices.map((idx, i) => `${players[idx].name}:${ROLES[eA.perm[i]]}`).sort().join(',');
         const teamBNames = teamBIndices.map((idx, i) => `${players[idx].name}:${ROLES[eB.perm[i]]}`).sort().join(',');
@@ -769,6 +780,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           score,
           mmrDiffVal,
           mainCount,
+          totalLaneDiff,
           pA: [...eA.perm],
           pB: [...eB.perm],
           teamAIndices,
@@ -965,157 +977,130 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
     throw new Error('有効なチーム分けが見つかりませんでした。制約が競合しています。');
   }
 
-  // 1. 総合バランス (スコア昇順) -> 案A
+  // 1. 黄金バランス (総合スコア最良: チームMMR差・対面格差・希望ロールのベスト調和) -> 案A
   const listA = [...candidates].sort((a, b) => a.score - b.score);
-  // 2. 戦力均等 (MMR差昇順) -> 案B
-  const listB = [...candidates].sort((a, b) => a.mmrDiffVal - b.mmrDiffVal || a.score - b.score);
-  // 3. 希望優先 (希望合致数降順) -> 案C
+
+  // 2. ガチ戦力均等 (チーム間MMR差最良 -> 5レーン対面格差最良 -> 総合スコア) -> 案B
+  const listB = [...candidates].sort((a, b) => a.mmrDiffVal - b.mmrDiffVal || a.totalLaneDiff - b.totalLaneDiff || a.score - b.score);
+
+  // 3. 希望最優先 (第1希望合致数最多 -> 総合スコア) -> 案C
   const listC = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
 
-  // 4. 低MMR優先 (低MMRオフロールペナルティ昇順) -> 案D
-  // プレイヤーをMMRの昇順（低い順）でソート
-  const sortedPlayersByMMR = [...players].sort((a, b) => (a.avgMMR || 0) - (b.avgMMR || 0));
-
-  // 低MMRプレイヤーほどメインロールに配属されていない場合のペナルティを計算する
-  const calcLowMMROffRolePenalty = (c: RawBalanceCandidate): number => {
+  // 4. 初参戦＆ライト保護 (初参戦・ライト層・初心者のオフロールペナルティ最少) -> 案D
+  const calcProtectPenalty = (c: RawBalanceCandidate): number => {
     let penalty = 0;
-    // チームA
-    c.teamAIndices.forEach((idx, i) => {
-      const p = players[idx];
-      const role = ROLES[c.pA[i]];
-      const isMain = p.isFixed || p.pref1 === 'ALL' || p.pref1 === role;
-      if (!isMain) {
-        const rankIndex = sortedPlayersByMMR.findIndex(sp => sp.name === p.name);
-        if (rankIndex !== -1) {
-          // MMRが低い（rankIndexが小さい）ほど、ペナルティを大きくする (10-rankIndex) の2乗
-          penalty += Math.pow(10 - rankIndex, 2);
+    const checkTeam = (indices: number[], pRole: number[]) => {
+      indices.forEach((idx, i) => {
+        const p = players[idx];
+        const role = ROLES[pRole[i]];
+        const isMain = p.isFixed || p.pref1 === 'ALL' || p.pref1 === role;
+        if (!isMain) {
+          if (p.isFirstTimer) penalty += 50000;
+          else if (p.isLightTier) penalty += 20000;
+          else if (p.isNewbie) penalty += 10000;
+          else penalty += 1000;
         }
-      }
-    });
-    // チームB
-    c.teamBIndices.forEach((idx, i) => {
-      const p = players[idx];
-      const role = ROLES[c.pB[i]];
-      const isMain = p.isFixed || p.pref1 === 'ALL' || p.pref1 === role;
-      if (!isMain) {
-        const rankIndex = sortedPlayersByMMR.findIndex(sp => sp.name === p.name);
-        if (rankIndex !== -1) {
-          penalty += Math.pow(10 - rankIndex, 2);
-        }
-      }
-    });
+      });
+    };
+    checkTeam(c.teamAIndices, c.pA);
+    checkTeam(c.teamBIndices, c.pB);
     return penalty;
   };
 
   const listD = [...candidates].sort((a, b) => {
-    const penA = calcLowMMROffRolePenalty(a);
-    const penB = calcLowMMROffRolePenalty(b);
-    if (penA !== penB) {
-      return penA - penB;
-    }
-    return a.score - b.score; // ペナルティが同じなら総合スコアが良い順
+    const penA = calcProtectPenalty(a);
+    const penB = calcProtectPenalty(b);
+    if (penA !== penB) return penA - penB;
+    return a.score - b.score;
+  });
+
+  // 5. 全5レーン対面ミラー均等 (全レーンの対面MMR格差の合計が最小 -> チームMMR差) -> 案E
+  const listE = [...candidates].sort((a, b) => {
+    return a.totalLaneDiff - b.totalLaneDiff || a.mmrDiffVal - b.mmrDiffVal || a.score - b.score;
   });
 
   const proposals: ProposalResult[] = [];
   const usedSignatures = new Set<string>();
 
-  // 案A: バランス
+  // 案A: 黄金バランス
   const bestA = listA[0];
   const resA = buildBalanceResult(bestA, players, ctx);
-  resA.balanceReport.unshift("💡 **【コンセプト：総合バランス】**\n各プレイヤーのロール希望、MMR（内部レート）の差、直近の同チーム履歴などを総合的に考慮した、最もバランスの良い標準的な組み合わせです。\n**こんな時におすすめ**：対面のレーン実力差を抑えつつ、多くの人が希望ロールで遊びたい時。");
+  resA.balanceReport.unshift("💡 **【コンセプト：黄金バランス（推奨）】**\nチームMMR差・レーン対面格差・希望ロールの3要素をバランスよく調和させた、最も接戦になりやすい標準案です。\n**こんな時におすすめ**: 迷った時はこの案！レーン戦の理不尽な格差を抑えつつ、多くの人が希望ロールで快適に遊べます。");
   const mmrBlueA = resA.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedA = resA.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resA,
     id: 'A',
-    title: '案A：バランス',
+    title: '案A（黄金バランス）',
     teamBlueMMR: mmrBlueA,
     teamRedMMR: mmrRedA,
     mmrDiff: Math.abs(mmrBlueA - mmrRedA)
   });
   usedSignatures.add(bestA.signature);
 
-  // 案B: 戦力均等
+  // 案B: ガチ戦力均等
   const bestB = listB.find(c => !usedSignatures.has(c.signature)) || listB[0];
   const resB = buildBalanceResult(bestB, players, ctx);
-  resB.balanceReport.unshift("💡 **【コンセプト：戦力均等（実力勝負）】**\nレーン間およびチーム全体のMMR格差を最小化し、両チームの実力差が最も平坦（公平なレーン戦・勝率期待値）になるように計算されています。\n**こんな時におすすめ**：実力が拮抗した真剣勝負や、公平な試合を楽しみたい時。");
+  resB.balanceReport.unshift("💡 **【コンセプト：ガチ戦力均等（実力勝負）】**\nチーム間MMR格差を極限までゼロに近づけ、勝率期待値50:50を目指した実力真剣勝負案です。\n**こんな時におすすめ**: 実力が拮抗した緊迫感ある試合を楽しみたい時や、本気のカスタム大会時におすすめです。");
   const mmrBlueB = resB.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedB = resB.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resB,
     id: 'B',
-    title: '案B：戦力均等',
+    title: '案B（ガチ戦力均等）',
     teamBlueMMR: mmrBlueB,
     teamRedMMR: mmrRedB,
     mmrDiff: Math.abs(mmrBlueB - mmrRedB)
   });
   usedSignatures.add(bestB.signature);
 
-  // 案C: 希望優先
+  // 案C: 希望最優先
   const bestC = listC.find(c => !usedSignatures.has(c.signature)) || listC[0];
   const resC = buildBalanceResult(bestC, players, ctx);
-  resC.balanceReport.unshift("💡 **【コンセプト：希望優先（楽しさ重視）】**\nできる限り多くのプレイヤーが第一希望（メインロール）でプレイできるように、ロール希望の合致数を最優先にして計算されています。\n**こんな時におすすめ**：自分の得意ロールや練習したいロールで全員がノーストレスで遊びたい時。");
+  resC.balanceReport.unshift("💡 **【コンセプト：全員ノーストレス（希望優先）】**\n全員が得意なメインロールで思いきりプレイできるよう、ロール希望の合致数を最優先したエンジョイ案です。\n**こんな時におすすめ**: 練習したいチャンプ・レーンがある時や、全員がストレスフリーで遊びたい時におすすめです。");
   const mmrBlueC = resC.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedC = resC.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resC,
     id: 'C',
-    title: '案C：希望優先',
+    title: '案C（全員ノーストレス）',
     teamBlueMMR: mmrBlueC,
     teamRedMMR: mmrRedC,
     mmrDiff: Math.abs(mmrBlueC - mmrRedC)
   });
   usedSignatures.add(bestC.signature);
 
-  // 案D: 低MMR優先
+  // 案D: 初参戦＆ライト保護
   const bestD = listD.find(c => !usedSignatures.has(c.signature)) || listD[0];
   const resD = buildBalanceResult(bestD, players, ctx);
-  resD.balanceReport.unshift("💡 **【コンセプト：低MMR（初心者）優先配属】**\n初心者や低レートのプレイヤーが慣れたメインロールで快適にプレイできるように、MMR（内部レート）の低いプレイヤーから優先的に第一希望ロールへ配属し、高MMRのプレイヤーが他のロールに回ってカバーする構成です。\n**こんな時におすすめ**：初心者やレートの低いプレイヤーを主役に据え、快適にプレイさせてあげたい時。");
+  resD.balanceReport.unshift("💡 **【コンセプト：初参戦＆ライト層VIP保護（歓迎・育成）】**\n初参戦者やライト層、初心者プレイヤーに絶対にオフロールや格上対面をさせず、高レート勢が他レーンで支える安心設計案です。\n**こんな時におすすめ**: 新しいメンバーを迎える時や、初心者・ライト層を気持ちよくエスコートしたい時におすすめです。");
   const mmrBlueD = resD.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedD = resD.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resD,
     id: 'D',
-    title: '案D：低MMR優先',
+    title: '案D（初参戦・ライト保護）',
     teamBlueMMR: mmrBlueD,
     teamRedMMR: mmrRedD,
     mmrDiff: Math.abs(mmrBlueD - mmrRedD)
   });
   usedSignatures.add(bestD.signature);
 
-  // 5. ハンデ調整 -> 案E
-  const handicapPlayers = players.filter(p => p.isHandicap);
-  const calcHandicapBalanceScore = (c: RawBalanceCandidate): number => {
-    let score = c.score;
-    if (handicapPlayers.length > 0) {
-      c.teamAIndices.forEach((idx) => {
-        if (players[idx].isHandicap) score -= 4000;
-      });
-    }
-    return score;
-  };
-
-  const listE = [...candidates].sort((a, b) => {
-    const scoreA = calcHandicapBalanceScore(a);
-    const scoreB = calcHandicapBalanceScore(b);
-    return scoreA - scoreB || a.mmrDiffVal - b.mmrDiffVal;
-  });
-
+  // 案E: 全5レーン対面ミラー均等
   const bestE = listE.find(c => !usedSignatures.has(c.signature)) || listE[0];
   const resE = buildBalanceResult(bestE, players, ctx);
-  resE.balanceReport.unshift("💡 **【コンセプト：ハンデ調整（格差補正）】**\nハンデ指定されたプレイヤーの計算上MMRを割引補正（ハンデペナルティ適用）した実効レートで再アサインしたバランス案です。\n**こんな時におすすめ**：実力差が大きい参加者が混ざっている日や、ハンデ設定付きのチーム分け時。");
+  resE.balanceReport.unshift("💡 **【コンセプト：全5レーン対面ミラー均等（対面勝負）】**\nチーム合計だけでなく、TOP/JG/MID/ADC/SUPの全レーンにおいて「対面同士の実力差」を最も小さく揃えた案です。\n**こんな時におすすめ**: 「特定レーンだけ一方的に崩壊する」のを防ぎ、すべてのレーンで白熱した対面勝負を楽しみたい時におすすめです。");
   const mmrBlueE = resE.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedE = resE.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resE,
     id: 'E',
-    title: '案E：ハンデ調整',
+    title: '案E（レーン対面均等）',
     teamBlueMMR: mmrBlueE,
     teamRedMMR: mmrRedE,
     mmrDiff: Math.abs(mmrBlueE - mmrRedE)
   });
 
-  // 切り替え時に綺麗に表示されるように、インデックス順にソートして返却
   return proposals.sort((a, b) => a.id.localeCompare(b.id));
 }
 
