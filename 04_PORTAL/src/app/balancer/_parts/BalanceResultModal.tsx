@@ -1,6 +1,7 @@
 "use client";
+import { detectUnallowedHigherMatchups, swapWholeTeams } from "../../../lib/balancer/teams";
 
-import React, { Fragment, useState, useEffect } from "react";
+import React, { Fragment, useState, useEffect, useMemo } from "react";
 import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -53,6 +54,15 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
 }) {
   const [clashData, setClashData] = useState<any>(null);
   const [loadingClash, setLoadingClash] = useState(false);
+  // 🛡️ チームメンバーやレーン入れ替え時にもリアルタイムに格上対面警告を再計算
+  const unallowedHigherMatchups = useMemo(() => {
+    return detectUnallowedHigherMatchups(
+      balanceResult?.teamBlue || [],
+      balanceResult?.teamRed || [],
+      players
+    );
+  }, [balanceResult?.teamBlue, balanceResult?.teamRed, players]);
+
 
   useEffect(() => {
     if (!balanceResult?.teamBlue?.length || !balanceResult?.teamRed?.length) return;
@@ -235,7 +245,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
 
             <div className="p-4 md:p-6 space-y-4">
               {/* ⚠️ 未許可の格上対面警告（管理者確認バナー） */}
-              {balanceResult.unallowedHigherMatchups && balanceResult.unallowedHigherMatchups.length > 0 && (
+              {unallowedHigherMatchups && unallowedHigherMatchups.length > 0 && (
                 <div className="p-3.5 rounded-xl border border-danger-500 bg-danger-50 text-danger-900 shadow-sm space-y-2">
                   <div className="flex items-center gap-2 font-bold text-sm text-danger-800">
                     <AlertTriangle className="h-5 w-5 text-danger-600 shrink-0 animate-pulse" />
@@ -245,7 +255,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     以下の対面はMMR差が200以上（シルバーvsプラチナ等）ありますが、下位側プレイヤーの「格上との対面」が「🛡️守ってほしい」になっています。10人構成の都合上やむを得ずマッチングされた可能性があります。
                   </p>
                   <div className="space-y-1 bg-white/80 p-2.5 rounded-lg border border-danger-200 text-xs">
-                    {balanceResult.unallowedHigherMatchups.map((m: any, idx: number) => (
+                    {unallowedHigherMatchups.map((m: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between flex-wrap gap-1">
                         <span className="font-bold text-danger-700">[{m.role}]</span>
                         <span>
@@ -778,13 +788,12 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     type="button"
                     onClick={() => {
                       if (!balanceResult) return;
-                      setBalanceResult({
-                        ...balanceResult,
-                        teamBlue: balanceResult.teamRed,
-                        teamRed: balanceResult.teamBlue,
-                        teamBlueMMR: balanceResult.teamRedMMR,
-                        teamRedMMR: balanceResult.teamBlueMMR,
-                      });
+                      if (handleSwapWholeTeams) {
+                        handleSwapWholeTeams();
+                      } else {
+                        const swapped = swapWholeTeams(balanceResult);
+                        setBalanceResult(swapped);
+                      }
                       setMessage({ type: 'success', text: '🔄 BLUE ⇄ RED の陣営を入れ替えました！' });
                     }}
                     className="bg-primary-50 hover:bg-primary-100 border border-primary-edge-soft text-primary-800 px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"

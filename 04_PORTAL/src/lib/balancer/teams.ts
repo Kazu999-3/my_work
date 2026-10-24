@@ -93,7 +93,9 @@ export function applyManualSwap(balanceResult: any, players: any[], targetTeam: 
       currentRole: targetRole,
       mmr: pData ? pData.mmr : 1000,
       mainLane: pData?.role_preferences?.primary || 'ALL',
-      subLane: pData?.role_preferences?.secondary || 'ALL'
+      subLane: pData?.role_preferences?.secondary || 'ALL',
+      allowHigher: pData ? (pData.allow_higher ?? pData.allowHigher ?? false) : false,
+      allow_higher: pData ? (pData.allow_higher ?? pData.allowHigher ?? false) : false,
     };
   } else {
     sourcePlayerObj = { ...newResult[sourceLocation.team][sourceLocation.index] };
@@ -142,6 +144,9 @@ export function applyManualSwap(balanceResult: any, players: any[], targetTeam: 
   const blueAvg = totalBlue / ((newResult.teamBlue || []).length || 1);
   const redAvg = totalRed / ((newResult.teamRed || []).length || 1);
   newResult.predictedBlueWinProb = calculateBlueWinProbability(blueAvg, redAvg);
+
+  // 🛡️ レーン対面入れ替え後の格上対面警告を再計算
+  newResult.unallowedHigherMatchups = detectUnallowedHigherMatchups(newResult.teamBlue, newResult.teamRed, players);
 
   return newResult;
 }
@@ -204,6 +209,71 @@ export function swapWholeTeams(balanceResult: any): any {
   const redAvg = totalRed / ((swapped.teamRed || []).length || 1);
   swapped.predictedBlueWinProb = calculateBlueWinProbability(blueAvg, redAvg);
 
+  // 🛡️ 陣営反転後の格上対面警告を再計算
+  swapped.unallowedHigherMatchups = detectUnallowedHigherMatchups(swapped.teamBlue, swapped.teamRed);
+
   return swapped;
 }
 
+
+
+/**
+ * 各レーンの対面MMR差を監査し、未許可の格上対面（MMR差200以上かつ allowHigher === false）を抽出する
+ * 手動スワップ時やサイド反転時にも常に最新のメンバー構成からリアルタイム再計算できるようにする
+ */
+export function detectUnallowedHigherMatchups(
+  teamBlue: any[],
+  teamRed: any[],
+  players?: any[]
+): Array<{
+  role: string;
+  weakerName: string;
+  weakerMmr: number;
+  strongerName: string;
+  strongerMmr: number;
+  diff: number;
+}> {
+  const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+  const list: any[] = [];
+  if (!teamBlue || !teamRed) return list;
+
+  ROLES.forEach(role => {
+    const pB = teamBlue.find((p: any) => p.currentRole === role || p.role === role);
+    const pR = teamRed.find((p: any) => p.currentRole === role || p.role === role);
+    if (pB && pR) {
+      const bMmr = Number(pB.mmr) || 1200;
+      const rMmr = Number(pR.mmr) || 1200;
+      const diff = Math.abs(bMmr - rMmr);
+      if (diff >= 200) {
+        const weaker = bMmr < rMmr ? pB : pR;
+        const stronger = bMmr < rMmr ? pR : pB;
+
+        // allowHigher の判定:
+        // 1. weaker.allowHigher (boolean)
+        // 2. weaker.allow_higher (boolean)
+        // 3. players マスターデータから検索
+        let allow = weaker.allowHigher ?? weaker.allow_higher;
+        if (allow === undefined && players) {
+          const master = players.find((p: any) => p.name === weaker.name);
+          if (master) {
+            allow = master.allow_higher ?? master.allowHigher ?? master.role_preferences?.allowHigher;
+          }
+        }
+
+        // allowHigher が false（または未設定でデフォルト保護）なら警告リストへ
+        if (!allow) {
+          list.push({
+            role,
+            weakerName: weaker.name,
+            weakerMmr: weaker.mmr,
+            strongerName: stronger.name,
+            strongerMmr: stronger.mmr,
+            diff
+          });
+        }
+      }
+    }
+  });
+
+  return list;
+}
