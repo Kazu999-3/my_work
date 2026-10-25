@@ -14,6 +14,7 @@ import {
   ChampionMeta,
   FESTIVAL_THEMES,
   FestivalTheme,
+  FESTIVAL_THEME_CATEGORIES,
 } from "../../../lib/championMetadata";
 import { getChampIcon } from "../../../lib/ddragonClient";
 import {
@@ -21,6 +22,7 @@ import {
   RotateCcw,
   Search,
   Dice5,
+  Dice6,
   CheckCircle2,
   XCircle,
   Eye,
@@ -34,21 +36,44 @@ import {
   Camera,
   Maximize2,
   Flame,
+  Users,
+  Dices,
+  Shuffle,
+  Trophy,
+  UserCheck,
+  Info,
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
 import CustomSubNav from "../../../components/CustomSubNav";
 
 type ViewMode = "region" | "role" | "class" | "theme" | "all";
 
+export interface DraftPlayer {
+  playerNumber: number;
+  champions: ChampionMeta[];
+  selectedChampId?: string;
+}
+
 export default function FestivalPickPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("region");
   const [searchQuery, setSearchQuery] = useState("");
   // 除外されたチャンピオンIDのセット（❌が付いているもの）
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
-  // ルーレット選出結果モーダル用
+  // ルーレット選出結果モーダル用（旧来の単体・5体選出）
   const [rouletteResults, setRouletteResults] = useState<ChampionMeta[]>([]);
   const [isRouletteRolling, setIsRouletteRolling] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // 👥 少人数・ドラフト機能用
+  const [playerCount, setPlayerCount] = useState<number>(6); // 2〜10人（デフォルト3v3=6人）
+  const [picksPerPlayer, setPicksPerPlayer] = useState<number>(3); // 1人あたりの候補数（1/2/3択）
+  const [draftResults, setDraftResults] = useState<DraftPlayer[]>([]);
+  const [isDraftRolling, setIsDraftRolling] = useState(false);
+  const [copiedDraft, setCopiedDraft] = useState(false);
+
+  // 🎲 今日のテーマおまかせダイス
+  const [isThemeRolling, setIsThemeRolling] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<FestivalTheme | null>(null);
 
   // 📸 キャプチャ用1枚プレビューモーダル
   const [showCaptureModal, setShowCaptureModal] = useState(false);
@@ -71,6 +96,7 @@ export default function FestivalPickPage() {
   // 全リセット
   const handleResetAll = useCallback(() => {
     setExcludedIds(new Set());
+    setActiveTheme(null);
     toast.success("すべての除外（❌）をリセットしました");
   }, []);
 
@@ -93,7 +119,7 @@ export default function FestivalPickPage() {
   }, []);
 
   // 特定テーマのみ残して他を全除外（❌）
-  const handleKeepOnlyTheme = useCallback((targetChampIds: string[]) => {
+  const handleKeepOnlyTheme = useCallback((targetChampIds: string[], themeObj?: FestivalTheme) => {
     const keepSet = new Set(targetChampIds);
     const newExcluded = new Set<string>();
     ALL_METADATA_CHAMPIONS.forEach((c) => {
@@ -102,8 +128,31 @@ export default function FestivalPickPage() {
       }
     });
     setExcludedIds(newExcluded);
+    if (themeObj) {
+      setActiveTheme(themeObj);
+    }
     toast.success(`このテーマの${targetChampIds.length}体のみを残して他を全除外（❌）しました！`);
   }, []);
+
+  // 🎲 今日のテーマおまかせダイス
+  const handleRandomThemeDice = useCallback(() => {
+    if (FESTIVAL_THEMES.length === 0) return;
+    setIsThemeRolling(true);
+    let step = 0;
+    const maxSteps = 12;
+    const interval = setInterval(() => {
+      step++;
+      const randomTheme = FESTIVAL_THEMES[Math.floor(Math.random() * FESTIVAL_THEMES.length)];
+      setActiveTheme(randomTheme);
+      if (step >= maxSteps) {
+        clearInterval(interval);
+        setIsThemeRolling(false);
+        handleKeepOnlyTheme(randomTheme.champIds, randomTheme);
+        setViewMode("theme");
+        toast.success(`🎲 今日のテーマ決定: 【${randomTheme.name}】！対象外を全除外しました`);
+      }
+    }, 60);
+  }, [handleKeepOnlyTheme]);
 
   // 検索フィルタ済みの全チャンピオン
   const filteredChamps = useMemo(() => {
@@ -122,6 +171,119 @@ export default function FestivalPickPage() {
   const activeCount = useMemo(() => {
     return filteredChamps.filter((c) => !excludedIds.has(c.id)).length;
   }, [filteredChamps, excludedIds]);
+
+  // 👥 ドラフト抽選（人数 × 候補数を重複なしで各プレイヤーに配布）
+  const handleDraftRoulette = useCallback(() => {
+    const available = filteredChamps.filter((c) => !excludedIds.has(c.id));
+    const totalNeeded = playerCount * picksPerPlayer;
+    if (available.length < totalNeeded) {
+      toast.error(
+        `候補チャンピオンが不足しています（必要: ${totalNeeded}体 / 残り: ${available.length}体）。除外を減らすか人数/候補数を調整してください`
+      );
+      return;
+    }
+    setIsDraftRolling(true);
+
+    let step = 0;
+    const maxSteps = 10;
+    const interval = setInterval(() => {
+      step++;
+      const shuffled = [...available].sort(() => Math.random() - 0.5);
+      const players: DraftPlayer[] = [];
+      for (let i = 0; i < playerCount; i++) {
+        players.push({
+          playerNumber: i + 1,
+          champions: shuffled.slice(i * picksPerPlayer, (i + 1) * picksPerPlayer),
+        });
+      }
+      setDraftResults(players);
+      if (step >= maxSteps) {
+        clearInterval(interval);
+        setIsDraftRolling(false);
+        toast.success(
+          `🎲 ${playerCount}名分（各${picksPerPlayer}択・計${totalNeeded}体）のドラフト候補を抽選しました！`
+        );
+      }
+    }, 70);
+  }, [filteredChamps, excludedIds, playerCount, picksPerPlayer]);
+
+  // 特定プレイヤーのドラフト候補を1人だけリロール
+  const handleRerollSinglePlayer = useCallback(
+    (playerNum: number) => {
+      const available = filteredChamps.filter((c) => !excludedIds.has(c.id));
+      // 現在他のプレイヤーに割り振られているチャンプIDを収集
+      const assignedIds = new Set<string>();
+      draftResults.forEach((p) => {
+        if (p.playerNumber !== playerNum) {
+          p.champions.forEach((c) => assignedIds.add(c.id));
+        }
+      });
+      // 未割り振りのプール
+      const unassigned = available.filter((c) => !assignedIds.has(c.id));
+      if (unassigned.length < picksPerPlayer) {
+        toast.error("リロール可能な余りチャンピオンが不足しています");
+        return;
+      }
+      const shuffled = [...unassigned].sort(() => Math.random() - 0.5);
+      const newChamps = shuffled.slice(0, picksPerPlayer);
+
+      setDraftResults((prev) =>
+        prev.map((p) =>
+          p.playerNumber === playerNum
+            ? { ...p, champions: newChamps, selectedChampId: undefined }
+            : p
+        )
+      );
+      toast.success(`プレイヤー ${playerNum} の候補を再抽選しました！`);
+    },
+    [filteredChamps, excludedIds, draftResults, picksPerPlayer]
+  );
+
+  // プレイヤーが候補の中から1体を選んで確定
+  const handleSelectDraftChamp = useCallback((playerNum: number, champId: string) => {
+    setDraftResults((prev) =>
+      prev.map((p) =>
+        p.playerNumber === playerNum
+          ? {
+              ...p,
+              selectedChampId: p.selectedChampId === champId ? undefined : champId,
+            }
+          : p
+      )
+    );
+  }, []);
+
+  // ドラフト結果をDiscord用フォーマットでコピー
+  const handleCopyDraftResults = useCallback(() => {
+    if (draftResults.length === 0) return;
+    const totalNeeded = draftResults.length * picksPerPlayer;
+    const themeNote = activeTheme ? `\n🎭 **テーマ**: ${activeTheme.name}` : "";
+
+    const lines = draftResults.map((p) => {
+      const champLines = p.champions
+        .map((c) => {
+          const isChosen = p.selectedChampId === c.id;
+          const reg = REGIONS[c.region]?.name || c.region;
+          return `    ${isChosen ? "👉 **" : "・ "}${c.name} (${reg})${
+            isChosen ? "** (確定★)" : ""
+          }`;
+        })
+        .join("\n");
+      return `👤 **プレイヤー ${p.playerNumber}**:\n${champLines}`;
+    });
+
+    const text = `【🎪 KTM お祭りカスタム ドラフト候補】${themeNote}
+👥 参加人数: ${draftResults.length}名（各${picksPerPlayer}択・計${totalNeeded}体）
+
+${lines.join("\n\n")}
+
+※ 各プレイヤーは自分の候補の中から1体選んでピックしてください！`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedDraft(true);
+    toast.success("ドラフト結果をDiscord用にコピーしました！");
+    setTimeout(() => setCopiedDraft(false), 2000);
+  }, [draftResults, picksPerPlayer, activeTheme]);
 
   // ルーレット抽選（未除外から count 体をランダム選出）
   const handleRoulette = useCallback(
@@ -262,6 +424,18 @@ export default function FestivalPickPage() {
               )}
             </div>
 
+            {/* 🎲 今日のテーマおまかせダイス */}
+            <button
+              type="button"
+              onClick={handleRandomThemeDice}
+              disabled={isThemeRolling}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 hover:from-purple-500 hover:to-amber-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition disabled:opacity-50 cursor-pointer animate-pulse hover:animate-none"
+              title="全19テーマの中から今日の縛りをランダム選出して即座にプール絞り込み！"
+            >
+              <Dices className={`w-3.5 h-3.5 ${isThemeRolling ? "animate-spin" : ""}`} />
+              <span>🎲 テーマおまかせダイス</span>
+            </button>
+
             {/* 📸 キャプチャ用1枚プレビューボタン */}
             <button
               type="button"
@@ -283,6 +457,149 @@ export default function FestivalPickPage() {
                 <RotateCcw className="w-3.5 h-3.5" /> ❌ 全リセット
               </button>
             )}
+          </div>
+        </div>
+
+        {/* ── 👥 少人数（10人以下）対応ドラフトルーレット パネル ── */}
+        <div className="bg-gradient-to-br from-surface via-surface to-primary-950/20 border-2 border-primary-500/30 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/80 pb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="p-1.5 bg-primary-600 text-white rounded-xl shadow-xs">
+                <Users className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-foreground flex items-center gap-2">
+                  少人数（10人以下）対応 ドラフト抽選
+                  <span className="text-[10px] bg-primary-500/10 text-primary-600 font-bold px-2 py-0.5 rounded-full border border-primary-500/20">
+                    2〜10人対応
+                  </span>
+                </h3>
+                <p className="text-[11px] text-muted">
+                  参加人数に合わせて1人1〜3択のピック候補を重複なしで自動配布します。
+                </p>
+              </div>
+            </div>
+
+            {/* 現在適用中のテーマ表示 */}
+            {activeTheme && (
+              <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-xl self-start sm:self-auto">
+                <span className="text-sm">{activeTheme.icon}</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                  {activeTheme.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetAll}
+                  className="ml-1 text-[10px] text-muted hover:text-danger-500 cursor-pointer"
+                  title="テーマ解除"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            {/* ① 人数選択 (スライダー & プリセット) */}
+            <div className="md:col-span-6 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-primary-500" />
+                  参加人数:
+                  <span className="font-black text-primary-600 font-mono text-sm">
+                    {playerCount}名
+                  </span>
+                </span>
+                {/* クイックプリセット */}
+                <div className="flex items-center gap-1">
+                  {[
+                    { label: "1v1", count: 2 },
+                    { label: "2v2", count: 4 },
+                    { label: "3v3", count: 6 },
+                    { label: "4v4", count: 8 },
+                    { label: "5v5", count: 10 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setPlayerCount(preset.count)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                        playerCount === preset.count
+                          ? "bg-primary-600 text-white shadow-xs"
+                          : "bg-surface-subtle hover:bg-surface-hover text-muted-strong border border-border"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input
+                type="range"
+                min={2}
+                max={10}
+                value={playerCount}
+                onChange={(e) => setPlayerCount(Number(e.target.value))}
+                className="w-full accent-primary-600 cursor-pointer h-1.5 bg-surface-subtle rounded-lg"
+              />
+            </div>
+
+            {/* ② 1人あたりの候補数選択 */}
+            <div className="md:col-span-3 flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                <Shuffle className="w-3.5 h-3.5 text-amber-500" />
+                1人あたりの候補:
+              </span>
+              <div className="flex items-center gap-1">
+                {[
+                  { count: 1, label: "1体 (即決)" },
+                  { count: 2, label: "2択" },
+                  { count: 3, label: "3択 (推奨)" },
+                ].map((item) => (
+                  <button
+                    key={item.count}
+                    type="button"
+                    onClick={() => setPicksPerPlayer(item.count)}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                      picksPerPlayer === item.count
+                        ? "bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-xs"
+                        : "bg-surface-subtle hover:bg-surface-hover text-muted-strong border border-border"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ③ ドラフト抽選実行ボタン & 必要体数インジケーター */}
+            <div className="md:col-span-3 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={handleDraftRoulette}
+                disabled={isDraftRolling || activeCount < playerCount * picksPerPlayer}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-600 via-rose-600 to-amber-600 hover:from-primary-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition disabled:opacity-50 cursor-pointer"
+              >
+                <Dice6 className={`w-4 h-4 ${isDraftRolling ? "animate-spin" : ""}`} />
+                <span>
+                  {playerCount}名分ドラフト抽選 🎲
+                </span>
+              </button>
+              <div className="flex items-center justify-between text-[10px] px-1 text-muted">
+                <span>必要: {playerCount * picksPerPlayer}体</span>
+                <span
+                  className={
+                    activeCount >= playerCount * picksPerPlayer
+                      ? "text-success-600 font-bold"
+                      : "text-danger-500 font-bold"
+                  }
+                >
+                  {activeCount >= playerCount * picksPerPlayer
+                    ? `残り ${activeCount}体 (抽選可能)`
+                    : `残り ${activeCount}体 (不足)`}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -594,96 +911,151 @@ export default function FestivalPickPage() {
 
         {/* ④ 🎭 特殊テーマ（縛り）モード */}
         {viewMode === "theme" && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div>
                 <h2 className="text-base font-black text-foreground flex items-center gap-2">
                   <Flame className="w-5 h-5 text-amber-500" />
-                  お祭りカスタム 特殊縛りテーマ一覧
+                  お祭りカスタム 特殊縛りテーマ一覧 (全{FESTIVAL_THEMES.length}種)
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
                   「このテーマのみ残す」を押すと、対象チャンピオン以外が一発で全除外（❌）され、即座にお祭りピックプールが完成します！
                 </p>
               </div>
+
+              <button
+                type="button"
+                onClick={handleRandomThemeDice}
+                disabled={isThemeRolling}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 hover:from-purple-500 hover:to-amber-500 text-white text-xs font-black flex items-center gap-2 shadow-sm transition disabled:opacity-50 cursor-pointer self-start sm:self-auto shrink-0"
+              >
+                <Dices className={`w-4 h-4 ${isThemeRolling ? "animate-spin" : ""}`} />
+                <span>🎲 ランダムにテーマを決める</span>
+              </button>
             </div>
 
-            {FESTIVAL_THEMES.map((theme) => {
-              // テーマに属するチャンピオンのうち、現在の検索クエリに合致するもの
-              const themeChamps = theme.champIds
-                .map((id) => CHAMPION_METADATA[id])
-                .filter(Boolean)
-                .filter((c) => {
-                  const q = searchQuery.trim().toLowerCase();
-                  if (!q) return true;
-                  return (
-                    c.name.toLowerCase().includes(q) ||
-                    c.ruby.toLowerCase().includes(q) ||
-                    c.id.toLowerCase().includes(q)
-                  );
-                });
-
-              if (themeChamps.length === 0) return null;
-              const champIds = themeChamps.map((c) => c.id);
-              const excludedCount = champIds.filter((id) => excludedIds.has(id)).length;
-              const activeThemeCount = champIds.length - excludedCount;
+            {/* カテゴリ別に整理して描画 */}
+            {(
+              [
+                "rivalry",
+                "mechanics",
+                "theme",
+                "ktm",
+              ] as (keyof typeof FESTIVAL_THEME_CATEGORIES)[]
+            ).map((catKey) => {
+              const catInfo = FESTIVAL_THEME_CATEGORIES[catKey];
+              const themesInCat = FESTIVAL_THEMES.filter((t) => t.category === catKey);
+              if (themesInCat.length === 0) return null;
 
               return (
-                <div
-                  key={theme.id}
-                  className="bg-surface rounded-2xl border border-border p-4 shadow-xs"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3 mb-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-2xl">{theme.icon}</span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-black text-foreground">
-                            {theme.name}
-                          </h3>
-                          <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border">
-                            {activeThemeCount} / {themeChamps.length} 体
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted">{theme.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => handleKeepOnlyTheme(theme.champIds)}
-                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-black shadow-xs transition cursor-pointer flex items-center gap-1"
-                        title="このテーマのチャンピオンだけを残して他をすべて❌除外します"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>このテーマのみ残す 🎯</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleExcludeGroup(champIds)}
-                        className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-xs font-bold border border-border transition cursor-pointer"
-                      >
-                        一括 ❌
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleClearGroup(champIds)}
-                        className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-success-500/10 text-success-600 hover:text-success-700 text-xs font-bold border border-border transition cursor-pointer"
-                      >
-                        一括解除
-                      </button>
-                    </div>
+                <div key={catKey} className="space-y-4">
+                  {/* カテゴリ見出し */}
+                  <div className="flex items-center gap-2 border-b-2 border-primary-500/30 pb-2">
+                    <span className="text-xl">{catInfo.icon}</span>
+                    <h3 className="text-base sm:text-lg font-black text-foreground">
+                      {catInfo.label}
+                    </h3>
+                    <span className="text-xs text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border font-bold">
+                      {themesInCat.length} テーマ
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
-                    {themeChamps.map((champ) => (
-                      <ChampionCard
-                        key={`${theme.id}-${champ.id}`}
-                        meta={champ}
-                        isExcluded={excludedIds.has(champ.id)}
-                        onClick={() => toggleExclude(champ.id)}
-                      />
-                    ))}
+                  <div className="space-y-5">
+                    {themesInCat.map((theme) => {
+                      // テーマに属するチャンピオンのうち、現在の検索クエリに合致するもの
+                      const themeChamps = theme.champIds
+                        .map((id) => CHAMPION_METADATA[id])
+                        .filter(Boolean)
+                        .filter((c) => {
+                          const q = searchQuery.trim().toLowerCase();
+                          if (!q) return true;
+                          return (
+                            c.name.toLowerCase().includes(q) ||
+                            c.ruby.toLowerCase().includes(q) ||
+                            c.id.toLowerCase().includes(q)
+                          );
+                        });
+
+                      if (themeChamps.length === 0) return null;
+                      const champIds = themeChamps.map((c) => c.id);
+                      const excludedCount = champIds.filter((id) => excludedIds.has(id)).length;
+                      const activeThemeCount = champIds.length - excludedCount;
+                      const isCurrentTheme = activeTheme?.id === theme.id;
+
+                      return (
+                        <div
+                          key={theme.id}
+                          className={`bg-surface rounded-2xl border p-4 shadow-xs transition-all ${
+                            isCurrentTheme
+                              ? "border-amber-500/80 ring-2 ring-amber-500/20 bg-amber-500/[0.02]"
+                              : "border-border"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3 mb-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-2xl">{theme.icon}</span>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-base font-black text-foreground">
+                                    {theme.name}
+                                  </h4>
+                                  {isCurrentTheme && (
+                                    <span className="text-[10px] bg-amber-500 text-white font-black px-2 py-0.5 rounded-full shadow-xs">
+                                      適用中 ★
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border font-mono">
+                                    {activeThemeCount} / {themeChamps.length} 体
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted">{theme.description}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleKeepOnlyTheme(theme.champIds, theme)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black shadow-xs transition cursor-pointer flex items-center gap-1 ${
+                                  isCurrentTheme
+                                    ? "bg-amber-600 text-white"
+                                    : "bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white"
+                                }`}
+                                title="このテーマのチャンピオンだけを残して他をすべて❌除外します"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>このテーマのみ残す 🎯</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleExcludeGroup(champIds)}
+                                className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-xs font-bold border border-border transition cursor-pointer"
+                              >
+                                一括 ❌
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleClearGroup(champIds)}
+                                className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-success-500/10 text-success-600 hover:text-success-700 text-xs font-bold border border-border transition cursor-pointer"
+                              >
+                                一括解除
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
+                            {themeChamps.map((champ) => (
+                              <ChampionCard
+                                key={`${theme.id}-${champ.id}`}
+                                meta={champ}
+                                isExcluded={excludedIds.has(champ.id)}
+                                onClick={() => toggleExclude(champ.id)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -792,6 +1164,190 @@ export default function FestivalPickPage() {
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 <span>結果をコピー</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 👥 少人数・ドラフト抽選結果モーダル ── */}
+      {draftResults.length > 0 && (
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface border-2 border-primary-500/50 rounded-3xl p-4 sm:p-6 max-w-4xl w-full shadow-2xl relative max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col">
+            {/* 上部背景デコレーション */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary-500 via-rose-500 to-amber-500" />
+
+            {/* モーダルヘッダー */}
+            <div className="flex items-center justify-between w-full mb-3 border-b border-border/80 pb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="p-2 bg-gradient-to-br from-primary-500 to-rose-600 rounded-xl text-white shadow-xs">
+                  <Sparkles className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-foreground flex items-center gap-2">
+                    お祭りドラフト抽選結果！
+                    <span className="text-xs bg-primary-500/10 text-primary-600 font-bold px-2 py-0.5 rounded-full border border-primary-500/20">
+                      {draftResults.length}名 / 各{picksPerPlayer}択
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-muted">
+                    各プレイヤーは提示された候補の中から1体を選んでください（クリックで確定マーク★が付きます）
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDraftResults([])}
+                className="p-1.5 rounded-full hover:bg-surface-hover text-muted hover:text-foreground text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* テーマ情報 */}
+            {activeTheme && (
+              <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
+                <span className="text-lg">{activeTheme.icon}</span>
+                <div>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    テーマ: {activeTheme.name}
+                  </span>
+                  <span className="text-muted ml-2 text-[11px]">
+                    — {activeTheme.description}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* プレイヤー別ドラフトカードグリッド */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+              {draftResults.map((player) => (
+                <div
+                  key={player.playerNumber}
+                  className={`bg-surface-subtle border rounded-2xl p-3 shadow-2xs transition-all ${
+                    player.selectedChampId
+                      ? "border-amber-500/60 ring-1 ring-amber-500/20 bg-amber-500/[0.02]"
+                      : "border-border"
+                  }`}
+                >
+                  {/* プレイヤーヘッダー */}
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                        {player.playerNumber}
+                      </span>
+                      <span className="text-xs font-black text-foreground">
+                        プレイヤー {player.playerNumber}
+                      </span>
+                      {player.selectedChampId && (
+                        <span className="text-[10px] bg-amber-500 text-white font-black px-1.5 py-0.2 rounded-md shadow-2xs flex items-center gap-1">
+                          <Check className="w-3 h-3" /> 確定
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 個別リロールボタン */}
+                    <button
+                      type="button"
+                      onClick={() => handleRerollSinglePlayer(player.playerNumber)}
+                      className="text-[10px] text-muted-strong hover:text-primary-600 bg-surface hover:bg-surface-hover px-2 py-0.5 rounded-lg border border-border flex items-center gap-1 transition cursor-pointer"
+                      title="このプレイヤーの候補だけを余りプールから再抽選"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>再抽選</span>
+                    </button>
+                  </div>
+
+                  {/* 候補チャンピオン群 */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {player.champions.map((champ) => {
+                      const isSelected = player.selectedChampId === champ.id;
+                      return (
+                        <button
+                          key={`${player.playerNumber}-${champ.id}`}
+                          type="button"
+                          onClick={() =>
+                            handleSelectDraftChamp(player.playerNumber, champ.id)
+                          }
+                          className={`relative flex flex-col items-center p-2 rounded-xl border text-center transition cursor-pointer select-none ${
+                            isSelected
+                              ? "bg-gradient-to-b from-amber-500/20 to-amber-500/5 border-amber-500 shadow-xs"
+                              : "bg-surface hover:bg-surface-hover border-border/80"
+                          }`}
+                        >
+                          <div
+                            className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-transform ${
+                              isSelected
+                                ? "border-amber-500 scale-105 shadow-sm"
+                                : "border-border"
+                            }`}
+                          >
+                            <img
+                              src={getChampIcon(champ.id)}
+                              alt={champ.name}
+                              className="w-full h-full object-cover"
+                            />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-amber-500/20 flex items-center justify-center">
+                                <span className="bg-amber-500 text-white p-0.5 rounded-full shadow-xs">
+                                  <Check className="w-3 h-3" />
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <span
+                            className={`mt-1.5 text-[11px] font-black truncate w-full px-0.5 leading-tight ${
+                              isSelected
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {champ.name}
+                          </span>
+                          <span className="text-[9px] text-muted truncate max-w-full">
+                            {REGIONS[champ.region]?.name || champ.region}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* フッター操作ボタン群 */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-border/80 pt-3">
+              <span className="text-xs text-muted font-bold">
+                確定済み:{" "}
+                <span className="text-amber-600 font-mono font-black">
+                  {draftResults.filter((p) => p.selectedChampId).length}
+                </span>{" "}
+                / {draftResults.length}名
+              </span>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleDraftRoulette}
+                  disabled={isDraftRolling}
+                  className="px-3.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Dice6 className={`w-4 h-4 ${isDraftRolling ? "animate-spin" : ""}`} />
+                  <span>もう一度全員抽選 🎲</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyDraftResults}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-rose-600 hover:from-primary-500 hover:to-rose-500 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                >
+                  {copiedDraft ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  <span>📋 Discord用に結果コピー</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

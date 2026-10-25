@@ -250,7 +250,7 @@ export interface FestivalTheme {
   name: string;
   icon: string;
   description: string;
-  category: 'mechanics' | 'theme' | 'ktm';
+  category: 'mechanics' | 'theme' | 'rivalry' | 'ktm';
   champIds: string[];
 }
 
@@ -303,8 +303,142 @@ export const FESTIVAL_THEMES: FestivalTheme[] = [
       'Illaoi', 'Trundle', 'Singed', 'Sion', 'Annie'
     ]
   },
+  {
+    id: 'nomana',
+    name: 'ノーマナ・気勢ラッシュ（スキル連打）',
+    icon: '⚡',
+    description: 'マナ切れ知らず！気・怒り・完全ノーコスト勢による超ハイスピード戦',
+    category: 'mechanics',
+    champIds: [
+      'Aatrox', 'Akali', 'Briar', 'DrMundo', 'Garen',
+      'Gnar', 'Katarina', 'Kennen', 'Kled', 'LeeSin',
+      'Mordekaiser', 'RekSai', 'Renekton', 'Riven', 'Rumble',
+      'Shen', 'Shyvana', 'Viego', 'Vladimir', 'Yasuo',
+      'Yone', 'Zac', 'Sett'
+    ]
+  },
+  {
+    id: 'super_poke',
+    name: '超長射程・弾幕スナイパー戦',
+    icon: '🎯',
+    description: '遠距離ポーク・爆撃スキルで削り合い！接近戦お断りの弾幕戦',
+    category: 'mechanics',
+    champIds: [
+      'Xerath', 'Ziggs', 'Jayce', 'Varus', 'Velkoz',
+      'Lux', 'Caitlyn', 'Jhin', 'Zoe', 'KogMaw',
+      'Hwei', 'Nidalee', 'Ezreal', 'Kaisa'
+    ]
+  },
+  {
+    id: 'ultra_tank_sustain',
+    name: '超回復・ゾンビシールド合戦',
+    icon: '💉',
+    description: '削っても削っても自己回復やシールドで復活！不死身の泥沼耐久マッチ',
+    category: 'mechanics',
+    champIds: [
+      'DrMundo', 'Warwick', 'Aatrox', 'Vladimir', 'TahmKench',
+      'Zac', 'Illaoi', 'Swain', 'Volibear', 'Olaf',
+      'Briar', 'Maokai', 'Sion', 'Shen', 'Taric', 'Soraka'
+    ]
+  },
+  {
+    id: 'game_changer_ult',
+    name: '最強Ult大乱闘（一撃必殺集団戦）',
+    icon: '🌪️',
+    description: '集団戦を一瞬でひっくり返す最強アルティメット持ち集結！Ult即開戦！',
+    category: 'mechanics',
+    champIds: [
+      'Malphite', 'Amumu', 'Fiddlesticks', 'Kennen', 'Orianna',
+      'Diana', 'JarvanIV', 'Neeko', 'Hecarim', 'Rakan',
+      'MissFortune', 'Gangplank', 'Seraphine', 'Rell', 'Sona'
+    ]
+  },
 
-  // 🐾 2. テーマ・種族・ビジュアル系
+  // ⚔️ 2. 地域抗争シリーズ
+  {
+    id: 'demacia_vs_noxus',
+    name: 'デマーシア vs ノクサス（王道帝国戦争）',
+    icon: '🛡️🪓',
+    description: '正義と規律のデマーシア軍 vs 力こそ正義のノクサス軍による全面激突！',
+    category: 'rivalry',
+    champIds: [
+      'Garen', 'JarvanIV', 'Lux', 'Fiora', 'Galio',
+      'Kayle', 'Lucian', 'Morgana', 'Poppy', 'Quinn',
+      'Shyvana', 'Sona', 'Sylas', 'Vayne', 'XinZhao',
+      'Darius', 'Draven', 'Katarina', 'Swain', 'Talon',
+      'Vladimir', 'Ambessa', 'Annie', 'Briar', 'Cassiopeia',
+      'Kled', 'Leblanc', 'Mordekaiser', 'Rell', 'Riven',
+      'Samira', 'Sion'
+    ]
+  },
+  {
+    id: 'piltover_vs_zaun',
+    name: 'ピルトーヴァー vs ゾウン（進歩と化学）',
+    icon: '⚙️🧪',
+    description: '進歩と科学の輝く都市 vs 地下に広がる過激化学都市のサイバー抗争！',
+    category: 'rivalry',
+    champIds: [
+      'Caitlyn', 'Camille', 'Ezreal', 'Heimerdinger', 'Jayce',
+      'Mel', 'Orianna', 'Seraphine', 'Vi',
+      'Blitzcrank', 'DrMundo', 'Ekko', 'Janna', 'Jinx',
+      'Renata', 'Singed', 'Twitch', 'Urgot', 'Viktor',
+      'Warwick', 'Zac', 'Zeri', 'Ziggs'
+    ]
+  },
+  {
+    id: 'ionia_showdown',
+    name: 'アイオニア決戦（自然・武芸・霊的調和）',
+    icon: '🌸',
+    description: '忍、剣士、精霊魔法使いが集う初生の地の頂上決戦！',
+    category: 'rivalry',
+    champIds: [
+      'Ahri', 'Akali', 'Hwei', 'Irelia', 'Ivern',
+      'Jhin', 'Karma', 'Kayn', 'Kennen', 'LeeSin',
+      'Lillia', 'MasterYi', 'Rakan', 'Sett', 'Shen',
+      'Syndra', 'Varus', 'Wukong', 'Xayah', 'Yasuo',
+      'Yone', 'Zed'
+    ]
+  },
+  {
+    id: 'shurima_vs_targon',
+    name: 'シュリーマ vs ターゴン（砂漠超越者vs天界）',
+    icon: '☀️🏔️',
+    description: '古代砂漠帝国の超越者皇帝 vs 天界霊峰の巨神星霊たちの激突！',
+    category: 'rivalry',
+    champIds: [
+      'Azir', 'Nasus', 'Renekton', 'Xerath', 'Sivir',
+      'Amumu', 'Akshan', 'KSante', 'Naafiri', 'Rammus', 'Taliyah',
+      'AurelionSol', 'Diana', 'Leona', 'Pantheon', 'Soraka',
+      'Taric', 'Zoe', 'Aphelios'
+    ]
+  },
+  {
+    id: 'bilgewater_vs_shadowisles',
+    name: 'ビルジウォーター vs シャドウアイル',
+    icon: '🏴‍☠️👻',
+    description: '無法の港湾海賊団 vs 黒き霧に呪われしアンデッド亡霊軍団！',
+    category: 'rivalry',
+    champIds: [
+      'Gangplank', 'MissFortune', 'Graves', 'Pyke', 'Nautilus',
+      'Illaoi', 'TwistedFate', 'TahmKench', 'Fizz', 'Nilah',
+      'Viego', 'Hecarim', 'Thresh', 'Kalista', 'Karthus',
+      'Gwen', 'Senna', 'Elise', 'Maokai', 'Yorick'
+    ]
+  },
+  {
+    id: 'freljord_tribes',
+    name: 'フレヨルド氷雪抗争（三姉妹のサバイバル）',
+    icon: '❄️',
+    description: 'アヴァローサ、ウィンターズクロウ、フロストガードの過酷な極北バトル！',
+    category: 'rivalry',
+    champIds: [
+      'Ashe', 'Sejuani', 'Lissandra', 'Braum', 'Anivia',
+      'Volibear', 'Ornn', 'Olaf', 'Trundle', 'Tryndamere',
+      'Gragas', 'Nunu', 'Udyr', 'Aurora', 'Gnar'
+    ]
+  },
+
+  // 🐾 3. テーマ・種族・ビジュアル系
   {
     id: 'yordle',
     name: 'ヨードル軍団（ちびっこ大行進）',
@@ -368,5 +502,13 @@ export const FESTIVAL_THEMES: FestivalTheme[] = [
     ]
   }
 ];
+
+export const FESTIVAL_THEME_CATEGORIES = {
+  mechanics: { label: '戦闘・メカニクス縛り', icon: '⚡' },
+  rivalry: { label: '地域抗争シリーズ', icon: '⚔️' },
+  theme: { label: 'ビジュアル・種族縛り', icon: '🐾' },
+  ktm: { label: '初心者・ハンデ枠', icon: '🌱' },
+} as const;
+
 
 
