@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     });
 
     if (!player) {
-      return NextResponse.json({ ok: false, error: 'プレイヤー情報の取得に失敗しました。' }, { status: 404 });
+      return NextResponse.json({ ok: false, error: 'プレイヤー情報の取得・初期化に失敗しました。時間をおいて再ログインしてください。' }, { status: 500 });
     }
 
     const currentCoins = getPlayerCoins(player);

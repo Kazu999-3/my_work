@@ -55,13 +55,11 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
   const [clashData, setClashData] = useState<any>(null);
   const [loadingClash, setLoadingClash] = useState(false);
   // 🛡️ チームメンバーやレーン入れ替え時にもリアルタイムに格上対面警告を再計算
-  const unallowedHigherMatchups = useMemo(() => {
-    return detectUnallowedHigherMatchups(
-      balanceResult?.teamBlue || [],
-      balanceResult?.teamRed || [],
-      players
-    );
-  }, [balanceResult?.teamBlue, balanceResult?.teamRed, players]);
+  const unallowedHigherMatchups = detectUnallowedHigherMatchups(
+    balanceResult?.teamBlue || [],
+    balanceResult?.teamRed || [],
+    players
+  );
 
 
   useEffect(() => {
