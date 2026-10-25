@@ -249,3 +249,40 @@ export async function getChampionAbilityNames(champId: string): Promise<string[]
   abilityNameCache.set(formatted, []);
   return [];
 }
+
+/**
+ * アイテムIDからDataDragonのアイコン画像URLを取得（未所持・0の場合はnull）
+ */
+export function getItemIcon(itemId?: number | string | null): string | null {
+  if (!itemId) return null;
+  const idNum = Number(itemId);
+  if (!idNum || idNum <= 0) return null;
+  return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/item/${idNum}.png`;
+}
+
+const SPELL_ID_TO_NAME: Record<number, string> = {
+  1: 'SummonerBoost',
+  3: 'SummonerExhaust',
+  4: 'SummonerFlash',
+  6: 'SummonerHaste',
+  7: 'SummonerHeal',
+  11: 'SummonerSmite',
+  12: 'SummonerTeleport',
+  13: 'SummonerMana',
+  14: 'SummonerDot',
+  21: 'SummonerBarrier',
+  32: 'SummonerSnowball',
+};
+
+/**
+ * サモナースペルIDからDataDragonのアイコン画像URLを取得
+ */
+export function getSummonerSpellIcon(spellId?: number | string | null): string | null {
+  if (!spellId) return null;
+  const idNum = Number(spellId);
+  const name = SPELL_ID_TO_NAME[idNum];
+  if (!name) return null;
+  return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/spell/${name}.png`;
+}
+
+

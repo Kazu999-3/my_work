@@ -3,7 +3,7 @@ import { toast } from '../../components/Toaster';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getChampIcon } from '../../lib/ddragonClient';
+import { getChampIcon, getItemIcon, getSummonerSpellIcon } from '../../lib/ddragonClient';
 import type { MmrBreakdown } from '../../lib/mmr';
 
 interface Match {
@@ -28,7 +28,15 @@ interface Participant {
   cs?: number;
   gold?: number | null;
   damage_dealt?: number;
+  damage_taken?: number;
   vision_score?: number;
+  items?: number[];
+  spells?: number[];
+  cc_time?: number;
+  solo_kills?: number;
+  time_dead?: number;
+  damage_mitigated?: number;
+  building_damage?: number;
 }
 
 function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
@@ -62,6 +70,74 @@ function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
   }
   parts.push(`計 ${b.final > 0 ? '+' : ''}${b.final ?? delta ?? 0}`);
   return parts.join(' / ');
+}
+
+function ItemSlots({ items }: { items?: number[] }) {
+  if (!items || items.length === 0 || items.every(id => !id || id <= 0)) return null;
+  return (
+    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+      <div className="grid grid-flow-col grid-rows-2 gap-0.5">
+        {items.slice(0, 6).map((itemId, i) => {
+          const icon = getItemIcon(itemId);
+          return (
+            <div key={i} className="w-5 h-5 rounded bg-black/40 border border-border/40 overflow-hidden flex items-center justify-center shrink-0">
+              {icon ? (
+                <img src={icon} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-black/20" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* トリンケット枠 */}
+      {items[6] !== undefined && items[6] > 0 && (
+        <div className="w-5 h-5 rounded-full bg-black/40 border border-amber-500/30 overflow-hidden flex items-center justify-center shrink-0 ml-0.5 self-center">
+          {getItemIcon(items[6]) ? (
+            <img src={getItemIcon(items[6])!} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-black/20" />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DamageBar({ damage, maxDamage, team }: { damage?: number; maxDamage: number; team: 'BLUE' | 'RED' }) {
+  const dmg = Number(damage) || 0;
+  if (dmg <= 0 || maxDamage <= 0) return null;
+  const pct = Math.min(100, Math.round((dmg / maxDamage) * 100));
+  const isBlue = team === 'BLUE';
+
+  return (
+    <div className="flex flex-col items-end gap-0.5 min-w-[55px] sm:min-w-[75px] shrink-0" title={`与ダメージ: ${dmg.toLocaleString()}`}>
+      <div className="text-[10px] font-mono font-bold text-foreground-subtle flex items-center gap-1">
+        <span>{(dmg / 1000).toFixed(1)}k</span>
+      </div>
+      <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${isBlue ? 'bg-secondary-500' : 'bg-danger-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SummonerSpells({ spells }: { spells?: number[] }) {
+  if (!spells || spells.length === 0 || spells.every(s => !s || s <= 0)) return null;
+  return (
+    <div className="flex flex-col gap-0.5 shrink-0">
+      {spells.slice(0, 2).map((spellId, i) => {
+        const icon = getSummonerSpellIcon(spellId);
+        if (!icon) return <div key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded bg-black/30 border border-border/30" />;
+        return (
+          <img key={i} src={icon} alt="" className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded object-cover border border-black/40 shadow-2xs" />
+        );
+      })}
+    </div>
+  );
 }
 
 const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -469,6 +545,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           const blueSorted = sortByRole(blueTeam);
           const redSorted = sortByRole(redTeam);
 
+          // チーム最大ダメージの算出（バーのスケール用）
+          const blueMaxDmg = Math.max(...blueTeam.map(p => Number(p.damage_dealt) || 0), 1);
+          const redMaxDmg = Math.max(...redTeam.map(p => Number(p.damage_dealt) || 0), 1);
+
           // チーム合計キル
           const blueKills = blueTeam.reduce((sum, p) => sum + (p.kills || 0), 0);
           const redKills = redTeam.reduce((sum, p) => sum + (p.kills || 0), 0);
@@ -564,30 +644,36 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     </div>
                     <div className="space-y-2.5">
                       {blueSorted.map(p => (
-                        <div key={p.player_name} className="flex items-center gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition">
-                          <div className="w-8 text-center text-[11px] font-black text-muted-strong flex-shrink-0">{p.role}</div>
+                        <div key={p.player_name} className="flex items-center gap-2 sm:gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition flex-wrap sm:flex-nowrap">
+                          <div className="w-7 sm:w-8 text-center text-[10px] sm:text-[11px] font-black text-muted-strong shrink-0">{p.role}</div>
                           {p.champion_name ? (
                             <Image
                               src={getChampIcon(p.champion_name)}
                               alt={p.champion_name}
                               width={36}
                               height={36}
-                              className="w-9 h-9 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
+                              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border shrink-0 object-cover shadow-2xs"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/5 shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
                           )}
-                          <div className="flex-1 min-w-0">
+                          <SummonerSpells spells={p.spells} />
+                          <div className="flex-1 min-w-[90px] sm:min-w-[110px]">
                             <Link href={`/player/${encodeURIComponent(p.player_name)}`} className="font-black text-foreground truncate text-xs sm:text-sm hover:underline hover:text-primary-600 block">
                               {p.player_name}
                             </Link>
-                            <div className="text-[10px] font-bold text-muted-strong">
-                              {p.champion_name || 'Champion'}
+                            <div className="text-[10px] font-bold text-muted-strong flex items-center gap-1.5 flex-wrap">
+                              <span>{p.champion_name || 'Champion'}</span>
+                              {Number(p.cs) > 0 && <span className="text-faint font-mono font-normal">({p.cs} CS)</span>}
+                              {p.gold && p.gold > 0 ? <span className="text-amber-500/90 font-mono font-normal">🪙{p.gold.toLocaleString()}</span> : null}
                             </div>
                           </div>
-                          
-                          <div className="flex flex-col items-end justify-center flex-shrink-0">
+
+                          <DamageBar damage={p.damage_dealt} maxDamage={blueMaxDmg} team="BLUE" />
+                          <ItemSlots items={p.items} />
+
+                          <div className="flex flex-col items-end justify-center shrink-0">
                             <div className="text-xs font-bold text-foreground-subtle font-mono">
                               {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
                             </div>
@@ -598,7 +684,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
                           <div
                             title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                            className={`w-12 text-right font-black font-mono text-xs sm:text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
+                            className={`w-10 sm:w-12 text-right font-black font-mono text-xs sm:text-sm shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
                           >
                             {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                           </div>
@@ -620,30 +706,36 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     </div>
                     <div className="space-y-2.5">
                       {redSorted.map(p => (
-                        <div key={p.player_name} className="flex items-center gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition">
-                          <div className="w-8 text-center text-[11px] font-black text-muted-strong flex-shrink-0">{p.role}</div>
+                        <div key={p.player_name} className="flex items-center gap-2 sm:gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition flex-wrap sm:flex-nowrap">
+                          <div className="w-7 sm:w-8 text-center text-[10px] sm:text-[11px] font-black text-muted-strong shrink-0">{p.role}</div>
                           {p.champion_name ? (
                             <Image
                               src={getChampIcon(p.champion_name)}
                               alt={p.champion_name}
                               width={36}
                               height={36}
-                              className="w-9 h-9 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
+                              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border shrink-0 object-cover shadow-2xs"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/5 shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
                           )}
-                          <div className="flex-1 min-w-0">
+                          <SummonerSpells spells={p.spells} />
+                          <div className="flex-1 min-w-[90px] sm:min-w-[110px]">
                             <Link href={`/player/${encodeURIComponent(p.player_name)}`} className="font-black text-foreground truncate text-xs sm:text-sm hover:underline hover:text-primary-600 block">
                               {p.player_name}
                             </Link>
-                            <div className="text-[10px] font-bold text-muted-strong">
-                              {p.champion_name || 'Champion'}
+                            <div className="text-[10px] font-bold text-muted-strong flex items-center gap-1.5 flex-wrap">
+                              <span>{p.champion_name || 'Champion'}</span>
+                              {Number(p.cs) > 0 && <span className="text-faint font-mono font-normal">({p.cs} CS)</span>}
+                              {p.gold && p.gold > 0 ? <span className="text-amber-500/90 font-mono font-normal">🪙{p.gold.toLocaleString()}</span> : null}
                             </div>
                           </div>
-                          
-                          <div className="flex flex-col items-end justify-center flex-shrink-0">
+
+                          <DamageBar damage={p.damage_dealt} maxDamage={redMaxDmg} team="RED" />
+                          <ItemSlots items={p.items} />
+
+                          <div className="flex flex-col items-end justify-center shrink-0">
                             <div className="text-xs font-bold text-foreground-subtle font-mono">
                               {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
                             </div>
@@ -654,7 +746,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
                           <div
                             title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                            className={`w-12 text-right font-black font-mono text-xs sm:text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
+                            className={`w-10 sm:w-12 text-right font-black font-mono text-xs sm:text-sm shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
                           >
                             {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                           </div>
