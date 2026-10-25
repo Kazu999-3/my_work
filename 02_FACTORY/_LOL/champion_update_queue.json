@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-24T13:02:08.755528+00:00",
+  "updated_at": "2026-10-25T20:12:53.296261+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -274,8 +274,8 @@
     },
     "Heimerdinger": {
       "name": "ハイマーディンガー",
-      "status": "pending",
-      "updated_at": "2026-10-16T08:50:44.493460+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-25T20:11:52.011495+00:00",
       "error": null
     },
     "Hwei": {
