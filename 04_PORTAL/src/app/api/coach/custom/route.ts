@@ -19,6 +19,17 @@ export async function GET(req: NextRequest) {
 
     const session = await getAuthSession();
     const isAdmin = Boolean(session?.isAdmin);
+    const isKazuki = session?.discordId === '697220229964759130' || playerName.toUpperCase() === 'KAZUKI' || playerName === 'かずき' || isAdmin;
+
+    // 先行テスト枠ガード: 一旦様子見でKAZUKIのみ利用可能
+    if (!isKazuki) {
+      return NextResponse.json({
+        ok: true,
+        report: null,
+        isPrivate: true,
+        error: '専属AIコーチ機能は現在先行テスト中のため、KAZUKI限定で公開されています。',
+      });
+    }
 
     // プレイヤーのDiscord IDを取得して本人確認
     let isOwner = false;
@@ -101,6 +112,14 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = Boolean(session.isAdmin);
+    const isKazuki = session.discordId === '697220229964759130' || playerName.toUpperCase() === 'KAZUKI' || playerName === 'かずき' || isAdmin;
+
+    if (!isKazuki) {
+      return NextResponse.json({
+        ok: false,
+        error: '専属AIコーチ機能は現在先行テスト中のため、KAZUKI限定で公開されています。',
+      }, { status: 403 });
+    }
 
     // 本人または管理者のみ診断実行可能
     let isOwner = false;

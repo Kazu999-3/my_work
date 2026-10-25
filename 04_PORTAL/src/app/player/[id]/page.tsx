@@ -840,10 +840,18 @@ export default function PlayerMyPage() {
     (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
   );
 
+  // 👑 KAZUKI（先行テスト枠）判定: 本人または管理者のみ先行検証可能
+  const isKazuki = Boolean(
+    player?.discord_id === '697220229964759130' ||
+    player?.name?.toUpperCase() === 'KAZUKI' ||
+    player?.name === 'かずき' ||
+    currentUser?.discordId === '697220229964759130'
+  );
+
   // タブアイテム定義（案B: KTMカスタムとソロキューを完全分離）
   const tabItems = [
     { id: "summary", name: "総合カルテ", icon: <Activity className="w-4 h-4" /> },
-    { id: "coach", name: "🤖 専属AIコーチ", icon: <Sparkles className="w-4 h-4 text-primary-500" /> },
+    ...(isKazuki ? [{ id: "coach", name: "🤖 専属AIコーチ", icon: <Sparkles className="w-4 h-4 text-primary-500" /> }] : []),
     { id: "analytics", name: "⚔️ KTMカスタム分析", icon: <Swords className="w-4 h-4" /> },
     { id: "soloq", name: "🎮 ソロキュー戦績", icon: <Award className="w-4 h-4" /> },
     { id: "chemistry", name: "🤝 相性＆好敵手", icon: <Users className="w-4 h-4" /> },
@@ -1341,8 +1349,8 @@ export default function PlayerMyPage() {
               transition={{ duration: 0.25 }}
             >
               
-              {/* 🤖 専属AIコーチタブ */}
-              {activeTab === 'coach' && (
+              {/* 🤖 専属AIコーチタブ（KAZUKI先行テスト時のみ） */}
+              {isKazuki && activeTab === 'coach' && (
                 <div className="space-y-6">
                   <CoachReportCard
                     playerName={player?.name || ''}
@@ -1355,14 +1363,16 @@ export default function PlayerMyPage() {
               {/* 1. 総合分析タブ */}
               {activeTab === 'summary' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* 🤖 専属AIコーチカルテ（サマリー最上部） */}
-                  <div className="lg:col-span-3">
-                    <CoachReportCard
-                      playerName={player?.name || ''}
-                      isMe={Boolean(isMe)}
-                      isAdmin={Boolean(currentUser?.isAdmin)}
-                    />
-                  </div>
+                  {/* 🤖 専属AIコーチカルテ（サマリー最上部・KAZUKI先行テスト時のみ表示） */}
+                  {isKazuki && (
+                    <div className="lg:col-span-3">
+                      <CoachReportCard
+                        playerName={player?.name || ''}
+                        isMe={Boolean(isMe)}
+                        isAdmin={Boolean(currentUser?.isAdmin)}
+                      />
+                    </div>
+                  )}
 
                   {/* 🤝 あなたの師弟関係 ＆ 目標ランク進捗レポート */}
                   <div className="lg:col-span-3">
