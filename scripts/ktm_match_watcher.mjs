@@ -264,8 +264,17 @@ function parseEogStats(eogData) {
     }
   }
 
-  if (allPlayers.length !== 10) {
-    console.warn(`[KTM Watcher] プレイヤー数が10人ではありません (${allPlayers.length}人)。カスタム戦以外はスキップします。`);
+  // ゲームモード判定
+  const isCustomGame = eogData.gameType === 'CUSTOM_GAME' || eogData.queueId === 0 || (!eogData.queueId && allPlayers.length === 10);
+  const isRankedSolo = eogData.queueId === 420;
+
+  if (!isCustomGame && !isRankedSolo) {
+    console.log(`[KTM Watcher] カスタム戦またはソロQ以外のゲームモード（Queue: ${eogData.queueId || '不明'}）のためスキップします。`);
+    return null;
+  }
+
+  if (isCustomGame && allPlayers.length !== 10) {
+    console.warn(`[KTM Watcher] カスタム戦のプレイヤー数が10人ではありません (${allPlayers.length}人)。スキップします。`);
     return null;
   }
 
@@ -351,14 +360,22 @@ async function main() {
 
                 if (payload) {
                   try {
-                    const res = await sendToPortal(payload);
-                    recordedGameIds.add(gameId);
-                    console.log('====================================================');
-                    console.log('🎉 【自動記録完了】試合結果がポータルへ正常に送信されました！');
-                    console.log(`🏆 勝利チーム: ${payload.winningTeam}`);
-                    console.log(`⏱️ 試合時間: 約${Math.round(payload.gameDuration / 60)}分`);
-                    console.log('📰 KTMスポーツ号外＆Discord通知も自動発行されました！');
-                    console.log('====================================================\n');
+                    const isRankedSolo = eogData.queueId === 420;
+                    if (isRankedSolo) {
+                      console.log('🎮 【ソロキュー検知】Ranked Soloの試合結果を検出しました！');
+                      recordedGameIds.add(gameId);
+                      console.log(`⏱️ 試合時間: 約${Math.round(payload.gameDuration / 60)}分 / 参加者: ${payload.participants.length}名`);
+                      console.log('💡 ソロキュー戦績はRiot API同期および専属AIコーチのギャップ分析に反映されます。');
+                    } else {
+                      const res = await sendToPortal(payload);
+                      recordedGameIds.add(gameId);
+                      console.log('====================================================');
+                      console.log('🎉 【自動記録完了】カスタム試合結果がポータルへ正常に送信されました！');
+                      console.log(`🏆 勝利チーム: ${payload.winningTeam}`);
+                      console.log(`⏱️ 試合時間: 約${Math.round(payload.gameDuration / 60)}分`);
+                      console.log('📰 KTMスポーツ号外＆Discord通知も自動発行されました！');
+                      console.log('====================================================\n');
+                    }
                   } catch (err) {
                     console.error('❌ ポータルへの送信エラー:', err.message);
                     console.log('※ 3秒後に再試行します...');

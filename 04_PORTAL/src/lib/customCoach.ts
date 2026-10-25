@@ -32,8 +32,41 @@ export interface CustomCoachReport {
     summary: string;
     recommendedTip: string;
   };
+  soloqGapAnalysis?: {
+    hasSoloqData: boolean;
+    soloqRank?: string;
+    soloqPlaystyleTag?: string;
+    tendencyDifference: string;
+    synergyAdvice: string;
+  };
   coachCheerMessage: string;
   createdAt: string;
+}
+
+/**
+ * プレイヤーのソロキュー連携情報・プレイスタイルを取得
+ */
+export async function fetchPlayerSoloqInfo(playerName: string) {
+  if (!supabase) return null;
+  try {
+    const { data: p } = await supabase
+      .from('ktm_players')
+      .select('highest_rank, puuid, riot_id, metadata')
+      .eq('name', playerName)
+      .maybeSingle();
+
+    if (!p) return null;
+
+    const soloq = (p.metadata as any)?.playstyle_cache?.soloq;
+    return {
+      highestRank: p.highest_rank || 'UNRANKED',
+      riotId: p.riot_id || '',
+      hasPuuid: Boolean(p.puuid),
+      soloqPlaystyle: soloq || null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -137,7 +170,7 @@ export async function fetchPlayerRecentCustomMatches(playerName: string, limit =
 /**
  * 実スタッツに基づくルールベースフォールバックカルテ生成
  */
-export function buildRuleBasedReport(playerName: string, matches: any[]): CustomCoachReport {
+export function buildRuleBasedReport(playerName: string, matches: any[], soloqInfo?: any): CustomCoachReport {
   const totalMatches = matches.length;
   const wins = matches.filter(m => m.isWin).length;
   const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 50;
@@ -204,6 +237,20 @@ export function buildRuleBasedReport(playerName: string, matches: any[]): Custom
     recommendedTip: '敵のアサシンやCCが重い構成の場合、第2・第3コアで早めのストップウォッチ系（ゾーニャ）やサモスペ（クレンズ・フラッシュ）の温存を意識すると生存率が跳ね上がります。',
   };
 
+  // 🎮 ソロQ×カスタムのギャップ診断
+  let soloqGapAnalysis = undefined;
+  if (soloqInfo && soloqInfo.hasPuuid) {
+    const soloqRank = soloqInfo.highestRank || 'UNRANKED';
+    const tag = soloqInfo.soloqPlaystyle?.primaryTag || 'balanced-player';
+    soloqGapAnalysis = {
+      hasSoloqData: true,
+      soloqRank,
+      soloqPlaystyleTag: tag,
+      tendencyDifference: `ソロキューでは【${soloqRank}】で個人技・ソロキルを主体に戦う傾向がありますが、カスタムではチームの連携やエンゲージ合わせを優先して慎重に立ち回る場面が見られます。`,
+      synergyAdvice: `ソロキューで培った鋭い対面キル圧をカスタムでも遠慮なく発揮しましょう。「自分がレーンを押し込んで先に寄る」コールを味方に1言伝えるだけで、チーム全体の士気と勝率が急上昇します。`,
+    };
+  }
+
   return {
     playerName,
     analyzedMatchesCount: totalMatches,
@@ -221,6 +268,7 @@ export function buildRuleBasedReport(playerName: string, matches: any[]): Custom
     strengths,
     improvementFocus,
     itemAndBuildAdvice,
+    soloqGapAnalysis,
     coachCheerMessage: `${playerName}さんの持ち味であるアグレッシブな判断力はチームの強力な推進力です！中盤の生存意識をあと1つ高めるだけで、次戦のキャリー力はさらに覚醒します！`,
     createdAt: new Date().toISOString(),
   };
@@ -230,14 +278,17 @@ export function buildRuleBasedReport(playerName: string, matches: any[]): Custom
  * Gemini を用いてプレイヤー専用カルテをオンデマンド生成
  */
 export async function generateCustomCoachReport(playerName: string): Promise<CustomCoachReport> {
-  const matches = await fetchPlayerRecentCustomMatches(playerName, 8);
+  const [matches, soloqInfo] = await Promise.all([
+    fetchPlayerRecentCustomMatches(playerName, 8),
+    fetchPlayerSoloqInfo(playerName),
+  ]);
 
   if (matches.length === 0) {
     throw new Error('分析対象のカスタム試合履歴がまだありません。カスタムに参加後に再度お試しください。');
   }
 
   // ルールベースの基礎サマリーを作成
-  const baseReport = buildRuleBasedReport(playerName, matches);
+  const baseReport = buildRuleBasedReport(playerName, matches, soloqInfo);
 
   // Gemini プロンプトの組み立て
   const matchesSummary = matches.map((m: any, idx: number) => {
@@ -252,6 +303,10 @@ export async function generateCustomCoachReport(playerName: string): Promise<Cus
     ].filter(Boolean).join(', ');
     return `試合${idx+1}: ${result} ${m.role} (${m.champion}) - ${details} ${itemsText}`;
   }).join('\n');
+
+  const soloqSection = soloqInfo?.hasPuuid
+    ? `\n【ソロキュー戦績データ】\n・最高到達ランク: ${soloqInfo.highestRank}\n・ソロQプレイスタイル傾向: ${soloqInfo.soloqPlaystyle?.primaryTag || 'balanced-player'}`
+    : '';
 
   const prompt = `あなたはLoLプロチームの専属アナリスト兼パーソナルコーチです。
 プレイヤー「${playerName}」の直近のカスタム試合の実数値スコアに基づき、選手の自信を高めつつ、次戦で勝率をあと一段引き上げるための【個人専属カルテ】を作成してください。
@@ -272,6 +327,7 @@ export async function generateCustomCoachReport(playerName: string): Promise<Cus
 ・主なロール: ${baseReport.keyStats.mainRole} / 主なチャンプ: ${baseReport.keyStats.mostPlayedChamp}
 ・平均与ダメ: ${baseReport.keyStats.avgDamage.toLocaleString()} / 平均白黒時間: ${baseReport.keyStats.avgTimeDeadSec}秒
 ${matchesSummary}
+${soloqSection}
 
 {
   "playerName": "${playerName}",

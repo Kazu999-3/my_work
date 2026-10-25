@@ -81,3 +81,37 @@ test('buildRuleBasedReport: サポート・高視界時に「影のゲームメ�
   assert.equal(report.coachBadge.title, '影のゲームメイカー');
   assert.equal(report.keyStats.mainRole, 'SUP');
 });
+
+test('buildRuleBasedReport: ソロキュー連携情報がある場合にギャップ診断が生成される', () => {
+  const dummyMatches = [
+    {
+      matchId: 1,
+      isWin: true,
+      role: 'TOP',
+      champion: 'Darius',
+      kills: 5,
+      deaths: 2,
+      assists: 4,
+      cs: 190,
+      damageDealt: 22000,
+      timeDead: 50,
+      damageMitigated: 18000,
+      visionScore: 12,
+    },
+  ];
+
+  const dummySoloq = {
+    hasPuuid: true,
+    highestRank: 'EMERALD II',
+    soloqPlaystyle: {
+      primaryTag: 'early-brawler',
+    },
+  };
+
+  const report = buildRuleBasedReport('SoloqWarrior', dummyMatches, dummySoloq);
+  assert.ok(report.soloqGapAnalysis);
+  assert.equal(report.soloqGapAnalysis?.hasSoloqData, true);
+  assert.equal(report.soloqGapAnalysis?.soloqRank, 'EMERALD II');
+  assert.ok(report.soloqGapAnalysis?.tendencyDifference.includes('EMERALD II'));
+  assert.ok(report.soloqGapAnalysis?.synergyAdvice.length > 20);
+});

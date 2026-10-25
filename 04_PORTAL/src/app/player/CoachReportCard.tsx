@@ -180,7 +180,7 @@ export default function CoachReportCard({ playerName, isMe, isAdmin }: CoachRepo
   }
 
   // 診断カルテの表示
-  const { coachBadge, keyStats, strengths, improvementFocus, itemAndBuildAdvice, coachCheerMessage, analyzedMatchesCount, overallRating } = report;
+  const { coachBadge, keyStats, strengths, improvementFocus, itemAndBuildAdvice, soloqGapAnalysis, coachCheerMessage, analyzedMatchesCount, overallRating } = report;
 
   return (
     <div className="bg-surface/90 border border-border rounded-3xl p-5 sm:p-8 shadow-lg space-y-6 relative overflow-hidden">
@@ -355,6 +355,33 @@ export default function CoachReportCard({ playerName, isMe, isAdmin }: CoachRepo
           <div className="text-xs text-muted leading-relaxed">
             <strong className="text-foreground font-black">{itemAndBuildAdvice.summary}</strong>
             <p className="mt-1 text-faint">{itemAndBuildAdvice.recommendedTip}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 🎮 ソロQ×カスタム 立ち回りギャップ分析 */}
+      {soloqGapAnalysis && soloqGapAnalysis.hasSoloqData && (
+        <div className="bg-gradient-to-r from-secondary-500/10 via-surface-subtle to-secondary-500/5 border border-secondary-edge-soft/60 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h4 className="text-xs font-black uppercase tracking-wider text-secondary-800 flex items-center gap-1.5">
+              <span>🎮</span>
+              <span>ソロキュー × KTMカスタム 立ち回りギャップ診断</span>
+            </h4>
+            <span className="text-[10px] font-mono text-faint bg-secondary-100 dark:bg-secondary-950/40 text-secondary-800 px-2 py-0.5 rounded border border-secondary-edge-soft">
+              最高到達: {soloqGapAnalysis.soloqRank}
+            </span>
+          </div>
+
+          <p className="text-xs text-muted leading-relaxed">
+            {soloqGapAnalysis.tendencyDifference}
+          </p>
+
+          <div className="p-3 bg-surface rounded-xl border border-border/80 text-xs font-bold text-foreground-subtle flex items-start gap-2">
+            <span className="text-base shrink-0">⚡</span>
+            <div className="leading-relaxed">
+              <span className="text-secondary-700 font-black">【カスタムでの武器活用法】: </span>
+              {soloqGapAnalysis.synergyAdvice}
+            </div>
           </div>
         </div>
       )}
