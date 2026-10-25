@@ -45,15 +45,25 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
 
               {/* ボーナス獲得アクション群 */}
               <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => handleClaimBonus('daily')}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer transform active:scale-95"
-                  title="1日1回おみくじを引いてボーナスを獲得します（最大+300pt）"
-                >
-                  <span className="text-sm">🎰</span>
-                  <span>デイリーおみくじ (最大+300pt)</span>
-                </button>
+                {user?.claimedDaily ? (
+                  <div
+                    className="px-3 py-1.5 rounded-xl bg-surface-hover/80 text-muted-strong font-bold text-xs flex items-center gap-1.5 border border-border cursor-not-allowed select-none"
+                    title="本日のデイリーおみくじは受取済みです（毎日0:00更新）"
+                  >
+                    <span className="text-sm text-success-600">✅</span>
+                    <span>デイリーおみくじ (本日受取済)</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleClaimBonus('daily')}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer transform active:scale-95 animate-pulse"
+                    title="1日1回おみくじを引いてボーナスを獲得します（最大+300pt）"
+                  >
+                    <span className="text-sm">🎰</span>
+                    <span>デイリーおみくじ (最大+300pt)</span>
+                  </button>
+                )}
 
                 {/* 残高が取れていない時は出さない */}
                 {user.coins != null && user.coins < 100 && (

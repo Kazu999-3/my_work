@@ -114,31 +114,50 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
           )}
         </Link>
 
-        {/* 🎁 デイリーボーナス ワンタップ受取ボタン */}
-        {!user.claimedDaily && (!collapsed || inDrawer) && (
-          <button
-            type="button"
-            onClick={handleQuickDailyClaim}
-            disabled={claiming}
-            className="px-2 py-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-primary-edge"
-            title="本日のデイリーボーナス (+100pt) を受け取る"
-          >
-            <Gift size={12} className="shrink-0" />
-            <span>{claiming ? '...' : '+100'}</span>
-          </button>
+        {/* 🎁 デイリーボーナス ワンタップ受取ボタン または 受取済バッジ */}
+        {(!collapsed || inDrawer) && (
+          user.claimedDaily ? (
+            <div
+              className="px-2 py-1 bg-surface-hover/80 text-muted-strong font-bold text-[10px] rounded-xl flex items-center gap-1 shrink-0 border border-border/60 select-none shadow-2xs"
+              title="本日のデイリーボーナス受取済みです（毎日0:00更新）"
+            >
+              <Check size={11} className="text-success-600 stroke-[3]" />
+              <span className="font-mono text-muted-strong">受取済</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleQuickDailyClaim}
+              disabled={claiming}
+              className="px-2 py-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-primary-edge"
+              title="本日のデイリーボーナス (+100pt) を受け取る"
+            >
+              <Gift size={12} className="shrink-0" />
+              <span>{claiming ? '...' : '+100'}</span>
+            </button>
+          )
         )}
 
-        {/* 折りたたみ時のコンパクト受取バッジ */}
-        {!user.claimedDaily && collapsed && !inDrawer && (
-          <button
-            type="button"
-            onClick={handleQuickDailyClaim}
-            disabled={claiming}
-            className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 text-stone-950 rounded-full flex items-center justify-center text-[9px] font-black border border-white animate-pulse"
-            title="本日のデイリーボーナス受取可能！"
-          >
-            🎁
-          </button>
+        {/* 折りたたみ時のコンパクト受取バッジ または 受取済アイコン */}
+        {collapsed && !inDrawer && (
+          user.claimedDaily ? (
+            <div
+              className="absolute -top-1 -right-1 w-4 h-4 bg-surface text-success-600 rounded-full flex items-center justify-center text-[9px] font-black border border-border/80 shadow-2xs"
+              title="本日のデイリーボーナス受取済"
+            >
+              <Check size={10} className="stroke-[3]" />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleQuickDailyClaim}
+              disabled={claiming}
+              className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 text-stone-950 rounded-full flex items-center justify-center text-[9px] font-black border border-white animate-pulse"
+              title="本日のデイリーボーナス受取可能！"
+            >
+              🎁
+            </button>
+          )
         )}
 
         {(!collapsed || inDrawer) && (

@@ -71,7 +71,7 @@ export default function PlayerMyPage() {
   const { id } = useParams(); // Discord ID or Player Name
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as any) || "summary";
-  const { user: currentUser } = useCurrentUser();
+  const { user: currentUser, refreshUser } = useCurrentUser();
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
@@ -113,7 +113,7 @@ export default function PlayerMyPage() {
       day: '2-digit'
     }).format(new Date()).replace(/\//g, '-');
   }, []);
-  const claimedDailyToday = player?.role_preferences?.lastDailyClaim === todayStr;
+  const claimedDailyToday = Boolean(currentUser?.claimedDaily || player?.role_preferences?.lastDailyClaim === todayStr);
 
   const handleClaimDaily = async () => {
     if (claimingDaily || claimedDailyToday) return;
@@ -148,6 +148,7 @@ export default function PlayerMyPage() {
             lastDailyClaim: todayStr
           }
         }));
+        if (refreshUser) refreshUser();
       } else {
         alert(data.error || 'デイリーボーナスの受取に失敗しました');
       }
@@ -891,13 +892,17 @@ export default function PlayerMyPage() {
                 type="button"
                 onClick={handleClaimDaily}
                 disabled={claimingDaily || claimedDailyToday}
-                className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
+                className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-1.5 ${
                   claimedDailyToday
-                    ? 'bg-surface-hover text-muted-strong border border-border cursor-not-allowed'
-                    : 'bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 hover:from-primary-400 hover:to-primary-300 text-stone-950 shadow-primary-500/20 hover:scale-102 active:scale-98 animate-pulse'
+                    ? 'bg-surface-hover/90 text-success-700 border border-success-edge-soft/60 cursor-not-allowed select-none'
+                    : 'bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 hover:from-primary-400 hover:to-primary-300 text-stone-950 shadow-primary-500/20 hover:scale-102 active:scale-98 animate-pulse cursor-pointer'
                 }`}
               >
-                <Gift size={16} className={claimedDailyToday ? 'text-faint' : 'text-primary-900'} />
+                {claimedDailyToday ? (
+                  <CheckCircle2 size={16} className="text-success-600 stroke-[2.5]" />
+                ) : (
+                  <Gift size={16} className="text-primary-900" />
+                )}
                 <span>
                   {claimingDaily
                     ? '受取中...'
