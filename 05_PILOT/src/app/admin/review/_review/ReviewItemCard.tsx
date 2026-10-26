@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 import { extractArticleSummary, stripArticleChrome } from '@/lib/articleDensity';
+import { detectChampionsFromText } from '@/lib/championDetector';
 
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
@@ -35,6 +36,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   const factCount = item.analysis_meta?.fact_count;
   const summary = useMemo(() => extractArticleSummary(item.content), [item.content]);
   const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
+  const detected = useMemo(() => detectChampionsFromText(item.title, summary), [item.title, summary]);
   return (
               <div
                 className={`p-4 md:p-5 rounded-2xl border space-y-3 transition ${
@@ -286,8 +288,20 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                 <div className="pt-3 border-t border-zinc-800/80 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3 flex-1">
                     {/* チャンピオン入力欄 */}
-                    <label className="flex flex-col gap-1 text-[10px] text-zinc-400 font-bold min-w-[180px] flex-1">
-                      <span>対象チャンピオン（カンマ区切りで複数可 / 空欄＝一般論）</span>
+                    <div className="flex flex-col gap-1 min-w-[180px] flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-zinc-400 font-bold">
+                        <span>対象チャンピオン（カンマ区切り可 / 空欄＝一般論）</span>
+                        {detected.main && edit.champion.trim() !== detected.main.id && (
+                          <button
+                            type="button"
+                            onClick={() => onEdit({ champion: detected.main!.id })}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 text-[10px] font-bold cursor-pointer transition shadow-sm"
+                            title="クリックすると対象チャンピオン欄に自動入力されます"
+                          >
+                            <span>🎯 {detected.main.nameJa} ({detected.main.id}) 適用</span>
+                          </button>
+                        )}
+                      </div>
                       <input
                         list="roster-champions"
                         value={edit.champion}
@@ -295,11 +309,23 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         placeholder="例: ノクターン, シン・ジャオ"
                         className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500"
                       />
-                    </label>
+                    </div>
 
                     {/* 対面相手入力欄 */}
-                    <label className="flex flex-col gap-1 text-[10px] text-zinc-400 font-bold min-w-[140px] w-40">
-                      <span>対面相手（空欄＝対面なし）</span>
+                    <div className="flex flex-col gap-1 min-w-[140px] w-44">
+                      <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-zinc-400 font-bold">
+                        <span>対面相手（空欄＝対面なし）</span>
+                        {detected.enemy && edit.enemyChampion.trim() !== detected.enemy.id && (
+                          <button
+                            type="button"
+                            onClick={() => onEdit({ enemyChampion: detected.enemy!.id })}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-[10px] font-bold cursor-pointer transition shadow-sm"
+                            title="クリックすると対面相手欄に自動入力されます"
+                          >
+                            <span>⚔️ {detected.enemy.nameJa} ({detected.enemy.id}) 適用</span>
+                          </button>
+                        )}
+                      </div>
                       <input
                         list="roster-champions"
                         value={edit.enemyChampion}
@@ -307,7 +333,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         placeholder="例: トリンダメア"
                         className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500"
                       />
-                    </label>
+                    </div>
 
                     {/* レーン選択セレクト */}
                     <label className="flex flex-col gap-1 text-[10px] text-zinc-400 font-bold w-36">
