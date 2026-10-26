@@ -42,11 +42,49 @@ const LEGACY_RE = /究極完全攻略バイブル|## 7\. 🧠/;
 /** 元動画情報・チャプター一覧・リンクの URL を除いた本文 */
 export function stripArticleChrome(content: string): string {
   return (content || '')
-    .replace(/^> 📺 \*\*元動画情報\*\*[\s\S]*?\n---\n/, '')
-    .replace(/^\s*> ⏱️ \*\*実演チャプター[\s\S]*?\n\n/, '')
+    .replace(/^> 📺[\s\S]*?\n---\n+/m, '')
+    .replace(/^\s*> ⏱️[\s\S]*?\n\n+/m, '')
     .replace(/\]\(https?:[^)]+\)/g, ']')
     .replace(/\[▶ [0-9:]+(?: 実演シーン)?\]/g, '')
     .trim();
+}
+
+/** 記事の先頭URLやメタデータを除去し、戦術の核心（要約3行程度）を抽出する */
+export function extractArticleSummary(content: string, maxLength = 240): string {
+  if (!content) return '';
+  // 1. 元動画・親記事・チャプターなどのブロックを除去
+  const text = stripArticleChrome(content);
+
+  // 2. 「## 1. 📌 本質テーマ＆戦術コンセプト」などの見出し以降の本文を優先的に探す
+  const section1Match = text.match(/## 1\.[^\n]*\n+([\s\S]*?)(?=\n##|\n#|$)/);
+  let candidate = '';
+  if (section1Match && section1Match[1].trim()) {
+    const paragraphs = section1Match[1].trim().split(/\n\s*\n/);
+    candidate = paragraphs[0].trim();
+  } else {
+    // 見出しがない、または別形式の場合は、# や --- で始まらない最初の段落を探す
+    const lines = text.split('\n');
+    const nonHeaderLines: string[] = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('---') || trimmed.startsWith('>')) {
+        continue;
+      }
+      nonHeaderLines.push(trimmed);
+      if (nonHeaderLines.join(' ').length >= maxLength) break;
+    }
+    candidate = nonHeaderLines.join(' ');
+  }
+
+  // リンク記法やMarkdown修飾のクリーニング
+  candidate = candidate.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  candidate = candidate.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
+  candidate = candidate.replace(/\s+/g, ' ').trim();
+
+  if (candidate.length > maxLength) {
+    return candidate.slice(0, maxLength) + '...';
+  }
+  return candidate;
 }
 
 function count(re: RegExp, text: string): number {

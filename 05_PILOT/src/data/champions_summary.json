@@ -75,7 +75,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -153,7 +153,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 14,
+    "libraryKnowledgeCount": 15,
     "tier": "Tier 1",
     "winRate": 51
   },
@@ -232,7 +232,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 0,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 3",
     "winRate": 52
   },
@@ -312,8 +312,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 4,
-    "libraryKnowledgeCount": 9,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 0,
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -391,7 +391,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 4,
-    "libraryKnowledgeCount": 5,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 4",
     "winRate": 50
   },
@@ -470,7 +470,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 4,
-    "libraryKnowledgeCount": 6,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 5",
     "winRate": 47
   },
@@ -551,7 +551,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 4",
+    "tier": "Tier 3",
     "winRate": 49
   },
   {
@@ -629,8 +629,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 8,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 5,
+    "tier": "Tier 4",
     "winRate": 51
   },
   {
@@ -709,9 +709,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 7,
-    "tier": "Tier 3",
-    "winRate": 52
+    "libraryKnowledgeCount": 6,
+    "tier": "Tier 4",
+    "winRate": 51
   },
   {
     "id": "Aphelios",
@@ -791,8 +791,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 10,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 9,
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -871,9 +871,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 5,
-    "libraryKnowledgeCount": 5,
-    "tier": "Tier 4",
-    "winRate": 50
+    "libraryKnowledgeCount": 4,
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Alistar",
@@ -950,7 +950,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 2,
+    "libraryKnowledgeCount": 1,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -1029,9 +1029,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 7,
-    "tier": "Tier 3",
-    "winRate": 49
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 4",
+    "winRate": 48
   },
   {
     "id": "Evelynn",
@@ -1108,9 +1108,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 3,
+    "libraryKnowledgeCount": 5,
     "tier": "Tier 3",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Illaoi",
@@ -1188,8 +1188,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
-    "winRate": 50
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Irelia",
@@ -1268,7 +1268,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -1348,7 +1348,7 @@
     "videoBibleCount": 16,
     "libraryKnowledgeCount": 7,
     "tier": "Tier 4",
-    "winRate": 49
+    "winRate": 48
   },
   {
     "id": "Varus",
@@ -1425,9 +1425,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 3,
-    "tier": "Tier 5",
-    "winRate": 47
+    "libraryKnowledgeCount": 4,
+    "tier": "Tier 4",
+    "winRate": 49
   },
   {
     "id": "Viego",
@@ -1504,8 +1504,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 7,
-    "libraryKnowledgeCount": 23,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 24,
+    "tier": "Tier 2",
     "winRate": 49
   },
   {
@@ -1584,8 +1584,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 20,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 21,
+    "tier": "Tier 4",
     "winRate": 51
   },
   {
@@ -1594,6 +1594,7 @@
     "jpName": "ヴェイン",
     "title": "ナイトハンター",
     "roles": [
+      "TOP",
       "BOT"
     ],
     "skills": {
@@ -1665,7 +1666,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 5,
     "tier": "Tier 5",
-    "winRate": 49
+    "winRate": 48
   },
   {
     "id": "Vex",
@@ -1824,8 +1825,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 51
+    "tier": "Tier 3",
+    "winRate": 52
   },
   {
     "id": "Udyr",
@@ -1908,7 +1909,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 3,
+    "libraryKnowledgeCount": 4,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -1988,8 +1989,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 12,
-    "tier": "Tier 1",
+    "libraryKnowledgeCount": 9,
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -2068,9 +2069,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 4,
+    "libraryKnowledgeCount": 5,
     "tier": "Tier 2",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Ezreal",
@@ -2147,9 +2148,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 2,
-    "tier": "Tier 5",
-    "winRate": 46
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 4",
+    "winRate": 47
   },
   {
     "id": "Elise",
@@ -2228,7 +2229,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 20,
+    "libraryKnowledgeCount": 23,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -2309,7 +2310,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 4",
+    "tier": "Tier 5",
     "winRate": 50
   },
   {
@@ -2388,8 +2389,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 1",
-    "winRate": 52
+    "tier": "Tier 2",
+    "winRate": 51
   },
   {
     "id": "Olaf",
@@ -2467,7 +2468,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 8,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -2546,8 +2547,8 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 5",
-    "winRate": 46
+    "tier": "Tier 4",
+    "winRate": 48
   },
   {
     "id": "AurelionSol",
@@ -2627,7 +2628,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
     "tier": "Tier 4",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "KSante",
@@ -2705,7 +2706,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 4",
+    "tier": "Tier 5",
     "winRate": 47
   },
   {
@@ -2783,9 +2784,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 14,
-    "libraryKnowledgeCount": 27,
-    "tier": "Tier 3",
-    "winRate": 49
+    "libraryKnowledgeCount": 21,
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Karthus",
@@ -2863,9 +2864,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
-    "tier": "Tier 5",
-    "winRate": 49
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 4",
+    "winRate": 50
   },
   {
     "id": "Kaisa",
@@ -3021,9 +3022,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 3",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Cassiopeia",
@@ -3102,7 +3103,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 7,
     "tier": "Tier 5",
-    "winRate": 48
+    "winRate": 47
   },
   {
     "id": "Katarina",
@@ -3180,9 +3181,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 4,
+    "libraryKnowledgeCount": 5,
     "tier": "Tier 2",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Camille",
@@ -3261,7 +3262,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -3420,8 +3421,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 5",
-    "winRate": 49
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Karma",
@@ -3499,7 +3500,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 2,
+    "libraryKnowledgeCount": 1,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -3579,8 +3580,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 4,
-    "tier": "Tier 1",
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -3659,7 +3660,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -3738,9 +3739,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 8,
-    "tier": "Tier 3",
-    "winRate": 49
+    "libraryKnowledgeCount": 12,
+    "tier": "Tier 4",
+    "winRate": 46
   },
   {
     "id": "Kindred",
@@ -3817,8 +3818,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 10,
-    "libraryKnowledgeCount": 13,
-    "tier": "Tier 4",
+    "libraryKnowledgeCount": 16,
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -3898,7 +3899,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 52
   },
   {
@@ -3979,8 +3980,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 2",
-    "winRate": 50
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Gragas",
@@ -4059,8 +4060,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 3,
-    "tier": "Tier 2",
+    "libraryKnowledgeCount": 4,
+    "tier": "Tier 4",
     "winRate": 50
   },
   {
@@ -4138,8 +4139,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 5,
-    "libraryKnowledgeCount": 27,
-    "tier": "Tier 2",
+    "libraryKnowledgeCount": 22,
+    "tier": "Tier 3",
     "winRate": 49
   },
   {
@@ -4218,8 +4219,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 2",
-    "winRate": 51
+    "tier": "Tier 3",
+    "winRate": 52
   },
   {
     "id": "Caitlyn",
@@ -4296,9 +4297,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 7,
+    "libraryKnowledgeCount": 5,
     "tier": "Tier 2",
-    "winRate": 49
+    "winRate": 48
   },
   {
     "id": "Kayle",
@@ -4377,7 +4378,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -4455,7 +4456,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 5,
+    "libraryKnowledgeCount": 7,
     "tier": "Tier 2",
     "winRate": 50
   },
@@ -4535,7 +4536,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 50
   },
   {
@@ -4614,7 +4615,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 5",
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -4773,8 +4774,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
-    "winRate": 50
+    "tier": "Tier 4",
+    "winRate": 49
   },
   {
     "id": "Sion",
@@ -4853,7 +4854,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
     "tier": "Tier 3",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Zyra",
@@ -4932,7 +4933,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 8,
-    "tier": "Tier 3",
+    "tier": "Tier 2",
     "winRate": 52
   },
   {
@@ -5013,8 +5014,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 4,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 5,
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -5093,8 +5094,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 2,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 4,
+    "tier": "Tier 4",
     "winRate": 52
   },
   {
@@ -5173,7 +5174,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -5330,7 +5331,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 43,
+    "libraryKnowledgeCount": 36,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -5410,7 +5411,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -5491,8 +5492,8 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 3",
-    "winRate": 48
+    "tier": "Tier 4",
+    "winRate": 47
   },
   {
     "id": "Shen",
@@ -5571,8 +5572,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 1",
-    "winRate": 51
+    "tier": "Tier 2",
+    "winRate": 52
   },
   {
     "id": "Ziggs",
@@ -5651,8 +5652,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 51
+    "tier": "Tier 5",
+    "winRate": 50
   },
   {
     "id": "JarvanIV",
@@ -5729,8 +5730,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 23,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 25,
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -5809,7 +5810,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 7,
+    "libraryKnowledgeCount": 6,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -5889,9 +5890,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
-    "winRate": 49
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Janna",
@@ -5969,8 +5970,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 1",
-    "winRate": 52
+    "tier": "Tier 2",
+    "winRate": 51
   },
   {
     "id": "Zilean",
@@ -6047,9 +6048,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
-    "winRate": 52
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Jhin",
@@ -6205,9 +6206,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 3,
-    "tier": "Tier 4",
-    "winRate": 49
+    "libraryKnowledgeCount": 4,
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Jinx",
@@ -6284,9 +6285,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 2,
-    "tier": "OP",
-    "winRate": 52
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Singed",
@@ -6364,7 +6365,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -6443,7 +6444,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 0,
+    "libraryKnowledgeCount": 1,
     "tier": "Tier 2",
     "winRate": 50
   },
@@ -6685,7 +6686,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 5",
-    "winRate": 44
+    "winRate": 43
   },
   {
     "id": "Thresh",
@@ -6763,7 +6764,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "OP",
+    "tier": "Tier 1",
     "winRate": 52
   },
   {
@@ -6841,9 +6842,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
-    "winRate": 52
+    "libraryKnowledgeCount": 2,
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Sett",
@@ -6921,8 +6922,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 1",
-    "winRate": 50
+    "tier": "Tier 2",
+    "winRate": 51
   },
   {
     "id": "Zed",
@@ -7000,9 +7001,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 48
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 5",
+    "winRate": 46
   },
   {
     "id": "Senna",
@@ -7160,7 +7161,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 0,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -7241,8 +7242,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 5",
-    "winRate": 51
+    "tier": "Tier 4",
+    "winRate": 50
   },
   {
     "id": "Zeri",
@@ -7320,7 +7321,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -7401,7 +7402,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 3",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Sona",
@@ -7637,7 +7638,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 11,
+    "libraryKnowledgeCount": 12,
     "tier": "Tier 3",
     "winRate": 50
   },
@@ -7717,9 +7718,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 2,
-    "tier": "Tier 3",
-    "winRate": 50
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 4",
+    "winRate": 51
   },
   {
     "id": "Darius",
@@ -7797,9 +7798,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
-    "winRate": 50
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Taric",
@@ -7956,8 +7957,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 5,
-    "libraryKnowledgeCount": 4,
-    "tier": "Tier 4",
+    "libraryKnowledgeCount": 5,
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -8036,9 +8037,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 6,
-    "libraryKnowledgeCount": 15,
-    "tier": "Tier 1",
-    "winRate": 51
+    "libraryKnowledgeCount": 14,
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Chogath",
@@ -8116,9 +8117,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 19,
-    "tier": "Tier 2",
-    "winRate": 50
+    "libraryKnowledgeCount": 20,
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "TwistedFate",
@@ -8196,7 +8197,7 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 9,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 51
   },
   {
@@ -8276,7 +8277,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -8355,7 +8356,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 51
   },
   {
@@ -8434,7 +8435,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -8513,9 +8514,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 11,
+    "libraryKnowledgeCount": 10,
     "tier": "Tier 4",
-    "winRate": 48
+    "winRate": 50
   },
   {
     "id": "Tristana",
@@ -8593,8 +8594,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
-    "winRate": 51
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Tryndamere",
@@ -8672,7 +8673,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -8751,8 +8752,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 4",
-    "winRate": 50
+    "tier": "Tier 3",
+    "winRate": 49
   },
   {
     "id": "Gnar",
@@ -8830,7 +8831,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -8909,9 +8910,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 4,
-    "libraryKnowledgeCount": 3,
-    "tier": "Tier 2",
-    "winRate": 50
+    "libraryKnowledgeCount": 2,
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Naafiri",
@@ -8989,9 +8990,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 2,
+    "libraryKnowledgeCount": 1,
     "tier": "Tier 4",
-    "winRate": 49
+    "winRate": 50
   },
   {
     "id": "Nami",
@@ -9069,8 +9070,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 10,
-    "tier": "Tier 1",
-    "winRate": 51
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Neeko",
@@ -9149,7 +9150,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 4",
-    "winRate": 49
+    "winRate": 48
   },
   {
     "id": "Nilah",
@@ -9227,7 +9228,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
+    "tier": "Tier 3",
     "winRate": 52
   },
   {
@@ -9464,7 +9465,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 4,
     "tier": "Tier 2",
-    "winRate": 50
+    "winRate": 49
   },
   {
     "id": "Nocturne",
@@ -9620,7 +9621,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 6,
+    "libraryKnowledgeCount": 3,
     "tier": "Tier 4",
     "winRate": 49
   },
@@ -9779,7 +9780,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 50
   },
   {
@@ -9860,8 +9861,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
-    "winRate": 51
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Viktor",
@@ -9939,9 +9940,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 2,
-    "tier": "Tier 1",
-    "winRate": 50
+    "libraryKnowledgeCount": 4,
+    "tier": "Tier 4",
+    "winRate": 48
   },
   {
     "id": "Fiora",
@@ -10019,7 +10020,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -10179,7 +10180,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 51
   },
   {
@@ -10260,8 +10261,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
-    "winRate": 51
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Briar",
@@ -10339,8 +10340,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 5,
-    "tier": "Tier 2",
-    "winRate": 51
+    "tier": "Tier 1",
+    "winRate": 52
   },
   {
     "id": "Braum",
@@ -10499,7 +10500,7 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -10579,9 +10580,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 4,
-    "libraryKnowledgeCount": 3,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 5",
-    "winRate": 49
+    "winRate": 50
   },
   {
     "id": "Blitzcrank",
@@ -10660,7 +10661,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 3,
     "tier": "Tier 1",
-    "winRate": 51
+    "winRate": 52
   },
   {
     "id": "Veigar",
@@ -10740,7 +10741,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 3,
     "tier": "Tier 3",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Hecarim",
@@ -10817,7 +10818,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 5,
+    "libraryKnowledgeCount": 4,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -10896,9 +10897,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 9,
+    "libraryKnowledgeCount": 12,
     "tier": "Tier 3",
-    "winRate": 51
+    "winRate": 52
   },
   {
     "id": "Poppy",
@@ -10978,7 +10979,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 3",
-    "winRate": 50
+    "winRate": 53
   },
   {
     "id": "Volibear",
@@ -11057,7 +11058,7 @@
     "hasBible": true,
     "videoBibleCount": 7,
     "libraryKnowledgeCount": 8,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -11136,7 +11137,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 4,
+    "libraryKnowledgeCount": 3,
     "tier": "Tier 4",
     "winRate": 51
   },
@@ -11215,9 +11216,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 17,
+    "libraryKnowledgeCount": 22,
     "tier": "Tier 1",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Malzahar",
@@ -11225,7 +11226,6 @@
     "jpName": "マルザハール",
     "title": "ヴォイドの予言者",
     "roles": [
-      "TOP",
       "MID"
     ],
     "skills": {
@@ -11296,8 +11296,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 49
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Malphite",
@@ -11377,8 +11377,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 3,
-    "tier": "OP",
-    "winRate": 52
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "MissFortune",
@@ -11455,9 +11455,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 2,
-    "tier": "Tier 4",
-    "winRate": 49
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Milio",
@@ -11535,7 +11535,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -11617,7 +11617,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 5",
-    "winRate": 45
+    "winRate": 46
   },
   {
     "id": "Morgana",
@@ -11694,7 +11694,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 0,
     "tier": "Tier 3",
     "winRate": 50
   },
@@ -11774,8 +11774,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 6,
-    "tier": "Tier 1",
-    "winRate": 51
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Yasuo",
@@ -11855,8 +11855,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
-    "winRate": 50
+    "tier": "Tier 3",
+    "winRate": 49
   },
   {
     "id": "Yuumi",
@@ -11936,7 +11936,7 @@
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 4",
-    "winRate": 47
+    "winRate": 48
   },
   {
     "id": "Yunara",
@@ -12014,8 +12014,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 3",
-    "winRate": 49
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Yone",
@@ -12094,8 +12094,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 1",
-    "winRate": 50
+    "tier": "Tier 3",
+    "winRate": 49
   },
   {
     "id": "Yorick",
@@ -12172,8 +12172,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 1,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 0,
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -12253,7 +12253,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 5",
-    "winRate": 45
+    "winRate": 47
   },
   {
     "id": "Rakan",
@@ -12331,7 +12331,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -12341,6 +12341,7 @@
     "title": "光の才女",
     "roles": [
       "MID",
+      "BOT",
       "SUP"
     ],
     "skills": {
@@ -12411,7 +12412,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -12490,8 +12491,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 5,
-    "tier": "Tier 1",
-    "winRate": 53
+    "tier": "Tier 3",
+    "winRate": 52
   },
   {
     "id": "Rumble",
@@ -12571,7 +12572,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 4",
+    "tier": "Tier 5",
     "winRate": 47
   },
   {
@@ -12649,9 +12650,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 7,
-    "libraryKnowledgeCount": 19,
-    "tier": "Tier 1",
-    "winRate": 49
+    "libraryKnowledgeCount": 20,
+    "tier": "Tier 3",
+    "winRate": 48
   },
   {
     "id": "Riven",
@@ -12728,9 +12729,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 3,
-    "tier": "Tier 3",
-    "winRate": 49
+    "libraryKnowledgeCount": 2,
+    "tier": "Tier 4",
+    "winRate": 50
   },
   {
     "id": "Lissandra",
@@ -12808,8 +12809,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 4,
-    "tier": "Tier 3",
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 4",
     "winRate": 52
   },
   {
@@ -12887,9 +12888,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 8,
-    "libraryKnowledgeCount": 24,
+    "libraryKnowledgeCount": 27,
     "tier": "Tier 1",
-    "winRate": 51
+    "winRate": 52
   },
   {
     "id": "Lucian",
@@ -12967,7 +12968,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 3,
-    "tier": "Tier 4",
+    "tier": "Tier 2",
     "winRate": 49
   },
   {
@@ -13126,7 +13127,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -13439,8 +13440,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
+    "libraryKnowledgeCount": 0,
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -13597,9 +13598,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 6,
+    "libraryKnowledgeCount": 7,
     "tier": "Tier 4",
-    "winRate": 48
+    "winRate": 49
   },
   {
     "id": "Locke",
@@ -13757,7 +13758,7 @@
     "hasBible": true,
     "videoBibleCount": 5,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 2",
-    "winRate": 51
+    "tier": "Tier 3",
+    "winRate": 52
   }
 ]

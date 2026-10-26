@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { assessArticleDensity, stripArticleChrome } from '../articleDensity';
+import { assessArticleDensity, stripArticleChrome, extractArticleSummary } from '../articleDensity';
 
 const HEADER = '> 📺 **元動画情報**\n> - **動画タイトル**: x\n> - **動画リンク**: [https://youtu.be/abc](https://youtu.be/abc)\n\n---\n\n';
 
@@ -41,5 +41,25 @@ describe('articleDensity', () => {
   it('分割知見と Shorts は短くても密度では判定しない', () => {
     assert.equal(assessArticleDensity('短い知見', null, { isAtomic: true }).level, 'ok');
     assert.equal(assessArticleDensity('意識しましょう。'.repeat(80), null, { isShort: true }).level, 'ok');
+  });
+
+  it('extractArticleSummary: 元動画ヘッダーを除き、核心段落を抽出する', () => {
+    const raw = `> 📺 **元動画情報**
+> - **動画タイトル**: テスト
+> - **動画リンク**: [https://youtu.be/xyz](https://youtu.be/xyz)
+
+---
+
+# 🏆 テストタイトル
+
+## 1. 📌 本質テーマ＆戦術コンセプト
+カジャンの真の目的は敵を動かすための釣り餌である。相手の森を荒らすこと自体が主目的ではない。
+
+## 2. 🛡️ 立ち回り
+その他`;
+    const summary = extractArticleSummary(raw);
+    assert.ok(!summary.includes('元動画情報'));
+    assert.ok(!summary.includes('https://'));
+    assert.ok(summary.includes('カジャンの真の目的は敵を動かすための釣り餌である'));
   });
 });

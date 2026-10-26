@@ -1,7 +1,9 @@
 'use client';
 
-import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle } from 'lucide-react';
+import { useMemo } from 'react';
+import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
+import { extractArticleSummary, stripArticleChrome } from '@/lib/articleDensity';
 
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
@@ -31,6 +33,8 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   const canReanalyze = !!onReanalyze && !item.is_atomic && /youtu/.test(item.source_url || '') && !taskActive;
   const thin = item.density?.level === 'thin';
   const factCount = item.analysis_meta?.fact_count;
+  const summary = useMemo(() => extractArticleSummary(item.content), [item.content]);
+  const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
   return (
               <div
                 className={`p-4 md:p-5 rounded-2xl border space-y-3 transition ${
@@ -158,6 +162,19 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                   </div>
                 )}
 
+                {/* 💡 核心要約（実戦ポイント直出し・目視判断を爆速化） */}
+                {summary && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>💡 核心要約（実戦ポイント）</span>
+                    </div>
+                    <p className="text-xs text-amber-100/95 leading-relaxed font-medium">
+                      {summary}
+                    </p>
+                  </div>
+                )}
+
                 {/* 🤖 自動判定＆統合先プレビューバッジ */}
                 <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex flex-wrap items-center gap-2">
@@ -257,11 +274,11 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
 
                 {/* 本文プレビュー */}
                 <p className={`text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap ${isOpen ? '' : 'line-clamp-4'}`}>
-                  {item.content}
+                  {isOpen ? item.content : (cleanBody || item.content)}
                 </p>
                 {item.content.length > 250 && (
                   <button onClick={onToggleExpand} className="text-[11px] text-amber-400 hover:text-amber-300 cursor-pointer">
-                    {isOpen ? '折りたたむ' : '本文全文を表示'}
+                    {isOpen ? '折りたたむ' : '本文全文を表示（元動画URL情報を含む）'}
                   </button>
                 )}
 
