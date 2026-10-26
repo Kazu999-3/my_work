@@ -390,11 +390,22 @@ export default function ReviewPage() {
         throw new Error(json.error || '分割知見の保存に失敗しました');
       }
       const parentId = decomposeModalItem.id;
+      const count = selectedInsights.length;
       // 親記事を画面の一覧から即座に除外（分解完了扱い）
       removeFromList([parentId]);
-      showMessage(json.message || `元記事(ID:${parentId})を完了とし、${selectedInsights.length}件の分割知見を登録しました`, 'success');
+      // 蓄積ダッシュボードの成果をリアルタイムに加算
+      setBibleStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          totalApproved: prev.totalApproved + count,
+          todayApproved: prev.todayApproved + count,
+          totalPending: Math.max(0, prev.totalPending - 1),
+        };
+      });
+      showMessage(json.message || `⚡ 元記事(ID:${parentId})を完了とし、${count}件の知見を教本へ直接統合しました！`, 'success');
       setDecomposeModalItem(null);
-      // 分割知見を一覧へ反映するためバックグラウンド更新
+      // 未承認一覧の件数再取得
       load({ silent: true });
     } catch (e: any) {
       setDecomposeError(e.message || '保存中にエラーが発生しました');

@@ -1,7 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { callGemini } from './geminiClient';
-import { resolveRosterChampion, getChampionNameJa } from './championRoster';
+import { resolveRosterChampion, resolveRosterChampions, getChampionNameJa } from './championRoster';
 import { LaneKey, LANE_CONFIG } from './laneDetector';
+import { integrateArticles, IntegrateArticle } from './knowledgeIntegrate';
+import { executeChampionFactsMerge } from './championFactsMerge';
+import { mergeArticleToLaneGuide } from './laneGuideIntegrate';
 
 export interface DecomposedInsight {
   champion: string; // チャンピオン英語ID、または 'Unknown'
@@ -124,15 +127,19 @@ ${content.slice(0, 15000)}
 }
 
 /**
- * 分解された知見群を Supabase の personal_knowledge テーブルへ子ナレッジとして保存する
+ * 分解された知見群を Supabase の personal_knowledge テーブルへ保存し、
+ * 各チャンピオン教本・辞典項目・レーンガイドへ直接承認・統合する（2026-10-26改修）
  */
 export async function saveDecomposedInsights(
   sb: SupabaseClient,
   parentArticleId: number,
   insights: DecomposedInsight[],
-  sourceUrl?: string | null
-): Promise<{ count: number; savedIds: number[] }> {
-  if (insights.length === 0) return { count: 0, savedIds: [] };
+  sourceUrl?: string | null,
+  opts: { autoApprove?: boolean } = { autoApprove: true }
+): Promise<{ count: number; savedIds: number[]; integratedChamps: string[] }> {
+  if (insights.length === 0) return { count: 0, savedIds: [], integratedChamps: [] };
+
+  const shouldApprove = opts.autoApprove !== false;
 
   const records = insights.map((insight) => ({
     title: insight.title,
@@ -140,20 +147,78 @@ export async function saveDecomposedInsights(
     raw_content: insight.content,
     source_url: sourceUrl || null,
     genre: 'LoL攻略',
-    tags: insight.tags,
+    tags: shouldApprove ? [...(insight.tags || []), '__INTEGRATED__'] : insight.tags,
     champion: insight.champion === 'Unknown' ? 'Unknown' : insight.champion,
     parent_id: parentArticleId,
     is_atomic: true,
-    review_status: 'pending',
+    review_status: shouldApprove ? 'approved' : 'pending',
   }));
 
   const { data, error } = await sb
     .from('personal_knowledge')
     .insert(records)
-    .select('id');
+    .select('id, title, content, raw_content, champion, tags, source_url');
 
   if (error) {
     throw new Error(`分割知見の保存に失敗しました: ${error.message}`);
+  }
+
+  const savedRows = (data || []) as IntegrateArticle[];
+  const savedIds = savedRows.map((r) => r.id);
+  const integratedChamps: string[] = [];
+
+  // 直接承認・統合（autoApprove）の実行
+  if (shouldApprove && savedRows.length > 0) {
+    try {
+      // 1. チャンピオン教本（matchup_sentinel & strategy）へ統合
+      const champRes = await integrateArticles(sb, savedRows);
+      if (champRes.champions?.length > 0) {
+        integratedChamps.push(...champRes.champions);
+      }
+
+      // 2. チャンピオン辞典項目（champion_facts: 強み・弱み・スパイク等）のマージ
+      for (const row of savedRows) {
+        const champList = await resolveRosterChampions(row.champion);
+        const articleText = row.content || row.raw_content || '';
+        if (champList.length > 0 && articleText.length >= 80) {
+          for (const champId of champList) {
+            try {
+              await executeChampionFactsMerge(
+                sb,
+                champId,
+                row.title || '(分割知見)',
+                articleText,
+                row.id
+              );
+            } catch (factErr) {
+              console.warn(`[saveDecomposedInsights] 辞典項目マージ警告 (${champId}):`, factErr);
+            }
+          }
+        }
+
+        // 3. レーンガイドへの統合（対象インサイトからレーンを特定）
+        const matchedInsight = insights.find((i) => i.title === row.title);
+        const targetLane = matchedInsight?.lane || 'COMMON';
+        try {
+          await mergeArticleToLaneGuide(
+            sb,
+            targetLane,
+            {
+              id: row.id,
+              title: row.title,
+              content: row.content,
+              raw_content: row.raw_content,
+              champion: row.champion,
+              source_url: row.source_url,
+            }
+          );
+        } catch (laneErr) {
+          console.warn(`[saveDecomposedInsights] レーンガイド統合警告 (${targetLane}):`, laneErr);
+        }
+      }
+    } catch (intErr) {
+      console.warn('[saveDecomposedInsights] 教本への直接統合処理で一部警告:', intErr);
+    }
   }
 
   // 親記事のタグに __DECOMPOSED__, __SUPERSEDED__ をマークし、review_status を完了('decomposed')へ更新
@@ -177,6 +242,5 @@ export async function saveDecomposedInsights(
     console.warn('[saveDecomposedInsights] 親記事タグ・ステータス更新スキップ:', err);
   }
 
-  const savedIds = (data || []).map((r: any) => r.id);
-  return { count: savedIds.length, savedIds };
+  return { count: savedIds.length, savedIds, integratedChamps: Array.from(new Set(integratedChamps)) };
 }

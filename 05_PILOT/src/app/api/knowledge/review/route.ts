@@ -447,12 +447,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'parentId と insights（配列）が必要です' }, { status: 400 });
       }
 
-      const saveRes = await saveDecomposedInsights(db, Number(parentId), insights as DecomposedInsight[], source_url);
+      const saveRes = await saveDecomposedInsights(db, Number(parentId), insights as DecomposedInsight[], source_url, { autoApprove: true });
+      const champsStr = saveRes.integratedChamps?.length > 0 ? ` (${saveRes.integratedChamps.join(', ')})` : '';
       return NextResponse.json({
         success: true,
-        message: `${saveRes.count}件の分割知見を登録しました（未承認リストに反映されます）`,
+        message: `${saveRes.count}件の分割知見を教本へ直接統合しました${champsStr}`,
         count: saveRes.count,
         savedIds: saveRes.savedIds,
+        integratedChamps: saveRes.integratedChamps,
       });
     }
 

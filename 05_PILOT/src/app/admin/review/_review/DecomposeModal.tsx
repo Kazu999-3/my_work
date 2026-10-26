@@ -67,13 +67,13 @@ export default function DecomposeModal({
             </div>
             <div>
               <h2 className="text-sm font-black text-white flex items-center gap-2">
-                <span>✂️ 複数チャンピオンへのナレッジ分解プレビュー</span>
+                <span>✂️ 複数チャンピオンへのナレッジ分解 ＆ 教本直接統合</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-amber-400 font-mono">
                   ID: {parentId}
                 </span>
               </h2>
               <p className="text-[11px] text-zinc-400 truncate max-w-xl">
-                元記事: {parentTitle}
+                元記事: {parentTitle}（登録すると未承認リストを挟まず各教本へ直接統合されます）
               </p>
             </div>
           </div>
@@ -254,17 +254,17 @@ export default function DecomposeModal({
             <button
               onClick={() => onSave(items.filter((i) => i.selected))}
               disabled={busy || loading || selectedCount === 0}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
             >
               {busy ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>保存中...</span>
+                  <span>教本へ統合中...</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>選択した {selectedCount} 件の分割知見を登録する</span>
+                  <span>⚡ 選択した {selectedCount} 件を教本へ直接承認・統合する</span>
                 </>
               )}
             </button>
