@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass } from 'lucide-react';
 import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
-import BibleProgressHeader, { type BibleStats } from './_review/BibleProgressHeader';
 import PreviewModal from './_review/PreviewModal';
 import DecomposeModal from './_review/DecomposeModal';
 import ReanalyzeModal from './_review/ReanalyzeModal';
@@ -42,7 +41,6 @@ export default function ReviewPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
-  const [bibleStats, setBibleStats] = useState<BibleStats | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -91,7 +89,6 @@ export default function ReviewPage() {
       if (json.channels) setChannels(json.channels);
       if (json.laneCounts) setLaneCounts(json.laneCounts);
       if (json.qualityCounts) setQualityCounts(json.qualityCounts);
-      if (json.bibleStats) setBibleStats(json.bibleStats);
       if (json.roster?.length) setRoster(json.roster);
       if (!opts.silent) setSelected(new Set());
 
@@ -222,19 +219,6 @@ export default function ReviewPage() {
     });
     if (result.ok) {
       removeFromList([item.id]);
-      setBibleStats((prev) => {
-        if (!prev) return prev;
-        const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
-        return {
-          ...prev,
-          totalApproved: prev.totalApproved + 1,
-          todayApproved: prev.todayApproved + 1,
-          totalPending: Math.max(0, prev.totalPending - 1),
-          topChampions: prev.topChampions.map((c) =>
-            (c.nameJa === targetChamp || c.champion === targetChamp) ? { ...c, count: c.count + 1 } : c
-          ),
-        };
-      });
       if (isPreviewing) setPreviewModalItem(null);
     } else {
       setModalError(result.error || '承認統合に失敗しました');
@@ -262,17 +246,6 @@ export default function ReviewPage() {
     const result = await post({ ids, action });
     if (result.ok) {
       removeFromList(ids);
-      if (action === 'approve') {
-        setBibleStats((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            totalApproved: prev.totalApproved + ids.length,
-            todayApproved: prev.todayApproved + ids.length,
-            totalPending: Math.max(0, prev.totalPending - ids.length),
-          };
-        });
-      }
     }
   };
 
@@ -393,16 +366,6 @@ export default function ReviewPage() {
       const count = selectedInsights.length;
       // 親記事を画面の一覧から即座に除外（分解完了扱い）
       removeFromList([parentId]);
-      // 蓄積ダッシュボードの成果をリアルタイムに加算
-      setBibleStats((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          totalApproved: prev.totalApproved + count,
-          todayApproved: prev.todayApproved + count,
-          totalPending: Math.max(0, prev.totalPending - 1),
-        };
-      });
       showMessage(json.message || `⚡ 元記事(ID:${parentId})を完了とし、${count}件の知見を教本へ直接統合しました！`, 'success');
       setDecomposeModalItem(null);
       // 未承認一覧の件数再取得
@@ -523,17 +486,11 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
-        {/* ヘッダーバー */}
-        <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-              <ClipboardCheck className="w-6 h-6 text-amber-400" /> 生成記事の承認 ＆ 完全プレビュー統合
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              動画解析記事を承認します。複数チャンピオン教本への追記・レーンガイドへのマージに加え、
-              各項目（強み・弱み・スパイク等）のAI差分マージと編集履歴の完全追従に対応しています。
-            </p>
-          </div>
+        {/* ヘッダーバー（極薄・シンプル） */}
+        <div className="border-b border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h1 className="text-lg md:text-xl font-black text-white flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-amber-400" /> 生成記事の承認 ＆ 教本統合
+          </h1>
           <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
             <Link href="/lane-guides" target="_blank" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold">
               <Compass className="w-3.5 h-3.5" /> レーン攻略バイブル
@@ -553,13 +510,6 @@ export default function ReviewPage() {
             {message.text}
           </div>
         )}
-
-        {/* 📚 教本インテリジェンス蓄積進捗 ＆ 獲得ダッシュボード */}
-        <BibleProgressHeader
-          stats={bibleStats}
-          onSelectChampion={(champNameJa) => setSearchQuery(champNameJa)}
-          activeSearchQuery={searchQuery}
-        />
 
         <ReviewControlBar
           type={type} setType={setType} channel={channel} setChannel={setChannel} channels={channels}

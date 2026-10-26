@@ -411,73 +411,92 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                     </div>
                   </div>
 
-                  {/* アクションボタン */}
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {onDecompose && !item.is_atomic && (
+                  {/* アクションボタン（左: 控えめなサブ操作 / 右: 目立つ主役操作） */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 pt-2 border-t border-zinc-800/40">
+                    {/* サブ操作（プレビュー・再解析・却下） */}
+                    <div className="flex items-center gap-1.5">
                       <button
-                        type="button"
-                        onClick={() => onDecompose()}
+                        onClick={() => onPreview()}
                         disabled={busy}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition shadow-sm ${
-                          item.isMultiChampion
-                            ? 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-teal-900/30 font-black'
-                            : 'bg-teal-950/40 border border-teal-700/60 text-teal-300 hover:bg-teal-900/50'
-                        }`}
-                        title="記事内の複数チャンピオン・マクロ知見を個別の分割知見へ分解します"
+                        className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+                        title="統合先をプレビュー確認してから承認 (P)"
                       >
-                        <Scissors className="w-3.5 h-3.5" /> ✂️ {item.isMultiChampion ? 'ナレッジ分解（推奨）' : 'ナレッジ分解'}
+                        <Eye className="w-3.5 h-3.5" /> プレビュー
                       </button>
-                    )}
-                    {canReanalyze && (
-                      <button
-                        type="button"
-                        onClick={() => onReanalyze!()}
-                        disabled={busy}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition ${
-                          thin ? 'bg-amber-600/80 hover:bg-amber-500 border-amber-500 text-white' : 'bg-amber-950/30 border-amber-700/60 text-amber-300 hover:bg-amber-900/40'
-                        }`}
-                        title="理由や深掘りしたい観点を付けて、この記事を作り直します（元の記事は残ります）"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" /> {isDraft ? 'もう一度再解析' : '再解析'}
-                      </button>
-                    )}
-                    {isDraft && onDiscardReanalysis ? (
-                      <button
-                        onClick={() => onDiscardReanalysis()}
-                        disabled={busy}
-                        className="px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-600 text-stone-200 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                        title="この再解析版は使わず、元の記事を承認待ちに戻します"
-                      >
-                        <Undo2 className="w-3.5 h-3.5" /> 元の記事に戻す
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onReject()}
-                        disabled={busy}
-                        className="px-3 py-1.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> 却下
-                      </button>
-                    )}
-                    {onApprove && (
-                      <button
-                        type="button"
-                        onClick={() => onApprove()}
-                        disabled={busy}
-                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm transition"
-                        title="プレビューモーダルを開かず、現在の設定で即座に承認して統合を実行します"
-                      >
-                        <Zap className="w-3.5 h-3.5" /> ⚡ 即時承認（統合）
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onPreview()}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 border border-zinc-700 shadow-sm transition"
-                      title="統合先をプレビュー確認・手直ししてから承認を実行します"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> プレビュー
-                    </button>
+
+                      {canReanalyze && (
+                        <button
+                          type="button"
+                          onClick={() => onReanalyze!()}
+                          disabled={busy}
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition ${
+                            thin ? 'bg-amber-950/40 border-amber-600/60 text-amber-300' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                          }`}
+                          title="理由や深掘りしたい観点を付けて再解析"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> {isDraft ? '再解析' : '再解析'}
+                        </button>
+                      )}
+
+                      {isDraft && onDiscardReanalysis ? (
+                        <button
+                          onClick={() => onDiscardReanalysis()}
+                          disabled={busy}
+                          className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        >
+                          <Undo2 className="w-3.5 h-3.5" /> 元に戻す
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onReject()}
+                          disabled={busy}
+                          className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-900/60 text-zinc-400 hover:text-rose-400 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+                          title="却下 (X)"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> 却下
+                        </button>
+                      )}
+                    </div>
+
+                    {/* メイン操作（即時承認 または 分解） */}
+                    <div className="flex items-center gap-2">
+                      {item.isMultiChampion && onDecompose && !item.is_atomic ? (
+                        <button
+                          type="button"
+                          onClick={() => onDecompose()}
+                          disabled={busy}
+                          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
+                          title="各チャンピオンの知見に分解して直接教本へ統合 (D)"
+                        >
+                          <Scissors className="w-3.5 h-3.5" /> ✂️ ナレッジ分解する (D)
+                        </button>
+                      ) : (
+                        <>
+                          {onDecompose && !item.is_atomic && (
+                            <button
+                              type="button"
+                              onClick={() => onDecompose()}
+                              disabled={busy}
+                              className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title="複数知見に分割 (D)"
+                            >
+                              <Scissors className="w-3.5 h-3.5" /> 分解
+                            </button>
+                          )}
+                          {onApprove && (
+                            <button
+                              type="button"
+                              onClick={() => onApprove()}
+                              disabled={busy}
+                              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-emerald-950/40 transition"
+                              title="現在の設定で即座に承認して教本へ統合 (A)"
+                            >
+                              <Zap className="w-3.5 h-3.5" /> ⚡ 即時承認（統合） (A)
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
