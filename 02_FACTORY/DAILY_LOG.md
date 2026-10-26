@@ -1,5 +1,39 @@
 ## 📅 2026-10-26（日）
 
+### 🚀 KTM Sovereign - LoL Match Watcher バックグラウンド自動起動（Windows スタートアップ常駐化）
+
+**概要**:
+1. **背景と課題**:
+   - 実機LoLクライアント（LCU）からの全スタッツ自動取得スクリプト（`ktm_match_watcher.mjs`）の検証が完了。
+   - PC起動時にユーザーが手動でバッチを立ち上げる必要をなくし、裏（黒い画面を一切出さないバックグラウンド）で自動起動・常駐させたい。
+2. **実施内容**:
+   - **【安全な二重起動防止 ＆ 永続ログ記録】(`scripts/ktm_match_watcher.mjs`)**:
+     - `.ktm_watcher.pid` による単一インスタンス管理を実装。既にバックグラウンドで起動している場合は重複起動せず安全に終了。プロセス終了時はPIDファイルを自動クリーンアップ。
+     - バックグラウンド実行時（コンソール画面なし環境）で stdout/stderr ハンドルや `console.clear()` が例外を起こさないよう TTY ガードを追加。
+     - `uncaughtException` / `unhandledRejection` を含め、すべての動作ログを `logs/match_watcher.log` へ日時付きで自動永続化。
+   - **【完全非表示起動ランナー】(`scripts/run_match_watcher_silent.vbs`)**:
+     - Windows 標準の WScript.Shell を用い、ウィンドウ完全非表示（`WindowStyle: 0`）で `node scripts\ktm_match_watcher.mjs` を非同期実行するランナーを整備。
+   - **【Windows スタートアップ自動登録】(`scripts/register_startup.ps1`, `unregister_startup.ps1`)**:
+     - ユーザーのスタートアップフォルダ（`shell:startup`）に `KTM_Match_Watcher.lnk` を安全に生成・配置。
+     - 管理者権限不要かつレジストリを汚さない非破壊設計で、PC起動時に自動で常駐を開始。
+   - **【ワンクリック停止バッチ】(`stop_match_watcher.bat`)**:
+     - PIDファイルを読み取り、タスクマネージャーを開かずに裏の Watcher プロセスのみをピンポイントで安全停止できるバッチを配置。
+3. **機械的実値検証**:
+   - ショートカット生成検証: `register_startup.ps1` 実行により `C:\Users\PC_User\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\KTM_Match_Watcher.lnk` の配置を確認。
+   - ターゲット（`wscript.exe`）、引数（`run_match_watcher_silent.vbs`）、作業ディレクトリ（`d:\my_work`）の正常性を確認。
+   - 単体テスト: `04_PORTAL` テスト **167件全件 PASS**。
+
+**再利用可能な3行ナレッジ**:
+- WindowsでNode.jsスクリプトを完全非表示（黒画面なし）で常駐させるには、WScript.Shellの `Run "cmd /c ...", 0, False` 経由で起動し、かつスクリプト側で TTY なしの stdout 例外を防ぐガードを敷く。
+- スタートアップ登録はレジストリ変更よりも `[Environment]::GetFolderPath('Startup')` へのショートカット作成が最も非破壊・安全で、ユーザー側でもアンインストール（削除）が容易。
+- バックグラウンド常駐プロセスには、多重起動防止（PIDファイル＋`process.kill(pid, 0)`による稼働確認）と、ファイルへの自動ログ退避をセットで仕込むことがトラブルシューティングの鍵。
+
+- `[要検証]`: PC再起動後のタスクマネージャーにおける `node.exe` の自動起動とメモリ消費（約60MB）の安定性
+- `[継続ウォッチ]`: LoLクライアント起動・終了を繰り返した際のLCU再接続の安定度
+- `[発信候補]`: 「LoLクライアントの試合終了を全自動監視してWebポータルへ即座に飛ばす、Windowsスタートアップ常駐Node.jsの作り方」
+
+---
+
 ### ✂️ 複数チャンピオン動画の初手自動判別 ＆ パイロット審査連携（要分解フローの完全自動化）
 
 **概要**:

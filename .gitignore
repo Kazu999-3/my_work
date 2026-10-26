@@ -107,3 +107,6 @@ scratch/
 # リプレイ経路解析のキャッシュ・作業ファイル
 scripts/icons/
 scripts/matches/
+
+# KTM Match Watcher の実行時PID
+.ktm_watcher.pid

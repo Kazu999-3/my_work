@@ -13,6 +13,13 @@
 
 > 「プレイ前 ➔ プレイ中 ➔ プレイ後 ➔ ナレッジ蓄積」の循環を維持する。不確定情報（AI推測）は使わず、Riot公式 / DataDragon / 実戦データのみを使う。
 
+- [x] **🔥【完了 (2026-10-26)】KTM Match Watcher 実機スタッツ自動収集 ＆ Windowsスタートアップ常駐化**:
+  - [x] 1. **LCU EOGからの10人詳細スタッツ（アイテム・サモスペ・ダメージ・白黒時間等）自動取得 ＆ DB完全永続化**: `scripts/ktm_match_watcher.mjs` および `/api/match/record`
+  - [x] 2. **ポータル対戦履歴（`/history`）のリッチUI刷新**: アイテム/サモスペアイコン、ダメージ割合バー、CS/ゴールド表示
+  - [x] 3. **専属AIコーチ（ソロQギャップ分析）＆KAZUKI専用表示ガード配備**: リアルな皮肉・開戦事故プロンプト完備
+  - [x] 4. **Windowsスタートアップバックグラウンド自動起動**: `run_match_watcher_silent.vbs`、`register_startup.ps1`、二重起動防止PIDロック、停止バッチ `stop_match_watcher.bat` 完備
+
+
 - [x] **🔥【完了 (2026-10-15)】3大コアテーマ完遂（HUD Habit Radar常駐タイマー ＆ DB正本Git自動同期 ＆ ポータルAPIエラー集約監視）**:
   - [x] 1. **【テーマ1: HUD強化】透過Web HUDに対面の癖（Habit Radar）を常駐連動**:
     - `/overlay` 画面右上に対面Habit Radarタイマー（2:48視界切れ・5:15リコール目安）を常駐連動。パルス発光アラート付き。

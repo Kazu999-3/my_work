@@ -20,6 +20,79 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ログファイルへの同時書き込み設定
+const LOG_FILE = path.resolve(__dirname, '../logs/match_watcher.log');
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+function writeLogFile(prefix, ...args) {
+  try {
+    const logDir = path.dirname(LOG_FILE);
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const text = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+    const line = `[${new Date().toISOString()}] ${prefix} ${text}\n`;
+    fs.appendFileSync(LOG_FILE, line, 'utf8');
+  } catch {}
+}
+
+console.log = (...args) => {
+  try {
+    originalConsoleLog(...args);
+  } catch {}
+  writeLogFile('[INFO]', ...args);
+};
+
+console.error = (...args) => {
+  try {
+    originalConsoleError(...args);
+  } catch {}
+  writeLogFile('[ERROR]', ...args);
+};
+
+// 未捕捉エラーをログに記録
+process.on('uncaughtException', (err) => {
+  writeLogFile('[FATAL_UNCAUGHT]', err?.stack || err?.message || String(err));
+});
+process.on('unhandledRejection', (reason) => {
+  writeLogFile('[FATAL_UNHANDLED]', reason?.stack || reason?.message || String(reason));
+});
+
+// 二重起動防止 (PIDファイルによる単一プロセス常駐)
+const LOCK_FILE = path.resolve(__dirname, '../.ktm_watcher.pid');
+function ensureSingleInstance() {
+  if (fs.existsSync(LOCK_FILE)) {
+    try {
+      const existingPid = parseInt(fs.readFileSync(LOCK_FILE, 'utf8').trim(), 10);
+      if (existingPid && !isNaN(existingPid)) {
+        process.kill(existingPid, 0); // 稼働中なら例外が発生しない
+        console.log(`⚠️ 既に KTM Match Watcher が実行中です (PID: ${existingPid})。重複起動を防止するため終了します。`);
+        process.exit(0);
+      }
+    } catch {
+      // プロセスが存在しない（前回異常終了の残骸）場合は上書き
+    }
+  }
+
+  fs.writeFileSync(LOCK_FILE, String(process.pid), 'utf8');
+
+  const cleanup = () => {
+    try {
+      if (fs.existsSync(LOCK_FILE)) {
+        const cur = fs.readFileSync(LOCK_FILE, 'utf8').trim();
+        if (cur === String(process.pid)) {
+          fs.unlinkSync(LOCK_FILE);
+        }
+      }
+    } catch {}
+  };
+
+  process.on('exit', cleanup);
+  process.on('SIGINT', () => { cleanup(); process.exit(0); });
+  process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+}
+
+ensureSingleInstance();
+
 // .env.local から設定を読み込み
 function loadEnv() {
   const envPath = path.resolve(__dirname, '../04_PORTAL/.env.local');
@@ -309,7 +382,9 @@ function parseEogStats(eogData) {
  * メイン監視ループ
  */
 async function main() {
-  console.clear();
+  if (process.stdout?.isTTY) {
+    try { console.clear(); } catch {}
+  }
   console.log('====================================================');
   console.log('   🎮 KTM Sovereign - Match Watcher (自動リザルト記録)');
   console.log('====================================================');
