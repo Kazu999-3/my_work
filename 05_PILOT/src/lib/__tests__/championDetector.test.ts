@@ -41,4 +41,17 @@ describe('championDetector', () => {
     const res = detectChampionsFromText('【1分Tips】リセットのタイミングと効率的なジャングルキャンプの回り方ルール');
     assert.equal(res.main, undefined, 'リセットやルールでセトやルルに誤爆しないこと');
   });
+
+  it('複数チャンピオンを扱う動画（ティアリスト・まとめ等）で isMultiChampion: true を正しく判定できる', () => {
+    const res = detectChampionsFromText('【パッチ26.2】TOPティアリスト！ダリウス・カミール・レネクトンが最強の理由');
+    assert.equal(res.isMultiChampion, true);
+    assert.equal(res.allChampions?.length, 3);
+  });
+
+  it('対面対決（A vs B）は複数チャンプ扱いせず、主役vs対面として正しく分離する', () => {
+    const res = detectChampionsFromText('アーリ vs ヤスオ：対面有利の作り方');
+    assert.equal(res.isMultiChampion, false);
+    assert.equal(res.main?.nameJa, 'アーリ');
+    assert.equal(res.enemy?.nameJa, 'ヤスオ');
+  });
 });

@@ -88,8 +88,26 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
               </span>
             )}
 
+            {/* ✂️ 複数チャンピオン対象バッジ（ナレッジ分解推奨） */}
+            {item.isMultiChampion && (
+              <span
+                className="text-[10px] font-black px-2 py-0.5 rounded border text-teal-200 border-teal-500/70 bg-teal-950/60 flex items-center gap-1 shadow-sm"
+                title={item.multiReason || '複数チャンピオンが検出されました。ナレッジ分解を推奨します'}
+              >
+                <Scissors className="w-3 h-3 text-teal-400" />
+                ✂️ 複数チャンプ対象 ({item.multiReason || '要分解'})
+              </span>
+            )}
+
             {/* 🎯 統合先＆対面バッジ（確実なメタ情報） */}
             {(() => {
+              if (item.isMultiChampion) {
+                return (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-teal-300 border-teal-700/60 bg-teal-950/40 flex items-center gap-1">
+                    ✂️ 個別教本へ分解推奨
+                  </span>
+                );
+              }
               const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
               if (targetChamp) {
                 return (
@@ -400,10 +418,14 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                         type="button"
                         onClick={() => onDecompose()}
                         disabled={busy}
-                        className="px-3 py-1.5 rounded-lg bg-teal-950/40 border border-teal-700/60 text-teal-300 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 hover:bg-teal-900/50 transition shadow-sm"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition shadow-sm ${
+                          item.isMultiChampion
+                            ? 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-teal-900/30 font-black'
+                            : 'bg-teal-950/40 border border-teal-700/60 text-teal-300 hover:bg-teal-900/50'
+                        }`}
                         title="記事内の複数チャンピオン・マクロ知見を個別の分割知見へ分解します"
                       >
-                        <Scissors className="w-3.5 h-3.5" /> ✂️ ナレッジ分解
+                        <Scissors className="w-3.5 h-3.5" /> ✂️ {item.isMultiChampion ? 'ナレッジ分解（推奨）' : 'ナレッジ分解'}
                       </button>
                     )}
                     {canReanalyze && (

@@ -8,7 +8,8 @@ import { integrateMatchupArticle } from '@/lib/matchupMemo';
 import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
 import { previewChampionFactsMerge, executeChampionFactsMerge, FactFieldKey } from '@/lib/championFactsMerge';
 import { decomposeArticle, saveDecomposedInsights, DecomposedInsight } from '@/lib/knowledgeDecompose';
-import { assessArticleDensity } from '@/lib/articleDensity';
+import { assessArticleDensity, extractArticleSummary } from '@/lib/articleDensity';
+import { detectChampionsFromText } from '@/lib/championDetector';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -208,6 +209,13 @@ export async function GET(req: NextRequest) {
           || (task.status === 'failed' && new Date(task.createdAt) > new Date(r.created_at)))
           ? task : null;
 
+        const articleSummary = extractArticleSummary(r.content || '');
+        const champDetect = detectChampionsFromText(r.title || '', articleSummary);
+        const hasMultiTag = Array.isArray(r.tags) && (r.tags.includes('複数チャンピオン') || r.tags.includes('ティアリスト'));
+        const hasMultipleChampsInCol = currentChampParts.length > 1;
+        const isMultiChampion = !r.is_atomic && (hasMultiTag || hasMultipleChampsInCol || !!champDetect.isMultiChampion || !!r.analysis_meta?.is_multi_champion);
+        const multiReason = champDetect.multiReason || (hasMultipleChampsInCol ? `${currentChampParts.length}体のチャンピオン (${currentChampNamesJa.join(', ')})` : hasMultiTag ? '複数チャンピオンタグ付き' : undefined);
+
         return {
           ...r,
           analysis_meta: r.analysis_meta || null,
@@ -236,6 +244,9 @@ export async function GET(req: NextRequest) {
           enemyChampion: matchupDetection.enemyChampion,
           enemyChampionJa: matchupDetection.enemyChampionJa,
           matchupLabel: matchupDetection.label,
+          isMultiChampion,
+          multiReason,
+          allDetectedChampions: champDetect.allChampions || [],
         };
       })
     );
@@ -271,7 +282,8 @@ export async function GET(req: NextRequest) {
       });
 
     const qualityCounts = {
-      determined: enrichedItems.filter((i) => !i.isLaneGeneral || !!i.detectedChampionsJa).length,
+      multi: enrichedItems.filter((i) => i.isMultiChampion).length,
+      determined: enrichedItems.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion).length,
       unknown: enrichedItems.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa).length,
       thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
       reanalyzed: enrichedItems.filter((i) => i.reanalysis_of != null).length,
@@ -282,7 +294,8 @@ export async function GET(req: NextRequest) {
 
     // 5. フィルタリング適用
     let filtered = enrichedItems;
-    if (quality === 'determined') filtered = filtered.filter((i) => !i.isLaneGeneral || !!i.detectedChampionsJa);
+    if (quality === 'multi') filtered = filtered.filter((i) => i.isMultiChampion);
+    if (quality === 'determined') filtered = filtered.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion);
     if (quality === 'unknown') filtered = filtered.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa);
     if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
     if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysis_of != null);

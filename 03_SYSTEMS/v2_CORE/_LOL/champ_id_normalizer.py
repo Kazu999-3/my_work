@@ -315,29 +315,62 @@ def detect_champions_from_text(text: str) -> list[str]:
 
 
 def determine_champion(title: str, fallback_champ: Optional[str] = None) -> str:
+    """単一の代表チャンピオンを返す（後方互換）"""
+    res = determine_champions(title, fallback_champ)
+    if "," in res:
+        return res.split(",")[0].strip()
+    return res
+
+
+def determine_champions(title: str, fallback_champ: Optional[str] = None) -> str:
     """
-    記事のタイトルとフォールバック（Geminiの出力など）から、最も信頼できる正規チャンピオンIDを決定する。
-    1. タイトルからDDragon公式辞書で検出されたチャンピオン（最優先・決定論的）
-       - 1体ならそれ
-       - 複数体なら先頭（第1登場）チャンピオン
-    2. タイトルから検出できない場合:
-       - fallback_champ を resolve_roster_champion で正規化
-       - 複数カンマ区切りなら最初の有効な1体を解決
-       - それでも無効なら 'Unknown'
+    記事のタイトルとフォールバック（Geminiの出力など）から、対象チャンピオンを決定する。
+    複数チャンピオンを扱っている場合（ティアリスト、OPチャンプ5選、複数並列など）は、
+    先頭1体に潰さずカンマ区切り（例: 'Camille, Darius, Renekton'）で漏れなく返す（2026-10-26改修）。
     """
-    from_title = detect_champions_from_text(title)
-    if from_title:
+    from_title = detect_champions_from_text(title or "")
+    
+    # 複数チャンプを扱う動画シグナル（ティアリスト、まとめ、OPチャンプ、パッチ、5選 等）
+    is_multi_signal = bool(re.search(
+        r"(?:tier|ティア|tierlist|ティアリスト|op|おすすめ|オススメ|強い|まとめ|パッチ|patch|選|チャンプ達|チャンピオン達)",
+        title or "",
+        re.IGNORECASE
+    ))
+
+    # 1. タイトルから複数（3体以上、または複数シグナルあり）検出された場合
+    if len(from_title) >= 3 or (len(from_title) >= 2 and is_multi_signal):
+        return ", ".join(from_title)
+    
+    # 2. タイトルから2体検出され、かつ「vs」「対面」ではない（並列）場合
+    if len(from_title) == 2:
+        is_vs = bool(re.search(r"(?:vs\.?|対面|対\s)", title or "", re.IGNORECASE))
+        if not is_vs:
+            return ", ".join(from_title)
+
+    # 3. タイトルから1体検出された場合
+    if len(from_title) == 1:
+        # ただしフォールバック（Geminiの解析）に複数チャンプがあり、複数シグナルがあればそちらを尊重
+        if fallback_champ and "," in fallback_champ and is_multi_signal:
+            resolved_list = []
+            for part in fallback_champ.split(","):
+                c = resolve_roster_champion(part.strip())
+                if c and c not in resolved_list:
+                    resolved_list.append(c)
+            if len(resolved_list) >= 2:
+                return ", ".join(resolved_list)
         return from_title[0]
 
+    # 4. タイトルから検出できない場合: fallback_champ を検証
     if fallback_champ and fallback_champ != "Unknown":
-        resolved = resolve_roster_champion(fallback_champ)
-        if resolved:
-            return resolved
-        # カンマ区切りの複数があれば最初の有効なチャンプを拾う
-        parts = [p.strip() for p in fallback_champ.split(",")]
+        parts = [p.strip() for p in fallback_champ.split(",") if p.strip()]
+        resolved_list = []
         for part in parts:
-            first_resolved = resolve_roster_champion(part)
-            if first_resolved:
-                return first_resolved
+            c = resolve_roster_champion(part)
+            if c and c not in resolved_list:
+                resolved_list.append(c)
+        if len(resolved_list) > 1:
+            return ", ".join(resolved_list)
+        if len(resolved_list) == 1:
+            return resolved_list[0]
 
     return "Unknown"

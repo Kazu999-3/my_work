@@ -174,7 +174,8 @@ def build_extract_prompt(title, channel, transcript, is_short=False, reanalysis=
 
 【出力】純粋な JSON のみ
 {{"video_type": "<{types} のどれかのキー>",
- "champion": "<主題のチャンピオンの英語ID。複数・無ければ Unknown>",
+ "champion": "<主題のチャンピオンの英語ID（単一なら 'Camille'、複数チャンピオンを扱うティアリストやまとめならカンマ区切りで 'Camille, Darius, Renekton'。特定チャンピオンが無ければ 'Unknown'）>",
+ "is_multi_champion": <複数チャンピオンを扱った動画（ティアリスト・パッチまとめ・複数ピック紹介等）なら true, 単一チャンピオンなら false>,
  "enemy": "<対面が明確ならその英語ID。無ければ null>",
  "facts": [
    {{"category": "<{cats} のどれかのキー>",
@@ -232,8 +233,9 @@ def build_write_prompt(title, channel, extraction, reanalysis=None):
 {{"title": "<記事の内容が分かる具体的な日本語タイトル。誇張語（究極・最強・完全など）は使わない>",
  "summary": "<Markdown 本文>",
  "genre": "<LoL攻略 / ビルド / マクロ / その他 のどれか>",
- "tags": ["<最大5つ>"],
- "champion": "<主題のチャンピオンの英語ID。無ければ Unknown>"}}
+ "tags": ["<最大5つ。複数チャンピオンを扱う動画なら '複数チャンピオン' を必ず含める>"],
+ "champion": "<主題のチャンピオンの英語ID（単一なら 'Camille'、複数チャンピオンを扱うならカンマ区切りで 'Camille, Darius, Renekton'。無ければ 'Unknown'）>",
+ "is_multi_champion": <複数チャンピオン対象なら true, 単一なら false>}}
 
 事実リスト:
 {facts_json}"""
@@ -345,7 +347,11 @@ def generate_article(title, channel, transcript, api_key, model, is_short=False,
     if not article.get("champion") or article.get("champion") == "Unknown":
         article["champion"] = extraction.get("champion") or "Unknown"
     article.setdefault("genre", "LoL攻略")
-    article.setdefault("tags", [])
+    tags = list(article.get("tags") or [])
+    is_multi = bool(article.get("is_multi_champion") or extraction.get("is_multi_champion") or ("," in str(article.get("champion", ""))))
+    if is_multi and "複数チャンピオン" not in tags:
+        tags.append("複数チャンピオン")
+    article["tags"] = tags
     cats = {}
     for f in facts:
         cats[f["category"]] = cats.get(f["category"], 0) + 1
@@ -353,6 +359,7 @@ def generate_article(title, channel, transcript, api_key, model, is_short=False,
         "prompt_version": PROMPT_VERSION,
         "model": model,
         "video_type": extraction.get("video_type"),
+        "is_multi_champion": is_multi,
         "fact_count": len(facts),
         "facts_with_reason": sum(1 for f in facts if f.get("reason")),
         "facts_with_numbers": sum(1 for f in facts if f.get("numbers")),

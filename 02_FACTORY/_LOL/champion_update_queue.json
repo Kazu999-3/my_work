@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-26T00:03:33.173679+00:00",
+  "updated_at": "2026-10-26T10:33:11.854463+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -385,82 +385,82 @@
     },
     "Kayn": {
       "name": "ケイン",
-      "status": "pending",
-      "updated_at": "2026-10-17T09:24:01.244317+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:04:24.303279+00:00",
       "error": null
     },
     "Kennen": {
       "name": "ケネン",
-      "status": "pending",
-      "updated_at": "2026-10-17T09:25:07.532420+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:05:37.241771+00:00",
       "error": null
     },
     "Khazix": {
       "name": "カ＝ジックス",
-      "status": "pending",
-      "updated_at": "2026-10-17T09:26:21.620820+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:08:10.869578+00:00",
       "error": null
     },
     "Kindred": {
       "name": "キンドレッド",
-      "status": "pending",
-      "updated_at": "2026-10-17T09:27:28.000740+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:09:40.710176+00:00",
       "error": null
     },
     "Kled": {
       "name": "クレッド",
-      "status": "pending",
-      "updated_at": "2026-10-17T11:18:13.538867+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:11:56.621795+00:00",
       "error": null
     },
     "KogMaw": {
       "name": "コグ＝マウ",
-      "status": "pending",
-      "updated_at": "2026-10-17T12:18:46.255116+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:13:00.756633+00:00",
       "error": null
     },
     "KSante": {
       "name": "カ・サンテ",
-      "status": "pending",
-      "updated_at": "2026-10-17T14:48:57.690881+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:15:33.554192+00:00",
       "error": null
     },
     "Leblanc": {
       "name": "ルブラン",
-      "status": "pending",
-      "updated_at": "2026-10-17T18:49:05.175855+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:17:24.708629+00:00",
       "error": null
     },
     "LeeSin": {
       "name": "リー・シン",
-      "status": "pending",
-      "updated_at": "2026-10-17T18:50:09.011484+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:19:44.155152+00:00",
       "error": null,
       "note": "Patch 16.21.1 core monitoring."
     },
     "Leona": {
       "name": "レオナ",
-      "status": "pending",
-      "updated_at": "2026-10-17T21:09:01.710524+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:20:43.958013+00:00",
       "error": null
     },
     "Lillia": {
       "name": "リリア",
-      "status": "pending",
-      "updated_at": "2026-10-17T21:10:03.469366+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:22:03.543412+00:00",
       "error": null,
       "note": "Patch 16.21.1 core monitoring."
     },
     "Lissandra": {
       "name": "リサンドラ",
-      "status": "pending",
-      "updated_at": "2026-10-17T22:18:39.964340+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:22:53.484710+00:00",
       "error": null
     },
     "Locke": {
       "name": "ロック",
-      "status": "pending",
-      "updated_at": "2026-10-17T23:35:49.551477+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T08:24:23.799049+00:00",
       "error": null,
       "note": "Patch 16.21.1 modified: ['mpperlevel']"
     },

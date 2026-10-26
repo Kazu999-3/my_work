@@ -211,6 +211,9 @@ export interface DetectedChampion {
 export interface DetectionResult {
   main?: DetectedChampion;
   enemy?: DetectedChampion;
+  isMultiChampion?: boolean;
+  allChampions?: DetectedChampion[];
+  multiReason?: string;
 }
 
 interface MatchCandidate {
@@ -254,11 +257,12 @@ function scanChampions(text: string): MatchCandidate[] {
           }
         }
 
-        // ★ 誤爆防止ガード 2: カタカナ用語（例: 'ルル', 'セト', 'ザヤ', 'シェン'）は、前後にカタカナが続く場合は単語の一部なので除外（例: 'リセット' の 'セト' や 'スルー'）
-        if (/^[\u30A0-\u30FFー]+$/.test(term)) {
+        // ★ 誤爆防止ガード 2: カタカナ用語（例: 'ルル', 'セト', 'ザヤ', 'シェン'）は、前後に純粋なカタカナ（ァ-ヴー）が続く場合は単語の一部なので除外（例: 'リセット' の 'セト' や 'スルー'）
+        // ※ '・'（中黒）や '／'、スペースなどは区切り文字なので前後にあってもスキップしない
+        if (/^[ァ-ヴー・＝]+$/.test(term)) {
           const charBefore = pos > 0 ? text[pos - 1] : '';
           const charAfter = pos + term.length < text.length ? text[pos + term.length] : '';
-          if (/[\u30A0-\u30FFー]/.test(charBefore) || /[\u30A0-\u30FFー]/.test(charAfter)) {
+          if (/[ァ-ヴー]/.test(charBefore) || /[ァ-ヴー]/.test(charAfter)) {
             pos += term.length;
             continue;
           }
@@ -297,9 +301,41 @@ function scanChampions(text: string): MatchCandidate[] {
   return filtered.sort((a, b) => a.index - b.index);
 }
 
-/** タイトルおよび要約テキストから主役チャンプと対面チャンプを推定する */
+/** タイトルおよび要約テキストから主役チャンプ、対面チャンプ、および複数チャンプ対象かを高精度に判定する */
 export function detectChampionsFromText(title: string, summary?: string): DetectionResult {
   const titleMatches = scanChampions(title || '');
+  const summaryMatches = summary ? scanChampions(summary) : [];
+
+  // 全出現チャンプをユニーク抽出
+  const seenIds = new Set<string>();
+  const allChampions: DetectedChampion[] = [];
+  for (const m of [...titleMatches, ...summaryMatches]) {
+    if (!seenIds.has(m.id)) {
+      seenIds.add(m.id);
+      allChampions.push({ id: m.id, nameJa: m.nameJa });
+    }
+  }
+
+  // 複数チャンプを扱う動画シグナル（ティアリスト、まとめ、OPチャンプ、パッチ、5選 等）
+  const isMultiSignal = /(?:tier|ティア|tierlist|ティアリスト|op|おすすめ|オススメ|強い|まとめ|パッチ|patch|選|チャンプ達|チャンピオン達)/i.test(title || '');
+  const isVs = /(?:vs\.?|対面|対\s)/i.test(title || '');
+
+  // 複数チャンピオン判定
+  let isMultiChampion = false;
+  let multiReason: string | undefined;
+
+  if (allChampions.length >= 3) {
+    isMultiChampion = true;
+    multiReason = `${allChampions.length}体のチャンピオンを検出 (${allChampions.map((c) => c.nameJa).slice(0, 4).join(', ')}${allChampions.length > 4 ? '...' : ''})`;
+  } else if (allChampions.length === 2) {
+    if (isMultiSignal) {
+      isMultiChampion = true;
+      multiReason = `複数チャンプ解説 (${allChampions.map((c) => c.nameJa).join(', ')})`;
+    } else if (!isVs) {
+      isMultiChampion = true;
+      multiReason = `並列言及 (${allChampions.map((c) => c.nameJa).join(', ')})`;
+    }
+  }
 
   // 1. タイトル内に明確な「A vs B」があるか検査
   // 例: 「コーキ vs トリンダメア」
@@ -315,6 +351,9 @@ export function detectChampionsFromText(title: string, summary?: string): Detect
       return {
         main: { id: leftCand.id, nameJa: leftCand.nameJa },
         enemy: { id: rightCand.id, nameJa: rightCand.nameJa },
+        isMultiChampion: isMultiChampion && !isVs,
+        allChampions,
+        multiReason,
       };
     }
   }
@@ -327,21 +366,28 @@ export function detectChampionsFromText(title: string, summary?: string): Detect
     return {
       main: { id: mainCand.id, nameJa: mainCand.nameJa },
       enemy: enemyCand ? { id: enemyCand.id, nameJa: enemyCand.nameJa } : undefined,
+      isMultiChampion,
+      allChampions,
+      multiReason,
     };
   }
 
   // 3. タイトルで見つからなかった場合、要約テキストから探す
-  if (summary) {
-    const summaryMatches = scanChampions(summary);
-    if (summaryMatches.length > 0) {
-      const mainCand = summaryMatches[0];
-      const enemyCand = summaryMatches.find((m) => m.id !== mainCand.id && m.isVsContext);
-      return {
-        main: { id: mainCand.id, nameJa: mainCand.nameJa },
-        enemy: enemyCand ? { id: enemyCand.id, nameJa: enemyCand.nameJa } : undefined,
-      };
-    }
+  if (summaryMatches.length > 0) {
+    const mainCand = summaryMatches[0];
+    const enemyCand = summaryMatches.find((m) => m.id !== mainCand.id && m.isVsContext);
+    return {
+      main: { id: mainCand.id, nameJa: mainCand.nameJa },
+      enemy: enemyCand ? { id: enemyCand.id, nameJa: enemyCand.nameJa } : undefined,
+      isMultiChampion,
+      allChampions,
+      multiReason,
+    };
   }
 
-  return {};
+  return {
+    isMultiChampion,
+    allChampions,
+    multiReason,
+  };
 }

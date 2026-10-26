@@ -82,9 +82,10 @@ _lol_core_dir = Path(__file__).resolve().parent.parent / "03_SYSTEMS" / "v2_CORE
 if str(_lol_core_dir) not in sys.path:
     sys.path.insert(0, str(_lol_core_dir))
 try:
-    from champ_id_normalizer import determine_champion, detect_champions_from_text, resolve_roster_champion
+    from champ_id_normalizer import determine_champion, determine_champions, detect_champions_from_text, resolve_roster_champion
 except ImportError:
     def determine_champion(t, f=None): return f or "Unknown"
+    def determine_champions(t, f=None): return f or "Unknown"
     def resolve_roster_champion(c): return c
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
@@ -871,11 +872,14 @@ def main():
             # /admin/knowledgeの「未承認」パネルで人間が承認するまではfetch_personal_knowledge
             # (champion_trend_worker.py)の対象から外れるようにする(2026-08-16、ユーザー要望)。
             # 既存の承認済み記事はそのまま維持し、今後の新規分だけが対象。
-            # チャンピオン判定: タイトル（記事タイトル＋元動画タイトル）照合を最優先、AI推測を正規化、無ければUnknown
+            # チャンピオン判定: タイトル（記事タイトル＋元動画タイトル）照合を最優先、複数チャンプも保持
             raw_champ = a.get("champion") or "Unknown"
-            final_champ = determine_champion(video_title, raw_champ)
+            final_champ = determine_champions(video_title, raw_champ)
             if final_champ == "Unknown" and it.get("title"):
-                final_champ = determine_champion(it.get("title"), raw_champ)
+                final_champ = determine_champions(it.get("title"), raw_champ)
+
+            if "," in final_champ and "複数チャンピオン" not in tags:
+                tags.append("複数チャンピオン")
 
             # personal_knowledge へ保存 (review_status='pending')
             # transcript: 字幕の全文（時刻付き）。承認画面の「再解析」が字幕を取り直さずに使う（2026-10-19）。

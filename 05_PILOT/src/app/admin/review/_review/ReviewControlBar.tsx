@@ -22,10 +22,10 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
   laneCounts: Record<string, number>;
   loading: boolean;
   onReload: () => void;
-  /** 2026-10-19: '' | 'determined' | 'unknown' | 'thin' | 'reanalyzed' */
+  /** 2026-10-19: '' | 'multi' | 'determined' | 'unknown' | 'thin' | 'reanalyzed' */
   quality: string;
   setQuality: (v: string) => void;
-  qualityCounts: { thin?: number; reanalyzed?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number };
+  qualityCounts: { thin?: number; reanalyzed?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number };
 }) {
   return (
         <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
@@ -45,9 +45,10 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                 </button>
               ))}
               <span className="w-px h-5 bg-zinc-800 mx-0.5" aria-hidden />
-              {/* チャンピオン確定状態フィルター（案A）: 教本へ即統合できるもの vs レーン汎用/未定 */}
+              {/* チャンピオン確定状態フィルター（案A）: 教本へ即統合できるもの vs レーン汎用/未定 vs 複数チャンプ */}
               {([
-                ['determined', '🎯 チャンプ確定', qualityCounts.determined, 'チャンピオンが特定できており、教本へ即時統合できる記事', 'bg-emerald-500/15 border-emerald-500/60 text-emerald-200'],
+                ['determined', '🎯 チャンプ確定', qualityCounts.determined, 'チャンピオンが1体特定できており、教本へ即時統合できる記事', 'bg-emerald-500/15 border-emerald-500/60 text-emerald-200'],
+                ['multi', '✂️ 複数チャンプ (要分解)', qualityCounts.multi, '複数のチャンピオンを扱っている記事（ナレッジ分解推奨）', 'bg-teal-500/15 border-teal-500/60 text-teal-200'],
                 ['unknown', '❓ チャンプ未定', qualityCounts.unknown, 'チャンピオン未確定（レーン一般論やマクロ知見など）', 'bg-amber-500/15 border-amber-500/60 text-amber-200'],
               ] as const).map(([k, l, n, tip, on]) => (
                 <button

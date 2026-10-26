@@ -27,6 +27,10 @@ export interface ReviewItem {
   enemyChampion?: string | null;
   enemyChampionJa?: string | null;
   matchupLabel?: string | null;
+  /** 複数チャンピオン対象（要ナレッジ分解）か（2026-10-26新設） */
+  isMultiChampion?: boolean;
+  multiReason?: string;
+  allDetectedChampions?: Array<{ id: string; nameJa: string }>;
   /** 再解析で作った版なら元の記事の ID（2026-10-19） */
   reanalysis_of?: number | null;
   analysis_meta?: AnalysisMeta | null;
