@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyPortalError, notifyHealthReport, type ErrorLogApp } from '../../../../lib/discordNotify';
+import { decodeUserSession, USER_SESSION_COOKIE } from '../../../../lib/userSession';
 
 // 04のブラウザ側エラーに加え、05(KTM Pilot)のサーバー/画面エラーと毎朝の健康診断の結果もここで受けて
 // #エラーログ へ集約する（05はDiscordの鍵を持たないため、04経由で送る）。
@@ -86,6 +87,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Message or stack is required' }, { status: 400 });
     }
 
+    // ログイン中のユーザーがいれば Cookie から自動特定して付与する
+    const sessionCookie = req.cookies.get(USER_SESSION_COOKIE)?.value;
+    const session = decodeUserSession(sessionCookie);
+
+    const resolvedUserId = session?.discordId || (typeof userId === 'string' && userId.trim() ? userId.trim() : undefined);
+    const resolvedUserName = session?.displayName || session?.username || (typeof userName === 'string' && userName.trim() ? userName.trim() : '未ログイン (ゲスト)');
+
+    const clientIp = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || undefined;
+
     // Discordへエラーを転送
     await notifyPortalError({
       error: message || 'Client Unhandled Exception',
@@ -93,12 +103,13 @@ export async function POST(req: NextRequest) {
       source: SOURCES.includes(source) ? source : 'CLIENT',
       method: typeof method === 'string' ? method.slice(0, 10) : undefined,
       path: path || 'Browser UI',
-      userId,
-      userName,
+      userId: resolvedUserId,
+      userName: resolvedUserName,
       context: {
         userAgent: (userAgent || req.headers.get('user-agent') || '').slice(0, 150),
         componentStack: componentStack ? String(componentStack).slice(0, 300) : undefined,
         stack: stack ? String(stack).slice(0, 500) : undefined,
+        ...(clientIp ? { clientIp } : {}),
       },
     });
 
