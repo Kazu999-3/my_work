@@ -91,7 +91,8 @@ async function runScheduledJob(event, env, ctx) {
     await migrateLegacyPeriodicCards(env);
   } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
     // 毎週月曜 9:00 JST (UTC 0:00 月曜 / CF dow=2): 個人週間レポート配信 ＆ 前週末カスタムカードの受付終了
-    await sendWeeklyReports(env);
+    // ⚠️ 2026-10-26: 個人週間レポート配信はユーザー判断により停止（通知不要のため）
+    // await sendWeeklyReports(env);
     try {
       const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
       const recent = await fetchRecentBotMessages(env, channelId);

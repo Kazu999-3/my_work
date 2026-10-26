@@ -8,10 +8,14 @@ import { notifyAdminError } from '../../utils/alert.js';
 /**
  * 個人週間レポート(#84): 直近7日にKTMカスタムをプレイした人へ、
  * 「◯勝◯敗 / MMR±◯ / 最多レーン」のサマリーを本人の個別案内チャンネルへ送る。
- * 2026-10-20: DM から個別案内チャンネルへ切り替えた（ユーザー判断）。チャンネルの見つけ方はポータル側にあるため頼む。
- * 個別案内チャンネルが無い人には送らない。cronは週1のためGH側の冗長キック対象外（二重送信防止）。
+ * 2026-10-20: DM から個別案内チャンネルへ切り替えた（ユーザー判断）。
+ * ⚠️ 2026-10-26: ユーザー判断により配信停止（メンバーへの自動通知不要のためOFF）。
  */
 export async function sendWeeklyReports(env) {
+  // ⚠️ 2026-10-26 ユーザー判断により配信停止（不要な通知を抑制）
+  console.log('[WeeklyReport] ユーザー判断により週間レポート配信は停止中です');
+  return;
+
   try {
     const weekAgoIso = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
     const rows = await fetchSupabase(
