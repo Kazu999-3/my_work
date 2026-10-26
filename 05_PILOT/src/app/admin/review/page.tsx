@@ -472,6 +472,7 @@ export default function ReviewPage() {
               onToggleExpand={() => setExpanded((s) => toggle(s, item.id))}
               setChannel={setChannel}
               onEdit={(patch) => updateEditField(item.id, patch)}
+              onApprove={() => approveOne(item)}
               onPreview={() => openPreview(item)}
               onReject={() => rejectOne(item)}
               onDecompose={() => openDecompose(item)}

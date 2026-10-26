@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle, Lightbulb } from 'lucide-react';
+import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle, Lightbulb, Zap } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 import { extractArticleSummary, stripArticleChrome } from '@/lib/articleDensity';
 import { detectChampionsFromText } from '@/lib/championDetector';
@@ -9,7 +9,7 @@ import { detectChampionsFromText } from '@/lib/championDetector';
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
 // 2026-10-19: 「薄い可能性」の目印・🔁 再解析・再解析版の 🆚 比較 / 元の記事に戻す を追加。
-export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload }: {
+export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onApprove, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload }: {
   item: ReviewItem;
   edit: ItemEditState;
   isOpen: boolean;
@@ -20,6 +20,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   onToggleExpand: () => void;
   setChannel: (v: string) => void;
   onEdit: (patch: Partial<ItemEditState>) => void;
+  onApprove?: () => void;
   onPreview: () => void;
   onReject: () => void;
   onDecompose?: () => void;
@@ -416,13 +417,24 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         <XCircle className="w-3.5 h-3.5" /> 却下
                       </button>
                     )}
+                    {onApprove && (
+                      <button
+                        type="button"
+                        onClick={() => onApprove()}
+                        disabled={busy}
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm transition"
+                        title="プレビューモーダルを開かず、現在の設定で即座に承認して統合を実行します"
+                      >
+                        <Zap className="w-3.5 h-3.5" /> ⚡ 即時承認（統合）
+                      </button>
+                    )}
                     <button
                       onClick={() => onPreview()}
                       disabled={busy}
-                      className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-                      title="統合先をプレビュー確認してから承認を実行します"
+                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 border border-zinc-700 shadow-sm transition"
+                      title="統合先をプレビュー確認・手直ししてから承認を実行します"
                     >
-                      <Eye className="w-3.5 h-3.5" /> プレビューして承認統合
+                      <Eye className="w-3.5 h-3.5" /> プレビュー
                     </button>
                   </div>
                 </div>
