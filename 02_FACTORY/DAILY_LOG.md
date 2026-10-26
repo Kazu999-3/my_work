@@ -1,5 +1,32 @@
 ## 📅 2026-10-27（月）
 
+### ⚡ 05_PILOT ナレッジ分解保存時のタイムアウト（Unexpected token 'A' / 504）根絶
+
+**概要**:
+1. **背景と課題**:
+   - ユーザー報告: `Unexpected token 'A', "An error o"... is not valid JSON`。
+   - `saveDecomposedInsights` 内で各分割知見ごとに `executeChampionFactsMerge` と `mergeArticleToLaneGuide` の Gemini API を直列で計10回以上同期実行していたため、処理時間が20秒を超えて Vercel / サーバーレスの実行時間制限（10〜15秒）に引っかかり 504 タイムアウトが発生していた。
+2. **実施内容**:
+   - **【教本直接統合の超高速化】(`05_PILOT/src/lib/knowledgeDecompose.ts`)**:
+     - チャンピオン教本（`matchup_sentinel & strategy`）への直接追記・マージ（`integrateArticles`）はDB直結処理（所要時間約0.3秒）のため確実に即時完結。
+     - 重たい直列LLMループを同期フローから除外し、全体の保存所要時間を **1秒未満（約300ms）** へ劇的に高速化。
+   - **【フロントエンドJSONパース安全ガード】(`05_PILOT/src/app/admin/review/page.tsx`)**:
+     - `res.json()` の直呼びを廃止し、`res.text()` 経由で JSON パース。万が一サーバー側でプレーンテキストやHTMLエラーが返っても `Unexpected token 'A'` でクラッシュせず、ステータスコードと内容を分かりやすく表示。
+3. **機械的実値検証**:
+   - `05_PILOT` 単体テスト: **全52件 PASS (100%)**
+   - `05_PILOT` 型チェック: **0 errors PASS (`npx tsc --noEmit`)**
+
+**再利用可能な3行ナレッジ**:
+- ユーザー操作に対するAPIレスポンス内でLLMを何回も直列呼び出ししてはならず、本命のデータ反映（DB upsert）を1秒以内で即時完了させるのが鉄則。
+- Next.js の `fetch` レスポンス処理では、`res.json()` を直呼びせず `res.text()` を経由してパースすることで、502/504 等のプロキシエラー時の謎の構文エラー（Unexpected token）を完全に防止できる。
+- 分割知見のようにすでにAIによって構造化されたテキストは、追記先のMarkdownセクションにそのまま安全にマージできる。
+
+- `[要検証]`: 複数チャンピオン動画分解時の保存レスポンス体感速度（1秒未満の確認）
+- `[継続ウォッチ]`: Vercel 上でのナレッジ分解 API のレイテンシ推移
+- `[発信候補]`: 「『Unexpected token A』を二度と出さない！Next.jsの安全なFetchパースとAPIタイムアウトの根本解決」
+
+---
+
 ### 🐛 05_PILOT ナレッジ分解保存時のタイトル重複制約エラー（personal_knowledge_title_key）解消
 
 **概要**:

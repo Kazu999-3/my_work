@@ -323,7 +323,13 @@ export default function ReviewPage() {
           source_url: item.source_url,
         }),
       });
-      const json = await res.json();
+      const rawText = await res.text();
+      let json: any = {};
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        throw new Error(`サーバーエラー (${res.status}): ${rawText.slice(0, 150)}`);
+      }
       if (!res.ok) {
         if (res.status === 401) {
           window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
@@ -354,7 +360,13 @@ export default function ReviewPage() {
           source_url: decomposeModalItem.source_url,
         }),
       });
-      const json = await res.json();
+      const rawText = await res.text();
+      let json: any = {};
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        throw new Error(`サーバーエラー (${res.status}): ${rawText.slice(0, 150)}`);
+      }
       if (!res.ok) {
         if (res.status === 401) {
           window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);

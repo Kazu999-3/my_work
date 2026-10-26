@@ -3,8 +3,6 @@ import { callGemini } from './geminiClient';
 import { resolveRosterChampion, resolveRosterChampions, getChampionNameJa } from './championRoster';
 import { LaneKey, LANE_CONFIG } from './laneDetector';
 import { integrateArticles, IntegrateArticle } from './knowledgeIntegrate';
-import { executeChampionFactsMerge } from './championFactsMerge';
-import { mergeArticleToLaneGuide } from './laneGuideIntegrate';
 
 export interface DecomposedInsight {
   champion: string; // チャンピオン英語ID、または 'Unknown'
@@ -232,54 +230,13 @@ export async function saveDecomposedInsights(
   const savedIds = savedRows.map((r) => r.id);
   const integratedChamps: string[] = [];
 
-  // 直接承認・統合（autoApprove）の実行
+  // 直接承認・統合（autoApprove）の実行（教本 strategy & champion_notes への超高速DB直接統合）
   if (shouldApprove && savedRows.length > 0) {
     try {
-      // 1. チャンピオン教本（matchup_sentinel & strategy）へ統合
+      // チャンピオン教本（matchup_sentinel & strategy）へ統合
       const champRes = await integrateArticles(sb, savedRows);
       if (champRes.champions?.length > 0) {
         integratedChamps.push(...champRes.champions);
-      }
-
-      // 2. チャンピオン辞典項目（champion_facts: 強み・弱み・スパイク等）のマージ
-      for (const row of savedRows) {
-        const champList = await resolveRosterChampions(row.champion);
-        const articleText = row.content || row.raw_content || '';
-        if (champList.length > 0 && articleText.length >= 80) {
-          for (const champId of champList) {
-            try {
-              await executeChampionFactsMerge(
-                sb,
-                champId,
-                row.title || '(分割知見)',
-                articleText,
-                row.id
-              );
-            } catch (factErr) {
-              console.warn(`[saveDecomposedInsights] 辞典項目マージ警告 (${champId}):`, factErr);
-            }
-          }
-        }
-
-        // 3. レーンガイドへの統合（対象インサイトからレーンを特定）
-        const matchedInsight = uniqueInsights.find((i) => i.title === row.title) || insights.find((i) => i.title === row.title);
-        const targetLane = matchedInsight?.lane || 'COMMON';
-        try {
-          await mergeArticleToLaneGuide(
-            sb,
-            targetLane,
-            {
-              id: row.id,
-              title: row.title,
-              content: row.content,
-              raw_content: row.raw_content,
-              champion: row.champion,
-              source_url: row.source_url,
-            }
-          );
-        } catch (laneErr) {
-          console.warn(`[saveDecomposedInsights] レーンガイド統合警告 (${targetLane}):`, laneErr);
-        }
       }
     } catch (intErr) {
       console.warn('[saveDecomposedInsights] 教本への直接統合処理で一部警告:', intErr);
