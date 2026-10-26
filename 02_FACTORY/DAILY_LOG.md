@@ -1,5 +1,33 @@
 ## 📅 2026-10-27（月）
 
+### ⚡ Gemini API 429クォータ枯渇の解消（稼働中モデル gemini-3-flash-preview への最優先配置）
+
+**概要**:
+1. **背景と課題**:
+   - ユーザー報告: `Gemini API エラー (429): You exceeded your current quota ... limit: 20, model: gemini-2.5-flash ... Please retry in 12h43m`。
+   - `geminiClient.ts` のフォールバック先が `gemini-3.1-flash-lite`(503) ➔ `gemini-3.5-flash-lite`(タイムアウト) ➔ `gemini-2.5-flash` となっており、末尾の `gemini-2.5-flash` が無料枠上限（20回/日）に達してエラーが噴出していた。
+2. **実施内容**:
+   - **【実測による稼働中モデルの特定】**:
+     - APIキーで主要モデルの疎通・クォータを実測検証した結果、`gemini-3-flash-preview` が 200 OK で高速かつクォータ潤沢に稼働していることを確認。
+   - **【クライアント定義の刷新】(`05_PILOT/src/lib/geminiClient.ts`, `04_PORTAL/src/lib/geminiClient.ts`)**:
+     - `FALLBACK_MODELS` の先頭および `DEFAULT_MODEL` を、今確実に動く `gemini-3-flash-preview` へ差し替え。
+3. **機械的実値検証**:
+   - `gemini-3-flash-preview` JSON生成実測: **200 OK 疎通確認済み**
+   - `05_PILOT` 単体テスト: **全52件 PASS (100%)**
+   - `05_PILOT` 型チェック: **0 errors PASS**
+   - `04_PORTAL` 型チェック: **0 errors PASS**
+
+**再利用可能な3行ナレッジ**:
+- 無料枠のGemini APIキーでは特定モデル（2.5-flash等）が20回/日で即座に枯渇するため、必ずAPIキーで疎通確認されたモデル（3-flash-preview等）を最優先にする。
+- Google側の混雑（503）が発生している際は、モデルのフォールバック順序が死活問題となるため、実測スクリプトで稼働確認したモデルをSSoTとして反映する。
+- 429エラーが発生しても慌てて有料課金や半日待機する必要はなく、プロジェクト内で利用可能なプレビュー系モデルに切り替えることで即座に復旧できる。
+
+- `[要検証]`: ナレッジ分解モーダルを開いた際（Gemini呼び出し）のレスポンス速度
+- `[継続ウォッチ]`: Google AI Studio のモデル別クォータ状況と 3.5-flash-lite の負荷回復推移
+- `[発信候補]`: 「Gemini APIの429（クォータ枯渇・12時間待ち）を別モデル最優先フォールバックで即時回避する実践術」
+
+---
+
 ### ⚡ 05_PILOT ナレッジ分解保存時のタイムアウト（Unexpected token 'A' / 504）根絶
 
 **概要**:

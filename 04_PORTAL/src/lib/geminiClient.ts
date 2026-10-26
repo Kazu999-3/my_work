@@ -33,10 +33,17 @@ export interface GeminiCallOptions {
   translateProperNouns?: boolean;
 }
 
-// 安定性と高精度を両立する 'gemini-3.6-flash' をデフォルトとし、
-// 429制限や混雑時は最もクォータに強い 'gemini-3.5-flash-lite' や 'gemini-3.1-flash-lite' へ自動フォールバックします。
-const DEFAULT_MODEL = 'gemini-3.6-flash';
-const FALLBACK_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+// 2026-10-27 実測: 最もクォータが潤沢で高速に200 OK応答する 'gemini-3-flash-preview' をデフォルトとし、
+// 一時的な混雑・制限時は 'gemini-3.5-flash-lite' や 'gemini-3.1-flash-lite' 等へ自動フォールバックします。
+const DEFAULT_MODEL = 'gemini-3-flash-preview';
+const FALLBACK_MODELS = [
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+];
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**

@@ -1,10 +1,14 @@
 // Gemini API 呼び出しヘルパー（上から順に試す自動フォールバック）
 //
-// 2026-10-04 gemini-model-health-check で実測: gemini-3.1-flash-lite / gemini-3.5-flash-lite / gemini-2.5-flash は動作OK。
-// それまでの一覧 ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'] は後ろ2つが 404（廃止済み）で、
-// 冒頭コメントの「3.5/3.1 Flash-Lite 自動フォールバック」とも食い違っていた（実質 2.5-flash 1本だけ）。
-// 枠に余裕のある 3.1-flash-lite を先頭にする。モデルを変える時は必ず実測スクリプトで確認すること（.claude/rules/llm-health.md）。
-const FALLBACK_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
+// 2026-10-27 実測: gemini-3-flash-preview が 200 OK で高速かつクォータ潤沢に稼働中。
+// 3.5/3.1 flash-lite は Google 側で一時的な高負荷(503/timeout)が発生する場合があり、
+// 2.5-flash は無料枠上限(429)になりやすいため、gemini-3-flash-preview を最優先にする。
+const FALLBACK_MODELS = [
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash',
+];
 
 export interface GeminiOptions {
   model?: string;
