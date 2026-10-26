@@ -330,6 +330,55 @@ export async function GET(req: NextRequest) {
     // 7. ページネーション切り出し
     const pagedItems = filtered.slice(offset, offset + limit);
 
+    // 8. 教本インテリジェンス全体の蓄積進捗 (bibleStats) の集計
+    let bibleStats = {
+      totalApproved: 0,
+      totalPending: enrichedItems.length,
+      todayApproved: 0,
+      topChampions: [] as Array<{ champion: string; nameJa: string; count: number }>,
+    };
+
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const { data: approvedRows } = await supabase
+        .from('personal_knowledge')
+        .select('champion, updated_at, created_at')
+        .eq('review_status', 'approved');
+
+      if (approvedRows) {
+        bibleStats.totalApproved = approvedRows.length;
+        const champCountMap: Record<string, number> = {};
+
+        for (const r of approvedRows) {
+          const t = new Date(r.updated_at || r.created_at).getTime();
+          if (t >= todayStart.getTime()) {
+            bibleStats.todayApproved++;
+          }
+          if (r.champion && r.champion !== NO_CHAMPION) {
+            const parts = String(r.champion).split(/[,、/|]\s*|\s+/).filter(Boolean);
+            for (const p of parts) {
+              champCountMap[p] = (champCountMap[p] || 0) + 1;
+            }
+          }
+        }
+
+        bibleStats.topChampions = await Promise.all(
+          Object.entries(champCountMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .map(async ([champ, count]) => ({
+              champion: champ,
+              nameJa: await getChampionNameJa(champ),
+              count,
+            }))
+        );
+      }
+    } catch (statsErr) {
+      console.warn('[knowledge/review] bibleStats 集計エラー（スキップ）:', statsErr);
+    }
+
     return NextResponse.json({
       success: true,
       total: filtered.length,
@@ -338,6 +387,7 @@ export async function GET(req: NextRequest) {
       channels,
       laneCounts,
       qualityCounts,
+      bibleStats,
       roster,
       laneConfig: LANE_CONFIG,
     });

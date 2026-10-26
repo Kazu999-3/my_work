@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass } from 'lucide-react';
 import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
+import BibleProgressHeader, { type BibleStats } from './_review/BibleProgressHeader';
 import PreviewModal from './_review/PreviewModal';
 import DecomposeModal from './_review/DecomposeModal';
 import ReanalyzeModal from './_review/ReanalyzeModal';
@@ -41,6 +42,7 @@ export default function ReviewPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [bibleStats, setBibleStats] = useState<BibleStats | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -89,6 +91,7 @@ export default function ReviewPage() {
       if (json.channels) setChannels(json.channels);
       if (json.laneCounts) setLaneCounts(json.laneCounts);
       if (json.qualityCounts) setQualityCounts(json.qualityCounts);
+      if (json.bibleStats) setBibleStats(json.bibleStats);
       if (json.roster?.length) setRoster(json.roster);
       if (!opts.silent) setSelected(new Set());
 
@@ -219,6 +222,19 @@ export default function ReviewPage() {
     });
     if (result.ok) {
       removeFromList([item.id]);
+      setBibleStats((prev) => {
+        if (!prev) return prev;
+        const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
+        return {
+          ...prev,
+          totalApproved: prev.totalApproved + 1,
+          todayApproved: prev.todayApproved + 1,
+          totalPending: Math.max(0, prev.totalPending - 1),
+          topChampions: prev.topChampions.map((c) =>
+            (c.nameJa === targetChamp || c.champion === targetChamp) ? { ...c, count: c.count + 1 } : c
+          ),
+        };
+      });
       if (isPreviewing) setPreviewModalItem(null);
     } else {
       setModalError(result.error || '承認統合に失敗しました');
@@ -244,7 +260,20 @@ export default function ReviewPage() {
       : `選択した${ids.length}件を却下して削除しますか？`)) return;
     // ★ 2026-10-07: post() は常にオブジェクトを返すため、以前の `if (await post(...))` は失敗しても一覧から消していた
     const result = await post({ ids, action });
-    if (result.ok) removeFromList(ids);
+    if (result.ok) {
+      removeFromList(ids);
+      if (action === 'approve') {
+        setBibleStats((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            totalApproved: prev.totalApproved + ids.length,
+            todayApproved: prev.todayApproved + ids.length,
+            totalPending: Math.max(0, prev.totalPending - ids.length),
+          };
+        });
+      }
+    }
   };
 
   // プレビューの読み込み
@@ -513,6 +542,13 @@ export default function ReviewPage() {
             {message.text}
           </div>
         )}
+
+        {/* 📚 教本インテリジェンス蓄積進捗 ＆ 獲得ダッシュボード */}
+        <BibleProgressHeader
+          stats={bibleStats}
+          onSelectChampion={(champNameJa) => setSearchQuery(champNameJa)}
+          activeSearchQuery={searchQuery}
+        />
 
         <ReviewControlBar
           type={type} setType={setType} channel={channel} setChannel={setChannel} channels={channels}
