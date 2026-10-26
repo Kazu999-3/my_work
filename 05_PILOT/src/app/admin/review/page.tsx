@@ -355,10 +355,13 @@ export default function ReviewPage() {
         }
         throw new Error(json.error || '分割知見の保存に失敗しました');
       }
-      showMessage(json.message || `${selectedInsights.length}件の分割知見を登録しました`, 'success');
+      const parentId = decomposeModalItem.id;
+      // 親記事を画面の一覧から即座に除外（分解完了扱い）
+      removeFromList([parentId]);
+      showMessage(json.message || `元記事(ID:${parentId})を完了とし、${selectedInsights.length}件の分割知見を登録しました`, 'success');
       setDecomposeModalItem(null);
-      // 未承認一覧を再読み込み
-      load();
+      // 分割知見を一覧へ反映するためバックグラウンド更新
+      load({ silent: true });
     } catch (e: any) {
       setDecomposeError(e.message || '保存中にエラーが発生しました');
     } finally {

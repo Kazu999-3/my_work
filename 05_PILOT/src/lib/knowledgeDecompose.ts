@@ -156,7 +156,7 @@ export async function saveDecomposedInsights(
     throw new Error(`分割知見の保存に失敗しました: ${error.message}`);
   }
 
-  // 親記事のタグに __DECOMPOSED__ をマーク
+  // 親記事のタグに __DECOMPOSED__, __SUPERSEDED__ をマークし、review_status を完了('decomposed')へ更新
   try {
     const { data: parent } = await sb
       .from('personal_knowledge')
@@ -165,14 +165,16 @@ export async function saveDecomposedInsights(
       .maybeSingle();
 
     const parentTags = Array.isArray(parent?.tags) ? parent.tags : [];
-    if (!parentTags.includes('__DECOMPOSED__')) {
-      await sb
-        .from('personal_knowledge')
-        .update({ tags: [...parentTags, '__DECOMPOSED__'] })
-        .eq('id', parentArticleId);
-    }
+    const newTags = Array.from(new Set([...parentTags, '__DECOMPOSED__', '__SUPERSEDED__']));
+    await sb
+      .from('personal_knowledge')
+      .update({
+        tags: newTags,
+        review_status: 'decomposed',
+      })
+      .eq('id', parentArticleId);
   } catch (err) {
-    console.warn('[saveDecomposedInsights] 親記事タグ更新スキップ:', err);
+    console.warn('[saveDecomposedInsights] 親記事タグ・ステータス更新スキップ:', err);
   }
 
   const savedIds = (data || []).map((r: any) => r.id);

@@ -23,8 +23,8 @@ function extractYoutubeId(url: string): string | null {
 const NO_CHAMPION = 'Unknown';
 const DEFAULT_PAGE_SIZE = 50;
 
-// 再解析（2026-10-19）: 採用しなかった版に付けるタグ。行は消さず、ライブラリ・承認待ちから隠す
-const SUPERSEDED_TAGS = ['__DELETED__', '__SUPERSEDED__'];
+// 再解析（2026-10-19）＆分解（2026-10-26）: 採用しなかった版や分解済みの親記事に付けるタグ。行は消さず、ライブラリ・承認待ちから隠す
+const SUPERSEDED_TAGS = ['__DELETED__', '__SUPERSEDED__', '__DECOMPOSED__'];
 const REANALYZE_REASONS = ['thin', 'focus', 'generic', 'wrong', 'other'];
 const REANALYZE_FOCUS = ['build', 'skill', 'laning', 'jungle', 'objective', 'macro', 'teamfight', 'matchup', 'mindset'];
 
@@ -95,7 +95,12 @@ export async function GET(req: NextRequest) {
       if (!cur || new Date(r.created_at) > new Date(cur.created_at)) draftByOriginal.set(r.reanalysis_of, r);
     }
     const rowById = new Map<number, any>(allRows.map((r: any) => [r.id, r]));
-    const rawRows = allRows.filter((r: any) => !draftByOriginal.has(r.id));
+    const rawRows = allRows
+      .filter((r: any) => !draftByOriginal.has(r.id))
+      .filter((r: any) => {
+        const tags = Array.isArray(r.tags) ? r.tags : [];
+        return !tags.some((t: string) => SUPERSEDED_TAGS.includes(t));
+      });
 
     // 元の記事が承認済み等で一覧に無い場合も比較できるよう取ってくる
     const missingOriginalIds = Array.from(draftByOriginal.keys()).filter((id) => !rowById.has(id));
