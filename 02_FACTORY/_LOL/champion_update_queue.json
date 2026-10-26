@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-26T11:43:47.211762+00:00",
+  "updated_at": "2026-10-26T17:04:44.519806+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -466,14 +466,14 @@
     },
     "Lucian": {
       "name": "ルシアン",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:06:21.739720+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T13:03:52.979324+00:00",
       "error": null
     },
     "Lulu": {
       "name": "ルル",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:08:03.253790+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-26T17:03:40.636178+00:00",
       "error": null
     },
     "Lux": {

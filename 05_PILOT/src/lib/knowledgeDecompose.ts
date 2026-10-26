@@ -141,29 +141,94 @@ export async function saveDecomposedInsights(
 
   const shouldApprove = opts.autoApprove !== false;
 
-  const records = insights.map((insight) => ({
-    title: insight.title,
-    content: insight.content,
-    raw_content: insight.content,
-    source_url: sourceUrl || null,
-    genre: 'LoL攻略',
-    tags: shouldApprove ? [...(insight.tags || []), '__INTEGRATED__'] : insight.tags,
-    champion: insight.champion === 'Unknown' ? 'Unknown' : insight.champion,
-    parent_id: parentArticleId,
-    is_atomic: true,
-    review_status: shouldApprove ? 'approved' : 'pending',
-  }));
-
-  const { data, error } = await sb
-    .from('personal_knowledge')
-    .insert(records)
-    .select('id, title, content, raw_content, champion, tags, source_url');
-
-  if (error) {
-    throw new Error(`分割知見の保存に失敗しました: ${error.message}`);
+  // 1. 事前重複チェック: DB既存タイトル ＆ バッチ内タイトルの一意化
+  const candidateTitles = insights.map((i) => (i.title || '無題知見').trim());
+  let existingTitles = new Set<string>();
+  try {
+    const { data: existingRows } = await sb
+      .from('personal_knowledge')
+      .select('title')
+      .in('title', candidateTitles);
+    if (existingRows) {
+      existingTitles = new Set(existingRows.map((r: { title: string }) => r.title));
+    }
+  } catch (err) {
+    console.warn('[saveDecomposedInsights] 既存タイトル取得警告:', err);
   }
 
-  const savedRows = (data || []) as IntegrateArticle[];
+  const usedTitles = new Set<string>();
+  const uniqueInsights = insights.map((insight) => {
+    const baseTitle = (insight.title || `${insight.championNameJa || insight.champion} 戦術知見`).trim();
+    let currentTitle = baseTitle;
+
+    // 既にDBに存在するか、同一バッチ内で重複している場合は連番を付与
+    if (existingTitles.has(currentTitle) || usedTitles.has(currentTitle)) {
+      let suffixNum = 2;
+      let candidate = `${baseTitle} (${suffixNum})`;
+      while (existingTitles.has(candidate) || usedTitles.has(candidate)) {
+        suffixNum++;
+        candidate = `${baseTitle} (${suffixNum})`;
+      }
+      currentTitle = candidate;
+    }
+
+    usedTitles.add(currentTitle);
+    return {
+      ...insight,
+      title: currentTitle,
+    };
+  });
+
+  // 2. 万が一のユニーク制約エラー（23505 / personal_knowledge_title_key）防止用自動リトライ
+  let savedRows: IntegrateArticle[] = [];
+  let insertError: any = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const records = uniqueInsights.map((insight, idx) => {
+      let titleToUse = insight.title;
+      if (attempt > 0) {
+        // リトライ時は個別サフィックスを付与して衝突を強制回避
+        titleToUse = `${insight.title} [#${parentArticleId}-${idx + 1}-${Date.now().toString(36).slice(-4)}]`;
+        insight.title = titleToUse;
+      }
+      return {
+        title: titleToUse,
+        content: insight.content,
+        raw_content: insight.content,
+        source_url: sourceUrl || null,
+        genre: 'LoL攻略',
+        tags: shouldApprove ? [...(insight.tags || []), '__INTEGRATED__'] : insight.tags,
+        champion: insight.champion === 'Unknown' ? 'Unknown' : insight.champion,
+        parent_id: parentArticleId,
+        is_atomic: true,
+        review_status: shouldApprove ? 'approved' : 'pending',
+      };
+    });
+
+    const { data, error } = await sb
+      .from('personal_knowledge')
+      .insert(records)
+      .select('id, title, content, raw_content, champion, tags, source_url');
+
+    if (!error && data) {
+      savedRows = data as IntegrateArticle[];
+      insertError = null;
+      break;
+    }
+
+    insertError = error;
+    if (error?.message?.includes('personal_knowledge_title_key') || error?.code === '23505') {
+      console.warn(`[saveDecomposedInsights] タイトル重複エラー検知、サフィックスを付与してリトライ (試行 ${attempt + 1}/3):`, error.message);
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  if (insertError) {
+    throw new Error(`分割知見の保存に失敗しました: ${insertError.message}`);
+  }
+
   const savedIds = savedRows.map((r) => r.id);
   const integratedChamps: string[] = [];
 
@@ -197,7 +262,7 @@ export async function saveDecomposedInsights(
         }
 
         // 3. レーンガイドへの統合（対象インサイトからレーンを特定）
-        const matchedInsight = insights.find((i) => i.title === row.title);
+        const matchedInsight = uniqueInsights.find((i) => i.title === row.title) || insights.find((i) => i.title === row.title);
         const targetLane = matchedInsight?.lane || 'COMMON';
         try {
           await mergeArticleToLaneGuide(
