@@ -867,6 +867,8 @@ export async function POST(request: Request) {
             building_damage: r.building_damage || 0,
             items: r.items || [],
             spells: r.spells || [],
+            isFirstTime: (statsMap[r.name]?.totalGames || 0) === 0,
+            totalGames: statsMap[r.name]?.totalGames || 0,
           })),
         };
         const saveNews = (article: any) =>

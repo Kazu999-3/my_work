@@ -36,6 +36,36 @@ export interface MatchNewsArticle {
 /**
  * 試合データからスポーツ新聞風の面白いハイライトニュースをGeminiで生成
  */
+// 🎭 芸人枠候補の除外フィルタ（初参加者・新人は絶対に除外！常連同士の愛あるプロレスに限定）
+export function filterEntertainerCandidates<T extends { name: string; isFirstTime?: boolean; totalGames?: number }>(
+  participants: T[],
+  winnerName?: string
+): T[] {
+  return participants.filter((p) => {
+    if (winnerName && p.name === winnerName) return false;
+    // 初参加者フラグ、または通算試合数が0〜1戦（初参加・初日）の人は完全除外
+    if (p.isFirstTime) return false;
+    if (typeof p.totalGames === 'number' && p.totalGames <= 1) return false;
+    return true;
+  });
+}
+
+// 🛡️ 初参加者保護の二重防波堤（AI出力のサニタイズ）
+export function sanitizeEntertainer(
+  article: Partial<MatchNewsArticle>,
+  participants: Array<{ name: string; isFirstTime?: boolean; totalGames?: number }>,
+  hasValidCandidates: boolean
+): void {
+  if (!article.entertainer) return;
+  const entertainerName = article.entertainer.name;
+  const isProtected = participants.some(
+    (p) => p.name === entertainerName && (p.isFirstTime || (typeof p.totalGames === 'number' && p.totalGames <= 1))
+  );
+  if (!hasValidCandidates || isProtected) {
+    delete article.entertainer;
+  }
+}
+
 export async function generateMatchNews(matchData: {
   matchId: string | number;
   winningTeam: 'BLUE' | 'RED';
@@ -62,6 +92,8 @@ export async function generateMatchNews(matchData: {
     building_damage?: number;
     items?: number[];
     spells?: number[];
+    isFirstTime?: boolean;
+    totalGames?: number;
   }>;
 }, options: { maxRetries?: number } = {}): Promise<MatchNewsArticle> {
   const { winningTeam, gameDuration, participants } = matchData;
@@ -124,8 +156,8 @@ export async function generateMatchNews(matchData: {
   const sortedLosers = [...loserParts].sort((a, b) => scorePlayer(b, loserTotalKills, loserTotalDmg) - scorePlayer(a, loserTotalKills, loserTotalDmg));
   const bestLoser = sortedLosers[0] || loserParts[0];
 
-  // 🎭 芸人枠候補（チームを最も揺らした人・悪い意味でのやらかし/肝冷やし大賞）
-  const entertainerCandidates = participants.filter((p) => p.name !== bestWinner?.name);
+  // 🎭 芸人枠候補（初参加者・新人は絶対に除外！常連同士の愛あるプロレスに限定）
+  const entertainerCandidates = filterEntertainerCandidates(participants, bestWinner?.name);
   const scoreEntertainer = (p: typeof participants[0]) => {
     const deaths = Number(p.deaths) || 0;
     const kills = Number(p.kills) || 0;
@@ -170,7 +202,7 @@ export async function generateMatchNews(matchData: {
     return deathBase + netFeeder + kdaInv + carryMeStumbleBonus + throwBountyBonus + upsetThrowBonus + timeDeadBonus;
   };
   const sortedEntertainers = [...entertainerCandidates].sort((a, b) => scoreEntertainer(b) - scoreEntertainer(a));
-  const bestEntertainer = sortedEntertainers[0] || entertainerCandidates[0];
+  const bestEntertainer = sortedEntertainers[0] || null;
 
   // 各レーンの対面比較サマリー（KDA・ダメージ・MMRレート差）
   const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -209,6 +241,26 @@ export async function generateMatchNews(matchData: {
     ? `・総ダメージ量: ${winningTeam} TEAM ${(winnerTotalDmg / 1000).toFixed(1)}k vs 相手側 ${(loserTotalDmg / 1000).toFixed(1)}k`
     : '';
 
+  const entertainerPromptGuide = bestEntertainer
+    ? `- entertainer.comment:
+  - 「一人でキャッチされたり、大きなミスをしてチームをグラグラと揺らした（味方の胃に穴を開けた）張本人」としてのピリッと辛口なユーモア寸評（80文字程度）。
+  - 【嘘偽りない範囲での文脈の掘り下げルール】:
+    1. 単に「〇〇デスした」のような数字の棒読みは厳禁。
+    2. そのチャンピオンのスキル特性や対面マッチアップの力関係（例: 本来CC解除や有利なハラスで耐えられるはずなのに相手を要塞に育ててしまった皮肉、JGなのにCSが極端に止まって森を差し押さえられた悲哀、耐久ビルドなのに敵のCCチェインに捕まって即蒸発した光景等）、スコアボードの実数値とLoLの仕様から【客観的に導き出せる現場のリアル】に踏み込むこと。
+    3. 完全な架空のセリフや見ていないプレーの捏造は避けつつ、「集団戦の開戦合図が味方のコールではなく本人のデスタイマーになっていた」「遠くで味方キャリーが必死に耐えている横で画面端でキャッチされ、味方の胃薬を空っぽにさせた」など、LoLプレイヤーなら誰もが情景を思い浮かべて爆笑できる解像度の高い切り口にすること。`
+    : `- entertainer: 今回の試合では該当者なし（初参加者保護のため）。entertainer キーは JSON に含めないでください。`;
+
+  const entertainerJsonTemplate = bestEntertainer
+    ? `  "entertainer": {
+    "name": "${bestEntertainer.name}",
+    "champion": "${bestEntertainer.champion_name || 'チャンプ'}",
+    "kda": "${bestEntertainer.kills || 0}/${bestEntertainer.deaths || 0}/${bestEntertainer.assists || 0}",
+    "role": "${bestEntertainer.role || 'TOP'}",
+    "comment": "味方の胃に穴を開けたやらかし・マッチアップの皮肉・開戦シグナル事故など、事実に基づき現場の光景を突いたピリ辛ユーモア寸評（80文字程度）"
+  },
+`
+    : '';
+
   const prompt = `あなたは「月刊KTMスポーツ」の戦術デスク兼eスポーツ実況解説者です。
 以下のLoLカスタム（KTM公式マッチ）の【実数値スコアボード】に基づき、プロ解説者（LJL実況）の視点を取り入れた、熱狂的で解像度の高いスポーツ新聞風ダイジェスト号外を作成してください。
 
@@ -237,12 +289,7 @@ ${participantSummary}
 - lead: スコアボードの実数値（KDAやキル数、ダメージ量、ロール対決の差）を交え、試合の流れと勝者を的確に解説するリード文（100〜140文字程度）
 - mvp.comment: キル数だけでなく、チームダメージシェア、格上を制したジャイアントキリング、サポートの視界・鉄壁での盤石な貢献など、スタッツの文脈を踏まえて熱狂的に称える寸評（60文字以内）
 - fighterOfTheMatch.comment: 敗戦側で孤軍奮闘した選手（高ダメージやキル関与）を称える敢闘寸評（60文字以内）
-- entertainer.comment:
-  - 「一人でキャッチされたり、大きなミスをしてチームをグラグラと揺らした（味方の胃に穴を開けた）張本人」としてのピリッと辛口なユーモア寸評（80文字程度）。
-  - 【嘘偽りない範囲での文脈の掘り下げルール】:
-    1. 単に「〇〇デスした」のような数字の棒読みは厳禁。
-    2. そのチャンピオンのスキル特性や対面マッチアップの力関係（例: 本来CC解除や有利なハラスで耐えられるはずなのに相手を要塞に育ててしまった皮肉、JGなのにCSが極端に止まって森を差し押さえられた悲哀、耐久ビルドなのに敵のCCチェインに捕まって即蒸発した光景等）、スコアボードの実数値とLoLの仕様から【客観的に導き出せる現場のリアル】に踏み込むこと。
-    3. 完全な架空のセリフや見ていないプレーの捏造は避けつつ、「集団戦の開戦合図が味方のコールではなく本人のデスタイマーになっていた」「遠くで味方キャリーが必死に耐えている横で画面端でキャッチされ、味方の胃薬を空っぽにさせた」など、LoLプレイヤーなら誰もが情景を思い浮かべて爆笑できる解像度の高い切り口にすること。
+${entertainerPromptGuide}
 - turningPoint: 単にキル数が多い対面を読み上げるだけでなく、レーン対面のMMR格差（格上が順当にゲームを支配したか、あるいは格下が番狂わせを起こしたか）、集団戦の総ダメージ差などの本質的な構造から勝敗の決定打を解説（80文字以内）
 - keyMatchup: 最も激戦となった対面レーンのスタッツ比較とレート格差・ダメージ差を踏まえた寸評（70文字以内）
 - sideStory: MMR変動（大幅UPや悔しい降格）やサポートの視界・タンクの被ダメ等の隠れた貢献（60文字以内）
@@ -265,14 +312,7 @@ ${participantSummary}
     "role": "${bestLoser?.role || 'TOP'}",
     "comment": "敗戦側で孤軍奮闘した選手を称える敢闘寸評（60文字以内）"
   },
-  "entertainer": {
-    "name": "${bestEntertainer?.name || '芸人枠'}",
-    "champion": "${bestEntertainer?.champion_name || 'チャンプ'}",
-    "kda": "${bestEntertainer?.kills || 0}/${bestEntertainer?.deaths || 0}/${bestEntertainer?.assists || 0}",
-    "role": "${bestEntertainer?.role || 'TOP'}",
-    "comment": "味方の胃に穴を開けたやらかし・マッチアップの皮肉・開戦シグナル事故など、事実に基づき現場の光景を突いたピリ辛ユーモア寸評（80文字程度）"
-  },
-  "turningPoint": "MMR格差やダメージ・キルシェアから読み取れる試合の決定打（80文字以内）",
+${entertainerJsonTemplate}  "turningPoint": "MMR格差やダメージ・キルシェアから読み取れる試合の決定打（80文字以内）",
   "keyMatchup": "最も激戦となった対面レーンのスタッツ比較と寸評（70文字以内）",
   "sideStory": "MMR変動（大幅UPや悔しい降格）やサポートの視界・タンクの被ダメ等の隠れた貢献（60文字以内）"
 }`;
@@ -295,7 +335,12 @@ ${participantSummary}
     throw new Error('AIニュースの生成に失敗しました。');
   }
 
-  return JSON.parse(cleaned.slice(s, e + 1));
+  const parsed = JSON.parse(cleaned.slice(s, e + 1));
+
+  // 初参加者保護の二重防波堤: 万が一AIが初参加者を選んだり、候補不在時にキーを出した場合は完全消去
+  sanitizeEntertainer(parsed, participants, Boolean(bestEntertainer));
+
+  return parsed;
 }
 
 /** 試合結果 Embed に載せる「📰 KTMスポーツ号外」フィールドを組み立てる（記録時と後追いで共通） */
