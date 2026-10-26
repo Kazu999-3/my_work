@@ -32,9 +32,9 @@ export default function ReviewPage() {
   const [sort, setSort] = useState<string>('created_asc');
   const [channels, setChannels] = useState<{ name: string; count: number }[]>([]);
   const [laneCounts, setLaneCounts] = useState<Record<string, number>>({});
-  // 2026-10-19: 薄い可能性・再解析版の絞り込み
+  // 2026-10-19: 薄い可能性・再解析版、2026-10-26: チャンプ確定・未定の絞り込み
   const [quality, setQuality] = useState<string>('');
-  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number; approve?: number; check?: number; skip?: number }>({});
+  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number }>({});
   const [reanalyzeItem, setReanalyzeItem] = useState<ReviewItem | null>(null);
   const [compareItem, setCompareItem] = useState<ReviewItem | null>(null);
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});

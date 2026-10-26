@@ -22,10 +22,10 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
   laneCounts: Record<string, number>;
   loading: boolean;
   onReload: () => void;
-  /** 2026-10-19: '' | 'thin'（薄い可能性） | 'reanalyzed'（再解析版） */
+  /** 2026-10-19: '' | 'determined' | 'unknown' | 'thin' | 'reanalyzed' */
   quality: string;
   setQuality: (v: string) => void;
-  qualityCounts: { thin?: number; reanalyzed?: number; approve?: number; check?: number; skip?: number };
+  qualityCounts: { thin?: number; reanalyzed?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number };
 }) {
   return (
         <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
@@ -45,11 +45,10 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                 </button>
               ))}
               <span className="w-px h-5 bg-zinc-800 mx-0.5" aria-hidden />
-              {/* 承認の目安（2026-10-20）: 山ごとに表示して、一括承認・一括却下でまとめて処理する */}
+              {/* チャンピオン確定状態フィルター（案A）: 教本へ即統合できるもの vs レーン汎用/未定 */}
               {([
-                ['approve', '✅ 承認候補', qualityCounts.approve, '字幕から取れた事実が多い・具体的な記述が多い記事', 'bg-emerald-500/15 border-emerald-500/60 text-emerald-200'],
-                ['check', '🔎 要確認', qualityCounts.check, '決め手のない記事。中身を見て判断', 'bg-amber-500/15 border-amber-500/60 text-amber-200'],
-                ['skip', '🍃 見送り候補', qualityCounts.skip, '途中で切れている・事実がほとんど無い・旧形式で記憶で書いた疑いが強い記事', 'bg-rose-500/15 border-rose-500/60 text-rose-200'],
+                ['determined', '🎯 チャンプ確定', qualityCounts.determined, 'チャンピオンが特定できており、教本へ即時統合できる記事', 'bg-emerald-500/15 border-emerald-500/60 text-emerald-200'],
+                ['unknown', '❓ チャンプ未定', qualityCounts.unknown, 'チャンピオン未確定（レーン一般論やマクロ知見など）', 'bg-amber-500/15 border-amber-500/60 text-amber-200'],
               ] as const).map(([k, l, n, tip, on]) => (
                 <button
                   key={k}

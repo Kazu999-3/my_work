@@ -271,6 +271,8 @@ export async function GET(req: NextRequest) {
       });
 
     const qualityCounts = {
+      determined: enrichedItems.filter((i) => !i.isLaneGeneral || !!i.detectedChampionsJa).length,
+      unknown: enrichedItems.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa).length,
       thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
       reanalyzed: enrichedItems.filter((i) => i.reanalysis_of != null).length,
       approve: enrichedItems.filter((i) => i.density.triage === 'approve').length,
@@ -280,6 +282,8 @@ export async function GET(req: NextRequest) {
 
     // 5. フィルタリング適用
     let filtered = enrichedItems;
+    if (quality === 'determined') filtered = filtered.filter((i) => !i.isLaneGeneral || !!i.detectedChampionsJa);
+    if (quality === 'unknown') filtered = filtered.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa);
     if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
     if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysis_of != null);
     if (quality === 'approve' || quality === 'check' || quality === 'skip') filtered = filtered.filter((i) => i.density.triage === quality);
