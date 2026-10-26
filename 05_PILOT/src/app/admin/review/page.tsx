@@ -40,6 +40,7 @@ export default function ReviewPage() {
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -172,7 +173,11 @@ export default function ReviewPage() {
 
   const removeFromList = (ids: number[]) => {
     const s = new Set(ids);
-    setItems((prev) => prev.filter((i) => !s.has(i.id)));
+    setItems((prev) => {
+      const nextItems = prev.filter((i) => !s.has(i.id));
+      setFocusedIndex((cur) => (nextItems.length === 0 ? -1 : Math.min(cur, nextItems.length - 1)));
+      return nextItems;
+    });
     setTotal((t) => Math.max(0, t - ids.length));
     setSelected((prev) => new Set(Array.from(prev).filter((id) => !s.has(id))));
   };
@@ -385,6 +390,96 @@ export default function ReviewPage() {
     return next;
   };
 
+  // ⌨️ キーボードショートカット (J/K:移動 A:即時承認 X:却下 D:分解 P:プレビュー Esc:モーダル閉じる)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // フォーム入力中（input, textarea, select）はキー操作を安全にスキップ
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toUpperCase();
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable;
+      if (isInput) return;
+
+      // モーダルが開いている時の Esc キー操作
+      if (previewModalItem || decomposeModalItem || reanalyzeItem || compareItem) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setPreviewModalItem(null);
+          setDecomposeModalItem(null);
+          setReanalyzeItem(null);
+          setCompareItem(null);
+        }
+        return;
+      }
+
+      if (items.length === 0) return;
+
+      const key = e.key.toLowerCase();
+
+      // J / ArrowDown: 次のカードへフォーカス
+      if (key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocusedIndex((prev) => {
+          const next = prev < items.length - 1 ? prev + 1 : 0;
+          const targetId = items[next]?.id;
+          const el = document.querySelector(`[data-review-card="${targetId}"]`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return next;
+        });
+        return;
+      }
+
+      // K / ArrowUp: 前のカードへフォーカス
+      if (key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocusedIndex((prev) => {
+          const next = prev > 0 ? prev - 1 : items.length - 1;
+          const targetId = items[next]?.id;
+          const el = document.querySelector(`[data-review-card="${targetId}"]`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return next;
+        });
+        return;
+      }
+
+      // 現在フォーカスされているアイテムの取得
+      const currentItem = focusedIndex >= 0 && focusedIndex < items.length ? items[focusedIndex] : null;
+      if (!currentItem) return;
+
+      // A: 即時承認（統合）
+      if (key === 'a') {
+        e.preventDefault();
+        approveOne(currentItem);
+        return;
+      }
+
+      // X: 却下
+      if (key === 'x') {
+        e.preventDefault();
+        rejectOne(currentItem);
+        return;
+      }
+
+      // D: ナレッジ分解
+      if (key === 'd') {
+        e.preventDefault();
+        if (!currentItem.is_atomic) {
+          openDecompose(currentItem);
+        }
+        return;
+      }
+
+      // P: プレビュー確認
+      if (key === 'p') {
+        e.preventDefault();
+        openPreview(currentItem);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [items, focusedIndex, previewModalItem, decomposeModalItem, reanalyzeItem, compareItem, edits]);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
@@ -426,18 +521,36 @@ export default function ReviewPage() {
           quality={quality} setQuality={setQuality} qualityCounts={qualityCounts}
         />
 
-        {/* 一括操作バー */}
+        {/* 一括操作バー ＆ キーボードショートカットガイド */}
         {items.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-zinc-900/50 rounded-xl border border-zinc-800">
-            <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                className="accent-amber-500"
-                checked={selected.size === items.length && items.length > 0}
-                onChange={() => setSelected(selected.size === items.length ? new Set() : new Set(items.map((i) => i.id)))}
-              />
-              表示中を全選択（{selected.size}/{items.length}）
-            </label>
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800 text-xs">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-zinc-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="accent-amber-500"
+                  checked={selected.size === items.length && items.length > 0}
+                  onChange={() => setSelected(selected.size === items.length ? new Set() : new Set(items.map((i) => i.id)))}
+                />
+                表示中を全選択（{selected.size}/{items.length}）
+              </label>
+
+              {/* ⌨️ キーボードショートカット案内バッジ */}
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-400 bg-zinc-950/80 px-2.5 py-1 rounded-lg border border-zinc-800">
+                <span className="text-zinc-500 font-bold">⌨️ ショートカット:</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-400">J/K</span>
+                <span>移動</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-emerald-400">A</span>
+                <span>即時承認</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-rose-400">X</span>
+                <span>却下</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-teal-400">D</span>
+                <span>分解</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-300">P</span>
+                <span>プレビュー</span>
+              </div>
+            </div>
+
             {selected.size > 0 && (
               <div className="flex gap-2">
                 <button onClick={() => batch('approve')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
@@ -462,15 +575,17 @@ export default function ReviewPage() {
             <p className="text-xs text-zinc-500 text-center py-12 bg-zinc-900/40 border border-zinc-800 rounded-xl">承認待ちの記事はありません</p>
           )}
 
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <ReviewItemCard
               key={item.id}
               item={item}
               edit={edits[item.id] || defaultEdit(item)}
               isOpen={expanded.has(item.id)}
               isSelected={selected.has(item.id)}
+              isFocused={focusedIndex === idx}
               channel={channel}
               busy={busy}
+              onCardClick={() => setFocusedIndex(idx)}
               onToggleSelect={() => setSelected((s) => toggle(s, item.id))}
               onToggleExpand={() => setExpanded((s) => toggle(s, item.id))}
               setChannel={setChannel}

@@ -9,11 +9,12 @@ import { detectChampionsFromText } from '@/lib/championDetector';
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
 // 2026-10-19: 「薄い可能性」の目印・🔁 再解析・再解析版の 🆚 比較 / 元の記事に戻す を追加。
-export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onApprove, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload }: {
+export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocused, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onApprove, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload, onCardClick }: {
   item: ReviewItem;
   edit: ItemEditState;
   isOpen: boolean;
   isSelected: boolean;
+  isFocused?: boolean;
   channel: string;
   busy: boolean;
   onToggleSelect: () => void;
@@ -28,6 +29,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   onCompare?: () => void;
   onDiscardReanalysis?: () => void;
   onReload?: () => void;
+  onCardClick?: () => void;
 }) {
   const isDraft = item.reanalysis_of != null;
   const task = item.reanalysisTask;
@@ -39,63 +41,81 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
   const detected = useMemo(() => detectChampionsFromText(item.title, summary), [item.title, summary]);
   return (
-              <div
-                className={`p-4 md:p-5 rounded-2xl border space-y-3 transition ${
-                  isSelected ? 'bg-amber-500/5 border-amber-500/40' : 'bg-zinc-900/80 border-zinc-800'
-                }`}
+    <div
+      onClick={onCardClick}
+      data-review-card={item.id}
+      className={`p-4 md:p-5 rounded-2xl border space-y-3 transition duration-150 ${
+        isFocused
+          ? 'ring-2 ring-amber-500/90 border-amber-500/80 bg-zinc-900 shadow-xl shadow-amber-500/10'
+          : isSelected
+          ? 'bg-amber-500/5 border-amber-500/40'
+          : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
+      }`}
+    >
+      {/* タイトル ＆ メタデータ行 */}
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          className="mt-1 accent-amber-500 shrink-0"
+          aria-label="選択"
+        />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-bold text-white break-words">{item.title}</h3>
+            {isFocused && (
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500 text-zinc-950 font-mono tracking-wider animate-pulse">
+                FOCUS (A:承認 X:却下)
+              </span>
+            )}
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+              item.is_atomic ? 'text-teal-300 border-teal-800/60 bg-teal-950/40' : 'text-amber-300 border-amber-800/60 bg-amber-950/40'
+            }`}>
+              {item.is_atomic ? '分割知見' : '動画解析'}
+            </span>
+            {isDraft && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-800/60 bg-emerald-950/40">
+                🔁 再解析版{typeof factCount === 'number' ? `（事実 ${factCount}件）` : ''}
+              </span>
+            )}
+            {thin && (
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-700/60 bg-amber-950/40"
+                title={item.density?.reasons.join('\n')}
               >
-                {/* タイトル ＆ メタデータ行 */}
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={onToggleSelect}
-                    className="mt-1 accent-amber-500 shrink-0"
-                    aria-label="選択"
-                  />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-bold text-white break-words">{item.title}</h3>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                        item.is_atomic ? 'text-teal-300 border-teal-800/60 bg-teal-950/40' : 'text-amber-300 border-amber-800/60 bg-amber-950/40'
-                      }`}>
-                        {item.is_atomic ? '分割知見' : '動画解析'}
-                      </span>
-                      {isDraft && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-800/60 bg-emerald-950/40">
-                          🔁 再解析版{typeof factCount === 'number' ? `（事実 ${factCount}件）` : ''}
-                        </span>
-                      )}
-                      {thin && (
-                        <span
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-700/60 bg-amber-950/40"
-                          title={item.density?.reasons.join('\n')}
-                        >
-                          ⚠️ 薄い可能性
-                        </span>
-                      )}
-                      {/* 承認の目安（2026-10-20）。理由は印の上に出す */}
-                      {item.density?.triage && !isDraft && (
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                            item.density.triage === 'approve'
-                              ? 'text-emerald-200 border-emerald-700/60 bg-emerald-950/40'
-                              : item.density.triage === 'skip'
-                              ? 'text-rose-200 border-rose-700/60 bg-rose-950/40'
-                              : 'text-zinc-300 border-zinc-700/60 bg-zinc-900/60'
-                          }`}
-                          title={(item.density.triageReasons || []).join('\n')}
-                        >
-                          {item.density.triage === 'approve' ? '✅ 承認候補' : item.density.triage === 'skip' ? '🍃 見送り候補' : '🔎 要確認'}
-                          {item.density.triageReasons?.[0] ? `：${item.density.triageReasons[0]}` : ''}
-                        </span>
-                      )}
-                      {Array.isArray(item.tags) && item.tags.includes('__DECOMPOSED__') && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-800/60 bg-amber-950/40 flex items-center gap-1">
-                          <Scissors className="w-2.5 h-2.5" /> 分解済み
-                        </span>
-                      )}
-                    </div>
+                ⚠️ 薄い可能性
+              </span>
+            )}
+
+            {/* 🎯 統合先＆対面バッジ（確実なメタ情報） */}
+            {(() => {
+              const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
+              if (targetChamp) {
+                return (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-emerald-300 border-emerald-700/60 bg-emerald-950/40 flex items-center gap-1 shadow-sm">
+                    🎯 統合先: {targetChamp}教本
+                  </span>
+                );
+              }
+              return (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-amber-300 border-amber-700/60 bg-amber-950/40 flex items-center gap-1">
+                  ❓ チャンプ未定（レーン一般論）
+                </span>
+              );
+            })()}
+            {(edit.enemyChampion || item.enemyChampionJa) && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-rose-300 border-rose-700/60 bg-rose-950/40 flex items-center gap-1 shadow-sm">
+                ⚔️ vs {edit.enemyChampion || item.enemyChampionJa}
+              </span>
+            )}
+
+            {Array.isArray(item.tags) && item.tags.includes('__DECOMPOSED__') && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-800/60 bg-amber-950/40 flex items-center gap-1">
+                <Scissors className="w-2.5 h-2.5" /> 分解済み
+              </span>
+            )}
+          </div>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-400">
                       {/* 📺 チャンネル名バッジ（クリックでそのチャンネルにワンクリック絞り込み） */}
