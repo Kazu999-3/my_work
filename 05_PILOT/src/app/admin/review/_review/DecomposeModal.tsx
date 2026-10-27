@@ -1,10 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Scissors, CheckCircle2, AlertTriangle, RefreshCw, X, Shield, BookOpen, Compass, Tag } from 'lucide-react';
+import { Scissors, CheckCircle2, AlertTriangle, RefreshCw, X, Shield, BookOpen, Compass, Tag, ExternalLink } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
 import { LANE_OPTIONS, type LaneKey } from './types';
 import type { DecomposedInsight } from '@/lib/knowledgeDecompose';
+
+// 本文冒頭の強制プレフィックス（> 📺 **元動画・親記事**: ...）を除去するサニタイズ
+const cleanDecomposedContent = (text: string) => {
+  if (!text) return '';
+  return text.replace(/^>\s*📺\s*\*\*元動画・親記事\*\*:.*?\n+---\n+/s, '').trim();
+};
 
 interface DecomposeModalProps {
   parentTitle: string;
@@ -31,11 +37,13 @@ export default function DecomposeModal({
   onSave,
   onRetry,
 }: DecomposeModalProps) {
-  const [items, setItems] = useState<DecomposedInsight[]>(initialInsights);
+  const [items, setItems] = useState<DecomposedInsight[]>(() => 
+    initialInsights.map(i => ({ ...i, content: cleanDecomposedContent(i.content) }))
+  );
 
   // 初期インサイトが親から渡されたときに更新
   React.useEffect(() => {
-    setItems(initialInsights);
+    setItems(initialInsights.map(i => ({ ...i, content: cleanDecomposedContent(i.content) })));
   }, [initialInsights]);
 
   const toggleSelect = (index: number) => {
@@ -205,34 +213,54 @@ export default function DecomposeModal({
                       </div>
                     </div>
 
-                    {/* レーン設定 ＆ タグ */}
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] pt-1 border-t border-zinc-800/60">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-zinc-500 text-[10px] font-bold">推奨レーン:</span>
-                        <select
-                          value={item.lane}
-                          onChange={(e) => updateItem(idx, { lane: e.target.value as LaneKey })}
-                          className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-200 text-[11px] focus:outline-none"
-                        >
-                          {LANE_OPTIONS.map((l) => (
-                            <option key={l.key} value={l.key}>{l.label}</option>
-                          ))}
-                        </select>
+                    {/* レーン設定 ＆ タグ ＆ 元動画リンク */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] pt-1.5 border-t border-zinc-800/60">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-500 text-[10px] font-bold">推奨レーン:</span>
+                          <select
+                            value={item.lane}
+                            onChange={(e) => updateItem(idx, { lane: e.target.value as LaneKey })}
+                            className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-200 text-[11px] focus:outline-none"
+                          >
+                            {LANE_OPTIONS.map((l) => (
+                              <option key={l.key} value={l.key}>{l.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-1 text-[10px] text-zinc-400">
+                          <Tag className="w-3 h-3 text-zinc-500" />
+                          <span>{item.tags.join(', ')}</span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-1 text-[10px] text-zinc-400">
-                        <Tag className="w-3 h-3 text-zinc-500" />
-                        <span>{item.tags.join(', ')}</span>
-                      </div>
+                      {sourceUrl && (
+                        <a
+                          href={sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" /> 元動画を開く
+                        </a>
+                      )}
                     </div>
 
-                    {/* 本文プレビュー / 編集 */}
-                    <textarea
-                      value={item.content}
-                      onChange={(e) => updateItem(idx, { content: e.target.value })}
-                      rows={4}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-[11px] leading-relaxed font-mono focus:outline-none focus:border-amber-500"
-                    />
+                    {/* 本文プレビュー / 編集（6〜7行でゆったり確認・編集可能に） */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-zinc-500 font-bold px-0.5">
+                        <span>💡 抽出された戦術本文（直接編集可能）:</span>
+                        <span>{item.content.length.toLocaleString()} 文字</span>
+                      </div>
+                      <textarea
+                        value={item.content}
+                        onChange={(e) => updateItem(idx, { content: e.target.value })}
+                        rows={7}
+                        placeholder="知見の本文がここに表示されます..."
+                        className="w-full px-3 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-zinc-200 text-xs leading-relaxed font-mono focus:outline-none focus:border-amber-500/80 shadow-inner"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

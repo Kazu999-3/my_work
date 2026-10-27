@@ -104,17 +104,13 @@ ${content.slice(0, 15000)}
       ? item.targetLane
       : 'COMMON') as LaneKey;
 
-    const sourceHeader = article.source_url
-      ? `> 📺 **元動画・親記事**: [${title}](${article.source_url})\n\n---\n\n`
-      : '';
-
     formatted.push({
       champion: champId,
       championNameJa: champNameJa,
       lane,
       laneLabel: LANE_CONFIG[lane]?.label || lane,
       title: item.title || `${champNameJa || champId} 戦術知見`,
-      content: `${sourceHeader}${item.content || ''}`.trim(),
+      content: (item.content || '').trim(),
       tags: Array.isArray(item.tags) ? item.tags : ['LoL攻略'],
       scope: item.scope === 'lane_general' ? 'lane_general' : 'champion_specific',
       selected: true,
