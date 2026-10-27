@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle, Lightbulb, Zap } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle, Lightbulb, Zap, ListPlus } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 import { extractArticleSummary, stripArticleChrome } from '@/lib/articleDensity';
 import { detectChampionsFromText } from '@/lib/championDetector';
@@ -41,6 +41,39 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
   const summary = useMemo(() => extractArticleSummary(item.content), [item.content]);
   const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
   const detected = useMemo(() => detectChampionsFromText(item.title, summary), [item.title, summary]);
+
+  // 📺 YouTube動画ID抽出 ＆ プレイリスト（PLPiEXmmDzgcs）連携
+  const targetPlaylistId = 'PLPiEXmmDzgcs';
+  const youtubeVideoId = useMemo(() => {
+    if (!item.source_url) return null;
+    const match = item.source_url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  }, [item.source_url]);
+
+  const [isPlaylistAdded, setIsPlaylistAdded] = useState(false);
+
+  useEffect(() => {
+    if (!youtubeVideoId) return;
+    try {
+      const saved = localStorage.getItem(`sovereign_pl_${targetPlaylistId}_${youtubeVideoId}`);
+      if (saved) setIsPlaylistAdded(true);
+    } catch (e) {
+      // ignore
+    }
+  }, [youtubeVideoId]);
+
+  const handleAddToPlaylist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!youtubeVideoId) return;
+    const playlistUrl = `https://www.youtube.com/watch?v=${youtubeVideoId}&list=${targetPlaylistId}`;
+    window.open(playlistUrl, '_blank', 'noopener,noreferrer');
+    try {
+      localStorage.setItem(`sovereign_pl_${targetPlaylistId}_${youtubeVideoId}`, 'true');
+      setIsPlaylistAdded(true);
+    } catch (e) {
+      // ignore
+    }
+  };
   return (
         <div
       onClick={onCardClick}
@@ -172,9 +205,26 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                       <span>{new Date(item.created_at).toLocaleDateString('ja-JP')} 生成</span>
                       {item.parentTitle && <span>元記事: {item.parentTitle}</span>}
                       {item.source_url && (
-                        <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 font-medium">
-                          <ExternalLink className="w-3 h-3" /> 元動画
-                        </a>
+                        <div className="inline-flex items-center gap-2">
+                          <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 font-medium">
+                            <ExternalLink className="w-3 h-3" /> 元動画
+                          </a>
+                          {youtubeVideoId && (
+                            <button
+                              type="button"
+                              onClick={handleAddToPlaylist}
+                              className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                                isPlaylistAdded
+                                  ? 'bg-rose-950/50 text-rose-300 border-rose-700/60 shadow-sm'
+                                  : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:text-white hover:bg-zinc-700'
+                              }`}
+                              title="YouTubeプレイリスト「PLPiEXmmDzgcs」に追加（新しいタブで開きます）"
+                            >
+                              <ListPlus className="w-3 h-3 text-rose-400" />
+                              <span>{isPlaylistAdded ? 'リスト追加済 ✓' : 'プレイリスト追加'}</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -424,8 +474,8 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
 
                   {/* アクションボタン（左: 控えめなサブ操作 / 右: 目立つ主役操作） */}
                   <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 pt-2 border-t border-zinc-800/40">
-                    {/* サブ操作（プレビュー・再解析・却下） */}
-                    <div className="flex items-center gap-1.5">
+                    {/* サブ操作（プレビュー・再解析・却下・プレイリスト追加） */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         onClick={() => onPreview()}
                         disabled={busy}
@@ -434,6 +484,23 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                       >
                         <Eye className="w-3.5 h-3.5" /> プレビュー
                       </button>
+
+                      {/* 📺 プレイリスト追加ボタン（ID: PLPiEXmmDzgcs） */}
+                      {youtubeVideoId && (
+                        <button
+                          type="button"
+                          onClick={handleAddToPlaylist}
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-sm ${
+                            isPlaylistAdded
+                              ? 'bg-rose-950/40 border-rose-600/60 text-rose-300'
+                              : 'bg-zinc-900 border-zinc-800 hover:border-rose-500/50 text-zinc-300 hover:text-white'
+                          }`}
+                          title="YouTubeプレイリスト「PLPiEXmmDzgcs」に追加（新しいタブで開きます）"
+                        >
+                          <ListPlus className={`w-3.5 h-3.5 ${isPlaylistAdded ? 'text-rose-400' : 'text-rose-500'}`} />
+                          <span>{isPlaylistAdded ? 'プレイリスト追加済 ✓' : '➕ プレイリスト'}</span>
+                        </button>
+                      )}
 
                       {canReanalyze && (
                         <button
