@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-27T01:10:29.465360+00:00",
+  "updated_at": "2026-10-27T02:35:03.006326+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -478,8 +478,8 @@
     },
     "Lux": {
       "name": "ラックス",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:09:49.851594+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T02:34:04.632713+00:00",
       "error": null
     },
     "Malphite": {
