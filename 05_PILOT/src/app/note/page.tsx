@@ -2,9 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle, History, ArrowRightLeft
+  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle, History, ArrowRightLeft,
+  Rocket, CheckSquare, Square, Share2, MessageSquare, ThumbsUp, Eye, Edit3
 } from 'lucide-react';
 import initialDraftsData from '@/data/note_drafts.json';
+
+interface NotePublishRecord {
+  isPublished: boolean;
+  publishedUrl?: string;
+  publishedAt?: string;
+  likes?: string;
+  views?: string;
+  notes?: string;
+}
 
 interface NoteDraft {
   id: string;
@@ -25,6 +35,42 @@ export default function NoteDraftsPage() {
   const [copied, setCopied] = useState(false);
   const [showToc, setShowToc] = useState(false);
   const [showDiffNotes, setShowDiffNotes] = useState(true);
+
+  // 🚀 公開ステータス＆メモのローカル永続化
+  const [publishMap, setPublishMap] = useState<Record<string, NotePublishRecord>>({});
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [showPublishPanel, setShowPublishPanel] = useState(false);
+  const [tagsCopied, setTagsCopied] = useState(false);
+  const [checklistChecks, setChecklistChecks] = useState<Record<string, boolean>>({});
+
+  // LocalStorageから公開ステータスを読み込み
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sovereign_note_publish_status');
+      if (saved) {
+        setPublishMap(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.warn('Failed to load note publish status:', e);
+    }
+  }, []);
+
+  // 公開ステータス保存ヘルパー
+  const updatePublishRecord = (draftId: string, updates: Partial<NotePublishRecord>) => {
+    setPublishMap((prev) => {
+      const current = prev[draftId] || { isPublished: false };
+      const updated = {
+        ...prev,
+        [draftId]: { ...current, ...updates }
+      };
+      try {
+        localStorage.setItem('sovereign_note_publish_status', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save note publish status:', e);
+      }
+      return updated;
+    });
+  };
 
   // クライアント側での差分リフレッシュ（SWR・フェッチ失敗しても静的データで確実に表示）
   useEffect(() => {
@@ -224,20 +270,28 @@ export default function NoteDraftsPage() {
           {/* 記事切り替えタブ */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5">
             {drafts.map((d) => {
-              let label = d.title.length > 16 ? d.title.slice(0, 16) + '…' : d.title;
+              let label = d.title.length > 14 ? d.title.slice(0, 14) + '…' : d.title;
               if (d.id === 'profile_intro') label = '✨ 自己紹介 (最新After)';
               if (d.id === 'profile_intro_before') label = '📜 自己紹介 (原案Before)';
+              const isPub = publishMap[d.id]?.isPublished;
               return (
                 <button
                   key={d.id}
                   onClick={() => setSelectedId(d.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 ${
+                  className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1.5 ${
                     d.id === selectedId
                       ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
                       : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
                   }`}
                 >
-                  {label}
+                  <span>{label}</span>
+                  {isPub && (
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                      d.id === selectedId ? 'bg-emerald-950 text-emerald-300' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    }`}>
+                      🚀 公開済
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -272,25 +326,305 @@ export default function NoteDraftsPage() {
         <main className="max-w-3xl mx-auto px-4 py-6">
           
           {/* 記事メタ情報カード */}
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 sm:p-5 mb-6 shadow-xl">
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[11px] font-bold border border-amber-500/40">
-                📝 note下書き
-              </span>
-              <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 text-[11px] font-mono flex items-center gap-1">
-                <Clock className="w-3 h-3 text-zinc-400" />
-                {currentDraft.charCount.toLocaleString()} 文字
-              </span>
-              {currentDraft.meta?.target_rank && (
-                <span className="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-800/60 text-[11px] font-bold">
-                  🎯 {currentDraft.meta.target_rank}
+          <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 sm:p-5 mb-4 shadow-xl">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {publishMap[currentDraft.id]?.isPublished ? (
+                  <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-mono text-[11px] font-black border border-emerald-500/40 flex items-center gap-1">
+                    <Rocket className="w-3 h-3" />
+                    <span>公開済み</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[11px] font-bold border border-amber-500/40">
+                    📝 下書き推敲中
+                  </span>
+                )}
+                
+                <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 text-[11px] font-mono flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-zinc-400" />
+                  {currentDraft.charCount.toLocaleString()} 文字
                 </span>
+
+                <span className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold flex items-center gap-1 ${
+                  currentDraft.title.length <= 32 
+                    ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60' 
+                    : 'bg-rose-950/60 text-rose-300 border border-rose-800/60'
+                }`}>
+                  タイトル {currentDraft.title.length}/32文字 {currentDraft.title.length <= 32 ? '✓' : '⚠️'}
+                </span>
+
+                {currentDraft.meta?.target_rank && (
+                  <span className="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-800/60 text-[11px] font-bold">
+                    🎯 {currentDraft.meta.target_rank}
+                  </span>
+                )}
+              </div>
+
+              {/* note直リンク（公開URLがある場合） */}
+              {publishMap[currentDraft.id]?.publishedUrl && (
+                <a
+                  href={publishMap[currentDraft.id].publishedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 transition shadow-sm"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  <span>noteを開く</span>
+                </a>
               )}
             </div>
 
             <h1 className="text-base sm:text-xl font-black text-white leading-snug mb-3">
               {currentDraft.title}
             </h1>
+
+            {/* クイックツールバー（チェックリスト ＆ 公開ステータス管理） */}
+            <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-zinc-800">
+              <button
+                onClick={() => {
+                  setShowChecklist(!showChecklist);
+                  setShowPublishPanel(false);
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border ${
+                  showChecklist 
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' 
+                    : 'bg-zinc-950 text-zinc-300 hover:text-white border-zinc-800'
+                }`}
+              >
+                <CheckSquare className="w-3.5 h-3.5 text-amber-400" />
+                <span>公開前チェックリスト</span>
+                {showChecklist ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowPublishPanel(!showPublishPanel);
+                  setShowChecklist(false);
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border ${
+                  showPublishPanel 
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50' 
+                    : publishMap[currentDraft.id]?.isPublished
+                      ? 'bg-emerald-950/30 text-emerald-300 border-emerald-800/40'
+                      : 'bg-zinc-950 text-zinc-300 hover:text-white border-zinc-800'
+                }`}
+              >
+                <Rocket className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{publishMap[currentDraft.id]?.isPublished ? '公開データ・メモ' : '投稿完了・ステータス'}</span>
+                {showPublishPanel ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
+              </button>
+            </div>
+
+            {/* 📋 ① 公開前チェックリストパネル */}
+            {showChecklist && (
+              <div className="mt-4 p-4 rounded-xl bg-zinc-950/90 border border-amber-500/30 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                  <h3 className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4" />
+                    <span>note投稿前の4大セルフチェック</span>
+                  </h3>
+                  <span className="text-[10px] text-zinc-400">公開直前の最終確認</span>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-zinc-300">
+                  {/* チェック1: タイトル32文字 */}
+                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+                    <div className="mt-0.5 text-amber-400">
+                      {currentDraft.title.length <= 32 ? <Check className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-rose-400" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-zinc-200">タイトル32文字以内（一覧視認性）</span>
+                        <span className={`font-mono text-[11px] font-bold ${currentDraft.title.length <= 32 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {currentDraft.title.length} / 32文字
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        {currentDraft.title.length <= 32 ? 'スマホ・一覧で途切れず綺麗に表示されます！' : '32文字を超えているためスマホ一覧で末尾が「…」と途切れる可能性があります。'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* チェック2: 推奨タグのワンタップコピー */}
+                  <div className="p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-zinc-200 flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5 text-amber-400" />
+                        <span>推奨タグ（投稿時コピペ用）</span>
+                      </span>
+                      <button
+                        onClick={() => {
+                          const tags = currentDraft.id === 'profile_intro'
+                            ? '#自己紹介 #はじめてのnote #LeagueofLegends #LoL #ジャングル #コミュニティ運営'
+                            : '#LeagueofLegends #LoL #ジャングル #ザイラ #初心者向け攻略';
+                          navigator.clipboard.writeText(tags);
+                          setTagsCopied(true);
+                          setTimeout(() => setTagsCopied(false), 2000);
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                          tagsCopied ? 'bg-emerald-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700'
+                        }`}
+                      >
+                        {tagsCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        <span>{tagsCopied ? 'タグをコピー完了！' : 'タグを一括コピー'}</span>
+                      </button>
+                    </div>
+                    <p className="font-mono text-[11px] text-amber-300/80 bg-black/40 p-1.5 rounded border border-zinc-800/60 select-all">
+                      {currentDraft.id === 'profile_intro'
+                        ? '#自己紹介 #はじめてのnote #LeagueofLegends #LoL #ジャングル #コミュニティ運営'
+                        : '#LeagueofLegends #LoL #ジャングル #ザイラ #初心者向け攻略'}
+                    </p>
+                  </div>
+
+                  {/* チェック3: 見出し画像・目次・コピー確認 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <label className="flex items-center gap-2 p-2 rounded-lg bg-zinc-900/40 border border-zinc-800/60 cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={!!checklistChecks[`${currentDraft.id}_cover`]}
+                        onChange={(e) => setChecklistChecks({...checklistChecks, [`${currentDraft.id}_cover`]: e.target.checked})}
+                        className="rounded border-zinc-700 text-amber-500 focus:ring-0" 
+                      />
+                      <span className="text-[11px] text-zinc-300">見出し画像（サムネ）設定済み</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 p-2 rounded-lg bg-zinc-900/40 border border-zinc-800/60 cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={!!checklistChecks[`${currentDraft.id}_copy`]}
+                        onChange={(e) => setChecklistChecks({...checklistChecks, [`${currentDraft.id}_copy`]: e.target.checked})}
+                        className="rounded border-zinc-700 text-amber-500 focus:ring-0" 
+                      />
+                      <span className="text-[11px] text-zinc-300">noteエディタに全文ペースト完了</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 🚀 ② 公開ステータス設定 ＆ URL・メモ記録パネル */}
+            {showPublishPanel && (
+              <div className="mt-4 p-4 rounded-xl bg-zinc-950/90 border border-emerald-500/30 space-y-3.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                  <h3 className="text-xs font-black text-emerald-400 flex items-center gap-1.5">
+                    <Rocket className="w-4 h-4" />
+                    <span>投稿ステータス ＆ 公開後データ記録</span>
+                  </h3>
+                  <span className="text-[10px] text-zinc-400">端末に自動保存</span>
+                </div>
+
+                {/* 公開トグルスイッチ */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/70 border border-zinc-800">
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>この記事のステータス:</span>
+                      {publishMap[currentDraft.id]?.isPublished ? (
+                        <span className="text-emerald-400 font-black">【🚀 公開済み】</span>
+                      ) : (
+                        <span className="text-amber-400 font-bold">【📝 下書き作成中】</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      {publishMap[currentDraft.id]?.isPublished 
+                        ? 'タブや一覧で「公開済」バッジが表示されています。' 
+                        : 'noteに投稿完了したらオンにしてください。'}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const current = publishMap[currentDraft.id] || { isPublished: false };
+                      updatePublishRecord(currentDraft.id, {
+                        isPublished: !current.isPublished,
+                        publishedAt: !current.isPublished ? new Date().toISOString().split('T')[0] : current.publishedAt
+                      });
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer shadow-sm ${
+                      publishMap[currentDraft.id]?.isPublished
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+                    }`}
+                  >
+                    {publishMap[currentDraft.id]?.isPublished ? '公開中（解除する）' : '🚀 投稿完了にする'}
+                  </button>
+                </div>
+
+                {/* note公開URL入力 */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1">
+                    <Share2 className="w-3 h-3 text-emerald-400" />
+                    <span>公開したnote記事のURL</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="url"
+                      placeholder="https://note.com/kazu311/n/..."
+                      value={publishMap[currentDraft.id]?.publishedUrl || ''}
+                      onChange={(e) => updatePublishRecord(currentDraft.id, { publishedUrl: e.target.value })}
+                      className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                    />
+                    {publishMap[currentDraft.id]?.publishedUrl && (
+                      <a
+                        href={publishMap[currentDraft.id].publishedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-xs font-bold flex items-center gap-1 border border-zinc-700 shrink-0"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>開く</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* スキ数 ＆ PV数 ＆ 所感メモ */}
+                <div className="space-y-2 pt-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-zinc-400 flex items-center gap-1">
+                        <ThumbsUp className="w-3 h-3 text-rose-400" />
+                        <span>スキ数</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例: 15"
+                        value={publishMap[currentDraft.id]?.likes || ''}
+                        onChange={(e) => updatePublishRecord(currentDraft.id, { likes: e.target.value })}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-zinc-400 flex items-center gap-1">
+                        <Eye className="w-3 h-3 text-cyan-400" />
+                        <span>PV数</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例: 350"
+                        value={publishMap[currentDraft.id]?.views || ''}
+                        onChange={(e) => updatePublishRecord(currentDraft.id, { views: e.target.value })}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3 text-amber-400" />
+                      <span>読者の反応・所感メモ</span>
+                    </label>
+                    <textarea
+                      placeholder="例: 投稿初日にザイラ使いの方から参考になったとコメントあり。次回はルーン解説を深掘り予定。"
+                      rows={2}
+                      value={publishMap[currentDraft.id]?.notes || ''}
+                      onChange={(e) => updatePublishRecord(currentDraft.id, { notes: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 目次トグルボタン */}
             {currentDraft.headings.length > 0 && (
