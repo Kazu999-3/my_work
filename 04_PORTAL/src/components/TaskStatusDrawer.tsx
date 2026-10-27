@@ -58,9 +58,17 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
     }
   };
 
-  // dashboard-stats は DB を何本も読む重いAPI。以前は15秒おき・裏に隠れても動き続け、開きっぱなしだと
-  // 1日5,760回呼んでいた（Vercel の Fluid Active CPU を使い切った主因の候補）。表示中だけ2分おき（2026-10-19）
-  useVisiblePolling(fetchTaskStatus, 2 * 60 * 1000);
+  // 🛡️ Zero Egress 防衛:
+  // ドロワーが閉じている間は、18本ものDBクエリを発行する dashboard-stats のポーリングを完全停止する。
+  // ドロワーを開いた時（open === true）だけポーリングを有効化する。
+  useVisiblePolling(fetchTaskStatus, 60 * 1000, open);
+
+  // ドロワーを開いた瞬間に最新状態を即座に取得
+  useEffect(() => {
+    if (open) {
+      fetchTaskStatus();
+    }
+  }, [open]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

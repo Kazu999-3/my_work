@@ -6,12 +6,41 @@ import { getCalendarPatch } from '../../../../lib/ddragonClient';
 
 export const dynamic = 'force-dynamic';
 
+// 🛡️ Zero Egress 防衛キャッシュ（同一・連続リクエスト時の18本クエリ直撃を100%遮断）
+let statsCache: { data: any; timestamp: number } | null = null;
+const CACHE_TTL_MS = 45 * 1000; // 45秒間キャッシュ
+
+// 🛡️ DB容量防衛: 30日以上前の完了・失敗済みタスクの自動パージ（1日1回ペースで実行）
+let lastCleanupTime = 0;
+async function cleanupOldEdgeTasks() {
+  const now = Date.now();
+  if (now - lastCleanupTime < 24 * 60 * 60 * 1000) return;
+  lastCleanupTime = now;
+  try {
+    const cutoff = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+    await supabase
+      .from('edge_tasks')
+      .delete()
+      .in('status', ['completed', 'failed'])
+      .lt('created_at', cutoff);
+  } catch (err) {
+    console.warn('[dashboard-stats] edge_tasks クリーンアップ警告:', err);
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const authResult = await verifyAdminSession(req);
     if (!authResult.ok) {
       return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
+
+    const now = Date.now();
+    if (statsCache && (now - statsCache.timestamp < CACHE_TTL_MS)) {
+      return NextResponse.json(statsCache.data);
+    }
+
+    cleanupOldEdgeTasks(); // 非同期で古いタスクをパージ
 
     const heartbeatId = '00000000-0000-0000-0000-000000000000';
 
@@ -202,7 +231,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const responseData = {
       worker: {
         active: workerActive,
         diff_seconds: diffSec,
@@ -252,7 +281,11 @@ export async function GET(req: NextRequest) {
         youtubeErrorCount: youtubeErrorCount ?? 0,
         dictReviewCount: (dictReviewNotif?.data as any)?.needsAttention ?? 0,
       },
-    });
+    };
+
+    statsCache = { data: responseData, timestamp: Date.now() };
+
+    return NextResponse.json(responseData);
 
   } catch (err: any) {
     console.error('❌ [Dashboard Stats API] GET Error:', err);

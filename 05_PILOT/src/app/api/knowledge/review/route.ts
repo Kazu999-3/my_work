@@ -72,7 +72,8 @@ export async function GET(req: NextRequest) {
       const { data: queueRows } = await supabase
         .from('youtube_queue')
         .select('url, channel_name')
-        .limit(3000);
+        .order('updated_at', { ascending: false })
+        .limit(500);
 
       if (queueRows) {
         for (const qr of queueRows) {
@@ -101,7 +102,7 @@ export async function GET(req: NextRequest) {
         .eq('review_status', 'pending')
         .or('tags.is.null,tags.not.cs.{__DELETED__}')
         .order('created_at', { ascending: true })
-        .limit(1000);
+        .limit(200);
 
       const { data, error } = await baseQuery;
       if (error) throw error;
