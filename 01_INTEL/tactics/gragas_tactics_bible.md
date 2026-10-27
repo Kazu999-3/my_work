@@ -140,4 +140,14 @@ LoLジャングルで低レートをキャリーするには、レーンのウ�
 *   「敵が近くにいると知っていても、その動きを密かに操作することができる。プロの試合でさえ、適切なボディランゲージを使うことで、この種のガンクでデスするプレイヤーがいる。」 (lowkey manipulate the enemy movement even though he knows you're around and even in Pro play by the way people die to these type of ganks if people play with their body language like properly)
 *   「アヘッドしていても、時には何かを与える必要がある。全てを取りに行くのではなく、時には与える。それがLoLの摂理だ。」 (sometimes you might have to give something even though you're ahead sometimes you just take something have to give something that's just how nature Works in Le Legends)
 *   「マスター帯のプレイヤーでもメカニクスは悪くないが、意思決定はブロンズレベルの場合がある。」 (if you're muster I think your mechanics are not bad you're like somewhat human but decision making is like bronze FF)
+
+---
+
+## 【記事】【MID/TOP】ロストチャプター始動による集団戦エンゲージ特化ビルド
+
+> 📺 **元動画・親記事**: [【LJL徹底分析】フェンネルの戦術的完璧主義とメタの支配：プロが明かす「勝つチーム」の思考プロセス完全攻略バイブル](https://www.youtube.com/watch?v=2AKZJslc_-E)
+
+---
+
+マナ問題を解決するためにロストチャプター（Lost Chapter）からスタートし、集団戦でのエンゲージ能力を最大化する。女神の涙（Tear of the Goddess）はコストパフォーマンスが悪いため避け、集団戦でのバリューを優先する。視界管理を徹底し、相手が視界を取りに来た瞬間をキャッチする動きが求められる。
 <!-- DB_MATCHUP_SENTINEL_END -->
