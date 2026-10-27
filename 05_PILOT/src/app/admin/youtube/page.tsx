@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Video, ListVideo, Tv, ListChecks } from 'lucide-react';
+import AdminNavHeader from '@/components/AdminNavHeader';
 import QueueTab from './QueueTab';
 import WatchTab from './WatchTab';
 import WorkerStatusPanel from './WorkerStatusPanel';
@@ -31,22 +31,10 @@ function YoutubeAdminContent() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
-        <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <Video className="w-6 h-6 text-amber-400" /> YouTube動画解析センター
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              解説動画をキューに積み、PCのエッジワーカーが字幕取得→要約→ライブラリ保存まで自動で行います。
-            </p>
-          </div>
-          <Link
-            href="/admin/review"
-            className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold self-start sm:self-auto"
-          >
-            生成記事の承認へ →
-          </Link>
-        </div>
+        <AdminNavHeader
+          title="YouTube動画解析センター"
+          subtitle="解説動画をキューに積み、PCのエッジワーカーが字幕取得→要約→ライブラリ保存まで自動で行います。"
+        />
 
         <WorkerStatusPanel />
 

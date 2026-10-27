@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass } from 'lucide-react';
+import AdminNavHeader from '@/components/AdminNavHeader';
 import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
 import PreviewModal from './_review/PreviewModal';
@@ -498,20 +499,20 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
-        {/* ヘッダーバー（極薄・シンプル） */}
-        <div className="border-b border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h1 className="text-lg md:text-xl font-black text-white flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-amber-400" /> 生成記事の承認 ＆ 教本統合
-          </h1>
-          <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
-            <Link href="/lane-guides" target="_blank" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold">
-              <Compass className="w-3.5 h-3.5" /> レーン攻略バイブル
+        <AdminNavHeader
+          title="生成記事の承認 ＆ 教本統合"
+          subtitle="YouTube解析で抽出された知見を審査し、各チャンピオン辞典およびレーン教本へ統合します。"
+          action={
+            <Link
+              href="/lane-guides"
+              target="_blank"
+              className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>レーン攻略バイブル ↗</span>
             </Link>
-            <Link href="/admin/youtube" className="text-xs text-zinc-400 hover:text-white">
-              ← 動画解析
-            </Link>
-          </div>
-        </div>
+          }
+        />
 
         {/* メッセージ */}
         {message && (

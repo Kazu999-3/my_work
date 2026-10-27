@@ -7,6 +7,7 @@ import {
   Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, 
   Sparkles, Filter, ExternalLink, ArrowLeft, Play, ShieldAlert, Award, Pencil, ChevronDown, ChevronUp
 } from 'lucide-react';
+import AdminNavHeader from '@/components/AdminNavHeader';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 interface ChampHealth {
@@ -219,27 +220,20 @@ function DictHealthDashboardContent() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* ページタイトル ＆ アクション */}
-        <div className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
-              🩺 辞典ヘルス監査センター
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              全173体のチャンピオン辞典データの鮮度・人間検証ステータス・AI更新を管理します。
-            </p>
-          </div>
-
-          <button
-            onClick={() => fetchHealth()}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors disabled:opacity-50 shrink-0"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            最新化
-          </button>
-        </div>
+        <AdminNavHeader
+          title="辞典ヘルス監査センター"
+          subtitle="全175体のチャンピオン辞典データの鮮度・人間検証ステータス・AI更新を管理します。"
+          action={
+            <button
+              onClick={() => fetchHealth()}
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 transition-colors disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              最新化
+            </button>
+          }
+        />
 
         {/* トースト通知 */}
         {message && (

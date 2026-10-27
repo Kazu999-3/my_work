@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import championsSummary from "@/data/champions_summary.json";
 import { getChampIcon } from "@/lib/ddragonClient";
+import AdminNavHeader from "@/components/AdminNavHeader";
 import {
   ArrowLeft, Search, Save, RotateCcw, Sparkles, Check, AlertTriangle,
   Layers, BookOpen, Crown, Wrench, ExternalLink, History, Clock, Trash2, Edit3

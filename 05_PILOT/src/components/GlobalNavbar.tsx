@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, ChevronDown, Shield, ClipboardCheck, FileText, Settings
+  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, ChevronDown, Shield, ClipboardCheck, FileText, Settings, Edit3
 } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
 import NotificationBell from './NotificationBell';
@@ -30,7 +30,8 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { name: '記事の承認', href: '/admin/review', icon: ClipboardCheck, desc: '動画知見の承認・分解' },
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video, desc: '動画解析キュー監視' },
-  { name: '辞典ヘルス監査', href: '/admin/dict-health', icon: Activity, desc: '教本健全性・欠損点検' },
+  { name: '健全性監査', href: '/admin/dict-health', icon: Activity, desc: '教本鮮度・欠損点検' },
+  { name: '教本エディタ', href: '/admin/dict-maintenance', icon: Edit3, desc: '全175体直接編集' },
   { name: '運用ダッシュボード', href: '/admin/dashboard', icon: Shield, desc: 'システム稼働・DB監視' },
 ];
 

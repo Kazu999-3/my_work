@@ -5,6 +5,7 @@ import { useVisiblePolling } from '../../../lib/useVisiblePolling';
 import Link from 'next/link';
 import { Shield, RefreshCw, ShieldAlert, Cloud, Trophy, Coins, Database, ExternalLink, Users, UserX, UserCheck } from 'lucide-react';
 import WorkerStatusPanel from '../youtube/WorkerStatusPanel';
+import AdminNavHeader from '@/components/AdminNavHeader';
 
 // 運用ダッシュボード（旧ポータル /admin/dashboard の移植）。2026-10-04
 // 旧版の「常に稼働中」と出すカードや固定値のヘルス表示は移さず、DBの実測値だけを出す。
@@ -167,24 +168,20 @@ export default function OpsDashboardPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-5">
-        <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <Shield className="w-6 h-6 text-amber-400" /> 運用ダッシュボード
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              PCワーカー・クラウドワーカー・KTM Botの稼働と、要対応タスクを実測値で一覧します（60秒ごとに自動更新）。
-            </p>
-          </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            {stats ? `更新（${ago(stats.generatedAt)}）` : '更新'}
-          </button>
-        </div>
+        <AdminNavHeader
+          title="運用ダッシュボード"
+          subtitle="PCワーカー・クラウドワーカー・KTM Botの稼働と、要対応タスクを実測値で一覧します（60秒ごとに自動更新）。"
+          action={
+            <button
+              onClick={load}
+              disabled={loading}
+              className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              {stats ? `更新（${ago(stats.generatedAt)}）` : '更新'}
+            </button>
+          }
+        />
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-950/30 text-rose-400 border border-rose-800/60 text-xs font-bold">{error}</div>
