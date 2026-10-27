@@ -137,7 +137,15 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
   - [`CTA_Bridge_Patterns.md`](file:///d:/my_work/.agent/resources/CTA_Bridge_Patterns.md): 導線（CTA）の繋ぎ方の型。
   - [`newsletter_context.md`](file:///d:/my_work/.agent/resources/newsletter_context.md): メルマガ執筆時の前提コンテキスト。
 - **[自動化ワークフロー (workflows/)](file:///d:/my_work/.agent/workflows/)**:
-  - `/note-production`、`/ktm-admin`、`/daily-report` などのスラッシュコマンドの定義書。
+  - `/note-production`、`/ktm-admin`、`/daily-report`、[`dev-edge`](file:///d:/my_work/.agent/workflows/dev-edge.md)、[`dev-portal`](file:///d:/my_work/.agent/workflows/dev-portal.md) などのワークフロー定義書。
+
+---
+
+## 📊 6. 監査 ＆ 分析レポート書庫 (Reports & Audits)
+- **[カスタム参加者ランク帯＆MMR実数分析レポート (custom_tier_analysis_report.md)](file:///d:/my_work/02_FACTORY/custom_tier_analysis_report.md)**: 49名のMMR分布と2部屋分けしきい値分析。
+- **[辞典事実監査レポート (DICT_FACT_AUDIT_20261007.md)](file:///d:/my_work/02_FACTORY/DICT_FACT_AUDIT_20261007.md)**: 全チャンピオン教本の事実性・整合性監査。
+- **[ナレッジ健全性点検レポート (KNOWLEDGE_LINT_REPORT.md)](file:///d:/my_work/02_FACTORY/KNOWLEDGE_LINT_REPORT.md)**: LLM Wiki健全性点検レポート。
+- **[メンバー連絡板 (2026-10-20_連絡板.md)](file:///d:/my_work/02_FACTORY/MEMBER_ANNOUNCEMENTS/2026-10-20_連絡板.md)**: 運用連絡・告知アーカイブ。
 
 ---
 
