@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-27T09:34:21.597845+00:00",
+  "updated_at": "2026-10-27T11:35:30.859279+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -551,8 +551,8 @@
     },
     "Nami": {
       "name": "ナミ",
-      "status": "pending",
-      "updated_at": "2026-10-18T13:14:53.524673+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T11:34:31.637285+00:00",
       "error": null
     },
     "Nasus": {
