@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle, History, ArrowRightLeft,
+  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle,
   Rocket, CheckSquare, Square, Share2, MessageSquare, ThumbsUp, Eye, Edit3
 } from 'lucide-react';
 import initialDraftsData from '@/data/note_drafts.json';
@@ -34,13 +34,13 @@ export default function NoteDraftsPage() {
   const [selectedId, setSelectedId] = useState<string>(staticDrafts[0]?.id || '');
   const [copied, setCopied] = useState(false);
   const [showToc, setShowToc] = useState(false);
-  const [showDiffNotes, setShowDiffNotes] = useState(true);
 
   // 🚀 公開ステータス＆メモのローカル永続化
   const [publishMap, setPublishMap] = useState<Record<string, NotePublishRecord>>({});
   const [showChecklist, setShowChecklist] = useState(false);
   const [showPublishPanel, setShowPublishPanel] = useState(false);
   const [tagsCopied, setTagsCopied] = useState(false);
+  const [copiedSingleTag, setCopiedSingleTag] = useState<string | null>(null);
   const [checklistChecks, setChecklistChecks] = useState<Record<string, boolean>>({});
 
   // LocalStorageから公開ステータスを読み込み
@@ -271,8 +271,8 @@ export default function NoteDraftsPage() {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5">
             {drafts.map((d) => {
               let label = d.title.length > 14 ? d.title.slice(0, 14) + '…' : d.title;
-              if (d.id === 'profile_intro') label = '✨ 自己紹介 (最新After)';
-              if (d.id === 'profile_intro_before') label = '📜 自己紹介 (原案Before)';
+              if (d.id === 'profile_intro') label = '✨ 自己紹介';
+              if (d.id === 'zyra_jg_guide') label = '🌿 ザイラJG攻略';
               const isPub = publishMap[d.id]?.isPublished;
               return (
                 <button
@@ -445,36 +445,112 @@ export default function NoteDraftsPage() {
                     </div>
                   </div>
 
-                  {/* チェック2: 推奨タグのワンタップコピー */}
-                  <div className="p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-zinc-200 flex items-center gap-1">
-                        <Tag className="w-3.5 h-3.5 text-amber-400" />
-                        <span>推奨タグ（投稿時コピペ用）</span>
-                      </span>
-                      <button
-                        onClick={() => {
-                          const tags = currentDraft.id === 'profile_intro'
-                            ? '#自己紹介 #はじめてのnote #LeagueofLegends #LoL #ジャングル #コミュニティ運営'
-                            : '#LeagueofLegends #LoL #ジャングル #ザイラ #初心者向け攻略';
-                          navigator.clipboard.writeText(tags);
-                          setTagsCopied(true);
-                          setTimeout(() => setTagsCopied(false), 2000);
-                        }}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
-                          tagsCopied ? 'bg-emerald-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700'
-                        }`}
-                      >
-                        {tagsCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        <span>{tagsCopied ? 'タグをコピー完了！' : 'タグを一括コピー'}</span>
-                      </button>
-                    </div>
-                    <p className="font-mono text-[11px] text-amber-300/80 bg-black/40 p-1.5 rounded border border-zinc-800/60 select-all">
-                      {currentDraft.id === 'profile_intro'
-                        ? '#自己紹介 #はじめてのnote #LeagueofLegends #LoL #ジャングル #コミュニティ運営'
-                        : '#LeagueofLegends #LoL #ジャングル #ザイラ #初心者向け攻略'}
-                    </p>
-                  </div>
+                  {/* チェック2: 推奨タグの候補リスト ＆ ワンタップコピー */}
+                  {(() => {
+                    const isProfile = currentDraft.id === 'profile_intro';
+                    const coreTags = isProfile
+                      ? ['#自己紹介', '#はじめてのnote', '#LeagueofLegends', '#LoL', '#ジャングル', '#コミュニティ運営']
+                      : ['#LeagueofLegends', '#LoL', '#ジャングル', '#ザイラ', '#低ランク脱出'];
+                    
+                    const audienceTags = isProfile
+                      ? [
+                          { tag: '#社会人ゲーマー', desc: '昼は会社員・夜はリフトの同世代に刺さる' },
+                          { tag: '#個人開発', desc: 'Bot開発や自動化に関心あるIT層向け' },
+                          { tag: '#LoL初心者', desc: '治安の良い温かいKTMを探す初心者向け' },
+                          { tag: '#ランク戦', desc: 'ブロンズ〜プラチナ奮闘記を読みたい層向け' }
+                        ]
+                      : [
+                          { tag: '#初心者向け攻略', desc: 'アイアン〜ゴールドで伸び悩む読者向け' },
+                          { tag: '#ゲーム攻略', desc: 'note全体のゲーム読者向け' },
+                          { tag: '#シルバー脱出', desc: 'シルバー帯で勝てない読者の検索対策' },
+                          { tag: '#プラチナ昇格', desc: '勝率6割でプラチナ到達の実績に惹かれる層向け' },
+                          { tag: '#ソロキュー', desc: '味方に依存せず一人で勝ちたい層向け' }
+                        ];
+
+                    const handleCopySingle = (tag: string) => {
+                      navigator.clipboard.writeText(tag);
+                      setCopiedSingleTag(tag);
+                      setTimeout(() => setCopiedSingleTag(null), 1800);
+                    };
+
+                    const handleCopyAll = () => {
+                      navigator.clipboard.writeText(coreTags.join(' '));
+                      setTagsCopied(true);
+                      setTimeout(() => setTagsCopied(false), 2000);
+                    };
+
+                    return (
+                      <div className="p-3 rounded-xl bg-zinc-900/70 border border-zinc-800 space-y-3">
+                        {/* ヘッダー＆一括コピーボタン */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="font-bold text-zinc-100 flex items-center gap-1.5 text-xs">
+                            <Tag className="w-3.5 h-3.5 text-amber-400" />
+                            <span>タグ候補リスト（タップで即時コピー）</span>
+                          </span>
+                          <button
+                            onClick={handleCopyAll}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1 shadow-sm ${
+                              tagsCopied ? 'bg-emerald-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-black font-black'
+                            }`}
+                          >
+                            {tagsCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{tagsCopied ? '王道セットをコピー完了！' : '👑 王道セットを一括コピー'}</span>
+                          </button>
+                        </div>
+
+                        {/* 王道必須セット */}
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-amber-300/90 uppercase tracking-wider block">
+                            【👑 王道・必須セット】（note公式・検索対策）
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {coreTags.map((t) => (
+                              <button
+                                key={t}
+                                onClick={() => handleCopySingle(t)}
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold transition cursor-pointer flex items-center gap-1 border ${
+                                  copiedSingleTag === t
+                                    ? 'bg-emerald-600 text-white border-emerald-500 scale-105'
+                                    : 'bg-zinc-800/80 hover:bg-zinc-700 text-amber-300 border-amber-500/30'
+                                }`}
+                              >
+                                <span>{t}</span>
+                                {copiedSingleTag === t && <Check className="w-2.5 h-2.5 text-white" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 読者層拡大・追加候補 */}
+                        <div className="space-y-1.5 pt-1 border-t border-zinc-800/60">
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                            【🎯 追加候補】（読者層に合わせて自由にチョイス）
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {audienceTags.map(({ tag, desc }) => (
+                              <button
+                                key={tag}
+                                onClick={() => handleCopySingle(tag)}
+                                className={`p-1.5 rounded-lg text-left transition cursor-pointer border flex items-center justify-between gap-1.5 ${
+                                  copiedSingleTag === tag
+                                    ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-200'
+                                    : 'bg-black/40 hover:bg-zinc-800/60 border-zinc-800/80 text-zinc-300'
+                                }`}
+                              >
+                                <div className="truncate">
+                                  <span className="font-mono font-bold text-[11px] text-zinc-200 block truncate">{tag}</span>
+                                  <span className="text-[10px] text-zinc-400 block truncate">{desc}</span>
+                                </div>
+                                <span className="text-[10px] font-bold shrink-0 text-amber-400/80">
+                                  {copiedSingleTag === tag ? '✓ コピー済' : 'コピー'}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* チェック3: 見出し画像・目次・コピー確認 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
@@ -659,89 +735,6 @@ export default function NoteDraftsPage() {
               </div>
             )}
           </div>
-
-          {/* ⚡ 自己紹介 ビフォーアフター比較バー */}
-          {(currentDraft.id === 'profile_intro' || currentDraft.id === 'profile_intro_before') && (
-            <div className="bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 border border-amber-500/30 rounded-2xl p-4 sm:p-5 mb-6 shadow-xl">
-              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs sm:text-sm font-black text-amber-300">自己紹介 ビフォーアフター比較</span>
-                </div>
-                
-                {/* 切替ピル */}
-                <div className="flex items-center gap-1 bg-black/70 p-1 rounded-xl border border-zinc-800">
-                  <button
-                    onClick={() => {
-                      const afterDraft = drafts.find(d => d.id === 'profile_intro');
-                      if (afterDraft) setSelectedId(afterDraft.id);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      currentDraft.id === 'profile_intro'
-                        ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>最新改善版 (After)</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const beforeDraft = drafts.find(d => d.id === 'profile_intro_before');
-                      if (beforeDraft) setSelectedId(beforeDraft.id);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      currentDraft.id === 'profile_intro_before'
-                        ? 'bg-zinc-700 text-zinc-100 shadow-md'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <History className="w-3.5 h-3.5" />
-                    <span>改善前原案 (Before)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 💡 改善ポイント解説アコーディオン */}
-              <div className="border-t border-zinc-800/80 pt-3">
-                <button
-                  onClick={() => setShowDiffNotes(!showDiffNotes)}
-                  className="w-full flex items-center justify-between text-xs font-bold text-zinc-400 hover:text-amber-300 transition cursor-pointer py-1"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                    <span>💡 5つの人気自己紹介から何を吸収・改善したか（差分解説）</span>
-                  </span>
-                  {showDiffNotes ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                </button>
-
-                {showDiffNotes && (
-                  <div className="mt-3 space-y-2 text-xs text-zinc-300 bg-black/50 p-3.5 rounded-xl border border-zinc-800/80 leading-relaxed">
-                    <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 font-bold shrink-0">ゆいまる流</span>
-                      <span>冒頭に「30秒でわかる生身の僕（昼は社会人、夜はLoL中毒、INTJ）」を新設。専門家ぶらず生身の人間味とギャップを開示して親近感を最大化。</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold shrink-0">ぜろ流</span>
-                      <span>「プロではなく泥臭い実験者」として読者と同じ目線に立ち、机上の空論ではない実戦生ログを届けるスタンスを明文化。</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 font-bold shrink-0">ゆるてく流</span>
-                      <span>「味方にキレ散らかして沼った黒歴史」を赤裸々に吐露し、痛みの共有から信頼を獲得。</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 font-bold shrink-0">あきまむ流</span>
-                      <span>友人が「僕のせいで負けたよね」と去って二度とログインしなくなった無力感と、そこから立ち上がった覚悟を情緒豊かに描写。</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-bold shrink-0">TETSU流</span>
-                      <span>最多デス新人保護Botや独自バランサーなど「初心者を守る情熱の独自システム」を熱狂的にアピール。</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* 本文リーダー */}
           <article className="bg-zinc-950/60 border border-zinc-800/70 rounded-2xl p-4 sm:p-7 shadow-2xl">
