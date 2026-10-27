@@ -30,28 +30,18 @@ name: KTM Bot Cron Backup
 #   KTM_WORKER_URL  : ワーカーの公開URL (例: https://ktm-os-worker.xxxx.workers.dev)
 #   KTM_TRIGGER_KEY : /trigger-scheduled の key（未設定ならデフォルト値を使用）
 
+# 【2026-10-27 停止】Cloudflare本命cronおよびSupabase pg_cronが安定稼働しているため、
+# 3〜5時間遅れで無駄に動いていた本GitHub Actionsスケジュールを停止（workflow_dispatchのみ保持）。
 on:
-  schedule:
-    # --- 週末定期カスタムの募集投稿（本命: 水曜12:00 JST / UTC 03:00）---
-    # 遅延を見越して3回試行する。2回目以降は既に投稿済みならBOT側でスキップされる。
-    - cron: '7 3 * * 3'      # 水 12:07 JST
-    - cron: '23 4 * * 3'     # 水 13:23 JST
-    - cron: '41 6 * * 3'     # 水 15:41 JST
-
-    # --- 中間アナウンス（本命: 金19:00 / 土17:00 / 日17:00 JST）---
-    # 21:00を過ぎて届いても無意味なため、BOT側に有効時間帯のガードがある。
-    - cron: '13 10 * * 5'    # 金 19:13 JST
-    - cron: '13 8 * * 6'     # 土 17:13 JST
-    - cron: '13 8 * * 0'     # 日 17:13 JST
-
-    # --- 20:00開催判定（本命: 土日20:00 JST）---
-    # 2026-09-21追加。それまで④(20:00判定)だけバックアップが無く、
-    # Cloudflare側のcron曜日ズレと相まって日曜分が構造的に一度も発火していなかった。
-    # 判定は19:50〜21:00 JSTの間でしか実行されない（BOT側のガード）。
-    - cron: '9 11 * * 6'     # 土 20:09 JST
-    - cron: '9 11 * * 0'     # 日 20:09 JST
-
-    # ⑤(週間レポート)はDM送信のため、二重送信防止の観点から意図的にバックアップ対象外。
+  # schedule:
+  #   - cron: '7 3 * * 3'
+  #   - cron: '23 4 * * 3'
+  #   - cron: '41 6 * * 3'
+  #   - cron: '13 10 * * 5'
+  #   - cron: '13 8 * * 6'
+  #   - cron: '13 8 * * 0'
+  #   - cron: '9 11 * * 6'
+  #   - cron: '9 11 * * 0'
   workflow_dispatch:
     inputs:
       mode:

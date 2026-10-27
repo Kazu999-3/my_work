@@ -4,6 +4,15 @@
 
 内容はTODO.mdからの単純な移動であり、情報は一切削除・要約していません。
 
+## ✅ 2026-10-27 セッションで対応済み（TODO棚卸し・実測確認・全域メンテナンス）
+
+- [x] **【完了】Cloudflare本命cronの空振り検証（実測実証済み）**: `bot_cron_runs` の実測ログにより、10/21(水) 12:00 JST に `source=cloudflare` で定期カスタム募集の投稿が完璧に成功（`status: success`）していることを確認。
+- [x] **【完了】Supabase migration 123（本番適用済み確認）**: `onboarding_channel_state.last_custom_nudge_at` は本番DBにすでに存在し、正常稼働中であることをREST APIで確認。
+- [x] **【完了】バランサーの「指定メンター」登録（10/22登録済み確認）**: `ktm_settings.onboarding_mentors` は `['sutaro', 'けんと', 'ごり', 'show']` として登録完了済み。
+- [x] **【完了】古いActions保険（`ktm-bot-cron-backup.yml`）の停止**: Cloudflare本命cronおよびSupabase pg_cronが安定稼働しているため、不要となったGitHub Actionsワークフローを停止。
+- [x] **【完了】ナレッジ全域のリンク切れ0件化 ＆ 知識ギャップ解消**: `gank_priority.md` 概念バイブル配備、`NEXUS_INDEX.md` 修正、歴史的ログ除外によりリンク切れを39件から0件へ完全解消。
+- [x] **【完了】YouTubeキューのエラー動画3件リトライ復帰**: タイトルからエラー文を剥がし `status: pending` へ復帰。
+
 ## ✅ 2026-10-19 Claude Codeセッションで対応済み（05: 健康診断の移行・記事の再解析・1試合1課題ループ）
 
 詳細は `HANDOVER_CLAUDE.md` §2.19。

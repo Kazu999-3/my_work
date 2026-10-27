@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # Sovereign OS - Edge Worker Launcher
 # ============================================================
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -48,6 +48,16 @@ if (-not (Test-Path $logDir)) {
 $env:PYTHONPATH = "$rootDir\03_SYSTEMS"
 $env:PYTHONUNBUFFERED = '1'
 $env:PYTHONIOENCODING = 'utf-8'
+
+# ログファイルが3MBを超えていたら自動ローテーション（最新2,000行を保持）
+if ((Test-Path $logFile) -and ((Get-Item $logFile).Length -gt 3MB)) {
+    try {
+        $tail = Get-Content $logFile -Tail 2000 -Encoding UTF8
+        $tail | Set-Content $logFile -Encoding UTF8
+    } catch {
+        # 使用中の場合は安全にスキップ
+    }
+}
 
 $now = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 Add-Content -Path $logFile -Encoding UTF8 -Value "`n===== [$now] Edge Worker Daemon 手動起動 ====="
