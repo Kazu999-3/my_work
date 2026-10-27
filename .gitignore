@@ -110,3 +110,7 @@ scripts/matches/
 
 # KTM Match Watcher の実行時PID
 .ktm_watcher.pid
+
+# 一時ファイル
+*.tmp
+*.bak

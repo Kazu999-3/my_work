@@ -66,6 +66,7 @@
   - YouTube動画の文字起こしからAIが自動生成した、43チャンピオン・174本の実戦動画解析マスターインデックス。
   - 旧サブ書庫 `02_FACTORY/bible/kirei_bible/` は2026-09-24に本書庫へ統合済み（字幕取得失敗の24本はファイルのみ移動し、INDEXには未掲載）。
 - **[LoL 戦略・環境分析インデックス (_LOL/INDEX.md)](file:///d:/my_work/01_INTEL/_LOL/INDEX.md)**: DNA（思考哲学）・PULSE（リアルタイム環境・Lolalytics）の総合書庫。
+- **[全チャンピオン戦術バイブル総合索引 (tactics/INDEX.md)](file:///d:/my_work/01_INTEL/tactics/INDEX.md)**: 全175体の対面データ・パワースパイク完全網羅マスター索引。
 - **[戦術インテルライブラリ](file:///d:/my_work/01_INTEL/tactics/)**:
   - **実戦バイブル (主力プール・全18体配備完了 / 全体Blueprint完備)**:
     - **🌲 JG/TOP主力 (プロ実演クリップ搭載 - 13体)**:
@@ -88,6 +89,7 @@
 ブログ記事、note 有料マガジン、アフィリエイト関連アセットの保管場所です。
 
 - **[01_DRAFTS (作成中の下書き)](file:///d:/my_work/02_FACTORY/01_DRAFTS/)**
+- **[note記事ストック マスター目次 (全224本)](file:///d:/my_work/02_FACTORY/_LOL/note_stocks/INDEX.md)**: 62チャンピオン・224本の即時執筆可能な記事ネタストック。
   - **[sns/](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/)**: 宣伝用 X（Twitter）スレッドの下書き（全187件の一覧は [`sns/INDEX.md`](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/INDEX.md)）。
   - ※ note 記事のドラフトは `02_FACTORY/note_drafts/` に保管（`.gitignore`対象のためリポジトリには含まれません）。公開管理・成績記録はポータルの `/admin/analytics` と `note_articles` テーブル側で行います。
 - ※ 旧 `02_PUBLISHED/`（投稿完了アーカイブ）は現存しません。公開済み記事の管理はポータルの `/admin/analytics` に一本化済みです。
