@@ -75,14 +75,21 @@ export default function NoteDraftsPage() {
     };
 
     const parseInline = (str: string) => {
-      // **太字** の変換
-      const parts = str.split(/(\*\*.*?\*\*)/g);
+      // **太字** と *斜体/注釈* の変換
+      const parts = str.split(/(\*\*.*?\*\*|\*[^*]+?\*)/g);
       return parts.map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**')) {
           return (
             <strong key={i} className="text-amber-300 font-bold">
               {part.slice(2, -2)}
             </strong>
+          );
+        }
+        if (part.startsWith('*') && part.endsWith('*') && !part.startsWith('**')) {
+          return (
+            <span key={i} className="text-zinc-400 text-xs italic block text-center mt-1">
+              {part.slice(1, -1)}
+            </span>
           );
         }
         return part;
@@ -133,6 +140,29 @@ export default function NoteDraftsPage() {
           <h3 key={index} className="text-base sm:text-lg font-bold text-amber-200/90 mt-5 mb-2">
             {line.slice(4)}
           </h3>
+        );
+        return;
+      }
+
+      // 画像記法 ![alt](src)
+      const imgMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+      if (imgMatch) {
+        const alt = imgMatch[1];
+        const src = imgMatch[2];
+        elements.push(
+          <div key={index} className="my-4 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 p-1.5 shadow-lg">
+            <img 
+              src={src} 
+              alt={alt} 
+              className="w-full h-auto object-contain rounded-lg max-h-96 mx-auto" 
+              loading="lazy" 
+            />
+            {alt && (
+              <p className="text-center text-xs text-zinc-400 mt-1.5 font-medium">
+                {alt}
+              </p>
+            )}
+          </div>
         );
         return;
       }
