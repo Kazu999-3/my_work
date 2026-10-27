@@ -36,13 +36,14 @@ WARN_RATIO = 0.70  # 70%超過で警告
 
 def load_supabase_credentials():
     """環境変数または .env.local から Supabase 接続情報をロード"""
-    url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
+    url = None
+    service_key = None
+    anon_key = None
     mgmt_token = os.environ.get("SUPABASE_ACCESS_TOKEN")
 
     env_candidates = [
-        REPO_ROOT / "05_PILOT" / ".env.local",
         REPO_ROOT / "04_PORTAL" / ".env.local",
+        REPO_ROOT / "05_PILOT" / ".env.local",
         REPO_ROOT / ".env",
     ]
 
@@ -60,15 +61,16 @@ def load_supabase_credentials():
                     v = v.strip().strip("\"'")
                     if not url and k in ("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"):
                         url = v
-                    if not key and k == "SUPABASE_SERVICE_ROLE_KEY":
-                        key = v
-                    if not key and k == "NEXT_PUBLIC_SUPABASE_ANON_KEY":
-                        key = v
+                    if not service_key and k in ("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY"):
+                        service_key = v
+                    if not anon_key and k in ("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"):
+                        anon_key = v
                     if not mgmt_token and k == "SUPABASE_ACCESS_TOKEN":
                         mgmt_token = v
         except Exception:
             pass
 
+    key = service_key or anon_key
     return url, key, mgmt_token
 
 def fetch_table_counts(url: str, key: str):
