@@ -9,7 +9,7 @@ import { detectChampionsFromText } from '@/lib/championDetector';
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
 // 2026-10-19: 「薄い可能性」の目印・🔁 再解析・再解析版の 🆚 比較 / 元の記事に戻す を追加。
-export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocused, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onApprove, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload, onCardClick }: {
+export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocused, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onApprove, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload, onCardClick, processingAction }: {
   item: ReviewItem;
   edit: ItemEditState;
   isOpen: boolean;
@@ -30,6 +30,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
   onDiscardReanalysis?: () => void;
   onReload?: () => void;
   onCardClick?: () => void;
+  processingAction?: "approving" | "rejecting" | null;
 }) {
   const isDraft = item.reanalysis_of != null;
   const task = item.reanalysisTask;
@@ -41,17 +42,27 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
   const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
   const detected = useMemo(() => detectChampionsFromText(item.title, summary), [item.title, summary]);
   return (
-    <div
+        <div
       onClick={onCardClick}
       data-review-card={item.id}
-      className={`p-4 md:p-5 rounded-2xl border space-y-3 transition duration-150 ${
+      className={`relative overflow-hidden p-4 md:p-5 rounded-2xl border space-y-3 transition duration-150 ${
         isFocused
           ? 'ring-2 ring-amber-500/90 border-amber-500/80 bg-zinc-900 shadow-xl shadow-amber-500/10'
           : isSelected
-          ? 'bg-amber-500/5 border-amber-500/40'
-          : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
+          ? 'border-amber-500/50 bg-amber-950/20'
+          : 'border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-900/90'
       }`}
     >
+      {/* ⏳ 承認・却下実行中の即時オーバーレイ演出 */}
+      {processingAction && (
+        <div className="absolute inset-0 z-30 bg-zinc-950/90 backdrop-blur-sm flex flex-col items-center justify-center gap-2.5 animate-in fade-in duration-100">
+          <Loader2 className="w-7 h-7 text-amber-400 animate-spin" />
+          <div className="text-xs font-black text-zinc-100 tracking-wide">
+            {processingAction === 'approving' ? '⚡ 承認統合を実行中...（教本へ反映中）' : '🗑️ 却下中...（削除しています）'}
+          </div>
+          <p className="text-[10px] text-zinc-400">完了すると一覧から自動で消去されます</p>
+        </div>
+      )}
       {/* タイトル ＆ メタデータ行 */}
       <div className="flex items-start gap-3">
         <input

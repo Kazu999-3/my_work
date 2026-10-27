@@ -940,7 +940,12 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    await Promise.all([...factTasks, ...laneTasks, ...matchupTasks]);
+    // LLM呼び出し（項目差分マージ等）は最大6秒でタイムアウトさせ、Vercel/サーバーレスの504タイムアウトによる承認失敗を根絶
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 6000));
+    await Promise.race([
+      Promise.allSettled([...factTasks, ...laneTasks, ...matchupTasks]),
+      timeoutPromise
+    ]);
 
     const totalCount = targetRows.length;
     invalidateReviewCache();

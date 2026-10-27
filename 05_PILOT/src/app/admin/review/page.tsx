@@ -42,6 +42,7 @@ export default function ReviewPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [processingMap, setProcessingMap] = useState<Record<number, "approving" | "rejecting">>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -187,6 +188,7 @@ export default function ReviewPage() {
   const approveOne = async (item: ReviewItem | null) => {
     if (!item) return;
     setModalError(null);
+    setProcessingMap((prev) => ({ ...prev, [item.id]: 'approving' }));
     const edit = edits[item.id] || defaultEdit(item);
     const isPreviewing = previewModalItem?.id === item.id;
 
@@ -218,6 +220,11 @@ export default function ReviewPage() {
       customLaneSectionText: finalLaneSectionText,
       customFactOverrides,
     });
+    setProcessingMap((prev) => {
+      const next = { ...prev };
+      delete next[item.id];
+      return next;
+    });
     if (result.ok) {
       removeFromList([item.id]);
       if (isPreviewing) setPreviewModalItem(null);
@@ -229,7 +236,13 @@ export default function ReviewPage() {
   // 1件却下
   const rejectOne = async (item: ReviewItem) => {
     if (!confirm(`「${item.title}」を却下して削除しますか？`)) return;
+    setProcessingMap((prev) => ({ ...prev, [item.id]: 'rejecting' }));
     const result = await post({ id: item.id, action: 'reject' });
+    setProcessingMap((prev) => {
+      const next = { ...prev };
+      delete next[item.id];
+      return next;
+    });
     if (result.ok) {
       removeFromList([item.id]);
       if (previewModalItem?.id === item.id) setPreviewModalItem(null);
@@ -608,6 +621,7 @@ export default function ReviewPage() {
               onCompare={() => setCompareItem(item)}
               onDiscardReanalysis={() => discardReanalysis(item)}
               onReload={() => load({ silent: true })}
+              processingAction={processingMap[item.id] || null}
             />
           ))}
         </div>
