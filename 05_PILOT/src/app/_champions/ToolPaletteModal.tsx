@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Layers, X, Plus, ExternalLink, Wrench, History } from "lucide-react";
+import { BookOpen, Layers, X, Plus, ExternalLink, Wrench, History, Gamepad2 } from "lucide-react";
 import type { ChampionDetail } from "./types";
 
 // ⚙️ ツール・管理クイックパレット モーダル
@@ -152,7 +152,28 @@ export default function ToolPaletteModal({ setIsLaneModalOpen, setFocusedLaneCha
 
               <div className="border-t border-zinc-800/80 my-1" />
 
-              {/* 5. 辞典メンテナンス管理 */}
+                            {/* 5. リアルタイムHUDオーバーレイ */}
+              <Link
+                href="/overlay"
+                target="_blank"
+                onClick={() => setIsToolModalOpen(false)}
+                className="w-full p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-amber-500/50 text-left transition flex items-center gap-3.5 cursor-pointer group shadow-xs"
+              >
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 group-hover:scale-105 transition shrink-0">
+                  <Gamepad2 size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-black text-zinc-200 group-hover:text-cyan-300 transition flex items-center gap-1.5">
+                    <span>🎮 試合中HUDオーバーレイ</span>
+                    <ExternalLink size={12} className="opacity-70 text-cyan-400" />
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                    実戦中に画面端で対面の癖・時間帯目標を常時表示
+                  </p>
+                </div>
+              </Link>
+
+              {/* 6. 辞典メンテナンス管理 */}
               <Link
                 href={selectedDetail ? `/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}` : "/admin/dict-maintenance"}
                 onClick={() => setIsToolModalOpen(false)}
