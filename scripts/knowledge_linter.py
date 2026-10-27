@@ -71,6 +71,12 @@ IGNORE_ORPHANS = {
     "GEMINI.md",
 }
 
+# 過去の作業日誌・アーカイブは過去コードの言及（削除・移行済みパス）を含むためリンク切れ監査から除外
+IGNORE_LINK_CHECK_FILES = {
+    "DAILY_LOG.md",
+    "TODO_ARCHIVE.md",
+}
+
 def get_all_md_files():
     md_files = []
     for sdir in SCAN_DIRS:
@@ -186,15 +192,17 @@ def run_linter(fix=False, report=False, silent=False):
                 invalid_frontmatter.append((fpath.relative_to(REPO_ROOT), missing_keys))
 
         # リンク解決 ＆ リンク切れ点検
+        is_history_log = fpath.name in IGNORE_LINK_CHECK_FILES
         for link in links:
             if link["type"] == "markdown":
                 target = link["resolved_path"]
                 if not target.exists():
-                    broken_links.append({
-                        "source": fpath.relative_to(REPO_ROOT),
-                        "text": link["text"],
-                        "target": link["raw"]
-                    })
+                    if not is_history_log:
+                        broken_links.append({
+                            "source": fpath.relative_to(REPO_ROOT),
+                            "text": link["text"],
+                            "target": link["raw"]
+                        })
                 else:
                     referenced_paths.add(target.resolve())
             elif link["type"] == "wikilink":
@@ -206,11 +214,12 @@ def run_linter(fix=False, report=False, silent=False):
                     for matched_file in filename_to_paths[tname]:
                         referenced_paths.add(matched_file.resolve())
                 else:
-                    broken_links.append({
-                        "source": fpath.relative_to(REPO_ROOT),
-                        "text": link["text"],
-                        "target": f"[[{link['raw']}]]"
-                    })
+                    if not is_history_log:
+                        broken_links.append({
+                            "source": fpath.relative_to(REPO_ROOT),
+                            "text": link["text"],
+                            "target": f"[[{link['raw']}]]"
+                        })
 
         # 概念キーワードの言及集計
         for c in CORE_CONCEPTS:

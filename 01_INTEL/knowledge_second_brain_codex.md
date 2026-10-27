@@ -27,6 +27,9 @@ tags: [KnowledgeManagement, SecondBrain, LLMWiki, Obsidian, Antigravity, ClaudeC
 8. [リンククロスシステム公式: AIアルゴリズム②：なぜAIは知ったかぶりをするのか？「RAG（検索拡張生成）」を徹底解説](https://note.com/linkc19/n/nac27d39a823c)
 9. [ブラックにゃー: 「わかりません」と言えるAIを、私は毎日つくっている ── AIの“もっともらしい嘘”（ハルシネーション）の正体と、今日からできる見抜き方](https://note.com/blacknyaa/n/nd21b02fe34fc)
 10. [AIで「できる」を増やす研究室（タイパ戦隊）: AIに記事を書いてもらうとき、僕が「元の会話」を必ず残す理由](https://note.com/taipasentai/n/n2a987b336528)
+11. [Lucky AI Lab: ローカルLLM実測・知識エージェント化の運用コストとナレッジマネジメント](https://note.com/luckyai/n/n323cf309bb52)
+12. [aimamawork (k_kaori.dododo): Obsidianは倉庫ではなく、資産に変えろ【思考の外付け・ナレッジ資産化】](https://brain-market.com/u/aimamawork/a/b4MDMzYjMgoTZsNWa0JXY?from=b3IDN4ATMgojclNXd)
+13. [pippin: サプライチェーンと情報開示の構造的リスク管理・透明性とファクトチェック](https://note.com/pippinxpippin/n/n8c96b89ce0c3)
 
 ---
 
@@ -63,6 +66,11 @@ AIと人間の役割境界を厳格に定義します。
 ### 1.6 エビデンス紐付けと空白補完ガード（タイパ戦隊原則）
 - **空白補完の厳禁**: AIは文章を滑らかにつなぐために、原本にない感情、出来事、特に「数字」を勝手に補完（捏造）しやすい。
 - **骨格（柵）の先行確定**: いきなり本文を書かせず、まず「主張と論点（柵）」を確定させ、元のEvidence（根拠）に実在する言葉と数字の範囲内のみで展開させる。
+
+### 1.7 倉庫化の根絶とアウトプット資産化（aimamawork・luckyai・pippin原則）
+- **メモを倉庫で腐らせない（aimamawork原則）**: 単に情報を集めて溜め込むだけでは「情報の墓場（死蔵）」になる。収集したすべての知識は、発信（note・SNS・製品）または実戦（意思決定）という「資産」へ繋がる導線を持つこと。
+- **手動管理コストの極小化（luckyai原則）**: ユーザーに複雑なツール操作や手動タグ付けを強いるシステムは破綻する。LLMと自動スクリプトが裏方（Grunt work）を担い、人間は最小限の確認と意思決定に専念できるアーキテクチャを維持する。
+- **情報源の透明性と検証可能性（pippin原則）**: AIが加工した知識には必ず一次ソース（URLや元ファイル）を紐付け、サプライチェーンのリスクや捏造の混入を即座にファクトチェックできる透明性を担保する。
 
 ---
 

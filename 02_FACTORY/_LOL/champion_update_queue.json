@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-27T04:34:03.169092+00:00",
+  "updated_at": "2026-10-27T08:01:42.232598+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -484,38 +484,38 @@
     },
     "Malphite": {
       "name": "マルファイト",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:10:59.765409+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T06:34:00.736866+00:00",
       "error": null
     },
     "Malzahar": {
       "name": "マルザハール",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:12:00.752679+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T07:54:44.779492+00:00",
       "error": null
     },
     "Maokai": {
       "name": "マオカイ",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:13:35.499253+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T07:56:14.168267+00:00",
       "error": null
     },
     "MasterYi": {
       "name": "マスター・イー",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:14:38.950620+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T07:57:19.306673+00:00",
       "error": null
     },
     "Mel": {
       "name": "メル",
-      "status": "pending",
-      "updated_at": "2026-10-18T12:16:02.651665+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T07:58:39.320553+00:00",
       "error": null
     },
     "Milio": {
       "name": "ミリオ",
-      "status": "pending",
-      "updated_at": "2026-10-18T13:06:41.661513+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T07:59:45.508145+00:00",
       "error": null
     },
     "MissFortune": {

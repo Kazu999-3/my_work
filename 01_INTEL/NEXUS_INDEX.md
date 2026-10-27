@@ -16,7 +16,7 @@
 
 ## 🏛️ ナレッジ管理 ＆ SSoT 原則（帝国憲章）
 1. **[第二の脳 構築・運用規範 (knowledge_second_brain_codex.md)](file:///d:/my_work/01_INTEL/knowledge_second_brain_codex.md)**:
-   - Karpathy氏のLLM Wiki（知識の事前コンパイル・Lint点検）、Lumi Sparkの予定実績乖離フィードバック（完了の再定義）、ハシのサンドイッチアプローチ、TOMOの3層編集長フレームワーク、Shiba Aki氏のエージェント4レイヤー、60代男子氏の自動堆積パイプラインを統合した最上位ナレッジ規範。
+   - Karpathy氏のLLM Wiki（知識の事前コンパイル・Lint点検）、Lumi Sparkの予定実績乖離フィードバック（完了の再定義）、ハシのサンドイッチアプローチ、TOMOの3層編集長フレームワーク、Shiba Aki氏のエージェント4レイヤー、60代男子氏の自動堆積パイプライン、aimamawork氏の倉庫化根絶・資産化原則を統合した最上位ナレッジ規範。
 2. **[知識自走とハルシネーション根絶の5大設計原則 (ai_knowledge_agent_architecture_5principles.md)](file:///d:/my_work/01_INTEL/ai_knowledge_agent_architecture_5principles.md)**:
    - 受動的本棚の自走化（エージェント4レイヤー）、習慣に頼らない自動堆積（/seed ➔ /reduce ➔ /reflect）、オープンブック試験（RAG）、空欄を作らない子の脱却（「わかりません」の信用）、Evidence紐付けと数字捏造ガード（柵作り）の5大原則集約。
 3. **[自立型AIエージェント協働 ＆ ゴール委任プロトコル (autonomous_task_delegation_protocol.md)](file:///d:/my_work/01_INTEL/autonomous_task_delegation_protocol.md)**:
@@ -50,6 +50,7 @@
 - **[Linear Jungle Tech（raaaaaq/Tarzaned・4キャンプ同期循環と先行リコール）](file:///D:/my_work/01_INTEL/concepts/jg_linear_jungle_tech.md)**
 - **[10,000試合実証：対面JG相対指標と勝率相関（FORESTER・15分74%勝利ボーダー）](file:///D:/my_work/01_INTEL/concepts/jg_relative_advantage_metrics.md)**
 - **[テンポの本質とフルクリア法則（ほけんじじ5要素 × FORESTER Lv9境界線・3.7万試合実証）](file:///D:/my_work/01_INTEL/concepts/jg_tempo_and_clearing_law.md)**
+- **[ガンク優先度判定論（成功3条件・ウェーブ管理・レーン相性による投資先決定）](file:///D:/my_work/01_INTEL/concepts/gank_priority.md)**
 
 ## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。
@@ -151,4 +152,4 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
 - **[記事・コンテンツ下書き総合索引 (DRAFTS INDEX)](file:///d:/my_work/02_FACTORY/01_DRAFTS/INDEX.md)**
 
 
-- [テスト実戦メモ：ダリウス対面でのLv1ブッシュインベード対策](file:///D:/my_work/01_INTEL/_LOL/tactics/note_20261001_211000_darius_invade_test.md)
+- **[実戦バイブル：ダリウス（TOP/Fighter主力・3段階勝ちパターン）](file:///D:/my_work/01_INTEL/tactics/darius_tactics_bible.md)**

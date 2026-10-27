@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle 
+  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle, History, ArrowRightLeft
 } from 'lucide-react';
 import initialDraftsData from '@/data/note_drafts.json';
 
@@ -24,6 +24,7 @@ export default function NoteDraftsPage() {
   const [selectedId, setSelectedId] = useState<string>(staticDrafts[0]?.id || '');
   const [copied, setCopied] = useState(false);
   const [showToc, setShowToc] = useState(false);
+  const [showDiffNotes, setShowDiffNotes] = useState(true);
 
   // クライアント側での差分リフレッシュ（SWR・フェッチ失敗しても静的データで確実に表示）
   useEffect(() => {
@@ -192,19 +193,24 @@ export default function NoteDraftsPage() {
           
           {/* 記事切り替えタブ */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5">
-            {drafts.map((d) => (
-              <button
-                key={d.id}
-                onClick={() => setSelectedId(d.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 ${
-                  d.id === selectedId
-                    ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                    : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-                }`}
-              >
-                {d.title.length > 16 ? d.title.slice(0, 16) + '…' : d.title}
-              </button>
-            ))}
+            {drafts.map((d) => {
+              let label = d.title.length > 16 ? d.title.slice(0, 16) + '…' : d.title;
+              if (d.id === 'profile_intro') label = '✨ 自己紹介 (最新After)';
+              if (d.id === 'profile_intro_before') label = '📜 自己紹介 (原案Before)';
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => setSelectedId(d.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 ${
+                    d.id === selectedId
+                      ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+                      : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {/* コピーボタン（目立つ主役） */}
@@ -289,6 +295,89 @@ export default function NoteDraftsPage() {
               </div>
             )}
           </div>
+
+          {/* ⚡ 自己紹介 ビフォーアフター比較バー */}
+          {(currentDraft.id === 'profile_intro' || currentDraft.id === 'profile_intro_before') && (
+            <div className="bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 border border-amber-500/30 rounded-2xl p-4 sm:p-5 mb-6 shadow-xl">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs sm:text-sm font-black text-amber-300">自己紹介 ビフォーアフター比較</span>
+                </div>
+                
+                {/* 切替ピル */}
+                <div className="flex items-center gap-1 bg-black/70 p-1 rounded-xl border border-zinc-800">
+                  <button
+                    onClick={() => {
+                      const afterDraft = drafts.find(d => d.id === 'profile_intro');
+                      if (afterDraft) setSelectedId(afterDraft.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      currentDraft.id === 'profile_intro'
+                        ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>最新改善版 (After)</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const beforeDraft = drafts.find(d => d.id === 'profile_intro_before');
+                      if (beforeDraft) setSelectedId(beforeDraft.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      currentDraft.id === 'profile_intro_before'
+                        ? 'bg-zinc-700 text-zinc-100 shadow-md'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>改善前原案 (Before)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 💡 改善ポイント解説アコーディオン */}
+              <div className="border-t border-zinc-800/80 pt-3">
+                <button
+                  onClick={() => setShowDiffNotes(!showDiffNotes)}
+                  className="w-full flex items-center justify-between text-xs font-bold text-zinc-400 hover:text-amber-300 transition cursor-pointer py-1"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>💡 5つの人気自己紹介から何を吸収・改善したか（差分解説）</span>
+                  </span>
+                  {showDiffNotes ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+
+                {showDiffNotes && (
+                  <div className="mt-3 space-y-2 text-xs text-zinc-300 bg-black/50 p-3.5 rounded-xl border border-zinc-800/80 leading-relaxed">
+                    <div className="flex items-start gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 font-bold shrink-0">ゆいまる流</span>
+                      <span>冒頭に「30秒でわかる生身の僕（昼は社会人、夜はLoL中毒、INTJ）」を新設。専門家ぶらず生身の人間味とギャップを開示して親近感を最大化。</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold shrink-0">ぜろ流</span>
+                      <span>「プロではなく泥臭い実験者」として読者と同じ目線に立ち、机上の空論ではない実戦生ログを届けるスタンスを明文化。</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 font-bold shrink-0">ゆるてく流</span>
+                      <span>「味方にキレ散らかして沼った黒歴史」を赤裸々に吐露し、痛みの共有から信頼を獲得。</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 font-bold shrink-0">あきまむ流</span>
+                      <span>友人が「僕のせいで負けたよね」と去って二度とログインしなくなった無力感と、そこから立ち上がった覚悟を情緒豊かに描写。</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-bold shrink-0">TETSU流</span>
+                      <span>最多デス新人保護Botや独自バランサーなど「初心者を守る情熱の独自システム」を熱狂的にアピール。</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* 本文リーダー */}
           <article className="bg-zinc-950/60 border border-zinc-800/70 rounded-2xl p-4 sm:p-7 shadow-2xl">
