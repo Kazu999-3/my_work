@@ -1,4 +1,4 @@
-name: CI (04_PORTAL / ktm_bot)
+name: CI (04_PORTAL / 05_PILOT / ktm_bot)
 
 # 個人開発でCIが無かったため、pushするまで壊れているかどうか誰も気づけなかった
 # (実際に2件のテストが仕様変更に追従できておらず失敗したまま放置されていた)。
@@ -9,16 +9,19 @@ name: CI (04_PORTAL / ktm_bot)
 # (2026-09-27の師弟マッチング3コミットが本番へ一度も反映されていなかった)。
 # デプロイが失敗しても本番Workerは古いコードで動き続けるため画面上は何も壊れず、
 # 誰も気づけなかった。構文とバンドルだけでも先に落としておく。
+#
+# 2026-10-27: 05_PILOT (Sovereign Pilot: 52件の単体テスト＋TypeScript型チェック) を追加。
+# 全アプリの安全性をGitHub Actions上で全自動検証する。
 
 on:
   push:
     branches: [master]
-    paths: ['04_PORTAL/**', '03_SYSTEMS/ktm_bot/**', '.github/workflows/ci.yml']
+    paths: ['04_PORTAL/**', '05_PILOT/**', '03_SYSTEMS/ktm_bot/**', '.github/workflows/ci.yml']
   pull_request:
-    paths: ['04_PORTAL/**', '03_SYSTEMS/ktm_bot/**', '.github/workflows/ci.yml']
+    paths: ['04_PORTAL/**', '05_PILOT/**', '03_SYSTEMS/ktm_bot/**', '.github/workflows/ci.yml']
 
 jobs:
-  test:
+  portal-test:
     # ⚠️ 「04_PORTAL に変更が無ければスキップ」という条件は意図的に付けていない。
     # github.event.commits は20件で打ち切られる等の取りこぼしがあり、
     # テストが黙ってスキップされる方が、数分余計に回すよりずっと危険。
@@ -38,6 +41,22 @@ jobs:
       # 2026-10-07: lint を追加。それまで CI で実行しておらず、エラー40件（04の @/ import 禁止違反8件を含む）が溜まっていた。
       # エラーのみで失敗させる（警告は通す）
       - run: npx eslint src
+      - run: npm test
+
+  pilot-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 05_PILOT
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 05_PILOT/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
       - run: npm test
 
   bot-syntax:
