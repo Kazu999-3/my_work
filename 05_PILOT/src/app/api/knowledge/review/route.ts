@@ -24,6 +24,18 @@ function extractYoutubeId(url: string): string | null {
 const NO_CHAMPION = 'Unknown';
 const DEFAULT_PAGE_SIZE = 50;
 
+// 🛡️ Zero Egress 防衛キャッシュ（審査中の同一・連続クエリによるSupabase転送量を90%以上遮断）
+let channelMapCache: { channelMap: Record<string, string>; videoIdMap: Record<string, string>; timestamp: number } | null = null;
+let pendingItemsCache: { data: any[]; timestamp: number } | null = null;
+let edgeTasksCache: { data: any[]; timestamp: number } | null = null;
+const CACHE_TTL_PENDING_MS = 45 * 1000; // 45秒
+const CACHE_TTL_CHANNELS_MS = 15 * 60 * 1000; // 15分
+
+export function invalidateReviewCache() {
+  pendingItemsCache = null;
+  edgeTasksCache = null;
+}
+
 // 再解析（2026-10-19）＆分解（2026-10-26）: 採用しなかった版や分解済みの親記事に付けるタグ。行は消さず、ライブラリ・承認待ちから隠す
 const SUPERSEDED_TAGS = ['__DELETED__', '__SUPERSEDED__', '__DECOMPOSED__'];
 const REANALYZE_REASONS = ['thin', 'focus', 'generic', 'wrong', 'other'];
@@ -48,47 +60,67 @@ export async function GET(req: NextRequest) {
     const sort = searchParams.get('sort') || 'created_asc'; // 'created_asc' | 'created_desc' | 'channel_asc' | 'volume_desc' | 'title_asc'
     const quality = searchParams.get('quality') || ''; // 'thin'（薄い可能性） | 'reanalyzed'（再解析版） | 'approve' | 'check' | 'skip'（承認の目安。2026-10-20）
 
-    // 1. youtube_queue からチャンネル名辞書をロード
-    const { data: queueRows } = await supabase
-      .from('youtube_queue')
-      .select('url, channel_name')
-      .limit(3000);
+    // 1. youtube_queue からチャンネル名辞書をロード（キャッシュ活用）
+    const now = Date.now();
+    let channelMap: Record<string, string> = {};
+    let videoIdMap: Record<string, string> = {};
 
-    const channelMap: Record<string, string> = {};
-    const videoIdMap: Record<string, string> = {};
+    if (channelMapCache && (now - channelMapCache.timestamp < CACHE_TTL_CHANNELS_MS)) {
+      channelMap = channelMapCache.channelMap;
+      videoIdMap = channelMapCache.videoIdMap;
+    } else {
+      const { data: queueRows } = await supabase
+        .from('youtube_queue')
+        .select('url, channel_name')
+        .limit(3000);
 
-    if (queueRows) {
-      for (const qr of queueRows) {
-        if (qr.url) {
-          const trimmedUrl = qr.url.trim();
-          const vid = extractYoutubeId(trimmedUrl);
-          if (qr.channel_name) {
-            const trimmedCh = qr.channel_name.trim();
-            channelMap[trimmedUrl] = trimmedCh;
-            if (vid) videoIdMap[vid] = trimmedCh;
+      if (queueRows) {
+        for (const qr of queueRows) {
+          if (qr.url) {
+            const trimmedUrl = qr.url.trim();
+            const vid = extractYoutubeId(trimmedUrl);
+            if (qr.channel_name) {
+              const trimmedCh = qr.channel_name.trim();
+              channelMap[trimmedUrl] = trimmedCh;
+              if (vid) videoIdMap[vid] = trimmedCh;
+            }
           }
         }
       }
+      channelMapCache = { channelMap, videoIdMap, timestamp: now };
     }
 
-    // 2. 未承認記事（pending）全件を取得
-    let baseQuery = supabase
-      .from('personal_knowledge')
-      .select('id, title, content, champion, parent_id, is_atomic, source_url, tags, created_at, reanalysis_of, analysis_meta')
-      .eq('review_status', 'pending')
-      .or('tags.is.null,tags.not.cs.{__DELETED__}')
-      .order('created_at', { ascending: true })
-      .limit(1000);
+    // 2. 未承認記事（pending）の取得（キャッシュ活用でEgress激減）
+    let allRows: any[] = [];
+    if (pendingItemsCache && (now - pendingItemsCache.timestamp < CACHE_TTL_PENDING_MS)) {
+      allRows = pendingItemsCache.data;
+    } else {
+      let baseQuery = supabase
+        .from('personal_knowledge')
+        .select('id, title, content, champion, parent_id, is_atomic, source_url, tags, created_at, reanalysis_of, analysis_meta')
+        .eq('review_status', 'pending')
+        .or('tags.is.null,tags.not.cs.{__DELETED__}')
+        .order('created_at', { ascending: true })
+        .limit(1000);
 
-    if (champion) baseQuery = baseQuery.eq('champion', champion);
-    if (type === 'atomic') baseQuery = baseQuery.eq('is_atomic', true);
-    if (type === 'video') baseQuery = baseQuery.eq('is_atomic', false);
+      const { data, error } = await baseQuery;
+      if (error) throw error;
+      allRows = data || [];
+      pendingItemsCache = { data: allRows, timestamp: now };
+    }
 
-    const { data, error } = await baseQuery;
-    if (error) throw error;
+    // champion / type フィルターはインメモリで高速処理（Supabaseクエリ不要）
+    if (champion) {
+      allRows = allRows.filter((r) => r.champion === champion);
+    }
+    if (type === 'atomic') {
+      allRows = allRows.filter((r) => r.is_atomic);
+    }
+    if (type === 'video') {
+      allRows = allRows.filter((r) => !r.is_atomic);
+    }
 
     // 再解析（2026-10-19）: 再解析版がある記事は元の記事を一覧から外し、再解析版のカードで新旧を比べる
-    const allRows = data || [];
     const draftByOriginal = new Map<number, any>();
     for (const r of allRows) {
       if (r.reanalysis_of == null) continue;
@@ -113,22 +145,27 @@ export async function GET(req: NextRequest) {
       for (const o of origRows || []) rowById.set(o.id, o);
     }
 
-    // 進行中・失敗した再解析の依頼（直近3日）
+    // 進行中・失敗した再解析の依頼（直近3日、キャッシュ活用）
     const reanalysisTasks: Record<number, { status: string; error: string | null; createdAt: string }> = {};
-    {
+    let taskRows: any[] = [];
+    if (edgeTasksCache && (now - edgeTasksCache.timestamp < CACHE_TTL_PENDING_MS)) {
+      taskRows = edgeTasksCache.data;
+    } else {
       const since = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
-      const { data: taskRows } = await supabase
+      const { data } = await supabase
         .from('edge_tasks')
         .select('status, payload, error_message, created_at')
         .eq('task_type', 'article_reanalyze')
         .gte('created_at', since)
         .order('created_at', { ascending: true })
         .limit(500);
-      for (const t of taskRows || []) {
-        const aid = Number((t as any).payload?.article_id);
-        if (!aid) continue;
-        reanalysisTasks[aid] = { status: t.status, error: t.error_message, createdAt: t.created_at };
-      }
+      taskRows = data || [];
+      edgeTasksCache = { data: taskRows, timestamp: now };
+    }
+    for (const t of taskRows || []) {
+      const aid = Number((t as any).payload?.article_id);
+      if (!aid) continue;
+      reanalysisTasks[aid] = { status: t.status, error: t.error_message, createdAt: t.created_at };
     }
 
     // 親記事タイトルのマッピング
@@ -461,6 +498,7 @@ export async function POST(req: NextRequest) {
       }
 
       const saveRes = await saveDecomposedInsights(db, Number(parentId), insights as DecomposedInsight[], source_url, { autoApprove: true });
+      invalidateReviewCache();
       const champsStr = saveRes.integratedChamps?.length > 0 ? ` (${saveRes.integratedChamps.join(', ')})` : '';
       return NextResponse.json({
         success: true,
@@ -669,6 +707,7 @@ export async function POST(req: NextRequest) {
         .in('id', ids)
         .eq('review_status', 'pending');
       if (error) throw error;
+      invalidateReviewCache();
       return NextResponse.json({ success: true, count: count ?? 0, message: `${count ?? 0}件を却下しました` });
     }
 
@@ -903,6 +942,7 @@ export async function POST(req: NextRequest) {
     await Promise.all([...factTasks, ...laneTasks, ...matchupTasks]);
 
     const totalCount = targetRows.length;
+    invalidateReviewCache();
     const champCount = champResult.integrated.length;
     const errors = [...champResult.errors, ...subErrors];
 

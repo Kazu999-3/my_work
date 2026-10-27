@@ -365,6 +365,22 @@ function getPickGuide(champId, roles = []) {
 }
 
 async function main() {
+  // 🛡️ Egress防衛（Zero Egress Policy）:
+  // 事前生成済みデータ（champions_summary.json, champions_detail_map.json）が存在し、
+  // 明示的な --force-sync 引数がない場合は、Supabaseへの大容量フェッチ（50MB+）を完全スキップする。
+  const isForceSync = process.argv.includes('--force-sync');
+  if (!isForceSync && fs.existsSync(SUMMARY_FILE) && fs.existsSync(DETAILS_FILE)) {
+    const sumStat = fs.statSync(SUMMARY_FILE);
+    const detStat = fs.statSync(DETAILS_FILE);
+    if (sumStat.size > 1000 && detStat.size > 1000) {
+      console.log('🛡️ [Zero Egress] 事前生成済みデータが存在するため、Supabase全件フェッチ(50MB+)を完全スキップします（Egress消費: 0MB）');
+      console.log(`   ・Summary: ${SUMMARY_FILE} (${(sumStat.size / 1024).toFixed(1)} KB)`);
+      console.log(`   ・Details: ${DETAILS_FILE} (${(detStat.size / 1024 / 1024).toFixed(1)} MB)`);
+      console.log('   ※ Supabaseから再取得したい場合は `node scripts/compile_champions.mjs --force-sync` を実行してください');
+      return;
+    }
+  }
+
   console.log('⚡ [Compile] 全173体DDragon公式辞書 ＋ Supabase(facts/sentinel/spikes/timing) ＋ バイブル全文を完全統合中...');
 
   if (!fs.existsSync(MASTER_DICT_PATH)) {

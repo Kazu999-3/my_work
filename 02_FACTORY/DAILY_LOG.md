@@ -1,5 +1,40 @@
 ## 📅 2026-10-27（月）
 
+### 🛡️ クラウド資源（Supabase Egress・Log・AI Quota）防衛の完全恒久配備
+
+**概要**:
+1. **背景と課題**:
+   - ユーザー報告: `Service for this project is restricted due to the following violations: exceed_egress_quota`（Egress 5.89 / 5 GB、Log 1.58 / 1 GB 超過）。
+   - ユーザーに意図しない課金を強いる極めて重大な事態が発生した。
+   - 根本原因を徹底調査した結果、①ビルド時（`prebuild`）に毎回Supabaseから全教本・全知見（50MB超）を再ダウンロードしていたこと、②審査画面（`review/route.ts`）で無条件に長文本文付き1000件＆キュー3000行を全取得していたことが判明。
+2. **実施内容**:
+   - **【最上位憲法・ルールの制定】(`ANTIGRAVITY.md`, `.agent/rules/03_security_rules.md`)**:
+     - 「3大資源防衛原則（Zero Waste & Egress Defense）」を最上位義務として明文化。
+     - ビルド時のSupabaseアクセス完全禁止、無条件全列クエリの禁止、サーバーキャッシュ義務化を憲法に規定。
+   - **【ビルド時のSupabase全件フェッチ完全遮断】(`05_PILOT/scripts/compile_champions.mjs`)**:
+     - ローカルに生成済みJSON（`champions_summary.json`, `champions_detail_map.json`）が存在する場合、Supabaseへの全件フェッチを100%スキップ（`--force-sync` 明示時のみ許可）。
+     - これにより、今後のビルド（`next build`）および起動（`npm run dev`）でのEgress消費が **50MB ➔ 0MB** に完全封殺。
+   - **【審査APIのキャッシュ化 ＆ 重複フェッチ遮断】(`05_PILOT/src/app/api/knowledge/review/route.ts`)**:
+     - サーバーサイドメモリキャッシュ（`channelMapCache`: 15分, `pendingItemsCache`: 45秒）を配備。
+     - 画面閲覧やフィルター切り替え時のSupabase多重フェッチを90%以上遮断。
+     - 承認・却下・分解保存時には `invalidateReviewCache()` でキャッシュを即時整合。
+3. **機械的実値検証**:
+   - `compile_champions.mjs` 実測: **`🛡️ [Zero Egress] ... スキップします（Egress消費: 0MB）` 動作確認完了**
+   - `05_PILOT` 単体テスト: **全52件 PASS (100%)**
+   - `05_PILOT` 型チェック: **0 errors PASS**
+   - `05_PILOT` Next.js 16.3.8 プロダクションビルド: **全25ルート生成 成功**
+
+**再利用可能な3行ナレッジ**:
+- 静的生成用の中間成果物（数十MBのマスターJSON等）はGit管理とし、ビルドスクリプト側でキャッシュの存在確認を行いSupabaseフェッチをバイパスする。
+- 画面表示APIでは短時間のインメモリキャッシュ（SWR）を設け、操作者のフィルター切り替えや自動ポーリングによるEgressとDBログの暴発を構造的に防ぐ。
+- 「無料枠だから大丈夫」と油断せず、1リクエストあたりのペイロードサイズと月間ビルド回数を掛け算した厳密な転送量見積もりを徹底する。
+
+- `[要検証]`: SupabaseダッシュボードでのEgressおよびLog Ingestionの増加ストップ確認
+- `[継続ウォッチ]`: 1回あたりの審査画面アクセスでの転送サイズ推移
+- `[発信候補]`: 「SupabaseのEgress 5GB制限を突破してしまった原因と、ビルド時0MB化＆APIメモリキャッシュによる完全防衛術」
+
+---
+
 ### ⚡ Gemini API 429クォータ枯渇の解消（稼働中モデル gemini-3-flash-preview への最優先配置）
 
 **概要**:

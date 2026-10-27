@@ -5,6 +5,19 @@
 ## 👑 プロジェクト概要
 League of Legends のリサーチ、記事生成、ソロキュー監視を統合し、自分だけの「勝利の方程式」を構築・Webサービス化するプロジェクト。
 
+## 🛡️ 【最上位鉄則】クラウド資源（AIクォータ・Supabase転送量・ログ量）防衛原則 (Zero Waste & Egress Defense)
+開発・テスト・デプロイ・運用の全フェーズにおいて、以下の防衛原則を**絶対厳守**すること（意図しない課金・サービス停止の完全根絶）：
+1. **Supabase Egress 0MB 原則（ビルド時の全件ダウンロード完全禁止）**:
+   - `npm run build`、`next build`、`npm run dev` などのビルド・起動処理で Supabase から巨大データ（数十MB）を取得することを完全禁止。ローカルキャッシュ（JSON）が存在する場合は 100% ローカルを再利用すること。
+   - APIエンドポイントで巨大テーブル（`personal_knowledge`, `matchup_sentinel`）を無制限全列フェッチ（`select('*')` や `limit(1000)`）することを禁止。一覧表示は軽量メタデータのみを取得し、本文はオンデマンド取得とする。
+   - 画面閲覧やフィルター操作による多重フェッチを防ぐため、サーバーサイドメモリキャッシュ（SWR）を常設すること。
+2. **AI消費クォータの防衛 (LLM Quota Defense)**:
+   - ループ内での同期的なLLM直列呼び出しを完全禁止。
+   - 429（クォータ枯渇）を回避するため、実測で健全性が確認されたモデル（`gemini-3-flash-preview`等）を最優先とし、枯渇モデルへの連続リトライを行わないこと。
+   - 構造化済みデータの保存では、不要な二次LLM呼び出しを排除し、DB直接書き込みで完結させること。
+3. **Supabase Log Ingestion 抑制 (ログクォータ防衛)**:
+   - 高頻度ポーリングや無意味な全件クエリを停止し、月間ログ生成量（1GB制限）の超過を防止すること。
+
 ## 🏛️ 技術スタック
 - **Core Engine**: Python (Playwright, requests, google-genai)
 - **Database/Cloud**: Supabase (PostgreSQL), ChromaDB (Vector DB)
