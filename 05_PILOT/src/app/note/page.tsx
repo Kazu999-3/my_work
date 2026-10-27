@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink 
+  FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle 
 } from 'lucide-react';
+import initialDraftsData from '@/data/note_drafts.json';
 
 interface NoteDraft {
   id: string;
@@ -17,25 +18,30 @@ interface NoteDraft {
 }
 
 export default function NoteDraftsPage() {
-  const [drafts, setDrafts] = useState<NoteDraft[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string>('');
+  const staticDrafts: NoteDraft[] = (initialDraftsData as any)?.drafts || [];
+  const [drafts, setDrafts] = useState<NoteDraft[]>(staticDrafts);
+  const [loading, setLoading] = useState(staticDrafts.length === 0);
+  const [selectedId, setSelectedId] = useState<string>(staticDrafts[0]?.id || '');
   const [copied, setCopied] = useState(false);
   const [showToc, setShowToc] = useState(false);
 
+  // クライアント側での差分リフレッシュ（SWR・フェッチ失敗しても静的データで確実に表示）
   useEffect(() => {
     fetch('/api/note')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.drafts?.length > 0) {
+        if (data.success && Array.isArray(data.drafts) && data.drafts.length > 0) {
           setDrafts(data.drafts);
-          // デフォルトで最初の記事（ザイラJGまたは最新）を選択
-          setSelectedId(data.drafts[0].id);
+          if (!selectedId) {
+            setSelectedId(data.drafts[0].id);
+          }
         }
       })
-      .catch((err) => console.error('Failed to load drafts:', err))
+      .catch((err) => {
+        console.warn('API fetch warning (using static fallback):', err);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedId]);
 
   const currentDraft = drafts.find((d) => d.id === selectedId) || drafts[0];
 
@@ -226,7 +232,7 @@ export default function NoteDraftsPage() {
       </div>
 
       {/* メインコンテンツ */}
-      {currentDraft && (
+      {currentDraft ? (
         <main className="max-w-3xl mx-auto px-4 py-6">
           
           {/* 記事メタ情報カード */}
@@ -322,6 +328,18 @@ export default function NoteDraftsPage() {
           </div>
 
         </main>
+      ) : (
+        <div className="max-w-md mx-auto px-4 py-16 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-4 text-zinc-500">
+            <FileText className="w-6 h-6" />
+          </div>
+          <h2 className="text-base font-bold text-zinc-200 mb-1">
+            note ドラフトがまだありません
+          </h2>
+          <p className="text-xs text-zinc-500">
+            02_FACTORY/01_DRAFTS/note/ 配下に .md ファイルを配置すると自動で表示されます。
+          </p>
+        </div>
       )}
     </div>
   );

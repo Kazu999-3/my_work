@@ -14,7 +14,8 @@ const __dirname = path.dirname(__filename);
 const PILOT_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(PILOT_ROOT, '..');
 const DRAFTS_DIR = path.join(REPO_ROOT, '02_FACTORY', '01_DRAFTS', 'note');
-const OUT_FILE = path.join(PILOT_ROOT, 'public', 'data', 'note_drafts.json');
+const OUT_FILE = path.join(PILOT_ROOT, 'src', 'data', 'note_drafts.json');
+const PUBLIC_OUT_FILE = path.join(PILOT_ROOT, 'public', 'data', 'note_drafts.json');
 
 export function compileNoteDrafts() {
   console.log('📝 note ドラフトの事前コンパイル中...');
@@ -87,8 +88,13 @@ export function compileNoteDrafts() {
   if (!fs.existsSync(path.dirname(OUT_FILE))) {
     fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });
   }
+  if (!fs.existsSync(path.dirname(PUBLIC_OUT_FILE))) {
+    fs.mkdirSync(path.dirname(PUBLIC_OUT_FILE), { recursive: true });
+  }
 
-  fs.writeFileSync(OUT_FILE, JSON.stringify({ drafts, updatedAt: new Date().toISOString() }, null, 2), 'utf8');
+  const jsonStr = JSON.stringify({ drafts, updatedAt: new Date().toISOString() }, null, 2);
+  fs.writeFileSync(OUT_FILE, jsonStr, 'utf8');
+  fs.writeFileSync(PUBLIC_OUT_FILE, jsonStr, 'utf8');
   console.log(`✅ ${drafts.length} 件の note ドラフトをコンパイル完了: ${OUT_FILE}`);
 }
 
