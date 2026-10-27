@@ -28,7 +28,7 @@ const DEFAULT_PAGE_SIZE = 50;
 let channelMapCache: { channelMap: Record<string, string>; videoIdMap: Record<string, string>; timestamp: number } | null = null;
 let pendingItemsCache: { data: any[]; timestamp: number } | null = null;
 let edgeTasksCache: { data: any[]; timestamp: number } | null = null;
-const CACHE_TTL_PENDING_MS = 45 * 1000; // 45秒
+const CACHE_TTL_PENDING_MS = 3 * 1000; // 3秒（重複承認防止・即時反映重視）
 const CACHE_TTL_CHANNELS_MS = 15 * 60 * 1000; // 15分
 
 export function invalidateReviewCache() {
@@ -91,9 +91,10 @@ export async function GET(req: NextRequest) {
       channelMapCache = { channelMap, videoIdMap, timestamp: now };
     }
 
-    // 2. 未承認記事（pending）の取得（キャッシュ活用でEgress激減）
+    // 2. 未承認記事（pending）の取得（直近更新時はキャッシュバイパス）
+    const bypassCache = searchParams.has('t') || searchParams.has('_');
     let allRows: any[] = [];
-    if (pendingItemsCache && (now - pendingItemsCache.timestamp < CACHE_TTL_PENDING_MS)) {
+    if (!bypassCache && pendingItemsCache && (now - pendingItemsCache.timestamp < CACHE_TTL_PENDING_MS)) {
       allRows = pendingItemsCache.data;
     } else {
       let baseQuery = supabase
@@ -940,8 +941,8 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // LLM呼び出し（項目差分マージ等）は最大6秒でタイムアウトさせ、Vercel/サーバーレスの504タイムアウトによる承認失敗を根絶
-    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 6000));
+    // LLM呼び出し（項目差分マージ等）は最大1.5秒でタイムアウトさせ、承認レスポンスを爆速化
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1500));
     await Promise.race([
       Promise.allSettled([...factTasks, ...laneTasks, ...matchupTasks]),
       timeoutPromise

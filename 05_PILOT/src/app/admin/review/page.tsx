@@ -79,6 +79,7 @@ export default function ReviewPage() {
       if (searchQuery.trim()) qs.set('q', searchQuery.trim());
       if (sort) qs.set('sort', sort);
       if (quality) qs.set('quality', quality);
+      qs.set('t', String(Date.now())); // キャッシュバイパスで常に最新の承認状態を取得
 
       const res = await fetch(`/api/knowledge/review?${qs.toString()}`);
       const json = await res.json();
@@ -184,13 +185,16 @@ export default function ReviewPage() {
     setSelected((prev) => new Set(Array.from(prev).filter((id) => !s.has(id))));
   };
 
-  // 1件承認（編集内容＋二系統統合＋項目マージパラメータを送信）
+  // 1件承認（楽観的UI更新で即座に一覧から消去して二重承認を根絶）
   const approveOne = async (item: ReviewItem | null) => {
     if (!item) return;
     setModalError(null);
-    setProcessingMap((prev) => ({ ...prev, [item.id]: 'approving' }));
     const edit = edits[item.id] || defaultEdit(item);
     const isPreviewing = previewModalItem?.id === item.id;
+
+    // ⚡ 楽観的消去: ユーザーの操作感（Vibe）最優先で0秒消去
+    removeFromList([item.id]);
+    if (isPreviewing) setPreviewModalItem(null);
 
     // モーダルでプレビュー表示中の場合、各行（文）の宛先（辞典/レーン/スキップ）に応じてテキストを合成
     let customFactOverrides: Record<string, Record<string, string>> | undefined;
@@ -220,46 +224,40 @@ export default function ReviewPage() {
       customLaneSectionText: finalLaneSectionText,
       customFactOverrides,
     });
-    setProcessingMap((prev) => {
-      const next = { ...prev };
-      delete next[item.id];
-      return next;
-    });
-    if (result.ok) {
-      removeFromList([item.id]);
-      if (isPreviewing) setPreviewModalItem(null);
-    } else {
-      setModalError(result.error || '承認統合に失敗しました');
+
+    if (!result.ok) {
+      showMessage(`「${item.title}」の承認に失敗しました: ${result.error}`, 'error');
+      // 失敗時のみ一覧を再同期して復元
+      load({ silent: true });
     }
   };
 
-  // 1件却下
+  // 1件却下（楽観的UI更新）
   const rejectOne = async (item: ReviewItem) => {
     if (!confirm(`「${item.title}」を却下して削除しますか？`)) return;
-    setProcessingMap((prev) => ({ ...prev, [item.id]: 'rejecting' }));
+    removeFromList([item.id]);
+    if (previewModalItem?.id === item.id) setPreviewModalItem(null);
     const result = await post({ id: item.id, action: 'reject' });
-    setProcessingMap((prev) => {
-      const next = { ...prev };
-      delete next[item.id];
-      return next;
-    });
-    if (result.ok) {
-      removeFromList([item.id]);
-      if (previewModalItem?.id === item.id) setPreviewModalItem(null);
+    if (!result.ok) {
+      showMessage(`却下に失敗しました: ${result.error}`, 'error');
+      load({ silent: true });
     }
   };
 
-  // 一括承認・却下
+  // 一括承認・却下（楽観的UI更新）
   const batch = async (action: 'approve' | 'reject') => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     if (!confirm(action === 'approve'
       ? `選択した${ids.length}件を承認して統合しますか？（AIが判定した複数チャンプ・レーンガイド・各項目へ自動分配されます）`
       : `選択した${ids.length}件を却下して削除しますか？`)) return;
-    // ★ 2026-10-07: post() は常にオブジェクトを返すため、以前の `if (await post(...))` は失敗しても一覧から消していた
+    
+    // ⚡ 0秒楽観的消去
+    removeFromList(ids);
     const result = await post({ ids, action });
-    if (result.ok) {
-      removeFromList(ids);
+    if (!result.ok) {
+      showMessage(`一括${action === 'approve' ? '承認' : '却下'}に失敗しました: ${result.error}`, 'error');
+      load({ silent: true });
     }
   };
 
