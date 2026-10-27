@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
+import { compileNoteDrafts } from './compile_note_drafts.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -956,6 +957,13 @@ async function main() {
   console.log(`✅ [Success] 2段階コンパイル完了:`);
   console.log(`   ・一覧用サマリー: ${SUMMARY_FILE} (${summaries.length}体)`);
   console.log(`   ・詳細マップ: ${DETAILS_FILE} (Facts:${Object.keys(factsMap).length}件, Matchups:${Object.keys(matchupsMap).length}チャンプ)`);
+
+  // 📝 note ドラフトの事前生成
+  try {
+    compileNoteDrafts();
+  } catch (draftErr) {
+    console.warn('⚠️ note ドラフトの事前生成をスキップ:', draftErr);
+  }
 }
 
 main().catch(console.error);

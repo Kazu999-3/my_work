@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, Sparkles, Shield, ClipboardCheck } from 'lucide-react';
+  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, Sparkles, Shield, ClipboardCheck, FileText } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
 import NotificationBell from './NotificationBell';
 
@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video },
   // 動画解析で作られた記事の承認（承認すると辞典へ統合）。以前はYouTube解析ページ内のリンクからしか行けなかった
   { name: '記事の承認', href: '/admin/review', icon: ClipboardCheck },
+  { name: 'note下書き', href: '/note', icon: FileText, badge: 'NEW' },
   { name: '運用ダッシュボード', href: '/admin/dashboard', icon: Shield },
 ];
 
