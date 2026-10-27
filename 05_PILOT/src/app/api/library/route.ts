@@ -31,6 +31,24 @@ function extractYoutubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+// ── キャッシュ層（Egress・ログ爆発防止） ─────────────────────────
+// 15分間キャッシュ: YouTubeキューのチャンネル名・公開日辞書
+let cachedQueueMaps: {
+  channelMap: Record<string, string>;
+  videoIdMap: Record<string, string>;
+  publishedMap: Record<string, string>;
+  videoIdPublishedMap: Record<string, string>;
+  timestamp: number;
+} | null = null;
+const QUEUE_CACHE_TTL_MS = 15 * 60 * 1000;
+
+// 60秒間キャッシュ: ライブラリの全件リッチ化済みアイテム（デフォルト一覧時）
+let cachedAllArticles: {
+  rows: any[];
+  timestamp: number;
+} | null = null;
+const ARTICLES_CACHE_TTL_MS = 60 * 1000;
+
 export async function GET(req: NextRequest) {
   try {
     if (!supabase) {
@@ -50,157 +68,161 @@ export async function GET(req: NextRequest) {
     // 元動画URLで記事を特定する（動画解析センターの「記事を見る」から詳細を直接開くため）
     const source = searchParams.get('source') || '';
 
-    // チャンネル名および公開日辞書を youtube_queue からロード
-    const { data: queueRows } = await supabase
-      .from('youtube_queue')
-      .select('url, channel_name, published_at')
-      .limit(3000);
+    // チャンネル名および公開日辞書をキャッシュ経由でロード（Egress防衛）
+    const now = Date.now();
+    let channelMap: Record<string, string> = {};
+    let videoIdMap: Record<string, string> = {};
+    let publishedMap: Record<string, string> = {};
+    let videoIdPublishedMap: Record<string, string> = {};
 
-    const channelMap: Record<string, string> = {};
-    const videoIdMap: Record<string, string> = {};
-    const publishedMap: Record<string, string> = {};
-    const videoIdPublishedMap: Record<string, string> = {};
+    if (cachedQueueMaps && now - cachedQueueMaps.timestamp < QUEUE_CACHE_TTL_MS) {
+      channelMap = cachedQueueMaps.channelMap;
+      videoIdMap = cachedQueueMaps.videoIdMap;
+      publishedMap = cachedQueueMaps.publishedMap;
+      videoIdPublishedMap = cachedQueueMaps.videoIdPublishedMap;
+    } else {
+      const { data: queueRows } = await supabase
+        .from('youtube_queue')
+        .select('url, channel_name, published_at')
+        .limit(3000);
 
-    if (queueRows) {
-      for (const qr of queueRows) {
-        if (qr.url) {
-          const trimmedUrl = qr.url.trim();
-          const vid = extractYoutubeId(trimmedUrl);
+      if (queueRows) {
+        for (const qr of queueRows) {
+          if (qr.url) {
+            const trimmedUrl = qr.url.trim();
+            const vid = extractYoutubeId(trimmedUrl);
 
-          if (qr.channel_name) {
-            const trimmedCh = qr.channel_name.trim();
-            channelMap[trimmedUrl] = trimmedCh;
-            if (vid) videoIdMap[vid] = trimmedCh;
-          }
+            if (qr.channel_name) {
+              const trimmedCh = qr.channel_name.trim();
+              channelMap[trimmedUrl] = trimmedCh;
+              if (vid) videoIdMap[vid] = trimmedCh;
+            }
 
-          if (qr.published_at) {
-            publishedMap[trimmedUrl] = qr.published_at;
-            if (vid) videoIdPublishedMap[vid] = qr.published_at;
-          }
-        }
-      }
-    }
-
-    let query = supabase
-      .from('personal_knowledge')
-      .select('id, title, champion, source_url, tags, genre, created_at, content')
-      // 削除済み(__DELETED__)は出さない。ただしタグが ['__DELETED__'] だけの行は、旧ポータルの統合処理
-      // （レーンガイド・辞典への統合）がタグを丸ごと置き換えて片付けた記事なので「統合済み」として出す（2026-10-07 ユーザー要望）。
-      // 人が削除した記事は __USER_DELETED__ も付く（下の setDeleted）ため、ここには含まれない
-      .or('tags.is.null,tags.not.cs.{__DELETED__},tags.eq.{__DELETED__}')
-      // 承認画面の「再解析」で作った版は、採用（承認）されるまでライブラリに出さない（元の記事と二重に見えるため。2026-10-19）
-      .or('reanalysis_of.is.null,review_status.eq.approved')
-      .order('created_at', { ascending: false });
-
-    if (q) {
-      query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%,raw_content.ilike.%${q}%`);
-    }
-
-    if (champion) {
-      query = query.ilike('champion', `%${champion}%`);
-    }
-
-    if (source) {
-      query = query.eq('source_url', source);
-    }
-
-    // 全件取得してカテゴリ集計＆チャンネル抽出＆フィルタリング
-    const { data, error } = await query.limit(2000);
-    if (error) throw error;
-
-    const allRows = data || [];
-    let lolCount = 0;
-    let generalCount = 0;
-
-    // 各記事のチャンネル名、公開日、鮮度、レーン、対面情報を解決
-    const enrichedRows = await Promise.all(
-      allRows.map(async (r: any) => {
-        let ch = '';
-        let pubDate: string | null = null;
-        const src = (r.source_url || '').trim();
-        const srcVid = extractYoutubeId(src);
-
-        // チャンネル特定
-        if (src && channelMap[src]) {
-          ch = channelMap[src];
-        } else if (srcVid && videoIdMap[srcVid]) {
-          ch = videoIdMap[srcVid];
-        } else if (r.content) {
-          const m = r.content.match(/>\s*-\s*\*\*チャンネル\*\*:\s*([^\n\r]+)/);
-          if (m) {
-            ch = m[1].trim();
-          } else {
-            const vidMatch = r.content.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
-            if (vidMatch && videoIdMap[vidMatch[1]]) {
-              ch = videoIdMap[vidMatch[1]];
+            if (qr.published_at) {
+              publishedMap[trimmedUrl] = qr.published_at;
+              if (vid) videoIdPublishedMap[vid] = qr.published_at;
             }
           }
         }
+      }
+      cachedQueueMaps = { channelMap, videoIdMap, publishedMap, videoIdPublishedMap, timestamp: now };
+    }
 
-        // 公開日時特定 (YouTubeキュー ➔ 本文メタデータ ➔ 取込日 created_at)
-        if (src && publishedMap[src]) {
-          pubDate = publishedMap[src];
-        } else if (srcVid && videoIdPublishedMap[srcVid]) {
-          pubDate = videoIdPublishedMap[srcVid];
-        } else if (r.content) {
-          const mPub = r.content.match(/>\s*-\s*\*\*公開日\*\*:\s*([^\n\r]+)/);
-          if (mPub) {
-            pubDate = mPub[1].trim();
+    // デフォルト一覧（q や source 等の特殊絞り込みが無い時）は 60 秒キャッシュを活用
+    const isDefaultFetch = !q && !source;
+    let enrichedRows: any[] = [];
+    let allRowsCount = 0;
+
+    if (isDefaultFetch && cachedAllArticles && now - cachedAllArticles.timestamp < ARTICLES_CACHE_TTL_MS) {
+      enrichedRows = cachedAllArticles.rows;
+      allRowsCount = enrichedRows.length;
+    } else {
+      // 🛡️ Egress 防衛: 一覧では巨大な本文 (content) を取得しない (15MB ➔ 0.15MB へ99%削減)
+      let query = supabase
+        .from('personal_knowledge')
+        .select('id, title, champion, source_url, tags, genre, created_at')
+        // 削除済み(__DELETED__)は出さない。ただしタグが ['__DELETED__'] だけの行は、旧ポータルの統合処理
+        // （レーンガイド・辞典への統合）がタグを丸ごと置き換えて片付けた記事なので「統合済み」として出す（2026-10-07 ユーザー要望）。
+        // 人が削除した記事は __USER_DELETED__ も付く（下の setDeleted）ため、ここには含まれない
+        .or('tags.is.null,tags.not.cs.{__DELETED__},tags.eq.{__DELETED__}')
+        // 承認画面の「再解析」で作った版は、採用（承認）されるまでライブラリに出さない（元の記事と二重に見えるため。2026-10-19）
+        .or('reanalysis_of.is.null,review_status.eq.approved')
+        .order('created_at', { ascending: false });
+
+      if (q) {
+        query = query.or(`title.ilike.%${q}%,raw_content.ilike.%${q}%`);
+      }
+
+      if (champion) {
+        query = query.ilike('champion', `%${champion}%`);
+      }
+
+      if (source) {
+        query = query.eq('source_url', source);
+      }
+
+      // 全件取得してカテゴリ集計＆チャンネル抽出＆フィルタリング
+      const { data, error } = await query.limit(2000);
+      if (error) throw error;
+
+      const allRows = data || [];
+      allRowsCount = allRows.length;
+
+      // 各記事のチャンネル名、公開日、鮮度、レーン、対面情報を解決
+      enrichedRows = await Promise.all(
+        allRows.map(async (r: any) => {
+          let ch = '';
+          let pubDate: string | null = null;
+          const src = (r.source_url || '').trim();
+          const srcVid = extractYoutubeId(src);
+
+          // チャンネル特定
+          if (src && channelMap[src]) {
+            ch = channelMap[src];
+          } else if (srcVid && videoIdMap[srcVid]) {
+            ch = videoIdMap[srcVid];
           }
-        }
 
-        // チャンネル名正規化（Kireiの表記揺れ統一など）
-        if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
-        if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
+          // 公開日時特定 (YouTubeキュー ➔ 取込日 created_at)
+          if (src && publishedMap[src]) {
+            pubDate = publishedMap[src];
+          } else if (srcVid && videoIdPublishedMap[srcVid]) {
+            pubDate = videoIdPublishedMap[srcVid];
+          }
 
-        const charCount = (r.content || '').length;
+          // チャンネル名正規化（Kireiの表記揺れ統一など）
+          if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
+          if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
 
-        // 鮮度・パッチ情報の計算
-        const effectiveDate = pubDate || r.created_at;
-        const freshnessInfo = calculateFreshness(r.title, r.content || '', effectiveDate);
+          // 鮮度・パッチ情報の計算（本文なしでもタイトルと公開日で高精度に算出）
+          const effectiveDate = pubDate || r.created_at;
+          const freshnessInfo = calculateFreshness(r.title, '', effectiveDate);
 
-        // レーン判定＆対面（VS）判定
-        const laneInfo = await detectArticleLane({
-          title: r.title,
-          content: r.content,
-          tags: r.tags,
-          champion: r.champion,
-        });
+          // レーン判定＆対面（VS）判定
+          const laneInfo = await detectArticleLane({
+            title: r.title,
+            tags: r.tags,
+            champion: r.champion,
+          });
 
-        const matchupInfo = await detectArticleMatchup({
-          title: r.title,
-          content: r.content,
-          tags: r.tags,
-          champion: r.champion,
-        });
+          const matchupInfo = await detectArticleMatchup({
+            title: r.title,
+            tags: r.tags,
+            champion: r.champion,
+          });
 
-        // レスポンス軽量化のため一覧では content 本文を削る
-        const { content, ...rest } = r;
-        return {
-          ...rest,
-          // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
-          tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
-          integrated: isIntegratedTags(r.tags),
-          channel: ch || 'その他・一般',
-          char_count: charCount,
-          published_at: freshnessInfo.publishedAt || (r.created_at ? r.created_at.split('T')[0] : null),
-          patch: freshnessInfo.estimatedPatch,
-          is_explicit_patch: freshnessInfo.isExplicitPatch,
-          freshness: freshnessInfo.freshness,
-          is_old_patch: freshnessInfo.isOldPatch,
-          days_ago: freshnessInfo.daysAgo,
-          freshness_label: freshnessInfo.label,
-          freshness_color: freshnessInfo.badgeColor,
-          lane: laneInfo.lane,
-          laneLabel: laneInfo.laneLabel,
-          isMatchup: matchupInfo.isMatchup,
-          enemyChampion: matchupInfo.enemyChampion,
-          enemyChampionJa: matchupInfo.enemyChampionJa,
-          matchupLabel: matchupInfo.label,
-        };
-      })
-    );
+          return {
+            ...r,
+            // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
+            tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
+            integrated: isIntegratedTags(r.tags),
+            channel: ch || 'その他・一般',
+            char_count: 0,
+            published_at: freshnessInfo.publishedAt || (r.created_at ? r.created_at.split('T')[0] : null),
+            patch: freshnessInfo.estimatedPatch,
+            is_explicit_patch: freshnessInfo.isExplicitPatch,
+            freshness: freshnessInfo.freshness,
+            is_old_patch: freshnessInfo.isOldPatch,
+            days_ago: freshnessInfo.daysAgo,
+            freshness_label: freshnessInfo.label,
+            freshness_color: freshnessInfo.badgeColor,
+            lane: laneInfo.lane,
+            laneLabel: laneInfo.laneLabel,
+            isMatchup: matchupInfo.isMatchup,
+            enemyChampion: matchupInfo.enemyChampion,
+            enemyChampionJa: matchupInfo.enemyChampionJa,
+            matchupLabel: matchupInfo.label,
+          };
+        })
+      );
 
+      if (isDefaultFetch) {
+        cachedAllArticles = { rows: enrichedRows, timestamp: now };
+      }
+    }
+
+    let lolCount = 0;
+    let generalCount = 0;
     for (const r of enrichedRows) {
       if (isLolRecord(r)) lolCount++;
       else generalCount++;
@@ -292,7 +314,7 @@ export async function GET(req: NextRequest) {
       counts: {
         lol: lolCount,
         general: generalCount,
-        all: allRows.length,
+        all: enrichedRows.length,
       },
       laneCounts,
       limit,
@@ -406,6 +428,7 @@ async function setDeleted(id: unknown, deleted: boolean) {
   const tags = deleted ? [...base, DELETED_TAG, USER_DELETED_TAG] : base;
   const { error } = await supabase.from('personal_knowledge').update({ tags }).eq('id', id);
   if (error) throw error;
+  cachedAllArticles = null;
   return row.title as string;
 }
 

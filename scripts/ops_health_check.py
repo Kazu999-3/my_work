@@ -218,6 +218,16 @@ def check_youtube_automation_freshness():
     except Exception as e:
         return {"status": "INFO", "msg": f"自動化鮮度チェックスキップ ({e})"}
 
+def check_supabase_resource_health():
+    """Supabaseのリソース使用量・テーブル急増・健全性チェック"""
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        from monitor_supabase_usage import record_daily_snapshot
+        res = record_daily_snapshot()
+        return {"status": res["status"], "msg": res["msg"]}
+    except Exception as e:
+        return {"status": "INFO", "msg": f"Supabase監視スキップ ({e})"}
+
 def main():
     print("\n" + "="*60)
     print(" 🛡️  Sovereign OS 全域総合ヘルスチェックレポート")
@@ -229,6 +239,7 @@ def main():
         ("ナレッジリンク整合性", check_knowledge_links),
         ("YouTubeキュー健全性", check_youtube_queue_health),
         ("YouTube自動化の稼働鮮度", check_youtube_automation_freshness),
+        ("Supabase クラウド資源健全性", check_supabase_resource_health),
         ("Git作業ツリー健全性", check_git_status),
         ("ポータル TypeScript 型整合性", check_portal_types),
         ("Riot 最新パッチ追従状況", check_riot_patch_status),
