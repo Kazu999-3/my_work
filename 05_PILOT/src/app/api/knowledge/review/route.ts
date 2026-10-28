@@ -512,6 +512,73 @@ export async function POST(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────
+    // 0.5 ワンクリック自動分解＆直接統合（確認不要で即座にAI分解して教本へ格納）
+    // ──────────────────────────────────────────
+    if (action === 'decompose_auto') {
+      const { id } = body;
+      if (!id) return NextResponse.json({ error: 'idが必要です' }, { status: 400 });
+
+      const { data: row, error: fetchErr } = await db
+        .from('personal_knowledge')
+        .select('id, title, content, raw_content, source_url, champion, tags')
+        .eq('id', id)
+        .single();
+
+      if (fetchErr || !row) {
+        return NextResponse.json({ error: '記事の取得に失敗しました' }, { status: 404 });
+      }
+
+      const targetTitle = row.title;
+      const targetContent = row.content || row.raw_content || '';
+      const targetUrl = row.source_url;
+
+      // 1. 自動分解を実行
+      let insights: DecomposedInsight[] = [];
+      try {
+        insights = await decomposeArticle({
+          id: row.id,
+          title: targetTitle,
+          content: targetContent,
+          source_url: targetUrl,
+        });
+      } catch (decErr) {
+        console.warn('[decompose_auto] 分解エラー、通常承認へフォールバック:', decErr);
+      }
+
+      // 2. 分解知見が得られた場合は各教本へ直接統合
+      if (insights && insights.length > 0) {
+        const saveRes = await saveDecomposedInsights(db, Number(id), insights, targetUrl, { autoApprove: true });
+        invalidateReviewCache();
+        const champsStr = saveRes.integratedChamps?.length > 0 ? ` (${saveRes.integratedChamps.join(', ')})` : '';
+        return NextResponse.json({
+          success: true,
+          decomposed: true,
+          message: `⚡ ${saveRes.count}件の知見に自動分解し、教本へ直接統合しました${champsStr}`,
+          count: saveRes.count,
+          savedIds: saveRes.savedIds,
+          integratedChamps: saveRes.integratedChamps,
+        });
+      }
+
+      // 3. もし分解知見が0件だった場合は安全に通常承認
+      await db
+        .from('personal_knowledge')
+        .update({ review_status: 'approved' })
+        .eq('id', id);
+      try {
+        await integrateArticles(db, [row]);
+      } catch (intErr) {
+        console.warn('[decompose_auto] フォールバック通常承認エラー:', intErr);
+      }
+      invalidateReviewCache();
+      return NextResponse.json({
+        success: true,
+        decomposed: false,
+        message: `記事を通常承認しました（分解対象知見なし）`,
+      });
+    }
+
+    // ──────────────────────────────────────────
     // 1. プレビュー生成アクション
     // ──────────────────────────────────────────
     if (action === 'preview') {

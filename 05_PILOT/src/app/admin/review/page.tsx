@@ -211,24 +211,33 @@ export default function ReviewPage() {
       finalLaneSectionText = (finalLaneSectionText || (previewData?.laneGuidePreview?.sectionText || '')) + routedLinesBlock(routedToLaneLines);
     }
 
-    const result = await post({
-      id: item.id,
-      action: 'approve',
-      champion: edit.champion,
-      enemyChampion: edit.enemyChampion,
-      title: edit.title,
-      content: edit.content,
-      lane: edit.lane,
-      includeLaneGuide: shouldIncludeLaneGuide,
-      includeFactMerge: edit.includeFactMerge,
-      customLaneSectionText: finalLaneSectionText,
-      customFactOverrides,
-    });
+    // ✂️ 複数チャンプ記事の場合、中身確認不要の自動分解＆教本直接統合を実行（2026-10-28）
+    const isAutoDecompose = !isPreviewing && item.isMultiChampion && !item.is_atomic;
+
+    const result = await post(
+      isAutoDecompose
+        ? { id: item.id, action: 'decompose_auto' }
+        : {
+            id: item.id,
+            action: 'approve',
+            champion: edit.champion,
+            enemyChampion: edit.enemyChampion,
+            title: edit.title,
+            content: edit.content,
+            lane: edit.lane,
+            includeLaneGuide: shouldIncludeLaneGuide,
+            includeFactMerge: edit.includeFactMerge,
+            customLaneSectionText: finalLaneSectionText,
+            customFactOverrides,
+          }
+    );
 
     if (!result.ok) {
       showMessage(`「${item.title}」の承認に失敗しました: ${result.error}`, 'error');
       // 失敗時のみ一覧を再同期して復元
       load({ silent: true });
+    } else if (result.message) {
+      showMessage(result.message, 'success');
     }
   };
 
