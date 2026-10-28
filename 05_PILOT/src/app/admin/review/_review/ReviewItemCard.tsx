@@ -51,6 +51,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
   }, [item.source_url]);
 
   const [isPlaylistAdded, setIsPlaylistAdded] = useState(false);
+  const [isPlaylistLoading, setIsPlaylistLoading] = useState(false);
 
   useEffect(() => {
     if (!youtubeVideoId) return;
@@ -62,16 +63,30 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
     }
   }, [youtubeVideoId]);
 
-  const handleAddToPlaylist = (e: React.MouseEvent) => {
+  // 1STEP直接追加ハンドラー（画面遷移ゼロ・API直接追加）
+  const handleAddToPlaylist = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!youtubeVideoId) return;
-    const playlistUrl = `https://www.youtube.com/watch?v=${youtubeVideoId}&list=${targetPlaylistId}`;
-    window.open(playlistUrl, '_blank', 'noopener,noreferrer');
+    if (!youtubeVideoId || isPlaylistLoading || isPlaylistAdded) return;
+    setIsPlaylistLoading(true);
     try {
-      localStorage.setItem(`sovereign_pl_${targetPlaylistId}_${youtubeVideoId}`, 'true');
+      const res = await fetch('/api/youtube/playlist/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: youtubeVideoId, playlistId: targetPlaylistId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'プレイリストへの追加に失敗しました');
+        return;
+      }
+      try {
+        localStorage.setItem(`sovereign_pl_${targetPlaylistId}_${youtubeVideoId}`, 'true');
+      } catch (_) {}
       setIsPlaylistAdded(true);
-    } catch (e) {
-      // ignore
+    } catch (err: any) {
+      alert(`通信エラー: ${err.message}`);
+    } finally {
+      setIsPlaylistLoading(false);
     }
   };
   return (
@@ -213,15 +228,20 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                             <button
                               type="button"
                               onClick={handleAddToPlaylist}
-                              className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                              disabled={isPlaylistLoading}
+                              className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border transition cursor-pointer disabled:opacity-50 ${
                                 isPlaylistAdded
                                   ? 'bg-rose-950/50 text-rose-300 border-rose-700/60 shadow-sm'
                                   : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:text-white hover:bg-zinc-700'
                               }`}
-                              title="YouTubeプレイリスト「PLPiEXmmDzgcs」に追加（新しいタブで開きます）"
+                              title={isPlaylistAdded ? 'YouTubeプレイリスト「PLPiEXmmDzgcs」に追加済み' : 'クリックしてYouTubeプレイリスト「PLPiEXmmDzgcs」に直接追加 (1STEP)'}
                             >
-                              <ListPlus className="w-3 h-3 text-rose-400" />
-                              <span>{isPlaylistAdded ? 'リスト追加済 ✓' : 'プレイリスト追加'}</span>
+                              {isPlaylistLoading ? (
+                                <Loader2 className="w-3 h-3 text-rose-400 animate-spin" />
+                              ) : (
+                                <ListPlus className="w-3 h-3 text-rose-400" />
+                              )}
+                              <span>{isPlaylistLoading ? '追加中...' : isPlaylistAdded ? 'リスト追加済 ✓' : 'プレイリスト追加'}</span>
                             </button>
                           )}
                         </div>
@@ -485,20 +505,25 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                         <Eye className="w-3.5 h-3.5" /> プレビュー
                       </button>
 
-                      {/* 📺 プレイリスト追加ボタン（ID: PLPiEXmmDzgcs） */}
+                      {/* 📺 プレイリスト追加ボタン（ID: PLPiEXmmDzgcs - 1STEP直接追加） */}
                       {youtubeVideoId && (
                         <button
                           type="button"
                           onClick={handleAddToPlaylist}
-                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-sm ${
+                          disabled={isPlaylistLoading}
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-sm disabled:opacity-50 ${
                             isPlaylistAdded
                               ? 'bg-rose-950/40 border-rose-600/60 text-rose-300'
                               : 'bg-zinc-900 border-zinc-800 hover:border-rose-500/50 text-zinc-300 hover:text-white'
                           }`}
-                          title="YouTubeプレイリスト「PLPiEXmmDzgcs」に追加（新しいタブで開きます）"
+                          title={isPlaylistAdded ? 'YouTubeプレイリスト「PLPiEXmmDzgcs」に追加済み' : 'クリックしてYouTubeプレイリスト「PLPiEXmmDzgcs」に直接追加 (1STEP)'}
                         >
-                          <ListPlus className={`w-3.5 h-3.5 ${isPlaylistAdded ? 'text-rose-400' : 'text-rose-500'}`} />
-                          <span>{isPlaylistAdded ? 'プレイリスト追加済 ✓' : '➕ プレイリスト'}</span>
+                          {isPlaylistLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 text-rose-400 animate-spin" />
+                          ) : (
+                            <ListPlus className={`w-3.5 h-3.5 ${isPlaylistAdded ? 'text-rose-400' : 'text-rose-500'}`} />
+                          )}
+                          <span>{isPlaylistLoading ? '追加中...' : isPlaylistAdded ? 'プレイリスト追加済 ✓' : '➕ プレイリスト'}</span>
                         </button>
                       )}
 
