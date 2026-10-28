@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Scissors, CheckCircle2, AlertTriangle, RefreshCw, X, Shield, BookOpen, Compass, Tag, ExternalLink } from 'lucide-react';
+import { Scissors, CheckCircle2, AlertTriangle, RefreshCw, X, Shield, BookOpen, Compass, Tag, ExternalLink, Swords } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
 import { LANE_OPTIONS, type LaneKey } from './types';
 import type { DecomposedInsight } from '@/lib/knowledgeDecompose';
@@ -198,6 +198,12 @@ export default function DecomposeModal({
                           }`}>
                             {item.scope === 'champion_specific' ? 'チャンピオン個別' : 'レーン/メタ全般'}
                           </span>
+                          {item.enemyChampion && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded border bg-rose-950/60 text-rose-300 border-rose-800/60 flex items-center gap-1 shadow-sm">
+                              <Swords className="w-2.5 h-2.5 text-rose-400" />
+                              <span>vs {item.enemyChampionNameJa || item.enemyChampion}</span>
+                            </span>
+                          )}
                           <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-mono">
                             {item.laneLabel || item.lane}
                           </span>
@@ -227,6 +233,18 @@ export default function DecomposeModal({
                               <option key={l.key} value={l.key}>{l.label}</option>
                             ))}
                           </select>
+                        </div>
+
+                        {/* 対面相手入力 */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-500 text-[10px] font-bold">対面相手:</span>
+                          <input
+                            type="text"
+                            value={item.enemyChampion || ''}
+                            placeholder="なし (例: Poppy)"
+                            onChange={(e) => updateItem(idx, { enemyChampion: e.target.value.trim() || undefined })}
+                            className="w-28 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-200 text-[11px] focus:outline-none focus:border-rose-500"
+                          />
                         </div>
 
                         <div className="flex items-center gap-1 text-[10px] text-zinc-400">

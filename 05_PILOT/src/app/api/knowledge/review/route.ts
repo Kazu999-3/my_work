@@ -460,15 +460,16 @@ export async function POST(req: NextRequest) {
     // 0. 複数チャンピオンへのナレッジ分解アクション
     // ──────────────────────────────────────────
     if (action === 'decompose_preview') {
-      const { id, title, content, source_url } = body;
+      const { id, title, content, source_url, champion } = body;
       let targetTitle = title;
       let targetContent = content;
       let targetUrl = source_url;
+      let targetChampion = champion || '';
 
       if (id && (!targetContent || !targetTitle)) {
         const { data: row, error: fetchErr } = await db
           .from('personal_knowledge')
-          .select('title, content, raw_content, source_url')
+          .select('title, content, raw_content, source_url, champion')
           .eq('id', id)
           .single();
         if (fetchErr || !row) {
@@ -477,6 +478,7 @@ export async function POST(req: NextRequest) {
         targetTitle = row.title;
         targetContent = row.content || row.raw_content || '';
         targetUrl = row.source_url;
+        targetChampion = row.champion || '';
       }
 
       const insights = await decomposeArticle({
@@ -484,6 +486,7 @@ export async function POST(req: NextRequest) {
         title: targetTitle,
         content: targetContent,
         source_url: targetUrl,
+        champion: targetChampion,
       });
 
       return NextResponse.json({
@@ -502,12 +505,14 @@ export async function POST(req: NextRequest) {
       const saveRes = await saveDecomposedInsights(db, Number(parentId), insights as DecomposedInsight[], source_url, { autoApprove: true });
       invalidateReviewCache();
       const champsStr = saveRes.integratedChamps?.length > 0 ? ` (${saveRes.integratedChamps.join(', ')})` : '';
+      const matchStr = saveRes.integratedMatchups?.length > 0 ? ` ⚔️ 対面DB（${saveRes.integratedMatchups.join(', ')}）` : '';
       return NextResponse.json({
         success: true,
-        message: `${saveRes.count}件の分割知見を教本へ直接統合しました${champsStr}`,
+        message: `${saveRes.count}件の分割知見を教本へ直接統合しました${champsStr}${matchStr}`,
         count: saveRes.count,
         savedIds: saveRes.savedIds,
         integratedChamps: saveRes.integratedChamps,
+        integratedMatchups: saveRes.integratedMatchups,
       });
     }
 
@@ -540,6 +545,7 @@ export async function POST(req: NextRequest) {
           title: targetTitle,
           content: targetContent,
           source_url: targetUrl,
+          champion: row.champion,
         });
       } catch (decErr) {
         console.warn('[decompose_auto] 分解エラー、通常承認へフォールバック:', decErr);
@@ -550,13 +556,15 @@ export async function POST(req: NextRequest) {
         const saveRes = await saveDecomposedInsights(db, Number(id), insights, targetUrl, { autoApprove: true });
         invalidateReviewCache();
         const champsStr = saveRes.integratedChamps?.length > 0 ? ` (${saveRes.integratedChamps.join(', ')})` : '';
+        const matchStr = saveRes.integratedMatchups?.length > 0 ? ` ⚔️ 対面DB（${saveRes.integratedMatchups.join(', ')}）` : '';
         return NextResponse.json({
           success: true,
           decomposed: true,
-          message: `⚡ ${saveRes.count}件の知見に自動分解し、教本へ直接統合しました${champsStr}`,
+          message: `⚡ ${saveRes.count}件の知見に自動分解し、教本へ直接統合しました${champsStr}${matchStr}`,
           count: saveRes.count,
           savedIds: saveRes.savedIds,
           integratedChamps: saveRes.integratedChamps,
+          integratedMatchups: saveRes.integratedMatchups,
         });
       }
 
