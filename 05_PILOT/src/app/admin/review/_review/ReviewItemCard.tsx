@@ -539,15 +539,28 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, isFocus
                     {/* メイン操作（即時承認 または 分解） */}
                     <div className="flex items-center gap-2">
                       {item.isMultiChampion && onDecompose && !item.is_atomic ? (
-                        <button
-                          type="button"
-                          onClick={() => onDecompose()}
-                          disabled={busy}
-                          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
-                          title="各チャンピオンの知見に分解して直接教本へ統合 (D)"
-                        >
-                          <Scissors className="w-3.5 h-3.5" /> ✂️ ナレッジ分解する (D)
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onDecompose()}
+                            disabled={busy}
+                            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
+                            title="各チャンピオンの知見に分解して直接教本へ統合 (D)"
+                          >
+                            <Scissors className="w-3.5 h-3.5" /> ✂️ ナレッジ分解する (D)
+                          </button>
+                          {onApprove && (
+                            <button
+                              type="button"
+                              onClick={() => onApprove()}
+                              disabled={busy}
+                              className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+                              title="分解せずに現在の設定のまま教本へ即時承認 (A)"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-emerald-400" /> 通常承認 (A)
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <>
                           {onDecompose && !item.is_atomic && (

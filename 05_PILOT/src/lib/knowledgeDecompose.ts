@@ -239,23 +239,32 @@ export async function saveDecomposedInsights(
     }
   }
 
-  // 親記事のタグに __DECOMPOSED__, __SUPERSEDED__ をマークし、review_status を完了('decomposed')へ更新
+  // 親記事のタグに __DECOMPOSED__, __SUPERSEDED__ をマークし、review_status を完了('approved')へ更新
+  // ※ personal_knowledge テーブルの CHECK 制約（review_status IN ('pending', 'approved')）に準拠
   try {
-    const { data: parent } = await sb
+    const { data: parent, error: fetchErr } = await sb
       .from('personal_knowledge')
       .select('tags')
       .eq('id', parentArticleId)
       .maybeSingle();
 
+    if (fetchErr) {
+      console.warn('[saveDecomposedInsights] 親記事タグ取得エラー:', fetchErr);
+    }
+
     const parentTags = Array.isArray(parent?.tags) ? parent.tags : [];
     const newTags = Array.from(new Set([...parentTags, '__DECOMPOSED__', '__SUPERSEDED__']));
-    await sb
+    const { error: updateErr } = await sb
       .from('personal_knowledge')
       .update({
         tags: newTags,
-        review_status: 'decomposed',
+        review_status: 'approved',
       })
       .eq('id', parentArticleId);
+
+    if (updateErr) {
+      console.error('[saveDecomposedInsights] 親記事のステータス更新失敗:', updateErr);
+    }
   } catch (err) {
     console.warn('[saveDecomposedInsights] 親記事タグ・ステータス更新スキップ:', err);
   }

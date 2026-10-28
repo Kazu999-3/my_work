@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-27T11:35:30.859279+00:00",
+  "updated_at": "2026-10-28T01:53:52.516896+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -557,14 +557,14 @@
     },
     "Nasus": {
       "name": "ナサス",
-      "status": "pending",
-      "updated_at": "2026-10-19T05:28:21.152165+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-27T21:35:00.649489+00:00",
       "error": null
     },
     "Nautilus": {
       "name": "ノーチラス",
-      "status": "pending",
-      "updated_at": "2026-10-19T05:29:47.976608+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-28T00:35:38.537372+00:00",
       "error": null
     },
     "Neeko": {
