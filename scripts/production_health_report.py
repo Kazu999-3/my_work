@@ -384,8 +384,10 @@ def check_pg_cron(r: Report, cur):
 
 
 def check_db_size(r: Report, cur, dry_run: bool = False):
-    size_mb = q1(cur, "select pg_database_size(current_database()) / 1048576.0")[0]
-    rev_mb = q1(cur, "select pg_total_relation_size('public.knowledge_revisions') / 1048576.0")[0]
+    raw_size = q1(cur, "select pg_database_size(current_database()) / 1048576.0")[0]
+    raw_rev = q1(cur, "select pg_total_relation_size('public.knowledge_revisions') / 1048576.0")[0]
+    size_mb = float(raw_size) if raw_size is not None else 0.0
+    rev_mb = float(raw_rev) if raw_rev is not None else 0.0
     pct = size_mb / DB_LIMIT_MB * 100
 
     # ktm_settings から前日の容量データを取得
@@ -408,7 +410,7 @@ def check_db_size(r: Report, cur, dry_run: bool = False):
     diff_str = ""
     if past_entries:
         last = past_entries[-1]
-        diff_size = size_mb - last["size_mb"]
+        diff_size = size_mb - float(last.get("size_mb", 0.0))
         diff_str = f" / 前日比 {diff_size:+.1f}MB"
 
     status = FAIL if pct >= 90 else WARN if pct >= 70 else OK
