@@ -21,14 +21,14 @@ interface NavItem {
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { name: 'チャンピオン辞典', href: '/', icon: Crown },
   { name: 'note下書き', href: '/note', icon: FileText, badge: 'NEW' },
-  { name: '攻略ライブラリ', href: '/library', icon: Library },
+  { name: '記事の承認', href: '/admin/review', icon: ClipboardCheck },
   { name: 'レーン攻略', href: '/lane-guides', icon: BookOpen },
   { name: 'AI戦術コーチ', href: '/coach', icon: Bot },
 ];
 
 // ⚙️ 管理・運用メニュー（レビュー・解析・点検）
 const ADMIN_NAV_ITEMS: NavItem[] = [
-  { name: '記事の承認', href: '/admin/review', icon: ClipboardCheck, desc: '動画知見の承認・分解' },
+  { name: '攻略ライブラリ', href: '/library', icon: Library, desc: '全知見アーカイブ・検索' },
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video, desc: '動画解析キュー監視' },
   { name: '健全性監査', href: '/admin/dict-health', icon: Activity, desc: '教本鮮度・欠損点検' },
   { name: '教本エディタ', href: '/admin/dict-maintenance', icon: Edit3, desc: '全175体直接編集' },
@@ -42,7 +42,7 @@ export default function GlobalNavbar() {
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const adminDropdownRef = useRef<HTMLDivElement>(null);
 
-  const isAdminActive = pathname.startsWith('/admin');
+  const isAdminActive = pathname.startsWith('/admin') && !pathname.startsWith('/admin/review');
 
   // 外側クリックで管理ドロップダウンを閉じる
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function GlobalNavbar() {
           <nav className="hidden md:flex items-center gap-1.5 text-xs font-bold min-w-0">
             {PRIMARY_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
@@ -200,7 +200,7 @@ export default function GlobalNavbar() {
             <div className="space-y-1.5">
               {PRIMARY_NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
@@ -307,13 +307,13 @@ export default function GlobalNavbar() {
         </Link>
 
         <Link
-          href="/library"
+          href="/admin/review"
           className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-bold transition-colors ${
-            pathname === '/library' ? 'text-amber-400 font-black' : 'text-zinc-400 hover:text-zinc-200'
+            pathname.startsWith('/admin/review') ? 'text-amber-400 font-black' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Library className="w-4 h-4" />
-          <span>知見</span>
+          <ClipboardCheck className="w-4 h-4" />
+          <span>承認</span>
         </Link>
 
         <Link
