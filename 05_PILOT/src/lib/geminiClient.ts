@@ -1,13 +1,15 @@
 // Gemini API 呼び出しヘルパー（上から順に試す自動フォールバック）
 //
-// 2026-10-27 実測: gemini-3-flash-preview が 200 OK で高速かつクォータ潤沢に稼働中。
-// 3.5/3.1 flash-lite は Google 側で一時的な高負荷(503/timeout)が発生する場合があり、
-// 2.5-flash は無料枠上限(429)になりやすいため、gemini-3-flash-preview を最優先にする。
+// 2026-10-29 実測:
+// - gemini-3.5-flash / gemini-3.5-flash-lite / gemini-3.6-flash が 200 OK で高速かつ安定稼働中。
+// - gemini-3-flash-preview は現在一時的な429枯渇中。
+// - gemini-3.1-flash-lite は Google 側で 503 UNAVAILABLE。
+// - gemini-2.5-flash は無料枠の1日20回制限(429)で即死するため候補から除外。
 const FALLBACK_MODELS = [
-  'gemini-3-flash-preview',
+  'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-2.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3-flash-preview',
 ];
 
 export interface GeminiOptions {

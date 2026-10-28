@@ -22,7 +22,7 @@ import { createClient } from '@supabase/supabase-js';
 const sb = createClient(supabaseUrl, supabaseKey);
 
 async function callGemini(prompt) {
-  const models = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
+  const models = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;

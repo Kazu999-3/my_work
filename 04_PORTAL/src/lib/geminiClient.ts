@@ -33,16 +33,17 @@ export interface GeminiCallOptions {
   translateProperNouns?: boolean;
 }
 
-// 2026-10-27 実測: 最もクォータが潤沢で高速に200 OK応答する 'gemini-3-flash-preview' をデフォルトとし、
-// 一時的な混雑・制限時は 'gemini-3.5-flash-lite' や 'gemini-3.1-flash-lite' 等へ自動フォールバックします。
-const DEFAULT_MODEL = 'gemini-3-flash-preview';
+// 2026-10-29 実測:
+// - gemini-3.5-flash / gemini-3.5-flash-lite / gemini-3.6-flash が 200 OK で高速かつ安定稼働中。
+// - gemini-3-flash-preview は現在一時的な429枯渇中。
+// - gemini-3.1-flash-lite は Google 側で 503 UNAVAILABLE。
+// - gemini-2.5-flash は無料枠の1日20回制限(429)で即死するため候補から除外。
+const DEFAULT_MODEL = 'gemini-3.5-flash';
 const FALLBACK_MODELS = [
-  'gemini-3-flash-preview',
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-3.6-flash',
   'gemini-3.5-flash',
-  'gemini-2.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-3-flash-preview',
 ];
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 

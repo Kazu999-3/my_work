@@ -1,3 +1,44 @@
+## 📅 2026-10-29（水）
+
+### ⚡ Gemini API 429 エラー解消 ＆ パイロット記事承認のモデル健全化
+
+**概要**:
+1. **背景と課題**:
+   - ユーザー報告: パイロット（05_PILOT）の記事承認実行時に `Gemini API エラー (429): Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash` が発生して承認処理が失敗する。
+2. **原因調査（機械的実測検証）**:
+   - `gemini-model-health-check` スクリプトで全モデルのクォータと稼働状況を実測検証：
+     - `gemini-3.5-flash`: ✅ 動作OK (200)
+     - `gemini-3.5-flash-lite`: ✅ 動作OK (200)
+     - `gemini-3.6-flash`: ✅ 動作OK (200)
+     - `gemini-3-flash-preview`: ⚠️ 429（一時的なレート制限）
+     - `gemini-3.1-flash-lite`: ❌ 503 UNAVAILABLE（Google側過負荷）
+     - `gemini-2.5-flash`: ⚠️ 429（無料枠日次上限20回超過中・残り15時間）
+   - `05_PILOT/src/lib/geminiClient.ts` のフォールバックリストが `gemini-3-flash-preview` ➔ `gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-2.5-flash` となっており、最新の安定モデル（3.5-flash, 3.6-flash）が欠落していた。
+   - 上流モデルがタイムアウトや503でスキップされた際、末尾の「1日20回制限の2.5-flash」にフォールスルーして429エラーが画面に露出していた。
+3. **実施内容**:
+   - **【05_PILOT クライアント健全化】(`05_PILOT/src/lib/geminiClient.ts`)**:
+     - `FALLBACK_MODELS` を安定モデル優先（`gemini-3.5-flash` ➔ `gemini-3.5-flash-lite` ➔ `gemini-3.6-flash` ➔ `gemini-3-flash-preview`）に刷新。
+     - 20回制限トラップとなる `gemini-2.5-flash` をリストから完全除外。
+   - **【04_PORTAL クライアント健全化】(`04_PORTAL/src/lib/geminiClient.ts`)**:
+     - `DEFAULT_MODEL` を `gemini-3.5-flash` に変更し、フォールバック順序も安定モデル優先に統一。
+   - **【検証スクリプト追従】(`05_PILOT/scripts/run_decompose_test.mjs`)**:
+     - 参照モデルを `gemini-3.5-flash` 系統へ更新。
+4. **機械的実値検証**:
+   - `05_PILOT`: `npx tsc --noEmit` ➔ **PASS（エラー0件）**
+   - `04_PORTAL`: `npx tsc --noEmit` ➔ **PASS（エラー0件）**
+   - 実機APIテスト: `run_decompose_test.mjs` を実行し、8件の知見分解・保存が正常終了することを確認済み。
+
+**再利用可能な3行ナレッジ**:
+- LLM API のフォールバックリスト末尾に「無料枠の厳しい日次制限モデル（20回/日等）」を配置すると、一時的な高負荷時に地雷を踏んでエラー画面を汚染するため、日次上限が厳しい旧モデルはリストから除外すべきである。
+- 単一モデルへの依存を避け、動作検証済みの同世代バリアント（3.5-flash, 3.5-flash-lite, 3.6-flash）を多層配置することで、503過負荷や一時的429に対しても無停止で自動フェイルオーバーできる。
+- エラー調査時は推測でモデル名を変更せず、`check_gemini_models.py` などの疎通チェックスクリプトで各モデルのリアルタイムHTTPステータスを実測して原因を確定させる。
+
+- `[要検証]`: 記事承認時の大量連続処理における `gemini-3.5-flash` / `3.5-flash-lite` の消費クォータ推移
+- `[継続ウォッチ]`: Google側の一時的障害が解消した後の `gemini-3-flash-preview` および `gemini-3.1-flash-lite` の復旧状況
+- `[発信候補]`: 「Gemini APIのモデルフォールバック設計：503過負荷と無料枠429の地雷を回避する多層アーキテクチャ」
+
+---
+
 ## 📅 2026-10-28（火）
 
 ### 🧭 パイロット ナビゲーション最適化（「記事の承認」の最前面昇格 ＆ ライブラリの管理移行）
