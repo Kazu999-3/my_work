@@ -39,6 +39,11 @@ JST = timezone(timedelta(hours=9))
 LOCAL_DAEMON_HEARTBEAT_ID = "00000000-0000-0000-0000-000000000005"
 DB_LIMIT_MB = 500  # Supabase 無料プランの上限
 
+# 日次履歴を保存する ktm_settings のキー
+SETTINGS_KEY_PENDING_STATS = "health_report_pending_stats"
+SETTINGS_KEY_DB_STATS = "health_report_db_stats"
+SETTINGS_KEY_DB_ACTIVITY = "health_report_db_activity"
+
 # 失敗していないかを見る定期ワークフロー（ファイル名: 表示名）
 WATCHED_WORKFLOWS = {
     "ktm-cloud-worker.yml": "辞典統合・動画発掘",
@@ -259,19 +264,75 @@ def check_youtube_queue(r: Report, cur):
         r.add(OK, "動画解析キュー", f"待ち {pending}本・48時間の完了 {done48}本")
 
 
+def check_pending_articles(r: Report, cur, dry_run: bool = False):
+    """未承認記事数と前日との差分を算出し、健康診断に表示・記録する。"""
+    row = q1(cur, "select count(*) from personal_knowledge where review_status = 'pending'")
+    pending_count = row[0] if row else 0
+
+    # ktm_settings から過去の統計と履歴を取得
+    setting_row = q1(cur, "select value from ktm_settings where key = %s", (SETTINGS_KEY_PENDING_STATS,))
+    stats_data = {}
+    if setting_row and setting_row[0]:
+        val = setting_row[0]
+        stats_data = val if isinstance(val, dict) else (json.loads(val) if isinstance(val, str) else {})
+    history = stats_data.get("history", []) if isinstance(stats_data, dict) else []
+
+    today_str = datetime.now(JST).strftime("%Y-%m-%d")
+
+    # 履歴が空の場合、直近の実測既知値（2026-10-27: 478件）を初期シードとして認識
+    if not history:
+        history = [{"date": "2026-10-27", "count": 478}]
+
+    past_entries = [h for h in history if isinstance(h, dict) and h.get("date") and h.get("date") < today_str and "count" in h]
+    past_entries.sort(key=lambda x: x["date"])
+
+    if past_entries:
+        last_entry = past_entries[-1]
+        last_date = last_entry["date"]
+        last_count = last_entry["count"]
+        diff = pending_count - last_count
+        if diff > 0:
+            diff_text = f"前日比 +{diff}件"
+        elif diff < 0:
+            diff_text = f"前日比 {diff}件"
+        else:
+            diff_text = "前日比 ±0件"
+        detail = f"{pending_count}件（{diff_text} / 昨日 {last_count}件）"
+    else:
+        detail = f"{pending_count}件（基準値を記録）"
+
+    r.add(OK, "記事の承認待ち", detail)
+
+    if not dry_run:
+        new_history = [h for h in history if isinstance(h, dict) and h.get("date") != today_str]
+        new_history.append({"date": today_str, "count": pending_count})
+        new_history = sorted(new_history, key=lambda x: x["date"])[-30:]
+
+        new_data = {
+            "count": pending_count,
+            "recorded_at": datetime.now(JST).isoformat(),
+            "history": new_history,
+        }
+        cur.execute("""
+            insert into ktm_settings (key, value, updated_at)
+            values (%s, %s::jsonb, now())
+            on conflict (key) do update
+            set value = excluded.value, updated_at = now()
+        """, (SETTINGS_KEY_PENDING_STATS, json.dumps(new_data, ensure_ascii=False)))
+
+
 def check_integration_backlog(r: Report, cur):
-    backlog, pending_review = q1(cur, """
+    backlog = q1(cur, """
         select count(*) filter (where review_status = 'approved'
                                   and coalesce(champion, '') not in ('', 'Unknown', 'UNKNOWN', 'GENERAL', 'null')
                                   and (tags is null or not (tags @> '{__DELETED__}' or tags @> '{__INTEGRATED__}'))
-                                  and created_at < now() - interval '6 hours'),
-               count(*) filter (where review_status = 'pending')
+                                  and created_at < now() - interval '6 hours')
         from personal_knowledge
-    """)
+    """)[0]
     if backlog > 0:
         r.add(WARN, "辞典への統合", f"承認済みで未統合の記事 {backlog}件（6時間以上前のもの）。dict-sync が動いていない可能性")
     else:
-        r.add(OK, "辞典への統合", f"未統合の承認済み記事 0件・承認待ち {pending_review}件")
+        r.add(OK, "辞典への統合", "未統合の承認済み記事 0件（同期完了）")
 
 
 def check_soloq_coach(r: Report, cur):
@@ -322,12 +383,130 @@ def check_pg_cron(r: Report, cur):
         r.add(OK, "DBの定期実行（pg_cron）", f"{len(EXPECTED_CRON_JOBS)}本とも稼働・直近の呼び出し {total_http}件すべて正常")
 
 
-def check_db_size(r: Report, cur):
+def check_db_size(r: Report, cur, dry_run: bool = False):
     size_mb = q1(cur, "select pg_database_size(current_database()) / 1048576.0")[0]
     rev_mb = q1(cur, "select pg_total_relation_size('public.knowledge_revisions') / 1048576.0")[0]
     pct = size_mb / DB_LIMIT_MB * 100
+
+    # ktm_settings から前日の容量データを取得
+    setting_row = q1(cur, "select value from ktm_settings where key = %s", (SETTINGS_KEY_DB_STATS,))
+    stats_data = {}
+    if setting_row and setting_row[0]:
+        val = setting_row[0]
+        stats_data = val if isinstance(val, dict) else (json.loads(val) if isinstance(val, str) else {})
+    history = stats_data.get("history", []) if isinstance(stats_data, dict) else []
+
+    today_str = datetime.now(JST).strftime("%Y-%m-%d")
+
+    # 初期シード（2026-10-27 実測値: 176MB, 変更履歴: 66MB）
+    if not history:
+        history = [{"date": "2026-10-27", "size_mb": 176.0, "rev_mb": 66.0}]
+
+    past_entries = [h for h in history if isinstance(h, dict) and h.get("date") and h.get("date") < today_str and "size_mb" in h]
+    past_entries.sort(key=lambda x: x["date"])
+
+    diff_str = ""
+    if past_entries:
+        last = past_entries[-1]
+        diff_size = size_mb - last["size_mb"]
+        diff_str = f" / 前日比 {diff_size:+.1f}MB"
+
     status = FAIL if pct >= 90 else WARN if pct >= 70 else OK
-    r.add(status, "DB容量", f"{size_mb:.0f}MB / {DB_LIMIT_MB}MB（{pct:.0f}%）・うち変更履歴 {rev_mb:.0f}MB")
+    r.add(status, "DB容量", f"{size_mb:.0f}MB / {DB_LIMIT_MB}MB（{pct:.0f}%{diff_str}）・うち変更履歴 {rev_mb:.0f}MB")
+
+    if not dry_run:
+        new_history = [h for h in history if isinstance(h, dict) and h.get("date") != today_str]
+        new_history.append({"date": today_str, "size_mb": round(size_mb, 2), "rev_mb": round(rev_mb, 2)})
+        new_history = sorted(new_history, key=lambda x: x["date"])[-30:]
+
+        new_data = {
+            "size_mb": round(size_mb, 2),
+            "rev_mb": round(rev_mb, 2),
+            "recorded_at": datetime.now(JST).isoformat(),
+            "history": new_history,
+        }
+        cur.execute("""
+            insert into ktm_settings (key, value, updated_at)
+            values (%s, %s::jsonb, now())
+            on conflict (key) do update
+            set value = excluded.value, updated_at = now()
+        """, (SETTINGS_KEY_DB_STATS, json.dumps(new_data, ensure_ascii=False)))
+
+
+def check_db_activity(r: Report, cur, dry_run: bool = False):
+    """PostgreSQL の読み出し行数・コミット数の推移（Egress急増予兆）を監視"""
+    row = q1(cur, """
+        select tup_returned, tup_fetched, xact_commit
+        from pg_stat_database
+        where datname = current_database()
+    """)
+    if not row:
+        return
+
+    cur_returned, cur_fetched, cur_commits = row[0], row[1], row[2]
+
+    setting_row = q1(cur, "select value from ktm_settings where key = %s", (SETTINGS_KEY_DB_ACTIVITY,))
+    stats_data = {}
+    if setting_row and setting_row[0]:
+        val = setting_row[0]
+        stats_data = val if isinstance(val, dict) else (json.loads(val) if isinstance(val, str) else {})
+    history = stats_data.get("history", []) if isinstance(stats_data, dict) else []
+
+    today_str = datetime.now(JST).strftime("%Y-%m-%d")
+
+    past_entries = [h for h in history if isinstance(h, dict) and h.get("date") and h.get("date") < today_str and "tup_returned" in h]
+    past_entries.sort(key=lambda x: x["date"])
+
+    if past_entries:
+        last = past_entries[-1]
+        delta_returned = cur_returned - last.get("tup_returned", 0)
+        delta_commits = cur_commits - last.get("xact_commit", 0)
+
+        if delta_returned < 0:
+            delta_returned = cur_returned
+        if delta_commits < 0:
+            delta_commits = cur_commits
+
+        ret_k = delta_returned / 10000.0
+        com_k = delta_commits / 10000.0
+
+        if delta_returned > 20_000_000:
+            status = WARN
+            pace_note = "⚠️ 読出行数が突出（Egress急増に注意）"
+        else:
+            status = OK
+            pace_note = "正常ペース"
+
+        detail = f"24時間で {ret_k:.1f}万行読出・{com_k:.1f}万コミット（{pace_note}）"
+    else:
+        detail = "初回計測（次回より24時間の活動量を表示）"
+        status = OK
+
+    r.add(status, "DB読み出し活動量", detail)
+
+    if not dry_run:
+        new_history = [h for h in history if isinstance(h, dict) and h.get("date") != today_str]
+        new_history.append({
+            "date": today_str,
+            "tup_returned": cur_returned,
+            "tup_fetched": cur_fetched,
+            "xact_commit": cur_commits,
+        })
+        new_history = sorted(new_history, key=lambda x: x["date"])[-30:]
+
+        new_data = {
+            "tup_returned": cur_returned,
+            "tup_fetched": cur_fetched,
+            "xact_commit": cur_commits,
+            "recorded_at": datetime.now(JST).isoformat(),
+            "history": new_history,
+        }
+        cur.execute("""
+            insert into ktm_settings (key, value, updated_at)
+            values (%s, %s::jsonb, now())
+            on conflict (key) do update
+            set value = excluded.value, updated_at = now()
+        """, (SETTINGS_KEY_DB_ACTIVITY, json.dumps(new_data, ensure_ascii=False)))
 
 
 def check_rls_regressions(r: Report, cur):
@@ -450,10 +629,24 @@ def main():
 
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=False) as conn:
         with conn.cursor() as cur:
-            for fn in (check_pc_daemon, check_edge_tasks, check_youtube_queue, check_integration_backlog,
-                       check_soloq_coach, check_pg_cron, check_db_size, check_rls_regressions):
+            db_checks = [
+                check_pc_daemon,
+                check_edge_tasks,
+                check_youtube_queue,
+                check_pending_articles,
+                check_integration_backlog,
+                check_soloq_coach,
+                check_pg_cron,
+                check_db_size,
+                check_db_activity,
+                check_rls_regressions,
+            ]
+            for fn in db_checks:
                 try:
-                    fn(report, cur)
+                    if fn in (check_pending_articles, check_db_size, check_db_activity):
+                        fn(report, cur, dry_run=args.dry_run)
+                    else:
+                        fn(report, cur)
                     conn.commit()
                 except Exception as e:
                     conn.rollback()
