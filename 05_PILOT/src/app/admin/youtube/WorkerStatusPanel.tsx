@@ -1,12 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useVisiblePolling } from '../../../lib/useVisiblePolling';
-import { RefreshCw, Cpu, Activity, Gamepad2, MapPin, Terminal, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { RefreshCw, Cpu, Gamepad2, MapPin, Terminal, CheckCircle2, AlertTriangle, RotateCcw, Play, Zap, Loader2, Sparkles, BookOpen } from 'lucide-react';
 
 interface Status {
   worker: { active: boolean; lastHeartbeat: string | null; diffSeconds: number | null; status: string | null };
-  tasks: { waiting: { id: string; task_type: string; status: string; created_at: string }[]; failed24h: number; latestFailure: { task_type: string; error_message: string; updated_at: string } | null };
+  tasks: {
+    waiting: { id: string; task_type: string; status: string; created_at: string }[];
+    failed24h: number;
+    failedTaskIds?: string[];
+    latestFailure: { task_type: string; error_message: string; updated_at: string } | null;
+  };
   videos: { pending: number; completed24h: number; lastCompletedAt: string | null };
 }
 
@@ -23,6 +28,8 @@ export default function WorkerStatusPanel() {
   const [data, setData] = useState<Status | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,6 +50,52 @@ export default function WorkerStatusPanel() {
   useVisiblePolling(load, 30_000);
 
   const active = data?.worker.active;
+
+  // ⚡ 失敗タスクの一括リトライ実行
+  const handleRetryFailedTasks = async () => {
+    if (!data?.tasks.failedTaskIds || data.tasks.failedTaskIds.length === 0) return;
+    setActionBusy('retry');
+    setActionMessage(null);
+    try {
+      const res = await fetch('/api/admin/tasks/retry-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: data.tasks.failedTaskIds }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || '再実行に失敗しました');
+      setActionMessage({
+        text: `⚡ ${json.retried}件のタスクを再起票しました${json.dispatched ? '（GitHub Actions即時発火完了）' : ''}`,
+        type: 'success',
+      });
+      await load();
+    } catch (err: any) {
+      setActionMessage({ text: `再実行エラー: ${err.message}`, type: 'error' });
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  // 🚀 タスクの手動トリガー実行（YouTube巡回・辞典合成等）
+  const handleTriggerTask = async (taskType: string, label: string) => {
+    setActionBusy(taskType);
+    setActionMessage(null);
+    try {
+      const res = await fetch('/api/admin/tasks/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_type: taskType }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `${label}の起動に失敗しました`);
+      setActionMessage({ text: `🚀 ${json.message || `${label}を起動しました`}`, type: 'success' });
+      await load();
+    } catch (err: any) {
+      setActionMessage({ text: `${label}起動エラー: ${err.message}`, type: 'error' });
+    } finally {
+      setActionBusy(null);
+    }
+  };
 
   return (
     <div className={`p-4 sm:p-5 rounded-2xl border space-y-4 transition shadow-lg ${
@@ -74,6 +127,16 @@ export default function WorkerStatusPanel() {
       </div>
 
       {error && <p className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-xl border border-rose-800/60">{error}</p>}
+      {actionMessage && (
+        <div className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 animate-in fade-in duration-150 ${
+          actionMessage.type === 'success'
+            ? 'bg-emerald-950/50 border-emerald-600/70 text-emerald-200'
+            : 'bg-rose-950/50 border-rose-600/70 text-rose-200'
+        }`}>
+          {actionMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />}
+          <span>{actionMessage.text}</span>
+        </div>
+      )}
 
       {data && (
         <>
@@ -138,6 +201,66 @@ export default function WorkerStatusPanel() {
               <div className={`text-sm font-black font-mono mt-0.5 ${data.tasks.failed24h > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                 {data.tasks.failed24h} 件
               </div>
+            </div>
+          </div>
+
+          {/* 🎮 スマホから呼べるクイック遠隔操作バー */}
+          <div className="p-3 rounded-xl bg-zinc-950/90 border border-zinc-800/90 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-300">
+              <Zap className="w-4 h-4 text-amber-400" />
+              <span>ワンタップ遠隔操作（Actions連携）:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* ① 失敗タスクの一括リトライ（失敗がある時だけ目立つボタンとして出現） */}
+              {data.tasks.failed24h > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRetryFailedTasks}
+                  disabled={!!actionBusy}
+                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-rose-950/40"
+                  title="直近24時間で失敗したタスクを一括で再起票し、GitHub Actionsを即時トリガーします"
+                >
+                  {actionBusy === 'retry' ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  )}
+                  <span>⚡ 失敗タスクを一括再試行 ({data.tasks.failed24h}件)</span>
+                </button>
+              )}
+
+              {/* ② YouTubeチャンネル新着監視の即時起動 */}
+              <button
+                type="button"
+                onClick={() => handleTriggerTask('youtube_channel_monitor', 'YouTube新着巡回')}
+                disabled={!!actionBusy}
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-xs"
+                title="監視中チャンネルの新着動画を今すぐスキャンしてキューに追加します"
+              >
+                {actionBusy === 'youtube_channel_monitor' ? (
+                  <Loader2 className="w-3.5 h-3.5 text-red-400 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 text-red-400" />
+                )}
+                <span>新着巡回を起動</span>
+              </button>
+
+              {/* ③ 辞典合成の即時起動 */}
+              <button
+                type="button"
+                onClick={() => handleTriggerTask('dict_synthesizer', '辞典の合成')}
+                disabled={!!actionBusy}
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-xs"
+                title="知見データを各チャンピオン教本へ一括コンパイルします"
+              >
+                {actionBusy === 'dict_synthesizer' ? (
+                  <Loader2 className="w-3.5 h-3.5 text-purple-400 animate-spin" />
+                ) : (
+                  <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                )}
+                <span>辞典合成を起動</span>
+              </button>
             </div>
           </div>
 

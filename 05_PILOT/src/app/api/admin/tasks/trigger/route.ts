@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 // 起票できる種類は限定し、同じ種類が待機中・実行中なら積まない（連打で何重にも入らないように）。
 const TRIGGERABLE_TASK_TYPES: Record<string, string> = {
   dict_synthesizer: '辞典の合成',
+  youtube_channel_monitor: 'YouTube新着巡回',
+  reddit_scout: 'Redditスカウト',
 };
 
 export async function POST(req: NextRequest) {

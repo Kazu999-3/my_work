@@ -17,7 +17,7 @@ export async function GET() {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
     const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
-    const [hb, pendingTasks, failed24h, lastCompleted, completed24h, pendingVideos, latestFailure] = await Promise.all([
+    const [hb, pendingTasks, failed24h, lastCompleted, completed24h, pendingVideos, latestFailure, failedTasks] = await Promise.all([
       supabase.from('edge_tasks').select('updated_at, payload').eq('id', LOCAL_HEARTBEAT_ID).maybeSingle(),
       supabase.from('edge_tasks').select('id, task_type, status, created_at')
         .in('status', ['pending', 'running']).not('id', 'in', `(${HEARTBEAT_IDS.join(',')})`)
@@ -31,6 +31,8 @@ export async function GET() {
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('edge_tasks').select('task_type, error_message, updated_at')
         .eq('status', 'failed').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('edge_tasks').select('id')
+        .eq('status', 'failed').gte('created_at', since24h).order('created_at', { ascending: false }).limit(50),
     ]);
     if (hb.error) throw hb.error;
 
@@ -48,6 +50,7 @@ export async function GET() {
       tasks: {
         waiting: pendingTasks.data || [],
         failed24h: failed24h.count || 0,
+        failedTaskIds: (failedTasks.data || []).map((t: any) => String(t.id)),
         latestFailure: latestFailure.data
           ? { ...latestFailure.data, error_message: String(latestFailure.data.error_message || '').slice(-300) }
           : null,
