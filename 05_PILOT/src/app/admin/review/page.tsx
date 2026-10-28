@@ -41,6 +41,7 @@ export default function ReviewPage() {
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [processingMap, setProcessingMap] = useState<Record<number, "approving" | "rejecting">>({});
   const [busy, setBusy] = useState(false);
@@ -258,15 +259,40 @@ export default function ReviewPage() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     if (!confirm(action === 'approve'
-      ? `選択した${ids.length}件を承認して統合しますか？（AIが判定した複数チャンプ・レーンガイド・各項目へ自動分配されます）`
+      ? `選択した${ids.length}件を承認して統合しますか？（複数チャンプ記事は自動分解、その他は教本・レーンガイドへ自動分配されます）`
       : `選択した${ids.length}件を却下して削除しますか？`)) return;
     
     // ⚡ 0秒楽観的消去
     removeFromList(ids);
-    const result = await post({ ids, action });
-    if (!result.ok) {
-      showMessage(`一括${action === 'approve' ? '承認' : '却下'}に失敗しました: ${result.error}`, 'error');
+
+    if (action === 'reject') {
+      const result = await post({ ids, action });
+      if (!result.ok) {
+        showMessage(`一括却下に失敗しました: ${result.error}`, 'error');
+        load({ silent: true });
+      }
+      return;
+    }
+
+    // approve の場合: 複数チャンプ記事は decompose_auto、通常記事は approve
+    const multiItems = items.filter((i) => ids.includes(i.id) && i.isMultiChampion && !i.is_atomic);
+    const standardIds = ids.filter((id) => !multiItems.some((m) => m.id === id));
+
+    const promises: Promise<any>[] = [];
+    if (standardIds.length > 0) {
+      promises.push(post({ ids: standardIds, action: 'approve' }));
+    }
+    for (const m of multiItems) {
+      promises.push(post({ id: m.id, action: 'decompose_auto' }));
+    }
+
+    const results = await Promise.allSettled(promises);
+    const hasError = results.some((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value?.ok));
+    if (hasError) {
+      showMessage('一部の記事の統合に失敗しました。最新状態を再読込します', 'error');
       load({ silent: true });
+    } else {
+      showMessage(`選択した${ids.length}件をすべて教本へ統合しました！${multiItems.length > 0 ? `（うち${multiItems.length}件を自動分解）` : ''}`, 'success');
     }
   };
 
@@ -510,6 +536,13 @@ export default function ReviewPage() {
         openPreview(currentItem);
         return;
       }
+
+      // E: 詳細・修正アコーディオンの開閉トグル
+      if (key === 'e') {
+        e.preventDefault();
+        setExpandedDetails((prev) => toggle(prev, currentItem.id));
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -578,13 +611,15 @@ export default function ReviewPage() {
                 <span>分解</span>
                 <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-300">P</span>
                 <span>プレビュー</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-300">E</span>
+                <span>詳細</span>
               </div>
             </div>
 
             {selected.size > 0 && (
               <div className="flex gap-2">
                 <button onClick={() => batch('approve')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> 選択分を一括承認（二系統＋項目自動マージ）
+                  <CheckCircle2 className="w-3.5 h-3.5" /> 選択分を一括承認（複数チャンプ自動分解連動）
                 </button>
                 <button onClick={() => batch('reject')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
                   <XCircle className="w-3.5 h-3.5" /> 選択分を却下
@@ -611,6 +646,7 @@ export default function ReviewPage() {
               item={item}
               edit={edits[item.id] || defaultEdit(item)}
               isOpen={expanded.has(item.id)}
+              isDetailsOpen={expandedDetails.has(item.id)}
               isSelected={selected.has(item.id)}
               isFocused={focusedIndex === idx}
               channel={channel}
@@ -618,6 +654,7 @@ export default function ReviewPage() {
               onCardClick={() => setFocusedIndex(idx)}
               onToggleSelect={() => setSelected((s) => toggle(s, item.id))}
               onToggleExpand={() => setExpanded((s) => toggle(s, item.id))}
+              onToggleDetails={() => setExpandedDetails((s) => toggle(s, item.id))}
               setChannel={setChannel}
               onEdit={(patch) => updateEditField(item.id, patch)}
               onApprove={() => approveOne(item)}

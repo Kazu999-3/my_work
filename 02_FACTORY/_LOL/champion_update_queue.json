@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-10-28T01:53:52.516896+00:00",
+  "updated_at": "2026-10-28T04:34:24.852403+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -569,8 +569,8 @@
     },
     "Neeko": {
       "name": "ニーコ",
-      "status": "pending",
-      "updated_at": "2026-10-19T06:27:39.239186+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-28T03:36:21.487479+00:00",
       "error": null
     },
     "Nidalee": {
