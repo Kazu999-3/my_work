@@ -141,10 +141,12 @@ class TaskDispatchMixin:
                 logger.info(f"🔁 [article_reanalyze] 記事 #{payload.get('article_id')} を再解析")
                 result = self._run_subprocess_task("scripts/reanalyze_article.py",
                                                    args=[_json.dumps(payload, ensure_ascii=False)], timeout=1200)
-                # 失敗は _run_subprocess_task が例外にする。利用上限だけは skipped で返るので、
-                # 承認画面に理由が出るよう failed にして message を残す
                 if result.get("success"):
                     self.update_task_status(task_id, "completed", result=result)
+                elif result.get("skipped"):
+                    # クォータ枯渇等の一時的な見送りは failed にせず pending に戻して後で消化
+                    logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り。pending に戻します: {result.get('message')}")
+                    self.update_task_status(task_id, "pending", result=result, error_message=None)
                 else:
                     self.update_task_status(task_id, "failed", result=result,
                                             error_message=str(result.get("message") or "再解析に失敗しました")[:1500])

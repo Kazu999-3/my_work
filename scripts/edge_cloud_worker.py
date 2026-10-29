@@ -392,6 +392,7 @@ def main():
                 # (2026-08-10発覚、edge_worker_daemon.pyの同種修正と対で対応)。
                 clean_message = None
                 is_skip = False
+                is_quota = False
                 try:
                     last_line = res.stdout.strip().splitlines()[-1] if res.stdout.strip() else ""
                     stdout_json = json.loads(last_line)
@@ -399,16 +400,42 @@ def main():
                         if stdout_json.get("message"):
                             clean_message = stdout_json["message"]
                         is_skip = bool(stdout_json.get("skipped"))
+                        is_quota = bool(stdout_json.get("is_quota"))
                 except Exception:
                     pass
 
+                # JSONのskippedフラグ以外にも、エラー文言やログからクォータ枯渇起因を包括判定
+                if not is_skip:
+                    all_text = f"{clean_message or ''} {res.stdout[-1000:]} {res.stderr[-1000:]}".lower()
+                    quota_keywords = (
+                        "quota exhausted", "resource_exhausted", "resourceexhausted",
+                        "429", "apiクォータ制限", "api制限のため今回の定期更新は安全にスキップ",
+                        "too many requests", "利用上限"
+                    )
+                    if any(kw in all_text for kw in quota_keywords):
+                        is_skip = True
+                        is_quota = True
+                        if not clean_message:
+                            clean_message = "API利用上限（429）のため一時見送り（クォータ回復後に自動再開）"
+
                 # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)は
-                # 本物のバグではないため、failedにして「要対応」リストへ積むと本当に対応が
-                # 必要なタスクに埋もれて分かりにくくなっていた(2026-08-14発覚)。completedとして
-                # 扱い、通知も飛ばさない(edge_worker_daemon.pyの同種修正と対で対応)。
+                # 本物のバグではないため、Discordエラー通知は飛ばさない。
+                # 特に再解析（article_reanalyze）は完了扱いにしてしまうと再解析されないため、
+                # pending に戻してクォータ回復後に自動再試行させる。
                 if is_skip:
                     print(f"⏭ 安全にスキップ: {task_type} ({task_id}) — {clean_message}")
-                    complete_task(task_id, "completed", result={"success": False, "skipped": True, "message": clean_message})
+                    if is_quota and task_type == "article_reanalyze":
+                        # pending に戻して後で自動リトライ
+                        sb("PATCH", f"edge_tasks?id=eq.{task_id}", {
+                            "status": "pending",
+                            "executor": None,
+                            "error_message": None,
+                            "updated_at": now_iso()
+                        })
+                        print("⏸ クォータ回復待ちのため、今回のクラウド実行ループを一時終了します。")
+                        break
+                    else:
+                        complete_task(task_id, "completed", result={"success": False, "skipped": True, "message": clean_message})
                     continue
 
                 err = f"{clean_message}\n（詳細ログ末尾: {res.stderr[-300:]}）" if clean_message else f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
