@@ -710,51 +710,89 @@ export async function POST(req: NextRequest) {
     if (ids.length === 0) return NextResponse.json({ error: '対象の id / ids が必要です' }, { status: 400 });
 
     // ──────────────────────────────────────────
-    // 再解析（2026-10-19）: 依頼・旧版のまま（再解析版を破棄）
+    // 再解析（2026-10-19 / 一括対応 2026-10-29）: 依頼・旧版のまま（再解析版を破棄）
     // ──────────────────────────────────────────
     if (action === 'reanalyze') {
-      const id = Number(body.id);
-      if (!id) return NextResponse.json({ error: 'id が必要です' }, { status: 400 });
       const reason = REANALYZE_REASONS.includes(body.reason) ? body.reason : 'thin';
       const focus = Array.isArray(body.focus) ? body.focus.filter((f: string) => REANALYZE_FOCUS.includes(f)) : [];
       const note = typeof body.note === 'string' ? body.note.trim().slice(0, 500) : '';
       const model = body.model === 'high' ? 'high' : 'standard';
 
-      const { data: row, error: rowErr } = await db
+      // 対象記事を一括取得
+      const { data: rows, error: rowErr } = await db
         .from('personal_knowledge')
         .select('id, source_url, review_status, reanalysis_of, is_atomic, tags')
-        .eq('id', id)
-        .maybeSingle();
+        .in('id', ids);
       if (rowErr) throw rowErr;
-      if (!row || row.review_status !== 'pending' || (row.tags || []).includes('__DELETED__')) {
-        return NextResponse.json({ error: '承認待ちの記事が見つかりません（承認・却下済みの可能性）' }, { status: 404 });
-      }
-      if (row.is_atomic || !/youtu/.test(row.source_url || '')) {
-        return NextResponse.json({ error: '再解析できるのは YouTube 動画の記事だけです' }, { status: 400 });
-      }
-      // 再解析版をさらに作り直す時は、元の記事を基準にし、今の版を「前回の記事」として渡す
-      const rootId: number = row.reanalysis_of ?? row.id;
 
-      const { data: running } = await db
-        .from('edge_tasks')
-        .select('id')
-        .eq('task_type', 'article_reanalyze')
-        .in('status', ['pending', 'running'])
-        .contains('payload', { article_id: rootId })
-        .limit(1);
-      if (running && running.length > 0) {
-        return NextResponse.json({ error: 'この記事は再解析中です。完了までお待ちください' }, { status: 409 });
-      }
-
-      const { error: insErr } = await db.from('edge_tasks').insert({
-        task_type: 'article_reanalyze',
-        status: 'pending',
-        payload: { article_id: rootId, base_id: row.id, reason, focus, note, model },
+      const validRows = (rows || []).filter((row) => {
+        if (!row || row.review_status !== 'pending' || (row.tags || []).includes('__DELETED__')) return false;
+        if (row.is_atomic || !/youtu/.test(row.source_url || '')) return false;
+        return true;
       });
+
+      if (validRows.length === 0) {
+        return NextResponse.json({ error: '再解析可能な承認待ち記事（YouTube動画）が見つかりません' }, { status: 400 });
+      }
+
+      // すでに再解析中（pending / running）のタスクがあるか確認
+      const { data: runningTasks } = await db
+        .from('edge_tasks')
+        .select('payload')
+        .eq('task_type', 'article_reanalyze')
+        .in('status', ['pending', 'running']);
+
+      const runningArticleIds = new Set(
+        (runningTasks || [])
+          .map((t: any) => t.payload?.article_id)
+          .filter(Boolean)
+      );
+
+      const tasksToInsert: {
+        task_type: string;
+        status: string;
+        payload: {
+          article_id: number;
+          base_id: number;
+          reason: string;
+          focus: string[];
+          note: string;
+          model: string;
+        };
+      }[] = [];
+
+      let alreadyRunningCount = 0;
+      for (const row of validRows) {
+        const rootId: number = row.reanalysis_of ?? row.id;
+        if (runningArticleIds.has(rootId)) {
+          alreadyRunningCount++;
+          continue;
+        }
+        // 同一バッチ内での重複防止
+        runningArticleIds.add(rootId);
+        tasksToInsert.push({
+          task_type: 'article_reanalyze',
+          status: 'pending',
+          payload: { article_id: rootId, base_id: row.id, reason, focus, note, model },
+        });
+      }
+
+      if (tasksToInsert.length === 0) {
+        return NextResponse.json({ error: '選択された記事はすべて現在再解析中です。完了までお待ちください' }, { status: 409 });
+      }
+
+      const { error: insErr } = await db.from('edge_tasks').insert(tasksToInsert);
       if (insErr) throw insErr;
+
+      const msg = tasksToInsert.length === 1
+        ? '再解析を依頼しました。数分で新しい版が届きます（届いたら通知ベルでお知らせします）'
+        : `${tasksToInsert.length}件の再解析をまとめて依頼しました！常駐ワーカーで順次処理されます${alreadyRunningCount > 0 ? `（${alreadyRunningCount}件は既に再解析中のためスキップ）` : ''}`;
+
       return NextResponse.json({
         success: true,
-        message: '再解析を依頼しました。数分で新しい版が届きます（届いたら通知ベルでお知らせします）',
+        enqueuedCount: tasksToInsert.length,
+        alreadyRunningCount,
+        message: msg,
       });
     }
 

@@ -4,16 +4,26 @@ import { useState } from 'react';
 import { RotateCcw, X, Loader2 } from 'lucide-react';
 import { REANALYZE_FOCUS, REANALYZE_REASONS, type ReanalyzeRequest, type ReviewItem } from './types';
 
-// 「🔁 再解析」の依頼フォーム（2026-10-19）。理由・深掘りしたい観点・メモ・モデルを選んで依頼する。
+// 「🔁 再解析」の依頼フォーム（2026-10-19 / まとめて再解析対応 2026-10-29）。
+// 理由・深掘りしたい観点・メモ・モデルを選んで依頼する。
 // 依頼は edge_tasks（article_reanalyze）に積まれ、クラウドワーカーか PC の常駐デーモンが処理する。
 // 元の記事は残したまま新しい版が承認待ちに届き、カードの「🆚 比べる」で新旧を見比べて選ぶ。
-export default function ReanalyzeModal({ item, busy, onClose, onSubmit }: {
-  item: ReviewItem;
+export default function ReanalyzeModal({ item, items, busy, onClose, onSubmit }: {
+  item?: ReviewItem | null;
+  items?: ReviewItem[];
   busy: boolean;
   onClose: () => void;
   onSubmit: (req: ReanalyzeRequest) => void;
 }) {
-  const [reason, setReason] = useState(item.density?.level === 'thin' ? 'thin' : 'focus');
+  const targetItems = items && items.length > 0 ? items : item ? [item] : [];
+  const isMultiple = targetItems.length > 1;
+  const singleItem = targetItems.length === 1 ? targetItems[0] : null;
+
+  const defaultReason = (singleItem?.density?.level === 'thin' || targetItems.some((i) => i.density?.level === 'thin'))
+    ? 'thin'
+    : 'focus';
+
+  const [reason, setReason] = useState(defaultReason);
   const [focus, setFocus] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [model, setModel] = useState<'standard' | 'high'>('standard');
@@ -21,7 +31,7 @@ export default function ReanalyzeModal({ item, busy, onClose, onSubmit }: {
   const toggleFocus = (k: string) =>
     setFocus((prev) => (prev.includes(k) ? prev.filter((f) => f !== k) : [...prev, k]));
 
-  const canSubmit = !busy && (reason !== 'focus' || focus.length > 0) && (reason !== 'other' || note.trim().length > 0);
+  const canSubmit = !busy && targetItems.length > 0 && (reason !== 'focus' || focus.length > 0) && (reason !== 'other' || note.trim().length > 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
@@ -29,9 +39,22 @@ export default function ReanalyzeModal({ item, busy, onClose, onSubmit }: {
         <div className="p-4 border-b border-stone-800 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-stone-100 flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-amber-400" /> 再解析を依頼
+              <RotateCcw className="w-4 h-4 text-amber-400" />
+              {isMultiple ? `まとめて再解析を依頼（${targetItems.length}件）` : '再解析を依頼'}
             </h2>
-            <p className="text-[11px] text-stone-400 mt-1 break-words">{item.title}</p>
+            {singleItem && (
+              <p className="text-[11px] text-stone-400 mt-1 break-words">{singleItem.title}</p>
+            )}
+            {isMultiple && (
+              <div className="mt-1 space-y-0.5 text-[11px] text-stone-400 max-h-20 overflow-y-auto">
+                {targetItems.slice(0, 3).map((it) => (
+                  <p key={it.id} className="truncate">・{it.title}</p>
+                ))}
+                {targetItems.length > 3 && (
+                  <p className="text-stone-500 font-semibold">他 {targetItems.length - 3} 件の記事</p>
+                )}
+              </div>
+            )}
           </div>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-100 cursor-pointer shrink-0" aria-label="閉じる">
             <X className="w-5 h-5" />
@@ -39,10 +62,16 @@ export default function ReanalyzeModal({ item, busy, onClose, onSubmit }: {
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto text-xs">
-          {item.density && item.density.reasons.length > 0 && (
+          {singleItem?.density && singleItem.density.reasons.length > 0 && (
             <div className="p-2.5 rounded-lg bg-amber-950/30 border border-amber-800/50 text-amber-200 space-y-1">
               <p className="font-bold">この記事の目印</p>
-              {item.density.reasons.map((r) => <p key={r}>・{r}</p>)}
+              {singleItem.density.reasons.map((r) => <p key={r}>・{r}</p>)}
+            </div>
+          )}
+
+          {isMultiple && (
+            <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-800/40 text-amber-200/90 text-[11px]">
+              選択した <b className="text-amber-300">{targetItems.length}件</b> の記事を同一の解析条件でバックグラウンド再解析します。
             </div>
           )}
 
@@ -118,7 +147,8 @@ export default function ReanalyzeModal({ item, busy, onClose, onSubmit }: {
             disabled={!canSubmit}
             className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} 再解析を依頼
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+            {isMultiple ? `${targetItems.length}件を一括再解析` : '再解析を依頼'}
           </button>
         </div>
       </div>

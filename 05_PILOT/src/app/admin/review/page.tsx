@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass, RotateCcw } from 'lucide-react';
 import AdminNavHeader from '@/components/AdminNavHeader';
 import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
@@ -36,7 +36,7 @@ export default function ReviewPage() {
   // 2026-10-19: 薄い可能性・再解析版、2026-10-26: チャンプ確定・未定の絞り込み
   const [quality, setQuality] = useState<string>('');
   const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number }>({});
-  const [reanalyzeItem, setReanalyzeItem] = useState<ReviewItem | null>(null);
+  const [reanalyzeItems, setReanalyzeItems] = useState<ReviewItem[] | null>(null);
   const [compareItem, setCompareItem] = useState<ReviewItem | null>(null);
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -124,13 +124,32 @@ export default function ReviewPage() {
   const hasActiveReanalysis = items.some((i) => i.reanalysisTask && ['pending', 'running'].includes(i.reanalysisTask.status));
   useVisiblePolling(() => { load({ silent: true }); }, 60_000, hasActiveReanalysis);
 
-  const requestReanalysis = async (item: ReviewItem, req: ReanalyzeRequest) => {
-    const result = await post({ action: 'reanalyze', id: item.id, ...req });
+  const requestReanalysis = async (targetItems: ReviewItem[], req: ReanalyzeRequest) => {
+    const ids = targetItems.map((i) => i.id);
+    const result = await post({ action: 'reanalyze', ids, ...req });
     if (result.ok) {
-      setReanalyzeItem(null);
+      setReanalyzeItems(null);
       setCompareItem(null);
+      // 依頼完了した記事を選択解除
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
       load({ silent: true });
     }
+  };
+
+  const startBatchReanalysis = () => {
+    const selectedIds = Array.from(selected);
+    const targets = items.filter(
+      (i) => selectedIds.includes(i.id) && !i.is_atomic && /youtu/.test(i.source_url || '')
+    );
+    if (targets.length === 0) {
+      showMessage('再解析できるYouTube動画の記事が選択されていません', 'error');
+      return;
+    }
+    setReanalyzeItems(targets);
   };
 
   const discardReanalysis = async (item: ReviewItem) => {
@@ -462,12 +481,12 @@ export default function ReviewPage() {
       if (isInput) return;
 
       // モーダルが開いている時の Esc キー操作
-      if (previewModalItem || decomposeModalItem || reanalyzeItem || compareItem) {
+      if (previewModalItem || decomposeModalItem || reanalyzeItems || compareItem) {
         if (e.key === 'Escape') {
           e.preventDefault();
           setPreviewModalItem(null);
           setDecomposeModalItem(null);
-          setReanalyzeItem(null);
+          setReanalyzeItems(null);
           setCompareItem(null);
         }
         return;
@@ -547,7 +566,7 @@ export default function ReviewPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items, focusedIndex, previewModalItem, decomposeModalItem, reanalyzeItem, compareItem, edits]);
+  }, [items, focusedIndex, previewModalItem, decomposeModalItem, reanalyzeItems, compareItem, edits]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
@@ -617,9 +636,17 @@ export default function ReviewPage() {
             </div>
 
             {selected.size > 0 && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button onClick={() => batch('approve')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
                   <CheckCircle2 className="w-3.5 h-3.5" /> 選択分を一括承認（複数チャンプ自動分解連動）
+                </button>
+                <button
+                  onClick={startBatchReanalysis}
+                  disabled={busy}
+                  className="px-3 py-1.5 rounded-lg bg-amber-600/30 border border-amber-500/60 hover:bg-amber-600/50 text-amber-200 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="選択した記事のうち、YouTube動画の記事をまとめて再解析します"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> 選択分を一括再解析
                 </button>
                 <button onClick={() => batch('reject')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
                   <XCircle className="w-3.5 h-3.5" /> 選択分を却下
@@ -661,7 +688,7 @@ export default function ReviewPage() {
               onPreview={() => openPreview(item)}
               onReject={() => rejectOne(item)}
               onDecompose={() => openDecompose(item)}
-              onReanalyze={() => setReanalyzeItem(item)}
+              onReanalyze={() => setReanalyzeItems([item])}
               onCompare={() => setCompareItem(item)}
               onDiscardReanalysis={() => discardReanalysis(item)}
               onReload={() => load({ silent: true })}
@@ -694,12 +721,12 @@ export default function ReviewPage() {
         )}
 
         {/* 🔁 再解析の依頼 */}
-        {reanalyzeItem && (
+        {reanalyzeItems && reanalyzeItems.length > 0 && (
           <ReanalyzeModal
-            item={reanalyzeItem}
+            items={reanalyzeItems}
             busy={busy}
-            onClose={() => setReanalyzeItem(null)}
-            onSubmit={(req) => requestReanalysis(reanalyzeItem, req)}
+            onClose={() => setReanalyzeItems(null)}
+            onSubmit={(req) => requestReanalysis(reanalyzeItems, req)}
           />
         )}
 
@@ -711,7 +738,7 @@ export default function ReviewPage() {
             onClose={() => setCompareItem(null)}
             onAdopt={() => { const it = compareItem; setCompareItem(null); openPreview(it); }}
             onDiscard={() => discardReanalysis(compareItem)}
-            onReanalyzeAgain={() => { setReanalyzeItem(compareItem); setCompareItem(null); }}
+            onReanalyzeAgain={() => { setReanalyzeItems([compareItem]); setCompareItem(null); }}
           />
         )}
 
