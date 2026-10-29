@@ -283,13 +283,23 @@ def call_gemini_json(prompt, api_key, model, max_tokens=8192, temperature=0.2, r
                 pass
             if err.code == 429:
                 wait = 20 * (attempt + 1)
-                print(f"[{log_prefix}] 429。{wait}秒待って再試行 ({attempt + 1}/{retries})")
+                print(f"[{log_prefix}] 429 レート制限。{wait}秒待って再試行 ({attempt + 1}/{retries})")
+                time.sleep(wait)
+                continue
+            if err.code in (500, 502, 503, 504):
+                wait = 5 * (attempt + 1)
+                print(f"[{log_prefix}] Google側一時エラー {err.code} ({detail[:60]})。{wait}秒待って再試行 ({attempt + 1}/{retries})")
                 time.sleep(wait)
                 continue
             if err.code == 404:
                 raise RuntimeError(f"モデル {model} が見つかりません (404): {detail}") from err
             print(f"[{log_prefix}] HTTPエラー {err.code}: {detail} ({attempt + 1}/{retries})")
-            time.sleep(2)
+            time.sleep(3)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as err:
+            last_err = err
+            wait = 4 * (attempt + 1)
+            print(f"[{log_prefix}] 通信一時切断 ({err})。{wait}秒待って再試行 ({attempt + 1}/{retries})")
+            time.sleep(wait)
         except Exception as err:
             last_err = err
             print(f"[{log_prefix}] 応答の解釈に失敗: {err} ({attempt + 1}/{retries})")

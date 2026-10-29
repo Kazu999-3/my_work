@@ -142,7 +142,10 @@ def main():
         except Exception as e:  # GitHub Actions の IP は YouTube に弾かれやすい（RateLimited 等）
             print(f"字幕の取り直しに失敗: {e}", file=sys.stderr)
 
-    models = [yw.VIDEO_MODEL, yw.GEMINI_MODEL] if use_high else [yw.GEMINI_MODEL]
+    # 2026-10-29: 単一モデル依存による503過負荷・一時エラー即死を根絶する多層フォールバック
+    fallback_pool = [yw.GEMINI_MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3-flash-preview"]
+    # 順序を保ちつつ重複排除
+    models = list(dict.fromkeys([yw.VIDEO_MODEL] + fallback_pool if use_high else fallback_pool))
     article, used_model, notes = None, None, []
     for model in models:
         try:
@@ -156,11 +159,11 @@ def main():
                 source = f"映像解析（{source}）"
                 article = yw.gemini_analyze_video(url, title_src, channel, is_short=is_short,
                                                   extra_instructions=reanalysis_instructions(reanalysis))
-                article["analysis_meta"] = {"prompt_version": "video-v1", "model": yw.VIDEO_MODEL}
-            used_model = model if transcript else yw.VIDEO_MODEL
+                article["analysis_meta"] = {"prompt_version": "video-v1", "model": model}
+            used_model = model
             break
         except (GeminiQuotaError, yw.GeminiQuotaExceeded) as e:
-            notes.append(f"{model}: 利用上限")
+            notes.append(f"{model}: 利用上限 (429)")
             if model == models[-1]:
                 out(False, f"Gemini の利用上限に達しています。時間をおいて再解析してください（{e}）"[:400])
         except ValueError as e:  # 事実が1件も取れない
@@ -169,6 +172,11 @@ def main():
             notes.append(f"{model}: {str(e)[:120]}")
             if model == models[-1]:
                 out(False, f"再解析に失敗しました: {e}"[:400])
+        except Exception as e:
+            # httpx.RemoteProtocolError や接続一時切断も安全に捕捉して次モデルへフェイルオーバー
+            notes.append(f"{model}: {type(e).__name__} ({str(e)[:100]})")
+            if model == models[-1]:
+                out(False, f"再解析に失敗しました: {type(e).__name__} - {e}"[:400])
 
     header_m = META_HEADER_RE.match(row.get("content") or "")
     header = header_m.group(1) if header_m else ""
