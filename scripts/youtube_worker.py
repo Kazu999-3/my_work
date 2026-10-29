@@ -103,9 +103,9 @@ if not SUPABASE_KEY:
         "SUPABASE_SERVICE_ROLE_KEY（推奨）または SUPABASE_KEY を登録してください。"
     )
 GEMINI_KEY = os.environ["GEMINI_API_KEY"]
-# ポータル側(lib/geminiClient.ts)と同じモデルに揃える。
-# gemini-2.5-flash はこのキーで日次上限を超過した実績があるため使わない。
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
+# ポータル側(lib/geminiClient.ts)と同じ安定モデルに揃える（2026-10-29健全化）。
+# 3.1-flash-lite は503過負荷、2.5-flash は日次20回上限の地雷があるため使用禁止。
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
 # 1回の実行で新しい動画に着手してよい時間（秒）。PCデーモンはこのスクリプトを2400秒で強制終了するため、
 # 3本目の途中で切られて再試行を繰り返さないよう、経過したら残りは次の実行（10分おき）に回す。
@@ -123,8 +123,8 @@ WHISPER_MAX_SEC = int(os.environ.get("WHISPER_MAX_SEC", "1200"))
 # 「字幕が取れなかったときだけ」にしている（ENABLE_VIDEO_ANALYSIS_ALWAYS=1 で全件）。
 ENABLE_VIDEO_ANALYSIS = os.environ.get("ENABLE_VIDEO_ANALYSIS", "1") not in ("0", "false", "False")
 ENABLE_VIDEO_ANALYSIS_ALWAYS = os.environ.get("ENABLE_VIDEO_ANALYSIS_ALWAYS", "0") in ("1", "true", "True")
-# 映像解析に使うモデル。gemini-model-health-check で実クォータを確認したものだけを書くこと。
-VIDEO_MODEL = os.environ.get("VIDEO_MODEL", "gemini-2.5-flash")
+# 映像解析に使うモデル。2026-10-29: 2.5-flashの20回制限トラップを排除し 3.5-flash へ統一。
+VIDEO_MODEL = os.environ.get("VIDEO_MODEL", "gemini-3.5-flash")
 # 映像解析で読む最大秒数。低解像度で約103トークン/秒（2026-09-23実測: 12分で74,179）。
 # 長さ不明(99999)の動画は長時間配信のアーカイブが多く、丸ごと渡すと入力上限(約100万)超過の
 # 400 INVALID_ARGUMENT で失敗し続けていた（2026-10-04: "KHA SHYVANA TO RANK 1" 等）。長い動画は先頭だけを解析する。

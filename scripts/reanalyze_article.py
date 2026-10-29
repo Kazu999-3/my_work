@@ -63,6 +63,39 @@ def load_transcript(row):
                   else "映像解析で作った記事で字幕が無い")
 
 
+def resolve_unique_title(candidate_title, article_id):
+    """
+    personal_knowledge の title UNIQUE 制約 (personal_knowledge_title_key) 衝突を回避する。
+    元記事や他の記事とタイトルが被る場合、「... (再解析)」や「... (再解析 v2)」を付与して一意化する。
+    """
+    import urllib.parse
+    base = re.sub(r"\s*\(再解析(?:\s*v\d+)?\)$", "", candidate_title or "").strip()
+    if not base:
+        base = f"再解析記事 #{article_id}"
+
+    # まずそのまま空いているか確認
+    rows = yw.sb("GET", f"personal_knowledge?title=eq.{urllib.parse.quote(base)}&select=id") or []
+    if not rows:
+        return base
+
+    # 埋まっていれば (再解析)
+    c1 = f"{base} (再解析)"
+    rows = yw.sb("GET", f"personal_knowledge?title=eq.{urllib.parse.quote(c1)}&select=id") or []
+    if not rows:
+        return c1
+
+    # さらに埋まっていれば v2, v3...
+    v = 2
+    while v <= 30:
+        cv = f"{base} (再解析 v{v})"
+        rows = yw.sb("GET", f"personal_knowledge?title=eq.{urllib.parse.quote(cv)}&select=id") or []
+        if not rows:
+            return cv
+        v += 1
+
+    return f"{base} (再解析 #{article_id}-{v})"
+
+
 def main():
     if len(sys.argv) < 2:
         out(False, "payload が指定されていません")
@@ -154,8 +187,10 @@ def main():
         "model": used_model,
         "fallback_notes": notes or None,
     })
+    unique_title = resolve_unique_title(title, article_id)
+
     new_row = {
-        "title": title,
+        "title": unique_title,
         "content": content,
         "raw_content": row.get("raw_content"),
         "transcript": transcript or row.get("transcript"),
@@ -167,7 +202,18 @@ def main():
         "reanalysis_of": article_id,
         "analysis_meta": meta,
     }
-    created = yw.sb("POST", "personal_knowledge", [new_row], prefer="return=representation")
+
+    created = None
+    for attempt in range(3):
+        try:
+            created = yw.sb("POST", "personal_knowledge", [new_row], prefer="return=representation")
+            break
+        except Exception as e:
+            if any(k in str(e) for k in ("duplicate key", "23505", "personal_knowledge_title_key")):
+                clean = re.sub(r"\s*\(再解析.*?\)$", "", new_row["title"]).strip()
+                new_row["title"] = f"{clean} (再解析 #{article_id}-{attempt + 1})"
+                continue
+            raise
     new_id = created[0].get("id") if created else None
 
     # 同じ元記事から前に作った、まだ採用されていない再解析版は履歴として隠す（承認画面には最新の版だけ出す）

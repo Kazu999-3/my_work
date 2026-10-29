@@ -1,5 +1,40 @@
 ## 📅 2026-10-29（水）
 
+### 🔧 記事再解析（article_reanalyze）の 409 Conflict（タイトル一意制約違反）解消 ＆ モデル健全化
+
+**概要**:
+1. **背景と課題**:
+   - Discord のエラー検知通知にて、ワーカーの `article_reanalyze` で `Exit code 1` / `HTTP Error 409: Conflict` が発生し、毎朝の健康診断で「タスク実行異常」として起票された。
+2. **原因調査（機械的実測検証）**:
+   - 失敗タスク（ID: `381e7038` / 記事: `#37609`）の生ログを精査：
+     `RuntimeError: HTTP 409 POST personal_knowledge -> {"code":"23505","details":"Key (title)=((2400 lp Chall Main) Smurf Unranked to Challenger 究極攻略バイブル) already exists.","message":"duplicate key value violates unique constraint \"personal_knowledge_title_key\""}`
+   - `personal_knowledge` テーブルには `title` 列に UNIQUE 制約が存在する。
+   - 再解析時、AI が元記事と同一のタイトルを出力した場合、新版 INSERT 時に一意制約に衝突して未処理例外としてクラッシュしていた。
+   - また、ワーカーのデフォルトモデル（`GEMINI_MODEL: gemini-3.1-flash-lite`, `VIDEO_MODEL: gemini-2.5-flash`）に、Google側503過負荷や無料枠日次20回上限の地雷が残存していた。
+3. **実施内容**:
+   - **【タイトル自動ユニーク化 ＆ リトライ安全機構】(`scripts/reanalyze_article.py`)**:
+     - `resolve_unique_title(candidate_title, article_id)` を新設。既存記事と同一タイトルの場合、自動で `「... (再解析)」` `「... (再解析 v2)」` を付与して一意性を確保。
+     - INSERT 時に 409 (23505) をキャッチして動的にサフィックスを再生成しリトライする多層防御を配備。
+   - **【ワーカーの LLM モデル健全化】(`scripts/youtube_worker.py`)**:
+     - `GEMINI_MODEL` および `VIDEO_MODEL` を、今朝 05_PILOT で安定動作検証済みの `gemini-3.5-flash` へ刷新。
+4. **機械的実値検証**:
+   - 失敗していた記事 `#37609` に対し `reanalyze_article.py` を実行 ➔ **PASS（Exit code 0）**
+   - 新しい版 `#38713`（事実 9件、字幕から再抽出）が承認待ち（`pending`）に正常生成され、タイトル衝突なく保存されたことを実測確認済み。
+   - 失敗ステータスだった edge_task `381e7038` を `completed` へ復旧。
+
+**再利用可能な3行ナレッジ**:
+- 「親記事を残したまま新版を追加保存する」データモデルにおいて、タイトル列に UNIQUE 制約が存在する場合は、INSERT 直前に同一タイトルの存在有無を確認し、自動サフィックス（`(再解析)` 等）を付与する一意化機構が不可欠である。
+- DBの UNIQUE 制約衝突（PostgreSQL 23505 / HTTP 409）に対しては、事前の SELECT 判定だけでなく、INSERT 実行時の try-catch による動的リトライを重ねた多層防御を敷くことでレースコンディションも完全に根絶できる。
+- クラウドワーカー（GitHub Actions）とローカルデーモンが共有するスクリプト群のデフォルト環境変数は、常に最新の安定 LLM モデル（3.5-flash 等）に揃えておき、旧世代の制限モデル（20回/日等）の混入を防ぐ。
+
+- `[要検証]`: GitHub Actions（`edge-cloud-worker.yml`）の次回定時実行時における article_reanalyze 正常完了
+- `[継続ウォッチ]`: 承認待ち記事の再解析版（`#38713` 等）のレビュー画面での承認・統合テスト
+- `[発信候補]`: 「Postgres UNIQUE 制約と AI 自動生成の衝突トラップ：再解析バージョニングにおけるタイトル一意化設計」
+
+---
+
+## 📅 2026-10-29（水）
+
 ### 🛡️ 10/28 カスタム試合のアイテム・サモスペ完全反映 ＆ MMR不変仕様の整理
 
 **概要**:
@@ -87,6 +122,41 @@
 
 ## 📅 2026-10-29（水）
 
+### 🔧 記事再解析（article_reanalyze）の 409 Conflict（タイトル一意制約違反）解消 ＆ モデル健全化
+
+**概要**:
+1. **背景と課題**:
+   - Discord のエラー検知通知にて、ワーカーの `article_reanalyze` で `Exit code 1` / `HTTP Error 409: Conflict` が発生し、毎朝の健康診断で「タスク実行異常」として起票された。
+2. **原因調査（機械的実測検証）**:
+   - 失敗タスク（ID: `381e7038` / 記事: `#37609`）の生ログを精査：
+     `RuntimeError: HTTP 409 POST personal_knowledge -> {"code":"23505","details":"Key (title)=((2400 lp Chall Main) Smurf Unranked to Challenger 究極攻略バイブル) already exists.","message":"duplicate key value violates unique constraint \"personal_knowledge_title_key\""}`
+   - `personal_knowledge` テーブルには `title` 列に UNIQUE 制約が存在する。
+   - 再解析時、AI が元記事と同一のタイトルを出力した場合、新版 INSERT 時に一意制約に衝突して未処理例外としてクラッシュしていた。
+   - また、ワーカーのデフォルトモデル（`GEMINI_MODEL: gemini-3.1-flash-lite`, `VIDEO_MODEL: gemini-2.5-flash`）に、Google側503過負荷や無料枠日次20回上限の地雷が残存していた。
+3. **実施内容**:
+   - **【タイトル自動ユニーク化 ＆ リトライ安全機構】(`scripts/reanalyze_article.py`)**:
+     - `resolve_unique_title(candidate_title, article_id)` を新設。既存記事と同一タイトルの場合、自動で `「... (再解析)」` `「... (再解析 v2)」` を付与して一意性を確保。
+     - INSERT 時に 409 (23505) をキャッチして動的にサフィックスを再生成しリトライする多層防御を配備。
+   - **【ワーカーの LLM モデル健全化】(`scripts/youtube_worker.py`)**:
+     - `GEMINI_MODEL` および `VIDEO_MODEL` を、今朝 05_PILOT で安定動作検証済みの `gemini-3.5-flash` へ刷新。
+4. **機械的実値検証**:
+   - 失敗していた記事 `#37609` に対し `reanalyze_article.py` を実行 ➔ **PASS（Exit code 0）**
+   - 新しい版 `#38713`（事実 9件、字幕から再抽出）が承認待ち（`pending`）に正常生成され、タイトル衝突なく保存されたことを実測確認済み。
+   - 失敗ステータスだった edge_task `381e7038` を `completed` へ復旧。
+
+**再利用可能な3行ナレッジ**:
+- 「親記事を残したまま新版を追加保存する」データモデルにおいて、タイトル列に UNIQUE 制約が存在する場合は、INSERT 直前に同一タイトルの存在有無を確認し、自動サフィックス（`(再解析)` 等）を付与する一意化機構が不可欠である。
+- DBの UNIQUE 制約衝突（PostgreSQL 23505 / HTTP 409）に対しては、事前の SELECT 判定だけでなく、INSERT 実行時の try-catch による動的リトライを重ねた多層防御を敷くことでレースコンディションも完全に根絶できる。
+- クラウドワーカー（GitHub Actions）とローカルデーモンが共有するスクリプト群のデフォルト環境変数は、常に最新の安定 LLM モデル（3.5-flash 等）に揃えておき、旧世代の制限モデル（20回/日等）の混入を防ぐ。
+
+- `[要検証]`: GitHub Actions（`edge-cloud-worker.yml`）の次回定時実行時における article_reanalyze 正常完了
+- `[継続ウォッチ]`: 承認待ち記事の再解析版（`#38713` 等）のレビュー画面での承認・統合テスト
+- `[発信候補]`: 「Postgres UNIQUE 制約と AI 自動生成の衝突トラップ：再解析バージョニングにおけるタイトル一意化設計」
+
+---
+
+## 📅 2026-10-29（水）
+
 ### 👑 Sovereign 統合スーパーバイザー新設 ＆ オーバーレイ・ステルス待機機能配備
 
 **概要**:
@@ -123,6 +193,41 @@
 - `[要検証]`: PC再起動時のスタートアップからの統合スーパーバイザー自動起動挙動
 - `[継続ウォッチ]`: 次回カスタム開催時のMatch Watcherによる10人スタッツ自動送信完了ログ
 - `[発信候補]`: 「スリープ運用Windowsで常駐Python/Nodeデーモンがいつの間にか死ぬ問題を親スーパーバイザーで完全根絶した話」
+
+---
+
+## 📅 2026-10-29（水）
+
+### 🔧 記事再解析（article_reanalyze）の 409 Conflict（タイトル一意制約違反）解消 ＆ モデル健全化
+
+**概要**:
+1. **背景と課題**:
+   - Discord のエラー検知通知にて、ワーカーの `article_reanalyze` で `Exit code 1` / `HTTP Error 409: Conflict` が発生し、毎朝の健康診断で「タスク実行異常」として起票された。
+2. **原因調査（機械的実測検証）**:
+   - 失敗タスク（ID: `381e7038` / 記事: `#37609`）の生ログを精査：
+     `RuntimeError: HTTP 409 POST personal_knowledge -> {"code":"23505","details":"Key (title)=((2400 lp Chall Main) Smurf Unranked to Challenger 究極攻略バイブル) already exists.","message":"duplicate key value violates unique constraint \"personal_knowledge_title_key\""}`
+   - `personal_knowledge` テーブルには `title` 列に UNIQUE 制約が存在する。
+   - 再解析時、AI が元記事と同一のタイトルを出力した場合、新版 INSERT 時に一意制約に衝突して未処理例外としてクラッシュしていた。
+   - また、ワーカーのデフォルトモデル（`GEMINI_MODEL: gemini-3.1-flash-lite`, `VIDEO_MODEL: gemini-2.5-flash`）に、Google側503過負荷や無料枠日次20回上限の地雷が残存していた。
+3. **実施内容**:
+   - **【タイトル自動ユニーク化 ＆ リトライ安全機構】(`scripts/reanalyze_article.py`)**:
+     - `resolve_unique_title(candidate_title, article_id)` を新設。既存記事と同一タイトルの場合、自動で `「... (再解析)」` `「... (再解析 v2)」` を付与して一意性を確保。
+     - INSERT 時に 409 (23505) をキャッチして動的にサフィックスを再生成しリトライする多層防御を配備。
+   - **【ワーカーの LLM モデル健全化】(`scripts/youtube_worker.py`)**:
+     - `GEMINI_MODEL` および `VIDEO_MODEL` を、今朝 05_PILOT で安定動作検証済みの `gemini-3.5-flash` へ刷新。
+4. **機械的実値検証**:
+   - 失敗していた記事 `#37609` に対し `reanalyze_article.py` を実行 ➔ **PASS（Exit code 0）**
+   - 新しい版 `#38713`（事実 9件、字幕から再抽出）が承認待ち（`pending`）に正常生成され、タイトル衝突なく保存されたことを実測確認済み。
+   - 失敗ステータスだった edge_task `381e7038` を `completed` へ復旧。
+
+**再利用可能な3行ナレッジ**:
+- 「親記事を残したまま新版を追加保存する」データモデルにおいて、タイトル列に UNIQUE 制約が存在する場合は、INSERT 直前に同一タイトルの存在有無を確認し、自動サフィックス（`(再解析)` 等）を付与する一意化機構が不可欠である。
+- DBの UNIQUE 制約衝突（PostgreSQL 23505 / HTTP 409）に対しては、事前の SELECT 判定だけでなく、INSERT 実行時の try-catch による動的リトライを重ねた多層防御を敷くことでレースコンディションも完全に根絶できる。
+- クラウドワーカー（GitHub Actions）とローカルデーモンが共有するスクリプト群のデフォルト環境変数は、常に最新の安定 LLM モデル（3.5-flash 等）に揃えておき、旧世代の制限モデル（20回/日等）の混入を防ぐ。
+
+- `[要検証]`: GitHub Actions（`edge-cloud-worker.yml`）の次回定時実行時における article_reanalyze 正常完了
+- `[継続ウォッチ]`: 承認待ち記事の再解析版（`#38713` 等）のレビュー画面での承認・統合テスト
+- `[発信候補]`: 「Postgres UNIQUE 制約と AI 自動生成の衝突トラップ：再解析バージョニングにおけるタイトル一意化設計」
 
 ---
 
