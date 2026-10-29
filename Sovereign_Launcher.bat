@@ -54,20 +54,16 @@ goto MENU
 
 :START_ALL
 echo.
-echo 🚀 全システムを一括起動しています...
-wscript.exe "D:\my_work\03_SYSTEMS\start_edge_worker.vbs"
-powershell -NoProfile -WindowStyle Hidden -Command "Start-Process 'd:\my_work\.venv\Scripts\pythonw.exe' -ArgumentList 'd:\my_work\scripts\replay_worker.py' -WindowStyle Hidden"
-wscript.exe "d:\my_work\scripts\run_match_watcher_silent.vbs"
-echo ✅ 動画解析、リプレイ待機、試合監視をすべてバックグラウンド起動しました。
+echo 🚀 統合スーパーバイザーを一括起動しています...
+wscript.exe "d:\my_work\scripts\run_supervisor_silent.vbs"
+echo ✅ 動画解析、試合監視、HUDオーバーレイ(ステルス)をすべて常駐監視起動しました。
 timeout /t 3 > nul
 goto MENU
 
 :STOP_ALL
 echo.
-echo 🛑 全システムを一括停止しています...
-call "D:\my_work\stop_edge_worker.bat" > nul 2>&1
-call "D:\my_work\03_SYSTEMS\stop_overlay.bat" > nul 2>&1
-powershell -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*replay_worker.py*' -or $_.CommandLine -like '*match_watcher_daemon*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" > nul 2>&1
+echo 🛑 統合スーパーバイザーと全常駐サービスを一括停止しています...
+call "d:\my_work\stop_supervisor.bat" > nul 2>&1
 echo ✅ 全デーモンを停止しました。
 timeout /t 3 > nul
 goto MENU

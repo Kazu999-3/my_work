@@ -110,6 +110,7 @@ def main():
     parser.add_argument("--demo", action="store_true", help="リアルタイム試合シミュレーション(デモモード)を実行")
     parser.add_argument("--test", action="store_true", help="自動テストスイートを実行")
     parser.add_argument("--always-show", action="store_true", help="すべてのウィジェットを常時表示（非アクティブ時も非表示にしない）")
+    parser.add_argument("--stealth", action="store_true", help="画面表示を行わず裏でバックグラウンド待機する（完全ステルスモード）")
     args = parser.parse_args()
 
     if args.test:
@@ -178,6 +179,7 @@ def main():
 
     # 表示状態管理
     hud_visible = False
+    stealth_mode = bool(args.stealth)  # 完全非表示（ステルス待機）モード
 
     # 👑 フローティングステータスバッジ（ゲーム中または手動表示時のみ展開）
     status_pill = MiniStatusPillWidget(
@@ -222,6 +224,28 @@ def main():
     toggle_action = QAction("👁️ オーバーレイ手動 表示/非表示 [F8]", tray_menu)
     toggle_action.triggered.connect(toggle_manual_visibility)
     tray_menu.addAction(toggle_action)
+
+    stealth_action = QAction("🔕 画面表示を一時停止（完全ステルス待機）", tray_menu)
+    stealth_action.setCheckable(True)
+    stealth_action.setChecked(stealth_mode)
+
+    def on_stealth_toggled(checked: bool):
+        nonlocal stealth_mode
+        stealth_mode = checked
+        if stealth_mode and hud_visible:
+            hide_hud_widgets()
+            try:
+                tray_icon.showMessage("Sovereign HUD", "ステルスモード有効: 画面表示を非表示にしました（裏で待機継続）", QSystemTrayIcon.MessageIcon.Information, 1500)
+            except Exception:
+                pass
+        elif not stealth_mode:
+            try:
+                tray_icon.showMessage("Sovereign HUD", "ステルスモード解除: 次の試合から自動表示されます", QSystemTrayIcon.MessageIcon.Information, 1500)
+            except Exception:
+                pass
+
+    stealth_action.toggled.connect(on_stealth_toggled)
+    tray_menu.addAction(stealth_action)
 
     tray_menu.addSeparator()
     quit_action = QAction("❌ Sovereign HUD を終了", tray_menu)
@@ -377,10 +401,13 @@ def main():
             g_str = state.get("gold_diff_str", "0G")
 
             if not hud_visible:
-                # 🎮 LoL開始を検知 ➔ 自動でオーバーレイを画面上に展開！
-                show_hud_widgets()
-                toast_alert.show_alert("👑", f"Sovereign HUD 接続完了: {my_champ} vs {enemy_champ}", alert_type="info", duration_ms=4000)
-                status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
+                if not stealth_mode:
+                    # 🎮 LoL開始を検知 ➔ 自動でオーバーレイを画面上に展開！
+                    show_hud_widgets()
+                    toast_alert.show_alert("👑", f"Sovereign HUD 接続完了: {my_champ} vs {enemy_champ}", alert_type="info", duration_ms=4000)
+                    status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
+                else:
+                    status_action.setText(f"⚔️ 試合中 (ステルス): {my_champ} vs {enemy_champ} ({t_str})")
                 tray_icon.setToolTip(f"👑 Sovereign HUD (試合中: {my_champ})")
 
             if last_reported_status != "in_game":
