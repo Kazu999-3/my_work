@@ -1,7 +1,7 @@
 {
   "source": "OP.GG",
   "sourceUrl": "https://www.op.gg/champions",
-  "fetchedAt": "2026-10-30T09:20:26.101680+09:00",
+  "fetchedAt": "2026-10-30T21:07:03.355810+09:00",
   "totalEntries": 264,
   "lanes": {
     "TOP": {
@@ -30,9 +30,19 @@
         "winRate": 51.0,
         "pickRate": 6.0,
         "banRate": 4.0,
+        "tier": "Tier 1",
+        "tierNum": 1,
+        "rank": 3,
+        "isRip": false
+      },
+      "Ornn": {
+        "championName": "Ornn",
+        "winRate": 52.0,
+        "pickRate": 4.0,
+        "banRate": 1.0,
         "tier": "Tier 2",
         "tierNum": 2,
-        "rank": 3,
+        "rank": 4,
         "isRip": false
       },
       "Shen": {
@@ -42,22 +52,12 @@
         "banRate": 1.0,
         "tier": "Tier 2",
         "tierNum": 2,
-        "rank": 4,
-        "isRip": false
-      },
-      "Ornn": {
-        "championName": "Ornn",
-        "winRate": 51.0,
-        "pickRate": 4.0,
-        "banRate": 1.0,
-        "tier": "Tier 2",
-        "tierNum": 2,
         "rank": 5,
         "isRip": false
       },
       "Sett": {
         "championName": "Sett",
-        "winRate": 51.0,
+        "winRate": 50.0,
         "pickRate": 6.0,
         "banRate": 3.0,
         "tier": "Tier 2",
@@ -79,7 +79,7 @@
         "championName": "Mordekaiser",
         "winRate": 50.0,
         "pickRate": 5.0,
-        "banRate": 8.0,
+        "banRate": 9.0,
         "tier": "Tier 2",
         "tierNum": 2,
         "rank": 8,
@@ -105,16 +105,6 @@
         "rank": 10,
         "isRip": false
       },
-      "Sion": {
-        "championName": "Sion",
-        "winRate": 51.0,
-        "pickRate": 4.0,
-        "banRate": 1.0,
-        "tier": "Tier 2",
-        "tierNum": 2,
-        "rank": 11,
-        "isRip": false
-      },
       "Camille": {
         "championName": "Camille",
         "winRate": 51.0,
@@ -122,17 +112,17 @@
         "banRate": 2.0,
         "tier": "Tier 2",
         "tierNum": 2,
-        "rank": 12,
+        "rank": 11,
         "isRip": false
       },
-      "Irelia": {
-        "championName": "Irelia",
-        "winRate": 50.0,
-        "pickRate": 5.0,
-        "banRate": 13.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 13,
+      "Sion": {
+        "championName": "Sion",
+        "winRate": 51.0,
+        "pickRate": 4.0,
+        "banRate": 1.0,
+        "tier": "Tier 2",
+        "tierNum": 2,
+        "rank": 12,
         "isRip": false
       },
       "Renekton": {
@@ -140,8 +130,18 @@
         "winRate": 50.0,
         "pickRate": 6.0,
         "banRate": 4.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
+        "rank": 13,
+        "isRip": false
+      },
+      "Yone": {
+        "championName": "Yone",
+        "winRate": 49.0,
+        "pickRate": 8.0,
+        "banRate": 15.0,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 14,
         "isRip": false
       },
@@ -150,18 +150,18 @@
         "winRate": 51.0,
         "pickRate": 4.0,
         "banRate": 12.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 15,
         "isRip": false
       },
-      "Yone": {
-        "championName": "Yone",
-        "winRate": 49.0,
-        "pickRate": 8.0,
-        "banRate": 15.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+      "Irelia": {
+        "championName": "Irelia",
+        "winRate": 50.0,
+        "pickRate": 5.0,
+        "banRate": 13.0,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 16,
         "isRip": false
       },
@@ -170,8 +170,8 @@
         "winRate": 51.0,
         "pickRate": 4.0,
         "banRate": 7.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 17,
         "isRip": false
       },
@@ -195,16 +195,6 @@
         "rank": 19,
         "isRip": false
       },
-      "Warwick": {
-        "championName": "Warwick",
-        "winRate": 52.0,
-        "pickRate": 1.0,
-        "banRate": 2.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 20,
-        "isRip": false
-      },
       "Chogath": {
         "championName": "Cho'Gath",
         "winRate": 51.0,
@@ -212,17 +202,17 @@
         "banRate": 8.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 21,
+        "rank": 20,
         "isRip": false
       },
-      "Yasuo": {
-        "championName": "Yasuo",
-        "winRate": 50.0,
-        "pickRate": 4.0,
-        "banRate": 26.0,
+      "Warwick": {
+        "championName": "Warwick",
+        "winRate": 52.0,
+        "pickRate": 1.0,
+        "banRate": 2.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 22,
+        "rank": 21,
         "isRip": false
       },
       "Kayle": {
@@ -230,6 +220,16 @@
         "winRate": 51.0,
         "pickRate": 2.0,
         "banRate": 1.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 22,
+        "isRip": false
+      },
+      "Yasuo": {
+        "championName": "Yasuo",
+        "winRate": 50.0,
+        "pickRate": 4.0,
+        "banRate": 26.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 23,
@@ -288,21 +288,11 @@
       "Illaoi": {
         "championName": "Illaoi",
         "winRate": 50.0,
-        "pickRate": 2.0,
+        "pickRate": 3.0,
         "banRate": 5.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 29,
-        "isRip": false
-      },
-      "Kled": {
-        "championName": "Kled",
-        "winRate": 51.0,
-        "pickRate": 2.0,
-        "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 30,
         "isRip": false
       },
       "Olaf": {
@@ -312,17 +302,17 @@
         "banRate": 4.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 31,
+        "rank": 30,
         "isRip": false
       },
-      "Akali": {
-        "championName": "Akali",
-        "winRate": 49.0,
-        "pickRate": 3.0,
-        "banRate": 17.0,
+      "Kled": {
+        "championName": "Kled",
+        "winRate": 51.0,
+        "pickRate": 2.0,
+        "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 32,
+        "rank": 31,
         "isRip": false
       },
       "Zaahen": {
@@ -330,6 +320,16 @@
         "winRate": 50.0,
         "pickRate": 3.0,
         "banRate": 1.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 32,
+        "isRip": false
+      },
+      "Akali": {
+        "championName": "Akali",
+        "winRate": 49.0,
+        "pickRate": 3.0,
+        "banRate": 17.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 33,
@@ -340,8 +340,8 @@
         "winRate": 52.0,
         "pickRate": 1.0,
         "banRate": 3.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 34,
         "isRip": false
       },
@@ -355,20 +355,20 @@
         "rank": 35,
         "isRip": false
       },
-      "Gragas": {
-        "championName": "Gragas",
+      "Riven": {
+        "championName": "Riven",
         "winRate": 50.0,
-        "pickRate": 3.0,
+        "pickRate": 2.0,
         "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 36,
         "isRip": false
       },
-      "Riven": {
-        "championName": "Riven",
+      "Gragas": {
+        "championName": "Gragas",
         "winRate": 50.0,
-        "pickRate": 2.0,
+        "pickRate": 3.0,
         "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
@@ -427,7 +427,7 @@
       },
       "Jayce": {
         "championName": "Jayce",
-        "winRate": 47.0,
+        "winRate": 48.0,
         "pickRate": 6.0,
         "banRate": 7.0,
         "tier": "Tier 4",
@@ -475,16 +475,6 @@
         "rank": 47,
         "isRip": false
       },
-      "Vladimir": {
-        "championName": "Vladimir",
-        "winRate": 50.0,
-        "pickRate": 1.0,
-        "banRate": 6.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 48,
-        "isRip": false
-      },
       "Ambessa": {
         "championName": "Ambessa",
         "winRate": 48.0,
@@ -492,17 +482,17 @@
         "banRate": 5.0,
         "tier": "Tier 4",
         "tierNum": 4,
-        "rank": 49,
+        "rank": 48,
         "isRip": false
       },
-      "Lissandra": {
-        "championName": "Lissandra",
-        "winRate": 51.0,
+      "Vladimir": {
+        "championName": "Vladimir",
+        "winRate": 50.0,
         "pickRate": 1.0,
-        "banRate": 4.0,
+        "banRate": 6.0,
         "tier": "Tier 4",
         "tierNum": 4,
-        "rank": 50,
+        "rank": 49,
         "isRip": false
       },
       "Sylas": {
@@ -510,6 +500,16 @@
         "winRate": 49.0,
         "pickRate": 1.0,
         "banRate": 17.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
+        "rank": 50,
+        "isRip": false
+      },
+      "Lissandra": {
+        "championName": "Lissandra",
+        "winRate": 51.0,
+        "pickRate": 1.0,
+        "banRate": 4.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 51,
@@ -527,7 +527,7 @@
       },
       "Aurora": {
         "championName": "Aurora",
-        "winRate": 51.0,
+        "winRate": 50.0,
         "pickRate": 1.0,
         "banRate": 1.0,
         "tier": "Tier 5",
@@ -547,7 +547,7 @@
       },
       "Vayne": {
         "championName": "Vayne",
-        "winRate": 48.0,
+        "winRate": 49.0,
         "pickRate": 1.0,
         "banRate": 4.0,
         "tier": "Tier 5",
@@ -555,21 +555,21 @@
         "rank": 55,
         "isRip": false
       },
-      "Malzahar": {
-        "championName": "Malzahar",
-        "winRate": 50.0,
-        "pickRate": 1.0,
-        "banRate": 9.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
-        "rank": 56,
-        "isRip": false
-      },
       "Swain": {
         "championName": "Swain",
         "winRate": 50.0,
         "pickRate": 1.0,
         "banRate": 2.0,
+        "tier": "Tier 5",
+        "tierNum": 5,
+        "rank": 56,
+        "isRip": false
+      },
+      "Malzahar": {
+        "championName": "Malzahar",
+        "winRate": 50.0,
+        "pickRate": 1.0,
+        "banRate": 9.0,
         "tier": "Tier 5",
         "tierNum": 5,
         "rank": 57,
@@ -585,21 +585,21 @@
         "rank": 58,
         "isRip": false
       },
-      "Rumble": {
-        "championName": "Rumble",
-        "winRate": 47.0,
-        "pickRate": 2.0,
-        "banRate": 1.0,
+      "Ryze": {
+        "championName": "Ryze",
+        "winRate": 49.0,
+        "pickRate": 1.0,
+        "banRate": 0.0,
         "tier": "Tier 5",
         "tierNum": 5,
         "rank": 59,
         "isRip": false
       },
-      "Ryze": {
-        "championName": "Ryze",
-        "winRate": 48.0,
-        "pickRate": 1.0,
-        "banRate": 0.0,
+      "Rumble": {
+        "championName": "Rumble",
+        "winRate": 47.0,
+        "pickRate": 2.0,
+        "banRate": 1.0,
         "tier": "Tier 5",
         "tierNum": 5,
         "rank": 60,
@@ -680,7 +680,7 @@
       "Kayn": {
         "championName": "Kayn",
         "winRate": 50.0,
-        "pickRate": 7.0,
+        "pickRate": 8.0,
         "banRate": 6.0,
         "tier": "Tier 2",
         "tierNum": 2,
@@ -772,8 +772,8 @@
         "winRate": 50.0,
         "pickRate": 5.0,
         "banRate": 10.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 15,
         "isRip": false
       },
@@ -782,18 +782,18 @@
         "winRate": 49.0,
         "pickRate": 8.0,
         "banRate": 10.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 16,
         "isRip": false
       },
       "Belveth": {
         "championName": "Bel'Veth",
         "winRate": 52.0,
-        "pickRate": 2.0,
+        "pickRate": 3.0,
         "banRate": 4.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 17,
         "isRip": false
       },
@@ -839,22 +839,12 @@
       },
       "XinZhao": {
         "championName": "Xin Zhao",
-        "winRate": 50.0,
+        "winRate": 51.0,
         "pickRate": 3.0,
         "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 22,
-        "isRip": false
-      },
-      "Taliyah": {
-        "championName": "Taliyah",
-        "winRate": 52.0,
-        "pickRate": 2.0,
-        "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 23,
         "isRip": false
       },
       "Sejuani": {
@@ -864,7 +854,7 @@
         "banRate": 0.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 24,
+        "rank": 23,
         "isRip": false
       },
       "Rammus": {
@@ -872,6 +862,16 @@
         "winRate": 52.0,
         "pickRate": 2.0,
         "banRate": 4.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 24,
+        "isRip": false
+      },
+      "Taliyah": {
+        "championName": "Taliyah",
+        "winRate": 52.0,
+        "pickRate": 2.0,
+        "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 25,
@@ -887,16 +887,6 @@
         "rank": 26,
         "isRip": false
       },
-      "Diana": {
-        "championName": "Diana",
-        "winRate": 50.0,
-        "pickRate": 3.0,
-        "banRate": 3.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 27,
-        "isRip": false
-      },
       "Hecarim": {
         "championName": "Hecarim",
         "winRate": 49.0,
@@ -904,17 +894,7 @@
         "banRate": 8.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 28,
-        "isRip": false
-      },
-      "Udyr": {
-        "championName": "Udyr",
-        "winRate": 51.0,
-        "pickRate": 2.0,
-        "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 29,
+        "rank": 27,
         "isRip": false
       },
       "Evelynn": {
@@ -922,6 +902,26 @@
         "winRate": 51.0,
         "pickRate": 3.0,
         "banRate": 2.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 28,
+        "isRip": false
+      },
+      "Diana": {
+        "championName": "Diana",
+        "winRate": 50.0,
+        "pickRate": 3.0,
+        "banRate": 3.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 29,
+        "isRip": false
+      },
+      "Udyr": {
+        "championName": "Udyr",
+        "winRate": 51.0,
+        "pickRate": 2.0,
+        "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 30,
@@ -972,29 +972,9 @@
         "winRate": 52.0,
         "pickRate": 1.0,
         "banRate": 0.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
+        "tier": "Tier 3",
+        "tierNum": 3,
         "rank": 35,
-        "isRip": false
-      },
-      "Kindred": {
-        "championName": "Kindred",
-        "winRate": 50.0,
-        "pickRate": 3.0,
-        "banRate": 2.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 36,
-        "isRip": false
-      },
-      "Vi": {
-        "championName": "Vi",
-        "winRate": 49.0,
-        "pickRate": 4.0,
-        "banRate": 1.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 37,
         "isRip": false
       },
       "Darius": {
@@ -1002,8 +982,28 @@
         "winRate": 51.0,
         "pickRate": 1.0,
         "banRate": 14.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 36,
+        "isRip": false
+      },
+      "Kindred": {
+        "championName": "Kindred",
+        "winRate": 50.0,
+        "pickRate": 3.0,
+        "banRate": 2.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 37,
+        "isRip": false
+      },
+      "Vi": {
+        "championName": "Vi",
+        "winRate": 49.0,
+        "pickRate": 4.0,
+        "banRate": 1.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
         "rank": 38,
         "isRip": false
       },
@@ -1012,8 +1012,8 @@
         "winRate": 49.0,
         "pickRate": 4.0,
         "banRate": 9.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
+        "tier": "Tier 3",
+        "tierNum": 3,
         "rank": 39,
         "isRip": false
       },
@@ -1047,16 +1047,6 @@
         "rank": 42,
         "isRip": false
       },
-      "Aatrox": {
-        "championName": "Aatrox",
-        "winRate": 51.0,
-        "pickRate": 1.0,
-        "banRate": 7.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 43,
-        "isRip": false
-      },
       "Gwen": {
         "championName": "Gwen",
         "winRate": 51.0,
@@ -1064,7 +1054,27 @@
         "banRate": 3.0,
         "tier": "Tier 4",
         "tierNum": 4,
+        "rank": 43,
+        "isRip": false
+      },
+      "Aatrox": {
+        "championName": "Aatrox",
+        "winRate": 51.0,
+        "pickRate": 1.0,
+        "banRate": 7.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 44,
+        "isRip": false
+      },
+      "Qiyana": {
+        "championName": "Qiyana",
+        "winRate": 46.0,
+        "pickRate": 7.0,
+        "banRate": 15.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
+        "rank": 45,
         "isRip": false
       },
       "Gragas": {
@@ -1072,18 +1082,8 @@
         "winRate": 51.0,
         "pickRate": 1.0,
         "banRate": 1.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
-        "rank": 45,
-        "isRip": false
-      },
-      "Qiyana": {
-        "championName": "Qiyana",
-        "winRate": 46.0,
-        "pickRate": 7.0,
-        "banRate": 16.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 46,
         "isRip": false
       },
@@ -1092,8 +1092,8 @@
         "winRate": 49.0,
         "pickRate": 1.0,
         "banRate": 1.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 47,
         "isRip": false
       },
@@ -1102,8 +1102,8 @@
         "winRate": 47.0,
         "pickRate": 3.0,
         "banRate": 24.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 48,
         "isRip": false
       },
@@ -1112,18 +1112,18 @@
         "winRate": 51.0,
         "pickRate": 1.0,
         "banRate": 0.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 49,
         "isRip": false
       },
       "Quinn": {
         "championName": "Quinn",
-        "winRate": 50.0,
+        "winRate": 49.0,
         "pickRate": 1.0,
         "banRate": 1.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 50,
         "isRip": false
       },
@@ -1132,8 +1132,8 @@
         "winRate": 50.0,
         "pickRate": 1.0,
         "banRate": 2.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 51,
         "isRip": false
       },
@@ -1141,20 +1141,10 @@
         "championName": "Fizz",
         "winRate": 50.0,
         "pickRate": 1.0,
-        "banRate": 6.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
-        "rank": 52,
-        "isRip": false
-      },
-      "Jayce": {
-        "championName": "Jayce",
-        "winRate": 47.0,
-        "pickRate": 2.0,
         "banRate": 7.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
-        "rank": 53,
+        "tier": "Tier 4",
+        "tierNum": 4,
+        "rank": 52,
         "isRip": false
       },
       "Jax": {
@@ -1162,6 +1152,16 @@
         "winRate": 49.0,
         "pickRate": 1.0,
         "banRate": 10.0,
+        "tier": "Tier 5",
+        "tierNum": 5,
+        "rank": 53,
+        "isRip": false
+      },
+      "Jayce": {
+        "championName": "Jayce",
+        "winRate": 47.0,
+        "pickRate": 2.0,
+        "banRate": 7.0,
         "tier": "Tier 5",
         "tierNum": 5,
         "rank": 54,
@@ -1293,7 +1293,7 @@
         "championName": "Vladimir",
         "winRate": 51.0,
         "pickRate": 4.0,
-        "banRate": 6.0,
+        "banRate": 7.0,
         "tier": "Tier 2",
         "tierNum": 2,
         "rank": 8,
@@ -1359,21 +1359,21 @@
         "rank": 14,
         "isRip": false
       },
-      "Lux": {
-        "championName": "Lux",
-        "winRate": 51.0,
-        "pickRate": 4.0,
-        "banRate": 4.0,
-        "tier": "Tier 2",
-        "tierNum": 2,
-        "rank": 15,
-        "isRip": false
-      },
       "Locke": {
         "championName": "Locke",
         "winRate": 50.0,
         "pickRate": 7.0,
         "banRate": 33.0,
+        "tier": "Tier 2",
+        "tierNum": 2,
+        "rank": 15,
+        "isRip": false
+      },
+      "Lux": {
+        "championName": "Lux",
+        "winRate": 51.0,
+        "pickRate": 4.0,
+        "banRate": 4.0,
         "tier": "Tier 2",
         "tierNum": 2,
         "rank": 16,
@@ -1389,21 +1389,21 @@
         "rank": 17,
         "isRip": false
       },
-      "Diana": {
-        "championName": "Diana",
-        "winRate": 51.0,
-        "pickRate": 3.0,
-        "banRate": 3.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 18,
-        "isRip": false
-      },
       "Hwei": {
         "championName": "Hwei",
         "winRate": 51.0,
         "pickRate": 4.0,
         "banRate": 2.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 18,
+        "isRip": false
+      },
+      "Diana": {
+        "championName": "Diana",
+        "winRate": 51.0,
+        "pickRate": 3.0,
+        "banRate": 3.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 19,
@@ -1419,21 +1419,21 @@
         "rank": 20,
         "isRip": false
       },
-      "Aurora": {
-        "championName": "Aurora",
-        "winRate": 51.0,
-        "pickRate": 3.0,
-        "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 21,
-        "isRip": false
-      },
       "Akali": {
         "championName": "Akali",
         "winRate": 49.0,
         "pickRate": 8.0,
         "banRate": 17.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 21,
+        "isRip": false
+      },
+      "Aurora": {
+        "championName": "Aurora",
+        "winRate": 51.0,
+        "pickRate": 3.0,
+        "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 22,
@@ -1453,10 +1453,20 @@
         "championName": "Sylas",
         "winRate": 49.0,
         "pickRate": 7.0,
-        "banRate": 18.0,
+        "banRate": 17.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 24,
+        "isRip": false
+      },
+      "Zoe": {
+        "championName": "Zoe",
+        "winRate": 51.0,
+        "pickRate": 3.0,
+        "banRate": 4.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 25,
         "isRip": false
       },
       "Veigar": {
@@ -1464,16 +1474,6 @@
         "winRate": 50.0,
         "pickRate": 3.0,
         "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 25,
-        "isRip": false
-      },
-      "Zoe": {
-        "championName": "Zoe",
-        "winRate": 50.0,
-        "pickRate": 3.0,
-        "banRate": 4.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 26,
@@ -1489,16 +1489,6 @@
         "rank": 27,
         "isRip": false
       },
-      "Taliyah": {
-        "championName": "Taliyah",
-        "winRate": 51.0,
-        "pickRate": 2.0,
-        "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 28,
-        "isRip": false
-      },
       "Velkoz": {
         "championName": "Vel'Koz",
         "winRate": 52.0,
@@ -1506,14 +1496,24 @@
         "banRate": 2.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 29,
+        "rank": 28,
         "isRip": false
       },
       "Anivia": {
         "championName": "Anivia",
-        "winRate": 50.0,
+        "winRate": 51.0,
         "pickRate": 2.0,
         "banRate": 2.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 29,
+        "isRip": false
+      },
+      "Taliyah": {
+        "championName": "Taliyah",
+        "winRate": 51.0,
+        "pickRate": 2.0,
+        "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 30,
@@ -1539,20 +1539,20 @@
         "rank": 32,
         "isRip": false
       },
-      "AurelionSol": {
-        "championName": "Aurelion Sol",
-        "winRate": 51.0,
-        "pickRate": 2.0,
+      "Gragas": {
+        "championName": "Gragas",
+        "winRate": 53.0,
+        "pickRate": 1.0,
         "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 33,
         "isRip": false
       },
-      "Gragas": {
-        "championName": "Gragas",
-        "winRate": 53.0,
-        "pickRate": 1.0,
+      "AurelionSol": {
+        "championName": "Aurelion Sol",
+        "winRate": 51.0,
+        "pickRate": 2.0,
         "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
@@ -1601,7 +1601,7 @@
       },
       "Irelia": {
         "championName": "Irelia",
-        "winRate": 48.0,
+        "winRate": 49.0,
         "pickRate": 3.0,
         "banRate": 13.0,
         "tier": "Tier 4",
@@ -1639,6 +1639,16 @@
         "rank": 42,
         "isRip": false
       },
+      "Sion": {
+        "championName": "Sion",
+        "winRate": 51.0,
+        "pickRate": 1.0,
+        "banRate": 1.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
+        "rank": 43,
+        "isRip": false
+      },
       "Malphite": {
         "championName": "Malphite",
         "winRate": 50.0,
@@ -1646,7 +1656,7 @@
         "banRate": 18.0,
         "tier": "Tier 4",
         "tierNum": 4,
-        "rank": 43,
+        "rank": 44,
         "isRip": false
       },
       "Garen": {
@@ -1654,16 +1664,6 @@
         "winRate": 51.0,
         "pickRate": 1.0,
         "banRate": 4.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 44,
-        "isRip": false
-      },
-      "Sion": {
-        "championName": "Sion",
-        "winRate": 51.0,
-        "pickRate": 1.0,
-        "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 45,
@@ -1719,21 +1719,21 @@
         "rank": 50,
         "isRip": false
       },
-      "Nasus": {
-        "championName": "Nasus",
-        "winRate": 49.0,
-        "pickRate": 1.0,
-        "banRate": 11.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
-        "rank": 51,
-        "isRip": false
-      },
       "Azir": {
         "championName": "Azir",
         "winRate": 47.0,
         "pickRate": 2.0,
         "banRate": 0.0,
+        "tier": "Tier 5",
+        "tierNum": 5,
+        "rank": 51,
+        "isRip": false
+      },
+      "Nasus": {
+        "championName": "Nasus",
+        "winRate": 49.0,
+        "pickRate": 1.0,
+        "banRate": 11.0,
         "tier": "Tier 5",
         "tierNum": 5,
         "rank": 52,
@@ -1866,8 +1866,8 @@
         "winRate": 54.0,
         "pickRate": 1.0,
         "banRate": 2.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 8,
         "isRip": false
       },
@@ -1881,21 +1881,21 @@
         "rank": 9,
         "isRip": false
       },
-      "Karthus": {
-        "championName": "Karthus",
-        "winRate": 54.0,
-        "pickRate": 1.0,
-        "banRate": 1.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 10,
-        "isRip": false
-      },
       "Sivir": {
         "championName": "Sivir",
         "winRate": 51.0,
         "pickRate": 4.0,
         "banRate": 2.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 10,
+        "isRip": false
+      },
+      "Karthus": {
+        "championName": "Karthus",
+        "winRate": 54.0,
+        "pickRate": 1.0,
+        "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 11,
@@ -1951,16 +1951,6 @@
         "rank": 16,
         "isRip": false
       },
-      "Lux": {
-        "championName": "Lux",
-        "winRate": 53.0,
-        "pickRate": 1.0,
-        "banRate": 4.0,
-        "tier": "Tier 3",
-        "tierNum": 3,
-        "rank": 17,
-        "isRip": false
-      },
       "Lucian": {
         "championName": "Lucian",
         "winRate": 49.0,
@@ -1968,7 +1958,7 @@
         "banRate": 2.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 18,
+        "rank": 17,
         "isRip": false
       },
       "Caitlyn": {
@@ -1978,7 +1968,7 @@
         "banRate": 21.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 19,
+        "rank": 18,
         "isRip": false
       },
       "Veigar": {
@@ -1988,7 +1978,7 @@
         "banRate": 1.0,
         "tier": "Tier 3",
         "tierNum": 3,
-        "rank": 20,
+        "rank": 19,
         "isRip": false
       },
       "Swain": {
@@ -1996,6 +1986,16 @@
         "winRate": 53.0,
         "pickRate": 1.0,
         "banRate": 2.0,
+        "tier": "Tier 3",
+        "tierNum": 3,
+        "rank": 20,
+        "isRip": false
+      },
+      "Lux": {
+        "championName": "Lux",
+        "winRate": 53.0,
+        "pickRate": 1.0,
+        "banRate": 4.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 21,
@@ -2011,20 +2011,20 @@
         "rank": 22,
         "isRip": false
       },
-      "Smolder": {
-        "championName": "Smolder",
-        "winRate": 50.0,
-        "pickRate": 4.0,
+      "Nilah": {
+        "championName": "Nilah",
+        "winRate": 52.0,
+        "pickRate": 1.0,
         "banRate": 2.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 23,
         "isRip": false
       },
-      "Nilah": {
-        "championName": "Nilah",
-        "winRate": 52.0,
-        "pickRate": 1.0,
+      "Smolder": {
+        "championName": "Smolder",
+        "winRate": 50.0,
+        "pickRate": 4.0,
         "banRate": 2.0,
         "tier": "Tier 3",
         "tierNum": 3,
@@ -2046,8 +2046,8 @@
         "winRate": 50.0,
         "pickRate": 4.0,
         "banRate": 5.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
+        "tier": "Tier 3",
+        "tierNum": 3,
         "rank": 26,
         "isRip": false
       },
@@ -2061,24 +2061,14 @@
         "rank": 27,
         "isRip": false
       },
-      "Katarina": {
-        "championName": "Katarina",
-        "winRate": 52.0,
-        "pickRate": 1.0,
-        "banRate": 12.0,
+      "Ziggs": {
+        "championName": "Ziggs",
+        "winRate": 51.0,
+        "pickRate": 2.0,
+        "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 28,
-        "isRip": false
-      },
-      "Xerath": {
-        "championName": "Xerath",
-        "winRate": 52.0,
-        "pickRate": 1.0,
-        "banRate": 8.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 29,
         "isRip": false
       },
       "Varus": {
@@ -2088,14 +2078,24 @@
         "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
+        "rank": 29,
+        "isRip": false
+      },
+      "Katarina": {
+        "championName": "Katarina",
+        "winRate": 52.0,
+        "pickRate": 1.0,
+        "banRate": 12.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 30,
         "isRip": false
       },
-      "Ziggs": {
-        "championName": "Ziggs",
-        "winRate": 51.0,
-        "pickRate": 2.0,
-        "banRate": 1.0,
+      "Xerath": {
+        "championName": "Xerath",
+        "winRate": 52.0,
+        "pickRate": 1.0,
+        "banRate": 8.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 31,
@@ -2173,7 +2173,7 @@
       },
       "Mel": {
         "championName": "Mel",
-        "winRate": 47.0,
+        "winRate": 46.0,
         "pickRate": 1.0,
         "banRate": 8.0,
         "tier": "Tier 5",
@@ -2208,8 +2208,8 @@
         "winRate": 51.0,
         "pickRate": 8.0,
         "banRate": 15.0,
-        "tier": "Tier 1",
-        "tierNum": 1,
+        "tier": "Tier 2",
+        "tierNum": 2,
         "rank": 3,
         "isRip": false
       },
@@ -2265,7 +2265,7 @@
       },
       "Janna": {
         "championName": "Janna",
-        "winRate": 51.0,
+        "winRate": 52.0,
         "pickRate": 5.0,
         "banRate": 1.0,
         "tier": "Tier 2",
@@ -2273,21 +2273,21 @@
         "rank": 9,
         "isRip": false
       },
-      "Senna": {
-        "championName": "Senna",
-        "winRate": 51.0,
-        "pickRate": 6.0,
-        "banRate": 1.0,
-        "tier": "Tier 2",
-        "tierNum": 2,
-        "rank": 10,
-        "isRip": false
-      },
       "Seraphine": {
         "championName": "Seraphine",
         "winRate": 51.0,
         "pickRate": 7.0,
         "banRate": 5.0,
+        "tier": "Tier 2",
+        "tierNum": 2,
+        "rank": 10,
+        "isRip": false
+      },
+      "Senna": {
+        "championName": "Senna",
+        "winRate": 51.0,
+        "pickRate": 6.0,
+        "banRate": 1.0,
         "tier": "Tier 2",
         "tierNum": 2,
         "rank": 11,
@@ -2316,7 +2316,7 @@
       "Rakan": {
         "championName": "Rakan",
         "winRate": 51.0,
-        "pickRate": 4.0,
+        "pickRate": 5.0,
         "banRate": 0.0,
         "tier": "Tier 2",
         "tierNum": 2,
@@ -2367,7 +2367,7 @@
         "championName": "Pyke",
         "winRate": 49.0,
         "pickRate": 6.0,
-        "banRate": 25.0,
+        "banRate": 24.0,
         "tier": "Tier 2",
         "tierNum": 2,
         "rank": 19,
@@ -2377,7 +2377,7 @@
         "championName": "Morgana",
         "winRate": 50.0,
         "pickRate": 4.0,
-        "banRate": 17.0,
+        "banRate": 18.0,
         "tier": "Tier 3",
         "tierNum": 3,
         "rank": 20,
@@ -2405,7 +2405,7 @@
       },
       "Karma": {
         "championName": "Karma",
-        "winRate": 49.0,
+        "winRate": 48.0,
         "pickRate": 7.0,
         "banRate": 3.0,
         "tier": "Tier 3",
@@ -2453,21 +2453,21 @@
         "rank": 27,
         "isRip": false
       },
-      "Renata Glasc": {
-        "championName": "Renata Glasc",
-        "winRate": 50.0,
-        "pickRate": 2.0,
-        "banRate": 0.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 28,
-        "isRip": false
-      },
       "Amumu": {
         "championName": "Amumu",
         "winRate": 52.0,
         "pickRate": 1.0,
         "banRate": 1.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
+        "rank": 28,
+        "isRip": false
+      },
+      "Renata Glasc": {
+        "championName": "Renata Glasc",
+        "winRate": 50.0,
+        "pickRate": 2.0,
+        "banRate": 0.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 29,
@@ -2513,16 +2513,6 @@
         "rank": 33,
         "isRip": false
       },
-      "Swain": {
-        "championName": "Swain",
-        "winRate": 48.0,
-        "pickRate": 3.0,
-        "banRate": 2.0,
-        "tier": "Tier 4",
-        "tierNum": 4,
-        "rank": 34,
-        "isRip": false
-      },
       "Pantheon": {
         "championName": "Pantheon",
         "winRate": 48.0,
@@ -2530,17 +2520,37 @@
         "banRate": 4.0,
         "tier": "Tier 4",
         "tierNum": 4,
+        "rank": 34,
+        "isRip": false
+      },
+      "Swain": {
+        "championName": "Swain",
+        "winRate": 48.0,
+        "pickRate": 3.0,
+        "banRate": 2.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 35,
         "isRip": false
       },
       "Galio": {
         "championName": "Galio",
-        "winRate": 50.0,
+        "winRate": 51.0,
         "pickRate": 1.0,
         "banRate": 2.0,
         "tier": "Tier 4",
         "tierNum": 4,
         "rank": 36,
+        "isRip": false
+      },
+      "Hwei": {
+        "championName": "Hwei",
+        "winRate": 51.0,
+        "pickRate": 1.0,
+        "banRate": 2.0,
+        "tier": "Tier 4",
+        "tierNum": 4,
+        "rank": 37,
         "isRip": false
       },
       "Neeko": {
@@ -2550,16 +2560,6 @@
         "banRate": 1.0,
         "tier": "Tier 4",
         "tierNum": 4,
-        "rank": 37,
-        "isRip": false
-      },
-      "Hwei": {
-        "championName": "Hwei",
-        "winRate": 50.0,
-        "pickRate": 1.0,
-        "banRate": 2.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
         "rank": 38,
         "isRip": false
       },
@@ -2568,8 +2568,8 @@
         "winRate": 50.0,
         "pickRate": 1.0,
         "banRate": 2.0,
-        "tier": "Tier 5",
-        "tierNum": 5,
+        "tier": "Tier 4",
+        "tierNum": 4,
         "rank": 39,
         "isRip": false
       },

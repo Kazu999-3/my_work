@@ -6,11 +6,13 @@ champion: "Wukong"
 role: "Jungle"
 word_count_target: 6500
 created_at: 2026-10-30
-cover_image: "/note_assets/champ_stats_zyra.png"
+cover_image: "/note_assets/wukong_jg_thumb.jpg"
 tags: ["#LoL", "#LeagueofLegends", "#ジャングル", "#JG", "#ゲーム攻略", "#初心者向け"]
 ---
 
 # 【LoL】集団戦を一人で破壊する！ウーコンJG低ランク脱出論
+
+![ウーコンJG集団戦破壊論アイキャッチ](/note_assets/wukong_jg_thumb.jpg)
 
 アイアンやシルバー、ゴールドのランク戦で、チャンピオン選択画面を開いた瞬間に頭を抱えるシチュエーションがあります。
 

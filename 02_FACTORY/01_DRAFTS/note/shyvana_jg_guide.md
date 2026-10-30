@@ -6,11 +6,13 @@ champion: "Shyvana"
 role: "Jungle"
 word_count_target: 6500
 created_at: 2026-10-30
-cover_image: "/note_assets/champ_stats_zyra.png"
+cover_image: "/note_assets/shyvana_jg_thumb.jpg"
 tags: ["#LoL", "#LeagueofLegends", "#ジャングル", "#JG", "#ゲーム攻略", "#初心者向け"]
 ---
 
 # 【LoL】森を食い尽くしドラゴン独占！シヴァーナJG完全攻略
+
+![シヴァーナJGドラゴン独占論アイキャッチ](/note_assets/shyvana_jg_thumb.jpg)
 
 アイアンやシルバー、ゴールドのランク戦でジャングルをプレイしていて、最もストレスが溜まる瞬間は何でしょうか？
 
