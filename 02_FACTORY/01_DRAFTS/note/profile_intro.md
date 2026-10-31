@@ -1,6 +1,12 @@
 ---
 title: "【自己紹介】4ヶ月失踪した僕がプラチナJGになって帰ってきた話"
-status: draft
+status: published
+published_at: 2026-10-28
+impressions: 480
+page_views: 25
+likes: 13
+comments: 0
+sales: 0
 category: profile
 pricing: free
 created_at: 2026-10-27
