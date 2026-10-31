@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FileText, Copy, Check, BookOpen, Clock, Tag, ChevronDown, ChevronUp, Sparkles, ExternalLink, AlertCircle,
-  Rocket, CheckSquare, Square, Share2, MessageSquare, ThumbsUp, Eye, Edit3
+  Rocket, CheckSquare, Square, Share2, MessageSquare, ThumbsUp, Eye, Edit3, DollarSign, Layers, Compass
 } from 'lucide-react';
 import initialDraftsData from '@/data/note_drafts.json';
 
@@ -34,6 +34,7 @@ export default function NoteDraftsPage() {
   const [selectedId, setSelectedId] = useState<string>(staticDrafts[0]?.id || '');
   const [copied, setCopied] = useState(false);
   const [showToc, setShowToc] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all'); // 'all' | 'profile' | 'free_guide' | 'paid_master'
 
   // 🚀 公開ステータス＆メモのローカル永続化
   const [publishMap, setPublishMap] = useState<Record<string, NotePublishRecord>>({});
@@ -223,6 +224,22 @@ export default function NoteDraftsPage() {
         return;
       }
 
+      // 有料境界線マーカー
+      if (line.includes('<!-- PAID_BOUNDARY_HERE -->')) {
+        elements.push(
+          <div key={index} className="my-8 p-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border-2 border-dashed border-amber-500/60 text-center shadow-lg">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-black font-black text-xs uppercase tracking-wider mb-2">
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>ここから有料エリア</span>
+            </span>
+            <p className="text-zinc-200 text-xs sm:text-sm font-bold">
+              noteではここから先が購入者限定ゾーンになります
+            </p>
+          </div>
+        );
+        return;
+      }
+
       // 区切り線
       if (trimmed === '---') {
         elements.push(<hr key={index} className="border-zinc-800 my-6" />);
@@ -261,37 +278,45 @@ export default function NoteDraftsPage() {
     );
   }
 
+  // フィルタリング後のドラフト一覧
+  const filteredDrafts = drafts.filter((d) => {
+    if (selectedCategory === 'all') return true;
+    const cat = d.meta?.category || (d.id === 'profile_intro' ? 'profile' : 'free_guide');
+    return cat === selectedCategory;
+  });
+
   return (
     <div className="min-h-screen bg-black text-zinc-100 pb-20">
       {/* 📱 トップ固定コントロールヘッダー */}
-      <div className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-3 py-2.5">
+      <div className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-3 py-2 space-y-2">
+        {/* 上段：カテゴリ切り替えフィルター ＆ 全文コピー */}
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
-          
-          {/* 記事切り替えタブ */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5">
-            {drafts.map((d) => {
-              let label = d.title.length > 14 ? d.title.slice(0, 14) + '…' : d.title;
-              if (d.id === 'profile_intro') label = '✨ 自己紹介';
-              if (d.id === 'zyra_jg_guide') label = '🌿 ザイラJG攻略';
-              const isPub = publishMap[d.id]?.isPublished;
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+            {[
+              { id: 'all', label: 'すべて', icon: Layers },
+              { id: 'profile', label: '自己紹介', icon: Sparkles },
+              { id: 'free_guide', label: '無料攻略', icon: BookOpen },
+              { id: 'paid_master', label: '有料マクロ', icon: DollarSign },
+            ].map((cat) => {
+              const Icon = cat.icon;
+              const count = drafts.filter(d => {
+                if (cat.id === 'all') return true;
+                const c = d.meta?.category || (d.id === 'profile_intro' ? 'profile' : 'free_guide');
+                return c === cat.id;
+              }).length;
               return (
                 <button
-                  key={d.id}
-                  onClick={() => setSelectedId(d.id)}
-                  className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                    d.id === selectedId
-                      ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                      : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1 border ${
+                    selectedCategory === cat.id
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
+                      : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border-zinc-800'
                   }`}
                 >
-                  <span>{label}</span>
-                  {isPub && (
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
-                      d.id === selectedId ? 'bg-emerald-950 text-emerald-300' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    }`}>
-                      🚀 公開済
-                    </span>
-                  )}
+                  <Icon className="w-3 h-3 text-amber-400" />
+                  <span>{cat.label}</span>
+                  <span className="text-[10px] opacity-70">({count})</span>
                 </button>
               );
             })}
@@ -303,7 +328,7 @@ export default function NoteDraftsPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-md ${
               copied
                 ? 'bg-emerald-600 text-white'
-                : 'bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/40'
+                : 'bg-amber-500 hover:bg-amber-400 text-black font-black shadow-amber-500/20'
             }`}
           >
             {copied ? (
@@ -318,6 +343,51 @@ export default function NoteDraftsPage() {
               </>
             )}
           </button>
+        </div>
+
+        {/* 下段：記事選択セレクター */}
+        <div className="max-w-3xl mx-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {filteredDrafts.map((d) => {
+            let label = d.title.length > 13 ? d.title.slice(0, 13) + '…' : d.title;
+            if (d.id === 'profile_intro') label = '✨ 自己紹介';
+            if (d.id === 'zyra_jg_guide') label = '🌿 ザイラJG';
+            if (d.id === 'wukong_jg_guide') label = '🐒 ウーコンJG';
+            if (d.id === 'shyvana_jg_guide') label = '🐉 シヴァーナJG';
+            if (d.id === 'qiyana_jg_guide') label = '👑 キヤナJG';
+            if (d.id === 'belveth_jg_guide') label = '👾 ベル＝ヴェスJG';
+            if (d.id === 'macro_master_guide') label = '💎 ソロQ脱出マクロ';
+
+            const isPub = publishMap[d.id]?.isPublished;
+            const isPaid = d.meta?.category === 'paid_master' || d.meta?.pricing === '500';
+
+            return (
+              <button
+                key={d.id}
+                onClick={() => setSelectedId(d.id)}
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1.5 border ${
+                  d.id === selectedId
+                    ? 'bg-zinc-100 text-black font-black border-white shadow-md'
+                    : 'bg-zinc-900 text-zinc-300 hover:text-white border-zinc-800'
+                }`}
+              >
+                <span>{label}</span>
+                {isPaid && (
+                  <span className={`px-1 py-0.2 rounded text-[9px] font-black ${
+                    d.id === selectedId ? 'bg-amber-400 text-black' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  }`}>
+                    有料
+                  </span>
+                )}
+                {isPub && (
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                    d.id === selectedId ? 'bg-emerald-950 text-emerald-300' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                  }`}>
+                    公開済
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -353,9 +423,21 @@ export default function NoteDraftsPage() {
                   タイトル {currentDraft.title.length}/32文字 {currentDraft.title.length <= 32 ? '✓' : '⚠️'}
                 </span>
 
+                {currentDraft.meta?.patch && (
+                  <span className="px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-300 border border-purple-800/60 text-[11px] font-bold">
+                    🛡️ パッチ {currentDraft.meta.patch}
+                  </span>
+                )}
+
                 {currentDraft.meta?.target_rank && (
                   <span className="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-800/60 text-[11px] font-bold">
                     🎯 {currentDraft.meta.target_rank}
+                  </span>
+                )}
+
+                {currentDraft.meta?.pricing && currentDraft.meta.pricing !== 'free' && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[11px] font-black">
+                    💰 有料（{currentDraft.meta.pricing}円）
                   </span>
                 )}
               </div>

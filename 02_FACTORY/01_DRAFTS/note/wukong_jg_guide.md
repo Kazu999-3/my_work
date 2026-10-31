@@ -1,6 +1,9 @@
 ---
 title: "【LoL】集団戦を一人で破壊する！ウーコンJG低ランク脱出論"
 status: draft
+category: free_guide
+pricing: free
+patch: "26.21"
 target_rank: "Iron - Silver - Gold"
 champion: "Wukong"
 role: "Jungle"
@@ -13,6 +16,8 @@ tags: ["#LoL", "#LeagueofLegends", "#ジャングル", "#JG", "#ゲーム攻略"
 # 【LoL】集団戦を一人で破壊する！ウーコンJG低ランク脱出論
 
 ![ウーコンJG集団戦破壊論アイキャッチ](/note_assets/wukong_jg_thumb.jpg)
+
+> 📌 **本記事の対応環境**: パッチ **26.21** 検証済み（現行ソロキュー環境対応）
 
 アイアンやシルバー、ゴールドのランク戦で、チャンピオン選択画面を開いた瞬間に頭を抱えるシチュエーションがあります。
 

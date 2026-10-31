@@ -1,6 +1,9 @@
 ---
 title: "【LoL】森を食い尽くしドラゴン独占！シヴァーナJG完全攻略"
 status: draft
+category: free_guide
+pricing: free
+patch: "26.21"
 target_rank: "Iron - Silver - Gold"
 champion: "Shyvana"
 role: "Jungle"
@@ -13,6 +16,8 @@ tags: ["#LoL", "#LeagueofLegends", "#ジャングル", "#JG", "#ゲーム攻略"
 # 【LoL】森を食い尽くしドラゴン独占！シヴァーナJG完全攻略
 
 ![シヴァーナJGドラゴン独占論アイキャッチ](/note_assets/shyvana_jg_thumb.jpg)
+
+> 📌 **本記事の対応環境**: パッチ **26.21** 検証済み（現行ソロキュー環境対応）
 
 アイアンやシルバー、ゴールドのランク戦でジャングルをプレイしていて、最もストレスが溜まる瞬間は何でしょうか？
 

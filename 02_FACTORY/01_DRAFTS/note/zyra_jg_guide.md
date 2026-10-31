@@ -1,6 +1,9 @@
 ---
 title: "【LoL】味方を捨てて一人で勝つ！ザイラJG低ランク脱出完全攻略"
 status: draft
+category: free_guide
+pricing: free
+patch: "26.21"
 target_rank: "Iron - Silver - Gold"
 champion: "Zyra"
 role: "Jungle"
@@ -13,6 +16,8 @@ tags: ["#LoL", "#LeagueofLegends", "#ジャングル", "#JG", "#ゲーム攻略"
 # 【LoL】味方を捨てて一人で勝つ！ザイラJG低ランク脱出完全攻略
 
 ![ザイラJG完全攻略アイキャッチ](/note_assets/zyra_jg_thumb.jpg)
+
+> 📌 **本記事の対応環境**: パッチ **26.21** 検証済み（※W種リチャージ短縮Buff適用後・現在のソロキュー現役仕様）
 
 アイアンやシルバーのランク戦でジャングルをやっていると、毎試合のように深い絶望感を味わいます。
 

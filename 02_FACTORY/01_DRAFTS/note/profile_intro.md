@@ -1,6 +1,8 @@
 ---
 title: "【自己紹介】4ヶ月失踪した僕がプラチナJGになって帰ってきた話"
 status: draft
+category: profile
+pricing: free
 created_at: 2026-10-27
 cover_image: "/note_assets/profile_thumb_pattern_A.jpg"
 tags: ["#自己紹介", "#はじめてのnote", "#LeagueofLegends", "#LoL", "#ジャングル", "#コミュニティ運営"]
