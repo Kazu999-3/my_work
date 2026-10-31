@@ -43,29 +43,32 @@ def build_zyra():
 
     # リボン
     draw.rounded_rectangle([card_x0+24, card_y0+20, card_x0+400, card_y0+58], radius=10, fill=(130, 30, 180, 245))
-    draw.text((card_x0+38, card_y0+26), "🌿 味方を捨てて一人で勝つ！", font=f_ribbon, fill=(255, 255, 255, 255))
+    draw.text((card_x0+38, card_y0+26), "✨ ブロンズ転落からプラチナへ！", font=f_ribbon, fill=(255, 255, 255, 255))
 
     # タイトル
-    draw.text((card_x0+24, card_y0+72), "ザイラJG 低ランク脱出攻略", font=f_title, fill=(25, 20, 35, 255))
+    f_title_b = ImageFont.truetype(font_bold, 33)
+    draw.text((card_x0+24, card_y0+72), "味方ガチャを破壊するザイラJG", font=f_title_b, fill=(25, 20, 35, 255))
     draw.line([(card_x0+24, card_y0+128), (card_x1-24, card_y0+128)], fill=(130, 30, 180, 160), width=2)
 
-    # 3箇条（実戦仕様に刷新）
+    # 3箇条（案B：低レート脱出・ソロQキャリー型）
+    f_item_b = ImageFont.truetype(font_bold, 21)
+    f_sub_b = ImageFont.truetype(font_reg, 15)
     items = [
-        ("1", "青バフ始動 ＆ 2:55スカトル先行", "インベード相手はウルフ始動 / 敵青バフ襲撃"),
-        ("2", "5:00グラブ優先！W解消で秒殺", "小マイト討伐で種クール解消➔植物乱立で消滅"),
-        ("3", "ダークシール回収 ＆ 視界外集団戦", "安全第一でスタック育成 ＆ E-W-W-R即死トラップ")
+        ("1", "殴り合わないから負けようがない", "中立は植物が受けてHP100%維持＆遠距離拒否"),
+        ("2", "グラブ・ドラゴンを一人で削り切る", "Wクール短縮で植物乱立秒殺＆本体受けミクロ"),
+        ("3", "信用できない味方に付き合わない勇気", "安全第一でダークシール回収＆壁越しから破壊")
     ]
     curr_y = card_y0 + 144
     for num, title, sub in items:
         draw.ellipse([card_x0+24, curr_y, card_x0+58, curr_y+34], fill=(130, 30, 180, 240))
         draw.text((card_x0+34, curr_y+4), num, font=f_num, fill=(255, 255, 255, 255))
-        draw.text((card_x0+70, curr_y+4), title, font=f_item, fill=(30, 25, 40, 255))
-        draw.text((card_x0+70, curr_y+34), sub, font=f_sub, fill=(90, 85, 100, 255))
+        draw.text((card_x0+70, curr_y+4), title, font=f_item_b, fill=(25, 20, 35, 255))
+        draw.text((card_x0+70, curr_y+34), sub, font=f_sub_b, fill=(80, 75, 95, 255))
         curr_y += 74
 
     # 最新パッチバフタグピル
-    draw.rounded_rectangle([card_x0+24, card_y1-60, card_x0+320, card_y1-22], radius=8, fill=(245, 235, 255, 255), outline=(160, 100, 220, 200), width=1)
-    draw.text((card_x0+36, card_y1-53), "⚡ 直近パッチW強化 ✕ 覇道・栄華", font=ImageFont.truetype(font_bold, 15), fill=(100, 30, 150, 255))
+    draw.rounded_rectangle([card_x0+24, card_y1-60, card_x0+385, card_y1-22], radius=8, fill=(245, 235, 255, 255), outline=(160, 100, 220, 200), width=1)
+    draw.text((card_x0+36, card_y1-53), "🛡️ パッチ26.21現役仕様 ✕ 勝率6割バイブル", font=ImageFont.truetype(font_bold, 15), fill=(100, 30, 150, 255))
 
     # 右下バッジ「129戦 勝率60.5%」
     bw, bh = 260, 68
