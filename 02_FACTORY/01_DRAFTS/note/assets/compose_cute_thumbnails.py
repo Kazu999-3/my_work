@@ -25,7 +25,7 @@ def draw_frosted_card(base, card_x0, card_y0, card_x1, card_y1, radius=22, bg_co
 # 1. ザイラJG サムネイル (zyra_jg_thumb.jpg)
 # ----------------------------------------------------
 def build_zyra():
-    src = r"C:\Users\PC_User\.gemini\antigravity\brain\b87c1b24-a2b2-4379-b780-13c1525109ad\zyra_illust_1793372903425.jpg"
+    src = r"C:\Users\PC_User\.gemini\antigravity\brain\b87c1b24-a2b2-4379-b780-13c1525109ad\zyra_anime_thumbnail_1793454268089.jpg"
     base = Image.open(src).convert("RGBA")
     W, H = base.size # 1376 x 768
 
