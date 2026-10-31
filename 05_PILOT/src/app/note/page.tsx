@@ -143,7 +143,8 @@ export default function NoteDraftsPage() {
       });
     };
 
-    lines.forEach((line, index) => {
+    lines.forEach((rawLine, index) => {
+      const line = rawLine.replace(/\r$/, '');
       const trimmed = line.trim();
 
       // リスト項目の判定
