@@ -75,20 +75,17 @@ class ManagedService:
         self.process: subprocess.Popen | None = None
         self.restart_count = 0
         self.last_start_time = 0.0
+        self.consecutive_crashes = 0
+        self.next_retry_time = 0.0
 
     def start(self):
         now = time.time()
-        # 連続即死（5秒未満での再起動）の場合はウェイトを入れて負荷を防止
-        if now - self.last_start_time < 5.0:
-            log(f"⚠️ {self.name} が直前に即死しました。5秒待機後に再試行します...")
-            time.sleep(5.0)
-
-        self.last_start_time = time.time()
+        self.last_start_time = now
         try:
             out_target = subprocess.DEVNULL
             if self.log_file:
                 self.log_file.parent.mkdir(parents=True, exist_ok=True)
-                self.log_fp = open(self.log_file, "a", encoding="utf-8", buffering=1)
+                self.log_fp = open(self.log_file, "a", encoding="utf-8", buffering=1, errors="replace")
                 out_target = self.log_fp
 
             self.process = subprocess.Popen(
@@ -104,6 +101,11 @@ class ManagedService:
             self.process = None
 
     def poll_and_recover(self):
+        now = time.time()
+        # サーキットブレーカーのクールダウン中なら再起動を見送る
+        if now < self.next_retry_time:
+            return
+
         if self.process is None:
             log(f"🔄 {self.name} が未起動のため起動します...")
             self.start()
@@ -111,7 +113,31 @@ class ManagedService:
 
         code = self.process.poll()
         if code is not None:
+            # プロセスが終了している
+            alive_duration = now - self.last_start_time
+            if alive_duration >= 120.0:
+                # 2分以上安定稼働していた後の終了なら、突発的な停止とみなしてクラッシュカウンタをリセット
+                self.consecutive_crashes = 1
+            else:
+                self.consecutive_crashes += 1
+
             self.restart_count += 1
+
+            # サーキットブレーカー: 短時間で連続3回以上クラッシュした場合は指数バックオフ
+            if self.consecutive_crashes >= 5:
+                cooldown = 300.0  # 5分待機
+                self.next_retry_time = now + cooldown
+                log(f"🚨 {self.name} が短時間で {self.consecutive_crashes} 回連続クラッシュしました。サーキットブレーカーを発動し、{int(cooldown)}秒間再起動を見送ります (終了コード: {code}, 累計再起動: {self.restart_count})")
+                return
+            elif self.consecutive_crashes >= 3:
+                cooldown = 60.0  # 1分待機
+                self.next_retry_time = now + cooldown
+                log(f"⚠️ {self.name} が連続クラッシュ中 ({self.consecutive_crashes}回)。{int(cooldown)}秒間待機後に再試行します (終了コード: {code}, 累計再起動: {self.restart_count})")
+                return
+            elif alive_duration < 5.0:
+                # 即死（5秒未満）の場合は安全のため5秒待機
+                time.sleep(5.0)
+
             log(f"⚠️ {self.name} が停止しているのを検知しました (終了コード: {code}, 累計再起動: {self.restart_count})。自動復旧中...")
             self.start()
 
@@ -180,6 +206,7 @@ def main():
             name="HUD Overlay (ステルスHUD)",
             cmd=[PYTHONW_EXE, "03_SYSTEMS/v2_CORE/_LOL/overlay/run_overlay.py", "--stealth"],
             cwd=ROOT_DIR,
+            log_file=ROOT_DIR / "00_LOGS" / "overlay.log",
         ),
     ]
 

@@ -14,25 +14,42 @@ Sovereign HUD - オーバーレイ統合ランチャー (LoL自動起動連動 �
 import os
 import sys
 import io
+import traceback
 
-# pythonw.exe (GUIモード) で sys.stdout / sys.stderr が None の場合の安全ガード
+# ログディレクトリの確保
+log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "00_LOGS")
+os.makedirs(log_dir, exist_ok=True)
+_overlay_log_path = os.path.join(log_dir, "overlay.log")
+
+# 未処理例外を確実に overlay.log に記録する
+def _handle_unhandled_exception(exc_type, exc_value, exc_traceback):
+    try:
+        with open(_overlay_log_path, "a", encoding="utf-8", errors="replace") as f:
+            f.write(f"\n[FATAL] 未処理例外によるクラッシュ:\n")
+            traceback.print_exception(exc_type, exc_value, exc_traceback, file=f)
+    except Exception:
+        pass
+    sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+sys.excepthook = _handle_unhandled_exception
+
+# pythonw.exe (GUIモード) で sys.stdout / sys.stderr が None または適切なエンコードでない場合の安全ガード
 if sys.stdout is None:
     try:
-        log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "00_LOGS")
-        os.makedirs(log_dir, exist_ok=True)
-        sys.stdout = open(os.path.join(log_dir, "overlay.log"), "a", encoding="utf-8", buffering=1)
+        sys.stdout = open(_overlay_log_path, "a", encoding="utf-8", buffering=1, errors="replace")
     except Exception:
         sys.stdout = io.StringIO()
 
 if sys.stderr is None:
     sys.stderr = sys.stdout if sys.stdout else io.StringIO()
 
-# Windows コンソールでの文字化け・UnicodeEncodeError防止
-if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-    except Exception:
-        pass
+# Windows コンソール・パイプでの文字化け・UnicodeEncodeError防止
+for stream in (sys.stdout, sys.stderr):
+    if stream and hasattr(stream, 'reconfigure'):
+        try:
+            stream.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
 
 import argparse
 import threading
@@ -261,15 +278,17 @@ def main():
     tray_icon.show()
 
     # Windows通知領域にトースト表示（画面中央にはポップアップを出さずトレイ通知のみで静かに案内）
-    try:
-        tray_icon.showMessage(
-            "👑 Sovereign HUD 起動完了",
-            "LoLの試合開始を自動検知して待機中...\n（[F8] キーまたはトレイアイコンで手動表示）",
-            QSystemTrayIcon.MessageIcon.Information,
-            3000
-        )
-    except Exception:
-        pass
+    # ※ ステルス待機モード（--stealth）時は通知爆撃やゲーム外での邪魔を防ぐためトースト通知を抑制
+    if not args.stealth:
+        try:
+            tray_icon.showMessage(
+                "👑 Sovereign HUD 起動完了",
+                "LoLの試合開始を自動検知して待機中...\n（[F8] キーまたはトレイアイコンで手動表示）",
+                QSystemTrayIcon.MessageIcon.Information,
+                3000
+            )
+        except Exception:
+            pass
 
     # チャット・スペル自動検知連動
     def on_chat_spell_event(chat_message: str):
