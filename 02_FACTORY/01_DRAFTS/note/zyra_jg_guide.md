@@ -1,6 +1,7 @@
 ---
 title: "【LoL】味方を捨てて一人で勝つ！ザイラJG低ランク脱出完全攻略"
-status: draft
+status: published
+published_at: 2026-10-31
 category: free_guide
 pricing: free
 patch: "26.21"
