@@ -1,7 +1,7 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from './riot';
-import { RANKS, performFullMmrRebuild } from './mmr';
+import { RANKS, performFullMmrRebuild, rankScore } from './mmr';
 import { updateMemberDiscordRankRole, getRankRoleName } from './discordRoleSync';
 
 export const INTRO_CHANNEL_ID = '1485646578621616209'; // #📝自己紹介
@@ -422,7 +422,7 @@ export async function processSingleIntroMessage(msg: {
     }
   }
 
-  // 2. ランクの決定（Riot API優先、取得失敗時は自己紹介テキストの自己申告ランクを採用）
+  // 2. ランクの決定（自己申告の最高ランクとRiot API現在ランクのうち、高い方を最高ランクとして採用）
   const parsedDeclared = parseDeclaredRank(parsed.declaredRank);
   let rankTier = parsedDeclared.tier;
   let rankDiv = parsedDeclared.division;
@@ -432,8 +432,13 @@ export async function processSingleIntroMessage(msg: {
       const leagues = await fetchLeagueByPuuid(puuid, apiKey);
       const soloQ = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5');
       if (soloQ) {
-        rankTier = soloQ.tier;
-        rankDiv = soloQ.rank;
+        // 自己申告とRiot API現在ランクのうち上位の方を採用（過去最高ランクが現在ランクで握りつぶされるのを防止）
+        if (rankScore(soloQ.tier) > rankScore(rankTier)) {
+          rankTier = soloQ.tier;
+          rankDiv = soloQ.rank;
+        } else if (rankScore(rankTier) === rankScore(soloQ.tier) && !rankDiv) {
+          rankDiv = soloQ.rank;
+        }
       }
     } catch (e: any) {
       console.warn('[processSingleIntroMessage] Rank fetch failed (using declared rank):', e.message);
