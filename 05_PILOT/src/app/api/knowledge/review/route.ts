@@ -8,7 +8,7 @@ import { integrateMatchupArticle } from '@/lib/matchupMemo';
 import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
 import { previewChampionFactsMerge, executeChampionFactsMerge, FactFieldKey } from '@/lib/championFactsMerge';
 import { decomposeArticle, saveDecomposedInsights, DecomposedInsight } from '@/lib/knowledgeDecompose';
-import { assessArticleDensity, extractArticleSummary } from '@/lib/articleDensity';
+import { assessArticleDensity, extractArticleSummary, detectIsShortVideo } from '@/lib/articleDensity';
 import { detectChampionsFromText } from '@/lib/championDetector';
 
 export const dynamic = 'force-dynamic';
@@ -250,7 +250,7 @@ export async function GET(req: NextRequest) {
         );
 
         const charCount = (r.content || '').length;
-        const isShort = Array.isArray(r.tags) && r.tags.includes('Shorts');
+        const isShort = detectIsShortVideo({ source_url: r.source_url, tags: r.tags, title: r.title, analysis_meta: r.analysis_meta });
         const density = assessArticleDensity(r.content || '', r.analysis_meta, { isShort, isAtomic: !!r.is_atomic });
 
         // 再解析版なら元の記事（比較用）、元の記事なら進行中・失敗した再解析の依頼
@@ -293,6 +293,7 @@ export async function GET(req: NextRequest) {
             : null,
           channel: ch || '不明',
           char_count: charCount,
+          isShortVideo: isShort,
           parentTitle: r.parent_id ? parentTitles[String(r.parent_id)] || null : null,
           isLaneGeneral: !r.champion || r.champion === NO_CHAMPION,
           currentChampNamesJa: currentChampNamesJa.join(', '),

@@ -1,10 +1,31 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { assessArticleDensity, stripArticleChrome, extractArticleSummary } from '../articleDensity';
+import { assessArticleDensity, stripArticleChrome, extractArticleSummary, detectIsShortVideo } from '../articleDensity';
 
 const HEADER = '> 📺 **元動画情報**\n> - **動画タイトル**: x\n> - **動画リンク**: [https://youtu.be/abc](https://youtu.be/abc)\n\n---\n\n';
 
 describe('articleDensity', () => {
+  it('detectIsShortVideo: URL・タグ・タイトルからShortsを判定できる', () => {
+    assert.equal(detectIsShortVideo({ source_url: 'https://www.youtube.com/shorts/abc123xyz' }), true);
+    assert.equal(detectIsShortVideo({ tags: ['LoL', 'Shorts'] }), true);
+    assert.equal(detectIsShortVideo({ title: 'マスターイーのQ回避テクニック #shorts' }), true);
+    assert.equal(detectIsShortVideo({ source_url: 'https://youtu.be/abc', title: '通常の解説動画' }), false);
+  });
+
+  it('Shortsは事実が1件以上あれば薄い扱いにならず適正と判定される', () => {
+    const shortArticle = 'Lv2でEフラッシュを当てることで確定キルが取れるワンポイントテクニック。';
+    const r = assessArticleDensity(shortArticle, { fact_count: 2 }, { isShort: true });
+    assert.equal(r.level, 'ok');
+    assert.equal(r.triage, 'approve');
+    assert.ok(r.reasons.some((msg) => msg.includes('ショート動画特化')));
+  });
+
+  it('長尺動画で事実が3件未満の場合は解析不足としてthin判定される', () => {
+    const longArticle = '長尺動画の本文です。'.repeat(30);
+    const r = assessArticleDensity(longArticle, { fact_count: 2 }, { isShort: false });
+    assert.equal(r.level, 'thin');
+    assert.ok(r.reasons.some((msg) => msg.includes('解析不足')));
+  });
   it('元動画情報とリンクURLを本文から除く', () => {
     const body = stripArticleChrome(HEADER + '本文 [▶ 02:15](https://youtu.be/abc?t=135) です');
     assert.ok(!body.includes('元動画情報'));

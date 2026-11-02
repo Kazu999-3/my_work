@@ -31,6 +31,8 @@ export interface ReviewItem {
   isMultiChampion?: boolean;
   multiReason?: string;
   allDetectedChampions?: Array<{ id: string; nameJa: string }>;
+  /** ショート動画（YouTube Shorts / 60秒以内）か（2026-11-02新設: 短尺と解析不足の判別用） */
+  isShortVideo?: boolean;
   /** 再解析で作った版なら元の記事の ID（2026-10-19） */
   reanalysis_of?: number | null;
   /** 再解析の進行・結果ステータス（2026-11-02新設: 未再解析・再解析中・再解析済・失敗の判別用） */

@@ -175,24 +175,35 @@ export default function ReviewItemCard({
                 FOCUS (A:承認 X:却下 E:詳細)
               </span>
             )}
-            <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                item.is_atomic ? 'text-teal-300 border-teal-800/60 bg-teal-950/40' : 'text-amber-300 border-amber-800/60 bg-amber-950/40'
-              }`}
-            >
-              {item.is_atomic ? '分割知見' : '動画解析'}
-            </span>
+            {/* 動画種別バッジ（Shorts短尺か長尺動画かを一目で識別） */}
+            {item.is_atomic ? (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-teal-300 border-teal-800/60 bg-teal-950/40">
+                ✂️ 分割知見
+              </span>
+            ) : item.isShortVideo ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-pink-300 border-pink-700/70 bg-pink-950/50 shadow-sm flex items-center gap-1">
+                ⚡ Shorts（1分短尺）
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-800/60 bg-amber-950/40">
+                🎬 通常動画（長尺）
+              </span>
+            )}
             {/* 🚀 再解析ステータス ＆ 薄い可能性の完全識別バッジ（2026-11-02改修） */}
             {(() => {
               const status = item.reanalysisStatus || (isDraft ? 'reanalyzed' : taskActive ? 'running' : 'unreanalyzed');
+              const isShort = item.isShortVideo;
+
               if (status === 'reanalyzed') {
                 if (thin) {
                   return (
                     <span
                       className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-rose-300 border-rose-800/70 bg-rose-950/50 shadow-sm flex items-center gap-1"
-                      title={`【再解析済だが薄い】\n${item.density?.reasons.join('\n') || ''}`}
+                      title={isShort
+                        ? `【Shorts再解析済】ショート動画ですが事実が抽出できませんでした。\n${item.density?.reasons.join('\n') || ''}`
+                        : `【長尺動画・再解析済だが事実少】長尺動画に対して字幕から取れた事実が少なめです。\n${item.density?.reasons.join('\n') || ''}`}
                     >
-                      ⚠️ 再解析済（薄い: 事実{factCount ?? 0}件）
+                      ⚠️ 再解析済（{isShort ? 'Shorts' : '長尺'}: 事実{factCount ?? 0}件）
                     </span>
                   );
                 }
@@ -225,9 +236,11 @@ export default function ReviewItemCard({
                 return (
                   <span
                     className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-600/80 bg-amber-950/60 shadow-sm"
-                    title={`【未再解析】再解析にかけることで高品質な記事へ作り直せる可能性があります。\n${item.density?.reasons.join('\n') || ''}`}
+                    title={isShort
+                      ? `【未再解析のShorts】ショート動画のため要約が短めです。必要に応じて再解析可能です。\n${item.density?.reasons.join('\n') || ''}`
+                      : `【未再解析・長尺の解析不足の可能性】長尺動画ですが具体的な記述が少ない状態です。再解析で改善できます。\n${item.density?.reasons.join('\n') || ''}`}
                   >
-                    ⏳ 未再解析（薄い可能性）
+                    ⏳ {isShort ? 'Shorts短文（未再解析）' : '長尺・解析不足の可能性（未再解析）'}
                   </span>
                 );
               }
@@ -342,8 +355,11 @@ export default function ReviewItemCard({
               <span className="break-words">再解析に失敗: {(task.error || '理由不明').split('\n')[0].slice(0, 150)}</span>
             </div>
           )}
-          {thin && !isDraft && item.density && item.density.reasons.length > 0 && (
-            <p className="text-[11px] text-amber-200/80">⚠️ {item.density.reasons.join(' ／ ')}</p>
+          {thin && item.density && item.density.reasons.length > 0 && (
+            <div className="p-2 rounded-lg bg-amber-950/25 border border-amber-800/40 text-[11px] text-amber-200/90 flex items-start gap-1.5">
+              <span className="shrink-0">{item.isShortVideo ? '⚡' : '⚠️'}</span>
+              <span>{item.density.reasons.join(' ／ ')}</span>
+            </div>
           )}
           {isDraft && (
             <div className="p-2 rounded-lg bg-emerald-950/30 border border-emerald-800/60 text-[11px] text-emerald-200 flex flex-wrap items-center gap-2">

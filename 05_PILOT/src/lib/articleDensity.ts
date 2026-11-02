@@ -91,6 +91,19 @@ function count(re: RegExp, text: string): number {
   return (text.match(re) || []).length;
 }
 
+export function detectIsShortVideo(item: {
+  source_url?: string | null;
+  tags?: string[] | null;
+  title?: string | null;
+  analysis_meta?: { video_type?: string | null } | null;
+}): boolean {
+  if (Array.isArray(item.tags) && item.tags.some((t) => t.toLowerCase() === 'shorts')) return true;
+  if (item.source_url && (item.source_url.includes('/shorts/') || item.source_url.includes('shorts='))) return true;
+  if (item.title && /#shorts|\bshorts\b|【shorts】|［shorts］/i.test(item.title)) return true;
+  if (item.analysis_meta?.video_type === 'shorts') return true;
+  return false;
+}
+
 export function assessArticleDensity(
   content: string,
   analysisMeta?: { fact_count?: number | null } | null,
@@ -108,21 +121,32 @@ export function assessArticleDensity(
   const reasons: string[] = [];
   let thin = false;
 
-  // 分割知見（is_atomic）・Shorts は短いのが正常なので、長さと密度では判定しない
+  // 分割知見（is_atomic）・Shorts は短いのが正常
   const judgeByDensity = !opts.isAtomic && !opts.isShort && chars >= 400;
 
-  if (factCount !== null) {
+  if (opts.isShort) {
+    // ⚡ ショート動画（Shorts）: 1分未満の短尺のため事実1〜2件が標準仕様
+    if (factCount !== null && factCount === 0) {
+      thin = true;
+      reasons.push('ショート動画ですが、抽出事実が0件でした（解析不足）');
+    } else if (chars < 80 && factCount === null) {
+      thin = true;
+      reasons.push('ショート動画としても極端に短文です');
+    } else {
+      reasons.push(`ショート動画特化（事実 ${factCount ?? '要点'}件・1点解説）`);
+    }
+  } else if (factCount !== null) {
     if (factCount < 5) {
       thin = true;
-      reasons.push(`字幕から取れた事実が ${factCount} 件だけ`);
+      reasons.push(`長尺動画ですが字幕から取れた事実が ${factCount} 件のみ（解析不足の可能性）`);
     }
   } else if (judgeByDensity) {
     if (specificPer1k < 1.0) {
       thin = true;
-      reasons.push(`数値・条件などの具体的な記述が少ない（1,000字あたり ${specificPer1k} 件）`);
+      reasons.push(`数値・条件などの具体的な記述が少ない（解析不足の可能性: 1,000字あたり ${specificPer1k} 件）`);
     } else if (specificPer1k < 1.8 && genericPer1k >= 2.4) {
       thin = true;
-      reasons.push(`一般論が多く具体的な記述が少ない（具体 ${specificPer1k} / 一般論 ${genericPer1k} 件・1,000字あたり）`);
+      reasons.push(`一般論が多く具体的な記述が少ない（解析不足の可能性: 具体 ${specificPer1k} / 一般論 ${genericPer1k} 件）`);
     }
   }
   if (memoryHits > 0 && !opts.isAtomic) {
@@ -145,9 +169,20 @@ export function assessArticleDensity(
   if (truncated) {
     triage = 'skip';
     triageReasons.push('途中で切れている');
+  } else if (opts.isShort) {
+    if (factCount !== null && factCount >= 1) {
+      triage = 'approve';
+      triageReasons.push(`ショート動画として要点（事実${factCount}件）が凝縮されています`);
+    } else if (chars >= 120) {
+      triage = 'approve';
+      triageReasons.push('ショート動画として要点がまとまっています');
+    } else {
+      triage = 'check';
+      triageReasons.push('ショート動画（要確認）');
+    }
   } else if (factCount !== null && factCount < 3) {
     triage = 'skip';
-    triageReasons.push(`字幕から取れた事実が ${factCount} 件だけ`);
+    triageReasons.push(`長尺動画ですが字幕から取れた事実が ${factCount} 件のみ（解析不足）`);
   } else if (legacyTemplate && thin) {
     triage = 'skip';
     triageReasons.push('旧形式で、一般論・記憶で書いた疑いが強い');
