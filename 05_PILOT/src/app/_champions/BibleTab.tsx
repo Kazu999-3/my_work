@@ -1,9 +1,11 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Zap, BookOpen, AlertTriangle, Layers, ChevronDown, Check, Sparkles, ExternalLink, Video, Eye, Waves, Compass, Edit3, Copy, Crown } from "lucide-react";
 import { getStageTactics } from "@/lib/tempoMetrics";
 import type { ChampionDetail } from "./types";
+import ChampionOptimizeModal from "./ChampionOptimizeModal";
 
 // タブ3: 実戦バイブル ＆ 統合マスター戦術書
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
@@ -16,6 +18,13 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
   selectedDetail: ChampionDetail;
   stageTactics: ReturnType<typeof getStageTactics> | null;
 }) {
+  const [isOptimizeOpen, setIsOptimizeOpen] = useState(false);
+  const [strategyText, setStrategyText] = useState(selectedDetail.globalGuide?.strategy || '');
+
+  useEffect(() => {
+    setStrategyText(selectedDetail.globalGuide?.strategy || '');
+  }, [selectedDetail.id, selectedDetail.globalGuide?.strategy]);
+
   return (
               <div className="space-y-5">
                 {/* 👑 統合戦術マスター教本 (enemy=GLOBAL 由来の原本全文) */}
@@ -32,7 +41,7 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
                               👑 統合戦術マスター教本
                             </span>
                             <span className="text-[11px] font-mono text-zinc-400">
-                              約{selectedDetail.globalGuide.strategy.length.toLocaleString()}文字
+                              約{strategyText.length.toLocaleString()}文字
                             </span>
                           </div>
                           <h3 className="text-sm sm:text-base font-black text-zinc-100 mt-1">
@@ -44,8 +53,8 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
                       <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                         <button
                           onClick={() => {
-                            if (!selectedDetail.globalGuide?.strategy) return;
-                            navigator.clipboard.writeText(selectedDetail.globalGuide.strategy);
+                            if (!strategyText) return;
+                            navigator.clipboard.writeText(strategyText);
                             setGlobalGuideCopied(true);
                             setTimeout(() => setGlobalGuideCopied(false), 2000);
                           }}
@@ -64,6 +73,15 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
                           <Edit3 size={13} />
                           <span className="hidden sm:inline">メンテ編集 ↗</span>
                         </Link>
+
+                        <button
+                          onClick={() => setIsOptimizeOpen(true)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 text-xs font-bold border border-amber-500/40 transition shadow-sm cursor-pointer"
+                          title="長大化した教本をAIで実戦完全版バイブルへ最適化・圧縮"
+                        >
+                          <Sparkles size={13} className="text-amber-400" />
+                          <span>AI最適化</span>
+                        </button>
                       </div>
                     </div>
 
@@ -74,7 +92,7 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
                           !isGlobalGuideExpanded ? "max-h-56 overflow-hidden mask-bottom" : ""
                         }`}
                       >
-                        {selectedDetail.globalGuide.strategy}
+                        {strategyText}
                       </div>
 
                       {!isGlobalGuideExpanded && (
@@ -83,7 +101,7 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
                             onClick={() => setIsGlobalGuideExpanded(true)}
                             className="pointer-events-auto px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs shadow-lg hover:shadow-amber-500/20 transition cursor-pointer flex items-center gap-2"
                           >
-                            <span>📖 統合マスター教本を全文展開（約{selectedDetail.globalGuide.strategy.length.toLocaleString()}文字）</span>
+                            <span>📖 統合マスター教本を全文展開（約{strategyText.length.toLocaleString()}文字）</span>
                             <ChevronDown size={14} />
                           </button>
                         </div>
@@ -100,6 +118,21 @@ export default function BibleTab({ isGlobalGuideExpanded, setIsGlobalGuideExpand
                         </div>
                       )}
                     </div>
+
+                    {/* AI教本最適化モーダル */}
+                    <ChampionOptimizeModal
+                      isOpen={isOptimizeOpen}
+                      onClose={() => setIsOptimizeOpen(false)}
+                      championId={selectedDetail.id}
+                      championName={selectedDetail.jpName || selectedDetail.id}
+                      currentStrategy={strategyText}
+                      onSuccess={(newText) => {
+                        setStrategyText(newText);
+                        if (selectedDetail.globalGuide) {
+                          selectedDetail.globalGuide.strategy = newText;
+                        }
+                      }}
+                    />
                   </div>
                 )}
 
