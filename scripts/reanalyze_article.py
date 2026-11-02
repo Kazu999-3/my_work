@@ -172,8 +172,16 @@ def main():
                     pass
                 out(False, f"Gemini の利用上限に達したため一時見送り（クォータ回復後に自動再開）: {e}"[:300],
                     skipped=True, is_quota=True)
-        except ValueError as e:  # 事実が1件も取れない
-            out(False, f"{e}。この動画は字幕からは記事にできません")
+        except json.JSONDecodeError as e:
+            notes.append(f"{model}: JSONパース失敗 ({str(e)[:80]})")
+            if model == models[-1]:
+                out(False, f"再解析に失敗しました（Gemini応答のJSON解釈エラー: {e}）"[:400])
+        except ValueError as e:
+            if "字幕から使える事実が1件も見つかりませんでした" in str(e):
+                out(False, f"{e}。この動画は字幕からは記事にできません")
+            notes.append(f"{model}: ValueError ({str(e)[:80]})")
+            if model == models[-1]:
+                out(False, f"再解析に失敗しました: {e}"[:400])
         except RuntimeError as e:
             notes.append(f"{model}: {str(e)[:120]}")
             if model == models[-1]:

@@ -650,14 +650,41 @@ def _generate_video(client, types, url, head, prompt_text, clip_start=0, clip_en
     )
 
 
-def _parse_video_json(res, is_short):
-    txt = (res.text or "").strip()
-    for pre in ("```json", "```"):
+def safe_json_loads(text):
+    """LLMが生成したJSONを安全にパースする。制御文字やフォーマットの揺れ（未エスケープ改行・末尾カンマ等）を吸収する。"""
+    if not text:
+        raise ValueError("JSON文字列が空です")
+    txt = text.strip()
+    for pre in ("```json", "```JSON", "```"):
         if txt.startswith(pre):
             txt = txt[len(pre):]
     if txt.endswith("```"):
         txt = txt[:-3]
-    data = json.loads(txt.strip())
+    txt = txt.strip()
+
+    s, e = txt.find("{"), txt.rfind("}")
+    target = txt[s:e + 1] if (s != -1 and e != -1 and s < e) else txt
+
+    # 1. strict=False でパース（未エスケープの改行・タブ等の制御文字を許容）
+    try:
+        return json.loads(target, strict=False)
+    except Exception:
+        pass
+
+    # 2. 末尾の余計なカンマを除去して再試行 (例: {"a": 1, })
+    try:
+        cleaned = re.sub(r",\s*([}\]])", r"\1", target)
+        return json.loads(cleaned, strict=False)
+    except Exception:
+        pass
+
+    # 3. 最後の手段（例外を上位へ送る）
+    return json.loads(target, strict=False)
+
+
+def _parse_video_json(res, is_short):
+    txt = (res.text or "").strip()
+    data = safe_json_loads(txt)
     um = getattr(res, "usage_metadata", None)
     if um:
         print(f"  📊 映像解析 ({'Shorts' if is_short else '通常'}): 入力{um.prompt_token_count} 出力{um.candidates_token_count} トークン")

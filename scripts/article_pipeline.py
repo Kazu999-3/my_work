@@ -248,6 +248,38 @@ def _is_quota_error(err):
     return "429" in s or "RESOURCE_EXHAUSTED" in s or "quota" in s.lower()
 
 
+def safe_json_loads(text):
+    """LLMが生成したJSONを安全にパースする。制御文字やフォーマットの揺れ（未エスケープ改行・末尾カンマ等）を吸収する。"""
+    if not text:
+        raise ValueError("JSON文字列が空です")
+    txt = text.strip()
+    for pre in ("```json", "```JSON", "```"):
+        if txt.startswith(pre):
+            txt = txt[len(pre):]
+    if txt.endswith("```"):
+        txt = txt[:-3]
+    txt = txt.strip()
+
+    s, e = txt.find("{"), txt.rfind("}")
+    target = txt[s:e + 1] if (s != -1 and e != -1 and s < e) else txt
+
+    # 1. strict=False でパース（未エスケープの改行・タブ等の制御文字を許容）
+    try:
+        return json.loads(target, strict=False)
+    except Exception:
+        pass
+
+    # 2. 末尾の余計なカンマを除去して再試行
+    try:
+        cleaned = re.sub(r",\s*([}\]])", r"\1", target)
+        return json.loads(cleaned, strict=False)
+    except Exception:
+        pass
+
+    # 3. 最後の手段
+    return json.loads(target, strict=False)
+
+
 def call_gemini_json(prompt, api_key, model, max_tokens=8192, temperature=0.2, retries=3, log_prefix="gemini"):
     """Gemini（REST）を呼んで JSON を返す。429 が続いたら GeminiQuotaError。"""
     body = {
@@ -271,9 +303,7 @@ def call_gemini_json(prompt, api_key, model, max_tokens=8192, temperature=0.2, r
             text = "".join(p.get("text", "") for p in res["candidates"][0]["content"]["parts"] if not p.get("thought")).strip()
             if res["candidates"][0].get("finishReason") not in (None, "STOP"):
                 print(f"⚠️ Gemini の生成が途中で止まりました: {res['candidates'][0].get('finishReason')}")
-            text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
-            s, e = text.find("{"), text.rfind("}")
-            return json.loads(text[s:e + 1])
+            return safe_json_loads(text)
         except urllib.error.HTTPError as err:
             last_err = err
             detail = ""

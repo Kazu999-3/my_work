@@ -1,5 +1,42 @@
 ## 📅 2026-11-02（月）
 
+### 🐛 記事再解析ワーカーのJSONパース制御文字例外（Invalid control character）是正 ＆ タスク復旧
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーから Discord の `#エラーログ` チャンネルの通知画像が共有された。
+   - エラー内容: `❌ 記事の再解析失敗 Invalid control character at: line 2 column 2869 (char 2922)。この動画は字幕からは記事にできません（詳細ログ末尾： [認証必須/bot制限] PNrbepdiXlQ: ログイン必須の動画のため通常フローへフォールバック）`。
+   - 調査の結果、動画 `PNrbepdiXlQ` がYouTube側でログイン必須だったため字幕取得から映像解析（`gemini_analyze_video`）にフォールバックした際、Geminiが生成したJSONの本文文字列の中にエスケープされていない生改行・制御文字（`\n` 等）が含まれていた。
+   - `youtube_worker.py` の `_parse_video_json` および `article_pipeline.py` の `call_gemini_json` において `json.loads` が標準の `strict=True` で呼ばれていたため、`Invalid control character` の `JSONDecodeError` を投げていた。
+   - さらに `reanalyze_article.py` の例外捕捉が `except ValueError:` となっていたため、`ValueError` を継承する `JSONDecodeError` が「事実が1件も取れない」用の「この動画は字幕からは記事にできません」という誤ったエラーメッセージに化けてタスクが失敗していた。
+2. **実施内容**:
+   - **【堅牢なJSONパーサー safe_json_loads の導入】(`scripts/youtube_worker.py`, `scripts/article_pipeline.py`)**:
+     - `strict=False` による未エスケープ制御文字（改行・タブ等）の許容。
+     - コードブロック修飾（```json）や末尾の余計なカンマ（trailing comma）の自動正規化修復を実装。
+   - **【例外ハンドリングの是正】(`scripts/reanalyze_article.py`)**:
+     - `except json.JSONDecodeError` を明示的に分離し、JSONパースエラー時は他モデルへ自動フォールバックするよう修正。
+     - 「字幕から事実が1件も見つかりませんでした」の判定を厳密化し、パースエラーの誤認を根絶。
+   - **【失敗タスクの復旧】**:
+     - 失敗していたタスク（`#afacc66f-baea-40a2-812d-8eac8a6d2d8c` 等）を `pending` にリセットし、修正済みパーサーで安全に再実行されるよう復元。
+3. **機械的実値検証**:
+   - 制御文字パーステスト: **未エスケープ生改行・末尾カンマ付きJSONのパース PASS (`test_json_fix.py`)**
+   - Python構文コンパイル: **0 errors PASS (`py_compile`)**
+   - 単体テスト全件実行: **52 tests passed, 0 failures PASS (`npm test`)**
+   - タスクリセット確認: **`status: pending` への更新完了実測確認**。
+
+**再利用可能な3行ナレッジ**:
+- LLMが生成するJSON文字列（特にMarkdown本文などの長文）にはエスケープされていない生の改行文字が混入することがあるため、Pythonでは `json.loads(..., strict=False)` またはサニタイズ処理が必須。
+- `json.decoder.JSONDecodeError` は `ValueError` のサブクラスであるため、ビジネスロジック固有の `ValueError` と同じブロックで雑に捕捉すると、パースエラーが業務エラーに偽装されて原因究明を妨げる。
+- 外部API（YouTube・Gemini）のエラーと自作パーサーのエラーの境界を明確にし、パース失敗時は代替モデルへフォールバックさせる多層防壁を維持する。
+
+- `[要検証]`: リセットされたタスク（`#afacc66f`）がPC常駐ワーカーで正常に再解析完了し、Discordエラーログが沈黙するか。
+- `[継続ウォッチ]`: 映像直接解析へフォールバックした動画において、新版記事が正常に生成されるか。
+- `[発信候補]`: 「PythonでLLM出力JSONを扱う時の罠：strict=FalseとValueError継承関係による偽装バグの根絶」
+
+---
+
+
+
 ### ⚡ Vercel無料枠（Fluid Active CPU: 4時間/月）枯渇防止：ソロQコーチ定期実行（poll-soloq-coach）の停止
 
 **概要**:
