@@ -8,6 +8,7 @@ import {
   Sparkles, Filter, ExternalLink, ArrowLeft, Play, ShieldAlert, Award, Pencil, ChevronDown, ChevronUp
 } from 'lucide-react';
 import AdminNavHeader from '@/components/AdminNavHeader';
+import ChampAvatar from '@/components/ChampAvatar';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 interface ChampHealth {
@@ -353,7 +354,7 @@ function DictHealthDashboardContent() {
                     title="一覧で中身を開く"
                     className="flex items-center gap-2 cursor-pointer group"
                   >
-                    <img src={getChampIcon(c.champion)} alt={c.champion} className="w-5 h-5 rounded-md object-cover" />
+                    <ChampAvatar champion={c.champion} size="sm" />
                     <span className="font-bold text-zinc-200 group-hover:text-amber-300">{c.champion}</span>
                   </button>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">
@@ -457,11 +458,7 @@ function DictHealthDashboardContent() {
                             {isOpen
                               ? <ChevronUp className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                               : <ChevronDown className="w-3.5 h-3.5 text-zinc-500 group-hover:text-amber-400 shrink-0" />}
-                            <img
-                              src={getChampIcon(c.champion)}
-                              alt={c.champion}
-                              className="w-8 h-8 rounded-lg object-cover border border-zinc-800"
-                            />
+                            <ChampAvatar champion={c.champion} size="md" />
                             <div>
                               <div className="font-bold text-zinc-200 group-hover:text-amber-300">{c.champion}</div>
                               <div className="text-[10px] text-zinc-500">

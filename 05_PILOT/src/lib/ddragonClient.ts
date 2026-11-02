@@ -1,5 +1,5 @@
 // DDragon クライアントヘルパー（公式アセットURL解決）
-export const DDRAGON_FALLBACK_PATCH = "16.19.1";
+export const DDRAGON_FALLBACK_PATCH = "16.21.1";
 
 let cachedLatestPatch = DDRAGON_FALLBACK_PATCH;
 
