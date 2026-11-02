@@ -73,6 +73,16 @@ note記事や発信コンテンツの制作において、**「AIが単独で勝
      1. マイページ（`/player/[id]`）のMMR推移グラフに全レーンの推移線（TOP: 青, JG: 緑, MID: 黄, ADC: 赤, SUP: 紫, 総合: シアン）を同時描画
      2. 選択中レーンを太線（3.5px）＆不透明度100%で前面強調、他レーンを細線（1px）＆半透明（15%）にフェード表示
      3. ツールチップでの全レーンMMR一覧および選択中レーンのハイライト表示
+   - **技術スタック**: Next.js (`04_PORTAL`), Chart.js / SVG, Supabase
+   - **現在のステップ**: 実装完了・稼働中
+10. **全レーン対応チャンネル拡充 ＆ 未開拓チャンピオン・優先スカウター (Role Balance & On-Demand Scout Engine) [NEW]**:
+   - **目的**: リサーチの偏り（JG専属チャンネルへの極端な集中、ADC/MID/SUP/TOP等の記事0体チャンピオンが62体存在した歪み）を根本是正し、全ロール・全チャンプの知見をバランスよく補給する。
+   - **MVPの範囲**:
+     1. **世界的名門チャンネルの全ロール拡充**: TOP（AloisNL）、MID（Coach Curtis, Shok）、ADC（Vapora Dark）、SUP（ShoDesu, CoreJJ）を巡回監視テーブル（`youtube_channels`）へ正式登録。
+     2. **未開拓チャンピオン・スカウターAPI (`/api/youtube/scout-champion`)**: 記事0件のチャンピオンを自動抽出し、`yt-dlp` 高速検索で高レートガイド動画を重複排除して `youtube_queue` へ投入。
+     3. **UIパネル (`ChampionScoutPanel.tsx`)**: `/admin/youtube` 画面でロール別の未開拓状況（0本数）を一覧化し、個別ワンクリック補給および上位一括補給を実現。
+   - **技術スタック**: Next.js (`05_PILOT`), Supabase, yt-dlp, TailwindCSS
+   - **現在のステップ**: 実装完了・本番稼働中
      4. 師弟募集掲示板（Discord）でのレーンアイコン動的判定（TOP: ⚔️, JG: 🌲, MID: ⚡, ADC/BOT: 🏹, SUP: 🛡️）
    - **技術スタック**: Next.js, React, Recharts, TailwindCSS
    - **現在のステップ**: Step 1（完了・稼働中）

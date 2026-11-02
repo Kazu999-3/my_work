@@ -7,6 +7,7 @@ import AdminNavHeader from '@/components/AdminNavHeader';
 import QueueTab from './QueueTab';
 import WatchTab from './WatchTab';
 import WorkerStatusPanel from './WorkerStatusPanel';
+import ChampionScoutPanel from './ChampionScoutPanel';
 import BookmarkletPanel from './BookmarkletPanel';
 import DeepDivePanel from './DeepDivePanel';
 import DictSynthPanel from './DictSynthPanel';
@@ -37,6 +38,8 @@ function YoutubeAdminContent() {
         />
 
         <WorkerStatusPanel />
+
+        <ChampionScoutPanel />
 
         <DeepDivePanel />
 
