@@ -178,7 +178,19 @@ def main():
                 out(False, f"再解析に失敗しました（Gemini応答のJSON解釈エラー: {e}）"[:400])
         except ValueError as e:
             if "字幕から使える事実が1件も見つかりませんでした" in str(e):
-                out(False, f"{e}。この動画は字幕からは記事にできません")
+                # 映像直接解析が有効ならフォールバックを試みる
+                if yw.ENABLE_VIDEO_ANALYSIS and transcript:
+                    print(f"  [フォールバック] 字幕から事実が取れなかったため映像直接解析を試みます: {title_src}")
+                    try:
+                        source = "映像解析（字幕なしフォールバック）"
+                        article = yw.gemini_analyze_video(url, title_src, channel, is_short=is_short,
+                                                          extra_instructions=reanalysis_instructions(reanalysis))
+                        article["analysis_meta"] = {"prompt_version": "video-v1", "model": model}
+                        used_model = model
+                        break
+                    except Exception as ve:
+                        print(f"  [フォールバック失敗] 映像直接解析も失敗: {ve}")
+                out(False, f"{e}。この動画は実況・字幕からは記事にできません", skipped=True, is_content_issue=True)
             notes.append(f"{model}: ValueError ({str(e)[:80]})")
             if model == models[-1]:
                 out(False, f"再解析に失敗しました: {e}"[:400])

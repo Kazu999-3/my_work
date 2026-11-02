@@ -401,12 +401,24 @@ def main():
                             clean_message = stdout_json["message"]
                         is_skip = bool(stdout_json.get("skipped"))
                         is_quota = bool(stdout_json.get("is_quota"))
+                        is_content_issue = bool(stdout_json.get("is_content_issue"))
                 except Exception:
                     pass
 
+                # JSONのフラグ以外にも、実況なし・事実なし等のコンテンツ起因を包括判定（システムエラーではないためDiscord通知除外）
+                all_text = f"{clean_message or ''} {res.stdout[-1000:]} {res.stderr[-1000:]}".lower()
+                content_issue_keywords = (
+                    "字幕から使える事実が1件も見つかりません",
+                    "この動画は字幕からは記事にできません",
+                    "この動画は実況・字幕からは記事にできません",
+                    "実況なし・雑談のみの動画の可能性",
+                )
+                if any(kw in all_text for kw in content_issue_keywords):
+                    is_skip = True
+                    is_content_issue = True
+
                 # JSONのskippedフラグ以外にも、エラー文言やログからクォータ枯渇起因を包括判定
                 if not is_skip:
-                    all_text = f"{clean_message or ''} {res.stdout[-1000:]} {res.stderr[-1000:]}".lower()
                     quota_keywords = (
                         "quota exhausted", "resource_exhausted", "resourceexhausted",
                         "429", "apiクォータ制限", "api制限のため今回の定期更新は安全にスキップ",
@@ -418,10 +430,7 @@ def main():
                         if not clean_message:
                             clean_message = "API利用上限（429）のため一時見送り（クォータ回復後に自動再開）"
 
-                # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)は
-                # 本物のバグではないため、Discordエラー通知は飛ばさない。
-                # 特に再解析（article_reanalyze）は完了扱いにしてしまうと再解析されないため、
-                # pending に戻してクォータ回復後に自動再試行させる。
+                # クォータ切れや実況なし等による安全なスキップは、本物のシステム障害ではないためDiscordエラー通知は飛ばさない。
                 if is_skip:
                     print(f"⏭ 安全にスキップ: {task_type} ({task_id}) — {clean_message}")
                     if is_quota and task_type == "article_reanalyze":
@@ -434,6 +443,9 @@ def main():
                         })
                         print("⏸ クォータ回復待ちのため、今回のクラウド実行ループを一時終了します。")
                         break
+                    elif is_content_issue:
+                        # 実況・事実なし動画は再試行せず failed で記録（承認画面では「再解析不可（実況なし等）」として静かに表示、Discordエラー通知は飛ばさない）
+                        complete_task(task_id, "failed", error_message=clean_message or "実況・字幕なしのため見送り")
                     else:
                         complete_task(task_id, "completed", result={"success": False, "skipped": True, "message": clean_message})
                     continue
