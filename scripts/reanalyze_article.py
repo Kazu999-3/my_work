@@ -163,14 +163,14 @@ def main():
             used_model = model
             break
         except (GeminiQuotaError, yw.GeminiQuotaExceeded) as e:
-            notes.append(f"{model}: 利用上限 (429)")
+            notes.append(f"{model}: 利用上限 (429/503)")
             if model == models[-1]:
                 # ワーカー全体のクォータポーズを設定（15分間）し、ワーカーが数分おきに叩き続けないようにする
                 try:
-                    yw._set_quota_pause(f"Gemini 429利用上限: {e}")
+                    yw._set_quota_pause(f"Gemini 一時過負荷/制限: {e}")
                 except Exception:
                     pass
-                out(False, f"Gemini の利用上限に達したため一時見送り（クォータ回復後に自動再開）: {e}"[:300],
+                out(False, f"Gemini の利用上限/一時過負荷のため一時見送り（クォータ回復後に自動再開）: {e}"[:300],
                     skipped=True, is_quota=True)
         except json.JSONDecodeError as e:
             notes.append(f"{model}: JSONパース失敗 ({str(e)[:80]})")
@@ -195,10 +195,28 @@ def main():
             if model == models[-1]:
                 out(False, f"再解析に失敗しました: {e}"[:400])
         except RuntimeError as e:
+            if yw._is_quota_error(e):
+                notes.append(f"{model}: 一時過負荷/制限 ({str(e)[:80]})")
+                if model == models[-1]:
+                    try:
+                        yw._set_quota_pause(f"Gemini 一時過負荷/制限: {e}")
+                    except Exception:
+                        pass
+                    out(False, f"Gemini API 一時過負荷（503/429）のため一時見送り（自動再開）: {e}"[:300],
+                        skipped=True, is_quota=True)
             notes.append(f"{model}: {str(e)[:120]}")
             if model == models[-1]:
                 out(False, f"再解析に失敗しました: {e}"[:400])
         except Exception as e:
+            if yw._is_quota_error(e):
+                notes.append(f"{model}: 一時過負荷/制限 ({str(e)[:80]})")
+                if model == models[-1]:
+                    try:
+                        yw._set_quota_pause(f"Gemini 一時過負荷/制限: {e}")
+                    except Exception:
+                        pass
+                    out(False, f"Gemini API 一時過負荷（503/429）のため一時見送り（自動再開）: {e}"[:300],
+                        skipped=True, is_quota=True)
             # httpx.RemoteProtocolError や接続一時切断も安全に捕捉して次モデルへフェイルオーバー
             notes.append(f"{model}: {type(e).__name__} ({str(e)[:100]})")
             if model == models[-1]:

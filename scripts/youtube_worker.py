@@ -156,7 +156,15 @@ QUOTA_PAUSE_MIN = 60
 
 def _is_quota_error(err) -> bool:
     code = getattr(err, "code", None)
-    return code == 429 or "RESOURCE_EXHAUSTED" in str(err)
+    err_str = str(err).lower()
+    if code in (429, 503):
+        return True
+    temporary_indicators = (
+        "resource_exhausted", "resourceexhausted",
+        "unavailable", "503", "high demand", "spikes in demand",
+        "temporary failure", "overloaded", "servererror"
+    )
+    return any(ind in err_str for ind in temporary_indicators)
 
 
 def _quota_paused_until():
@@ -635,19 +643,33 @@ def _generate_video(client, types, url, head, prompt_text, clip_start=0, clip_en
             file_data=types.FileData(file_uri=url),
             video_metadata=types.VideoMetadata(start_offset=f"{int(clip_start)}s", end_offset=f"{int(clip_end)}s"),
         )
-    return client.models.generate_content(
-        model=VIDEO_MODEL,
-        contents=types.Content(parts=[
-            video_part,
-            types.Part(text=head + prompt_text),
-        ]),
-        config=types.GenerateContentConfig(
-            # 低解像度でも画面内テキストは読める。既定のままだとトークンが約3倍になる
-            # （2026-09-23実測: 12分の動画で 212,419 → 74,179）。
-            media_resolution="MEDIA_RESOLUTION_LOW",
-            temperature=0.2,
-        ),
-    )
+
+    max_retries = 3
+    backoffs = [5, 15, 30]
+    for attempt in range(max_retries):
+        try:
+            return client.models.generate_content(
+                model=VIDEO_MODEL,
+                contents=types.Content(parts=[
+                    video_part,
+                    types.Part(text=head + prompt_text),
+                ]),
+                config=types.GenerateContentConfig(
+                    # 低解像度でも画面内テキストは読める。既定のままだとトークンが約3倍になる
+                    # （2026-09-23実測: 12分の動画で 212,419 → 74,179）。
+                    media_resolution="MEDIA_RESOLUTION_LOW",
+                    temperature=0.2,
+                ),
+            )
+        except Exception as e:
+            if _is_quota_error(e):
+                if attempt < max_retries - 1:
+                    wait_sec = backoffs[attempt]
+                    print(f"  ⏳ Gemini API 一時過負荷/制限 ({e}) を検知。{wait_sec}秒待機後に再試行 ({attempt+1}/{max_retries})...")
+                    time.sleep(wait_sec)
+                    continue
+                raise GeminiQuotaExceeded(str(e)[:200]) from e
+            raise
 
 
 def safe_json_loads(text):

@@ -422,13 +422,14 @@ def main():
                     quota_keywords = (
                         "quota exhausted", "resource_exhausted", "resourceexhausted",
                         "429", "apiクォータ制限", "api制限のため今回の定期更新は安全にスキップ",
-                        "too many requests", "利用上限"
+                        "too many requests", "利用上限",
+                        "503", "unavailable", "high demand", "spikes in demand", "servererror"
                     )
                     if any(kw in all_text for kw in quota_keywords):
                         is_skip = True
                         is_quota = True
                         if not clean_message:
-                            clean_message = "API利用上限（429）のため一時見送り（クォータ回復後に自動再開）"
+                            clean_message = "API一時過負荷・利用上限（503/429）のため一時見送り（自動再開）"
 
                 # クォータ切れや実況なし等による安全なスキップは、本物のシステム障害ではないためDiscordエラー通知は飛ばさない。
                 if is_skip:

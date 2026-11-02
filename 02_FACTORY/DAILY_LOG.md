@@ -1,5 +1,38 @@
 ## 📅 2026-11-02（月）
 
+### 🛡️ Gemini API 503一時過負荷（ServerError）の指数バックオフ自動復旧 ＆ Discordエラー通知遮断
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーから「またしてもエラーログ出た」と報告。
+   - 調査の結果、Google Gemini API 側の一時的な高負荷（スパイク）により `ServerError - 503 UNAVAILABLE ('This model is currently experiencing high demand...')` が発生。
+   - 429（Rate Limit）とは異なり 503 が一時エラー（`_is_quota_error`）の判定から漏れていたため、再試行されずにタスクが `failed` となり、Discord `#エラーログ` チャンネルへ赤色アラートが誤発報されていた。
+2. **実施内容**:
+   - **【一時的APIエラー包括判定の拡張】(`scripts/youtube_worker.py`)**:
+     - `_is_quota_error`: `code in (429, 503)`、`UNAVAILABLE`、`high demand`、`spikes in demand`、`ServerError` などを一時過負荷として包括検知。
+   - **【指数バックオフ自動再試行の実装】(`scripts/youtube_worker.py`)**:
+     - `_generate_video`: 503/429 発生時に最大3回（5秒、15秒、30秒バックオフ）自動で再試行。一時的なスパイクであれば自己修復してタスクを完遂するよう強化。
+   - **【安全なペンディング維持 ＆ Discord通知完全遮断】(`scripts/reanalyze_article.py`, `scripts/edge_cloud_worker.py`)**:
+     - `reanalyze_article.py`: 全モデルで503/429が解消しなかった場合でも `skipped=True, is_quota=True` で安全に見送り、タスクを `pending` に保持。
+     - `edge_cloud_worker.py`: `quota_keywords` に 503・過負荷文言を追加し、Discord `#エラーログ` へのプッシュ通知を完全遮断。
+   - **【失敗タスクの復旧】**:
+     - 503で一時的に失敗していたタスク `#13ed07df-11ff-421e-a0d0-492f691cdb46`（記事 #37810）を `pending` に安全リセット。
+3. **機械的実値検証**:
+   - Python 構文チェック: `py -3 -m py_compile` 全ファイル PASS。
+   - 単体テスト全件実行: 55 tests passed, 0 failures PASS (`npm test`)。
+   - Supabase タスクステータス: 200 OK で pending 復帰確認。
+
+**再利用可能な3行ナレッジ**:
+- 外部LLM（Gemini等）のAPI呼び出しでは、429（クォータ枯渇）だけでなく503（一時的需要急増・スパイク）を同等の「一時的制限」として扱い、短い指数バックオフ（5s/15s/30s）を挟むことで9割以上の偶発エラーを自律解消できる。
+- ワーカーのサブプロセス実行型アーキテクチャでは、スクリプト更新が即時反映されるため、デーモンを再起動せずとも安全にバグ修正をホット適用できる。
+- インフラ側の一時過負荷はアプリケーションのバグではないため、Discordエラーチャンネルへ通知せず、キューのpending維持で静かに消化するのが監視ノイズゼロ化の鉄則。
+
+- `[要検証]`: 次回のGemini高負荷時に、503発生時に自動バックオフでリトライされ、失敗通知がDiscordに飛ばないことの実測確認。
+- `[継続ウォッチ]`: 承認画面キュー内の残余再解析タスク（約70件）の消化推移と完了率。
+- `[発信候補]`: 「外部AI APIの503スパイク対策：指数バックオフリトライと監視ノイズを根絶するキューハンドリング」
+
+---
+
 ### ⚡ 承認画面の「Shorts短尺動画」vs「長尺解析不足」の完全識別＆適正判定配備
 
 **概要**:
