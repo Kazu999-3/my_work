@@ -17,6 +17,7 @@ export interface GeminiOptions {
   temperature?: number;
   maxOutputTokens?: number;
   responseMimeType?: string;
+  timeoutMs?: number;
 }
 
 export async function callGemini(prompt: string, options: GeminiOptions = {}): Promise<string> {
@@ -51,7 +52,7 @@ export async function callGemini(prompt: string, options: GeminiOptions = {}): P
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 60000),
       });
 
       if (!res.ok) {
