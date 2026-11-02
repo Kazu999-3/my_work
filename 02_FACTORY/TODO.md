@@ -38,6 +38,7 @@
 
 ## 🚚 04の役目終了前に05へ移す裏方（低優先・04停止時に着手）
 
+- [x] **【完了】04 `/api/cron/soloq-coach` への毎時定期実行（poll-soloq-coach）を停止**（2026-11-02、Vercel無料枠枯渇対策・マイグレーション124適用済）
 - `soloq-coach-poll.yml` → 04 `/api/cron/soloq-coach`
 - `soloq-history-sync.yml` → 04
 - 04のVercel Cron `soloq-trends` `freshness-check`
