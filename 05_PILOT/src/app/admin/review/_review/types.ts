@@ -33,6 +33,8 @@ export interface ReviewItem {
   allDetectedChampions?: Array<{ id: string; nameJa: string }>;
   /** 再解析で作った版なら元の記事の ID（2026-10-19） */
   reanalysis_of?: number | null;
+  /** 再解析の進行・結果ステータス（2026-11-02新設: 未再解析・再解析中・再解析済・失敗の判別用） */
+  reanalysisStatus?: 'reanalyzed' | 'running' | 'failed' | 'unreanalyzed';
   analysis_meta?: AnalysisMeta | null;
   /** 中身の濃さの目印（lib/articleDensity.ts） */
   density?: DensityInfo;

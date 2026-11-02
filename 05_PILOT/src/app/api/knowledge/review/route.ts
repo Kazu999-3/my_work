@@ -122,6 +122,33 @@ export async function GET(req: NextRequest) {
       allRows = allRows.filter((r) => !r.is_atomic);
     }
 
+    // 進行中・失敗した再解析の依頼（キャッシュ活用、直近7日＋未完了全件）
+    const reanalysisTasks: Record<number, { status: string; error: string | null; createdAt: string }> = {};
+    const runningTaskArticleIds = new Set<number>();
+    let taskRows: any[] = [];
+    if (edgeTasksCache && (now - edgeTasksCache.timestamp < CACHE_TTL_PENDING_MS)) {
+      taskRows = edgeTasksCache.data;
+    } else {
+      const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+      const { data } = await supabase
+        .from('edge_tasks')
+        .select('status, payload, error_message, created_at')
+        .eq('task_type', 'article_reanalyze')
+        .or(`created_at.gte.${since},status.in.(pending,running)`)
+        .order('created_at', { ascending: true })
+        .limit(1000);
+      taskRows = data || [];
+      edgeTasksCache = { data: taskRows, timestamp: now };
+    }
+    for (const t of taskRows || []) {
+      const aid = Number((t as any).payload?.article_id);
+      if (!aid) continue;
+      reanalysisTasks[aid] = { status: t.status, error: t.error_message, createdAt: t.created_at };
+      if (t.status === 'pending' || t.status === 'running') {
+        runningTaskArticleIds.add(aid);
+      }
+    }
+
     // 再解析（2026-10-19）: 再解析版がある記事は元の記事を一覧から外し、再解析版のカードで新旧を比べる
     const draftByOriginal = new Map<number, any>();
     for (const r of allRows) {
@@ -135,6 +162,15 @@ export async function GET(req: NextRequest) {
       .filter((r: any) => {
         const tags = Array.isArray(r.tags) ? r.tags : [];
         return !tags.some((t: string) => SUPERSEDED_TAGS.includes(t));
+      })
+      // 🚀 2026-11-02: 再解析依頼をかけた記事は初回解析キューへ移動した扱いとし、承認待ち一覧から除外する
+      .filter((r: any) => {
+        const rootId: number = r.reanalysis_of ?? r.id;
+        const isQueued = runningTaskArticleIds.has(rootId) || runningTaskArticleIds.has(r.id);
+        if (quality === 'reanalyzing') {
+          return isQueued;
+        }
+        return !isQueued;
       });
 
     // 元の記事が承認済み等で一覧に無い場合も比較できるよう取ってくる
@@ -145,29 +181,6 @@ export async function GET(req: NextRequest) {
         .select('id, title, content, created_at, analysis_meta, tags, is_atomic')
         .in('id', missingOriginalIds);
       for (const o of origRows || []) rowById.set(o.id, o);
-    }
-
-    // 進行中・失敗した再解析の依頼（直近3日、キャッシュ活用）
-    const reanalysisTasks: Record<number, { status: string; error: string | null; createdAt: string }> = {};
-    let taskRows: any[] = [];
-    if (edgeTasksCache && (now - edgeTasksCache.timestamp < CACHE_TTL_PENDING_MS)) {
-      taskRows = edgeTasksCache.data;
-    } else {
-      const since = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
-      const { data } = await supabase
-        .from('edge_tasks')
-        .select('status, payload, error_message, created_at')
-        .eq('task_type', 'article_reanalyze')
-        .gte('created_at', since)
-        .order('created_at', { ascending: true })
-        .limit(500);
-      taskRows = data || [];
-      edgeTasksCache = { data: taskRows, timestamp: now };
-    }
-    for (const t of taskRows || []) {
-      const aid = Number((t as any).payload?.article_id);
-      if (!aid) continue;
-      reanalysisTasks[aid] = { status: t.status, error: t.error_message, createdAt: t.created_at };
     }
 
     // 親記事タイトルのマッピング
@@ -243,10 +256,19 @@ export async function GET(req: NextRequest) {
         // 再解析版なら元の記事（比較用）、元の記事なら進行中・失敗した再解析の依頼
         const rootId: number = r.reanalysis_of ?? r.id;
         const original = r.reanalysis_of != null ? rowById.get(r.reanalysis_of) : null;
-        const task = reanalysisTasks[rootId];
+        const task = reanalysisTasks[rootId] || reanalysisTasks[r.id];
         const taskForCard = task && (task.status === 'pending' || task.status === 'running'
           || (task.status === 'failed' && new Date(task.createdAt) > new Date(r.created_at)))
           ? task : null;
+
+        let reanalysisStatus: 'reanalyzed' | 'running' | 'failed' | 'unreanalyzed' = 'unreanalyzed';
+        if (r.reanalysis_of != null) {
+          reanalysisStatus = 'reanalyzed';
+        } else if (task && (task.status === 'pending' || task.status === 'running')) {
+          reanalysisStatus = 'running';
+        } else if (task && task.status === 'failed') {
+          reanalysisStatus = 'failed';
+        }
 
         const articleSummary = extractArticleSummary(r.content || '');
         const champDetect = detectChampionsFromText(r.title || '', articleSummary);
@@ -259,6 +281,7 @@ export async function GET(req: NextRequest) {
           ...r,
           analysis_meta: r.analysis_meta || null,
           density,
+          reanalysisStatus,
           reanalysisTask: taskForCard,
           reanalysisOriginal: original
             ? {
@@ -326,6 +349,7 @@ export async function GET(req: NextRequest) {
       unknown: enrichedItems.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa).length,
       thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
       reanalyzed: enrichedItems.filter((i) => i.reanalysis_of != null).length,
+      reanalyzing: runningTaskArticleIds.size,
       approve: enrichedItems.filter((i) => i.density.triage === 'approve').length,
       check: enrichedItems.filter((i) => i.density.triage === 'check').length,
       skip: enrichedItems.filter((i) => i.density.triage === 'skip').length,
@@ -338,6 +362,7 @@ export async function GET(req: NextRequest) {
     if (quality === 'unknown') filtered = filtered.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa);
     if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
     if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysis_of != null);
+    if (quality === 'reanalyzing') filtered = filtered.filter((i) => i.reanalysisStatus === 'running');
     if (quality === 'approve' || quality === 'check' || quality === 'skip') filtered = filtered.filter((i) => i.density.triage === quality);
 
     // チャンネルフィルター
@@ -783,6 +808,7 @@ export async function POST(req: NextRequest) {
 
       const { error: insErr } = await db.from('edge_tasks').insert(tasksToInsert);
       if (insErr) throw insErr;
+      invalidateReviewCache();
 
       const msg = tasksToInsert.length === 1
         ? '再解析を依頼しました。数分で新しい版が届きます（届いたら通知ベルでお知らせします）'

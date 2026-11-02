@@ -24,10 +24,10 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
   onReload: () => void;
   quality: string;
   setQuality: (v: string) => void;
-  qualityCounts: { thin?: number; reanalyzed?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number };
+  qualityCounts: { thin?: number; reanalyzed?: number; reanalyzing?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number };
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const hasAdvancedFilter = Boolean(type || quality === 'thin' || quality === 'reanalyzed');
+  const hasAdvancedFilter = Boolean(type || quality === 'thin' || quality === 'reanalyzed' || quality === 'reanalyzing');
 
   return (
     <div className="p-3 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-2.5">
@@ -189,7 +189,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
             {/* 品質・状態 */}
             <div className="flex items-center gap-1">
               <span className="text-zinc-500 font-bold mr-1">品質:</span>
-              {([['thin', '⚠️ 薄い可能性', qualityCounts.thin], ['reanalyzed', '🔁 再解析版', qualityCounts.reanalyzed]] as const).map(([k, l, n]) => (
+              {([['thin', '⚠️ 薄い可能性', qualityCounts.thin], ['reanalyzed', '🔁 再解析版', qualityCounts.reanalyzed], ['reanalyzing', '🔄 再解析キュー中', qualityCounts.reanalyzing]] as const).map(([k, l, n]) => (
                 <button
                   key={k}
                   onClick={() => setQuality(quality === k ? '' : k)}
@@ -207,7 +207,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
             <button
               onClick={() => {
                 setType('');
-                if (quality === 'thin' || quality === 'reanalyzed') setQuality('');
+                if (quality === 'thin' || quality === 'reanalyzed' || quality === 'reanalyzing') setQuality('');
               }}
               className="text-zinc-400 hover:text-zinc-200 text-[11px] underline cursor-pointer"
             >

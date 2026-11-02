@@ -35,7 +35,7 @@ export default function ReviewPage() {
   const [laneCounts, setLaneCounts] = useState<Record<string, number>>({});
   // 2026-10-19: 薄い可能性・再解析版、2026-10-26: チャンプ確定・未定の絞り込み
   const [quality, setQuality] = useState<string>('');
-  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number }>({});
+  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number; reanalyzing?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number }>({});
   const [reanalyzeItems, setReanalyzeItems] = useState<ReviewItem[] | null>(null);
   const [compareItem, setCompareItem] = useState<ReviewItem | null>(null);
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});
@@ -126,16 +126,14 @@ export default function ReviewPage() {
 
   const requestReanalysis = async (targetItems: ReviewItem[], req: ReanalyzeRequest) => {
     const ids = targetItems.map((i) => i.id);
+    // ⚡ 楽観的消去: 再解析依頼をかけた記事はキューへ移動した扱いとし、承認一覧から即座に消去
+    removeFromList(ids);
     const result = await post({ action: 'reanalyze', ids, ...req });
     if (result.ok) {
       setReanalyzeItems(null);
       setCompareItem(null);
-      // 依頼完了した記事を選択解除
-      setSelected((prev) => {
-        const next = new Set(prev);
-        for (const id of ids) next.delete(id);
-        return next;
-      });
+      load({ silent: true });
+    } else {
       load({ silent: true });
     }
   };

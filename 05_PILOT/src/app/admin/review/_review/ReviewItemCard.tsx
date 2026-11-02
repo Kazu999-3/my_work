@@ -182,19 +182,57 @@ export default function ReviewItemCard({
             >
               {item.is_atomic ? '分割知見' : '動画解析'}
             </span>
-            {isDraft && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-800/60 bg-emerald-950/40">
-                🔁 再解析版{typeof factCount === 'number' ? `（事実 ${factCount}件）` : ''}
-              </span>
-            )}
-            {thin && (
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-700/60 bg-amber-950/40"
-                title={item.density?.reasons.join('\n')}
-              >
-                ⚠️ 薄い可能性
-              </span>
-            )}
+            {/* 🚀 再解析ステータス ＆ 薄い可能性の完全識別バッジ（2026-11-02改修） */}
+            {(() => {
+              const status = item.reanalysisStatus || (isDraft ? 'reanalyzed' : taskActive ? 'running' : 'unreanalyzed');
+              if (status === 'reanalyzed') {
+                if (thin) {
+                  return (
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-rose-300 border-rose-800/70 bg-rose-950/50 shadow-sm flex items-center gap-1"
+                      title={`【再解析済だが薄い】\n${item.density?.reasons.join('\n') || ''}`}
+                    >
+                      ⚠️ 再解析済（薄い: 事実{factCount ?? 0}件）
+                    </span>
+                  );
+                }
+                return (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-800/60 bg-emerald-950/40">
+                    🔁 再解析版{typeof factCount === 'number' ? `（事実 ${factCount}件）` : ''}
+                  </span>
+                );
+              }
+              if (status === 'running') {
+                return (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-sky-300 border-sky-800/60 bg-sky-950/40 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    🔄 再解析中（キュー処理中）
+                  </span>
+                );
+              }
+              if (status === 'failed') {
+                return (
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-zinc-400 border-zinc-700 bg-zinc-800/60"
+                    title={item.reanalysisTask?.error || '実況音声なし等の理由で再解析が失敗しました'}
+                  >
+                    ❌ 再解析不可（実況なし等）
+                  </span>
+                );
+              }
+              // unreanalyzed
+              if (thin) {
+                return (
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-600/80 bg-amber-950/60 shadow-sm"
+                    title={`【未再解析】再解析にかけることで高品質な記事へ作り直せる可能性があります。\n${item.density?.reasons.join('\n') || ''}`}
+                  >
+                    ⏳ 未再解析（薄い可能性）
+                  </span>
+                );
+              }
+              return null;
+            })()}
 
             {/* ✂️ 複数チャンピオン対象バッジ */}
             {item.isMultiChampion && (
