@@ -33,11 +33,12 @@ async function main() {
   }
 
   const limitArg = process.argv.find(arg => arg.startsWith('--limit='));
-  const targetCount = limitArg ? parseInt(limitArg.split('=')[1], 10) : 5;
+  const isAll = process.argv.includes('--all');
+  const targetCount = isAll ? 9999 : (limitArg ? parseInt(limitArg.split('=')[1], 10) : 5);
 
-  console.log(`=== チャンピオン教本 AI一括最適化バッチ (Target: 上位${targetCount}件) ===`);
+  console.log(`=== チャンピオン教本 AI一括最適化バッチ (Target: ${isAll ? '1万字以上の全件' : `上位${targetCount}件`}) ===`);
 
-  // 1. 全GLOBAL教本を取得して文字数降順にソート
+  // 1. 全GLOBAL教本を取得
   const { data: records, error } = await supabase
     .from('matchup_sentinel')
     .select('id, champion, strategy')
@@ -48,13 +49,26 @@ async function main() {
     process.exit(1);
   }
 
+  // 実行直前の最新全量バックアップを保存（原本非破壊）
+  const backupDir = path.resolve(process.cwd(), '../02_FACTORY/_BACKUP_CHAMPIONS');
+  if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+  const backupFile = path.join(backupDir, `pre_batch_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  fs.writeFileSync(backupFile, JSON.stringify(records, null, 2), 'utf8');
+  console.log(`🛡️ 実行直前の最新原本全量バックアップを退避しました: ${backupFile}`);
+
   const sorted = records
     .map(r => ({ ...r, len: (r.strategy || '').length }))
     .filter(r => r.len >= 10000) // 1万文字以上の肥大化教本のみを対象
     .sort((a, b) => b.len - a.len);
 
   const targets = sorted.slice(0, targetCount);
-  console.log(`対象チャンピオン: ${targets.map(t => `${t.champion} (${t.len}文字)`).join(', ')}`);
+  console.log(`対象チャンピオン数: ${targets.length}体`);
+  console.log(`対象リスト: ${targets.map(t => `${t.champion}(${t.len}字)`).join(', ')}`);
+
+  let successCount = 0;
+  let failCount = 0;
+  let totalOriginalChars = 0;
+  let totalOptimizedChars = 0;
 
   for (let i = 0; i < targets.length; i++) {
     const target = targets[i];
@@ -105,6 +119,7 @@ ${cleanedForPrompt}
 
       if (newLen < 1000) {
         console.warn(`⚠️ 最適化結果が短すぎるためスキップ: ${target.champion} (${newLen}文字)`);
+        failCount++;
         continue;
       }
 
@@ -119,21 +134,33 @@ ${cleanedForPrompt}
 
       if (upErr) {
         console.error(`❌ DB更新エラー (${target.champion}):`, upErr);
+        failCount++;
       } else {
         console.log(`💾 DB更新完了: ${target.champion}`);
+        successCount++;
+        totalOriginalChars += target.len;
+        totalOptimizedChars += newLen;
       }
 
       // レートリミット対策で少し待機
       if (i < targets.length - 1) {
-        console.log('⏱️ 3秒待機中...');
-        await new Promise(r => setTimeout(r, 3000));
+        console.log('⏱️ 4秒待機中...');
+        await new Promise(r => setTimeout(r, 4000));
       }
     } catch (e: any) {
       console.error(`❌ 処理失敗 (${target.champion}):`, e.message || e);
+      failCount++;
+      // エラー発生時は少し長めに待機
+      await new Promise(r => setTimeout(r, 6000));
     }
   }
 
   console.log('\n=== 一括最適化バッチ終了 ===');
+  console.log(`成功: ${successCount}体, 失敗: ${failCount}体`);
+  if (successCount > 0) {
+    const totalReduction = (((totalOriginalChars - totalOptimizedChars) / totalOriginalChars) * 100).toFixed(1);
+    console.log(`総文字数: ${totalOriginalChars.toLocaleString()}字 ➔ ${totalOptimizedChars.toLocaleString()}字 (-${totalReduction}%)`);
+  }
 }
 
 main().catch(console.error);
