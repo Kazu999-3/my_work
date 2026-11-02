@@ -261,8 +261,13 @@ export async function GET(req: NextRequest) {
           || (task.status === 'failed' && new Date(task.createdAt) > new Date(r.created_at)))
           ? task : null;
 
+        const isReanalyzed = r.reanalysis_of != null
+          || (Array.isArray(r.tags) && r.tags.includes('再解析'))
+          || !!r.analysis_meta?.reanalysis
+          || (r.title || '').includes('(再解析');
+
         let reanalysisStatus: 'reanalyzed' | 'running' | 'failed' | 'unreanalyzed' = 'unreanalyzed';
-        if (r.reanalysis_of != null) {
+        if (isReanalyzed) {
           reanalysisStatus = 'reanalyzed';
         } else if (task && (task.status === 'pending' || task.status === 'running')) {
           reanalysisStatus = 'running';
@@ -349,7 +354,7 @@ export async function GET(req: NextRequest) {
       determined: enrichedItems.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion).length,
       unknown: enrichedItems.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa).length,
       thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
-      reanalyzed: enrichedItems.filter((i) => i.reanalysis_of != null).length,
+      reanalyzed: enrichedItems.filter((i) => i.reanalysisStatus === 'reanalyzed').length,
       reanalyzing: runningTaskArticleIds.size,
       approve: enrichedItems.filter((i) => i.density.triage === 'approve').length,
       check: enrichedItems.filter((i) => i.density.triage === 'check').length,
@@ -362,7 +367,7 @@ export async function GET(req: NextRequest) {
     if (quality === 'determined') filtered = filtered.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion);
     if (quality === 'unknown') filtered = filtered.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa);
     if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
-    if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysis_of != null);
+    if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysisStatus === 'reanalyzed');
     if (quality === 'reanalyzing') filtered = filtered.filter((i) => i.reanalysisStatus === 'running');
     if (quality === 'approve' || quality === 'check' || quality === 'skip') filtered = filtered.filter((i) => i.density.triage === quality);
 
