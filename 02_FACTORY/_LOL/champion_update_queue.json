@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-11-01T21:56:33.163479+00:00",
+  "updated_at": "2026-11-02T01:08:34.011673+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -631,139 +631,139 @@
     "Pyke": {
       "name": "パイク",
       "status": "completed",
-      "updated_at": "2026-11-01T21:31:55.322973+00:00",
+      "updated_at": "2026-11-01T22:31:42.674019+00:00",
       "error": null
     },
     "Qiyana": {
       "name": "キヤナ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:33:08.911506+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:43:07.157486+00:00",
       "error": null
     },
     "Quinn": {
       "name": "クイン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:34:30.691135+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:44:15.050821+00:00",
       "error": null
     },
     "Rakan": {
       "name": "ラカン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:35:31.778998+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:45:32.088275+00:00",
       "error": null
     },
     "Rammus": {
       "name": "ラムス",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:36:31.394082+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:46:30.499474+00:00",
       "error": null
     },
     "RekSai": {
       "name": "レク＝サイ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:37:36.209831+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:47:26.518725+00:00",
       "error": null
     },
     "Rell": {
       "name": "レル",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:39:01.041784+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:48:20.972410+00:00",
       "error": null
     },
     "Renata": {
       "name": "レナータ・グラスク",
-      "status": "failed",
+      "status": "pending",
       "updated_at": "2026-10-19T07:49:18.438304+00:00",
-      "error": "Trend collection failed (API/quota error or DB write failure)"
+      "error": null
     },
     "Renekton": {
       "name": "レネクトン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:40:46.510224+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T07:50:08.906306+00:00",
       "error": null
     },
     "Rengar": {
       "name": "レンガー",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:41:51.659149+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T09:28:17.980151+00:00",
       "error": null
     },
     "Riven": {
       "name": "リヴェン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:42:50.138284+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T10:28:42.191212+00:00",
       "error": null
     },
     "Rumble": {
       "name": "ランブル",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:43:51.850664+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T13:27:54.704108+00:00",
       "error": null
     },
     "Ryze": {
       "name": "ライズ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:45:04.921839+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-19T18:28:47.629609+00:00",
       "error": null
     },
     "Samira": {
       "name": "サミーラ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:46:10.601587+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:28:39.960232+00:00",
       "error": null
     },
     "Sejuani": {
       "name": "セジュアニ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:47:12.240045+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:29:02.299146+00:00",
       "error": null
     },
     "Senna": {
       "name": "セナ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:48:13.421097+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:29:24.135643+00:00",
       "error": null
     },
     "Seraphine": {
       "name": "セラフィーン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:49:11.072563+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:29:44.715432+00:00",
       "error": null
     },
     "Sett": {
       "name": "セト",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:50:10.153483+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:30:08.288706+00:00",
       "error": null
     },
     "Shaco": {
       "name": "シャコ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:51:08.592177+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:30:51.163876+00:00",
       "error": null
     },
     "Shen": {
       "name": "シェン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:52:16.622773+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:31:13.336007+00:00",
       "error": null
     },
     "Shyvana": {
       "name": "シヴァーナ",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:53:23.312297+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:31:38.348021+00:00",
       "error": null
     },
     "Singed": {
       "name": "シンジド",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:54:38.143501+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:32:01.320839+00:00",
       "error": null
     },
     "Sion": {
       "name": "サイオン",
-      "status": "completed",
-      "updated_at": "2026-11-01T21:55:39.794267+00:00",
+      "status": "pending",
+      "updated_at": "2026-10-04T21:32:23.318417+00:00",
       "error": null,
       "note": "Patch 16.21.1 modified: ['hpperlevel']"
     },
