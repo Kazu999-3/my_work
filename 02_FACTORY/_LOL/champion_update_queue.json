@@ -1,6 +1,6 @@
 {
   "patch_version": "26.21",
-  "updated_at": "2026-11-03T16:57:58.213648+00:00",
+  "updated_at": "2026-11-03T23:26:59.120851+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -836,20 +836,20 @@
     },
     "Taric": {
       "name": "タリック",
-      "status": "pending",
-      "updated_at": "2026-10-04T21:37:03.881683+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-03T17:13:42.133016+00:00",
       "error": null
     },
     "Teemo": {
       "name": "ティーモ",
-      "status": "pending",
-      "updated_at": "2026-10-04T21:37:25.203951+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-03T21:50:03.907564+00:00",
       "error": null
     },
     "Thresh": {
       "name": "スレッシュ",
-      "status": "pending",
-      "updated_at": "2026-10-04T21:37:47.087465+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-03T23:21:39.865834+00:00",
       "error": null
     },
     "Tristana": {

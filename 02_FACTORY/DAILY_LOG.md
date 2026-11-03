@@ -1,5 +1,35 @@
 ## 📅 2026-11-04（水）
 
+### 🔇 記事再解析（/admin/review）のDiscordエラー通知完全遮断 ＆ タイムアウト適正化（300秒）
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーから「まだでてる」とDiscord通知（`⚠️【ワーカー】/admin/review で失敗が発生しました ❌ 記事の再解析失敗 タイムアウト (1200秒)`）のスクショ付きで再度報告を受領。
+   - 原因:
+     1. `scripts/edge_cloud_worker.py` の `notify_portal` において、`youtube_channel_monitor` は遮断していたが、`article_reanalyze`（記事の再解析）が遮断対象から漏れており、再解析のタイムアウトが Discord の `#エラーログ` チャンネルへ Embed 送信されていた。
+     2. `article_reanalyze` のタイムアウトが 1200秒（20分）と長すぎた上、`reanalyze_article.py` のフォールバックモデルが5個あったため、長尺動画で待機が重なった際に20分間プロセスをロックしていた。
+     3. 2日前のゾンビタスク（runningのまま放置されていた `article_reanalyze`）が残存していた。
+2. **実施内容**:
+   - **【Discordエラー通知の完全遮断】(`scripts/edge_cloud_worker.py`)**:
+     - `notify_portal` 内で `article_reanalyze` も通知スキップ対象に追加（`task_type in ("youtube_channel_monitor", "article_reanalyze")`）。再解析の結果・成否は承認画面のUI上で完結するため、Discordへのノイズ通知を完全に根絶。
+   - **【タイムアウトの短縮 ＆ モデル集約】(`scripts/edge_cloud_worker.py`, `scripts/reanalyze_article.py`)**:
+     - `article_reanalyze` のタイムアウトを 1200秒 ➔ 300秒（5分）へ適正化。
+     - フォールバックプールを安定モデル2つ（`gemini-3.5-flash` 系）に集約し、無駄な待機時間の増殖を防止。
+   - **【ゾンビタスク解消 ＆ 全件スキャンアーカイブ】(`scripts/clean_defective_pending.py`)**:
+     - 過去の放置タスク（13ed07df...）を `failed` へ正常クローズ。
+     - 1,000件規模の全件スキャンで残余の不良記事（6件）を追加退避。
+3. **機械的実値検証**:
+   - Python 構文チェック: `py_compile` PASS (エラー0)。
+   - `edge_tasks` の待機/実行中タスク: 0件（正常）。
+
+**再利用可能な3行ナレッジ**:
+- 画面UI上で即座にステータスが把握できるタスク（再解析や編集等）は、Discordチャンネルへのエラー通知を遮断し、ユーザーへの通知疲れ・スパム感を防ぐのがUX設計の鉄則。
+- ワーカーのタイムアウト値は安全マージンを持たせつつも、過度に長く設定（20分等）せず、5分程度に抑えてゾンビプロセス化を早期検知・リトライさせる。
+
+---
+
+
+
 ### 🛡️ 記事生成パイプラインの自己修復（自律リトライ最大3回）導入 ＆ 不良記事（事実不足・途切れ）の根本根絶
 
 **概要**:

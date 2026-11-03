@@ -116,9 +116,9 @@ TASK_MAP = {
     "reddit_scout": ("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py", build_no_args, 280),
     "lol_trend_collect": ("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", build_no_args, 280),
     "dict_synthesizer": ("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py", build_no_args, 280),
-    # 承認画面の「🔁 再解析」（2026-10-19）。保存済みの字幕から2回 Gemini を呼ぶ。字幕が無い記事は
-    # 映像解析になり数分かかることがあるため長めにする。PC の常駐デーモン（task_dispatch.py）も同じ処理を持つ
-    "article_reanalyze": ("scripts/reanalyze_article.py", build_reanalyze_args, 1200),
+    # 承認画面の「🔁 再解析」（2026-10-19）。保存済みの字幕から2回 Gemini を呼ぶ。
+    # 2026-11-04: 1200秒タイムアウトによるDiscordノイズ防止のため300秒に短縮
+    "article_reanalyze": ("scripts/reanalyze_article.py", build_reanalyze_args, 300),
     # 注意: champion_db_bulk_updateはここのTASK_MAPに加えない。
     # champ_db_bulk_updater.pyはd:/my_work/...を直接ハードコードしており、champ-dict-update.yml
     # 側は"Setup d:/my_work path"ステップでシンボリックリンクを張って対処しているが、
@@ -157,9 +157,9 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
     PORTAL_URL未設定や送信失敗は握りつぶす(タスク自体の成否には影響させない)。"""
     if not PORTAL_URL:
         return
-    # YouTubeチャンネル監視などの定期バックグラウンド巡回は、自動リトライされる一時的タスクのため
+    # YouTubeチャンネル監視などの定期バックグラウンド巡回や、画面上で結果を確認する再解析タスクは、
     # 成功・失敗問わずDiscord(#エラーログ)への通知を遮断（ユーザーへのノイズ通知防止）
-    if task_type == "youtube_channel_monitor":
+    if task_type in ("youtube_channel_monitor", "article_reanalyze"):
         return
     label, url_path = TASK_LABELS.get(task_type, (task_type, "/"))
     if task_type == "champion_trend":

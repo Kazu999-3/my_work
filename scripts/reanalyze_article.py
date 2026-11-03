@@ -142,8 +142,8 @@ def main():
         except Exception as e:  # GitHub Actions の IP は YouTube に弾かれやすい（RateLimited 等）
             print(f"字幕の取り直しに失敗: {e}", file=sys.stderr)
 
-    # 2026-10-29: 単一モデル依存による503過負荷・一時エラー即死を根絶する多層フォールバック
-    fallback_pool = [yw.GEMINI_MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3-flash-preview"]
+    # 安定モデル2つに集約（5モデル総当たりによる多重タイムアウト待機を防止）
+    fallback_pool = [yw.GEMINI_MODEL, "gemini-3.5-flash"]
     # 順序を保ちつつ重複排除
     models = list(dict.fromkeys([yw.VIDEO_MODEL] + fallback_pool if use_high else fallback_pool))
     article, used_model, notes = None, None, []

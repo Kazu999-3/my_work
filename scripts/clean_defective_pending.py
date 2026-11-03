@@ -33,7 +33,7 @@ def sb(method, path, body=None):
         return json.loads(res_body) if res_body else None
 
 # 全件の pending 記事を取得
-data = sb("GET", "personal_knowledge?review_status=eq.pending&select=id,title,champion,content,tags,analysis_meta,created_at,reanalysis_of&order=created_at.desc&limit=300") or []
+data = sb("GET", "personal_knowledge?review_status=eq.pending&select=id,title,champion,content,tags,analysis_meta,created_at,reanalysis_of&order=created_at.desc&limit=1000") or []
 
 print(f"現在承認待ち（pending）の記事: {len(data)} 件")
 
@@ -50,6 +50,9 @@ def is_truncated(text):
 defective_ids = []
 
 for d in data:
+    tags = d.get("tags") or []
+    if "__DELETED__" in tags or "__SUPERSEDED__" in tags:
+        continue
     chars = len(d.get("content") or "")
     meta = d.get("analysis_meta") or {}
     facts = meta.get("fact_count")
