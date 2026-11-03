@@ -112,7 +112,7 @@ TASK_MAP = {
     "champion_trend": ("03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py", build_champion_trend_args, 500),
     "resolve_youtube_channel": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_resolve_channel_args, 100),
     "resolve_youtube_playlist": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_resolve_playlist_args, 100),
-    "youtube_channel_monitor": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_monitor_args, 280),
+    "youtube_channel_monitor": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_monitor_args, 500),
     "reddit_scout": ("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py", build_no_args, 280),
     "lol_trend_collect": ("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", build_no_args, 280),
     "dict_synthesizer": ("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py", build_no_args, 280),
@@ -157,8 +157,9 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
     PORTAL_URL未設定や送信失敗は握りつぶす(タスク自体の成否には影響させない)。"""
     if not PORTAL_URL:
         return
-    # YouTubeチャンネル監視などの定期バックグラウンド巡回完了通知は不要なためスキップ
-    if task_type == "youtube_channel_monitor" and success:
+    # YouTubeチャンネル監視などの定期バックグラウンド巡回は、自動リトライされる一時的タスクのため
+    # 成功・失敗問わずDiscord(#エラーログ)への通知を遮断（ユーザーへのノイズ通知防止）
+    if task_type == "youtube_channel_monitor":
         return
     label, url_path = TASK_LABELS.get(task_type, (task_type, "/"))
     if task_type == "champion_trend":

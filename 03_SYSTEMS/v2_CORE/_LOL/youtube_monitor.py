@@ -333,19 +333,27 @@ def monitor_channels():
             if not videos:
                 continue
                 
-            # 各動画がすでに queue に存在するかチェック
+            # 取得した動画IDをまとめて照会（1回のクエリで重複判定を高速化）
+            v_ids = [v["video_id"] for v in videos if v.get("video_id")]
+            if not v_ids:
+                continue
+                
+            ids_param = ",".join(v_ids)
+            check_status, check_body = _supabase_request(f"youtube_queue?id=in.({ids_param})&select=id", method='GET')
+            existing_ids = set()
+            if check_status == 200 and check_body:
+                try:
+                    records = json.loads(check_body)
+                    existing_ids = {r["id"] for r in records}
+                except Exception:
+                    pass
+
             for v in videos:
                 video_id = v["video_id"]
+                if video_id in existing_ids:
+                    continue
                 title = v["title"]
                 url = v["url"]
-                
-                # youtube_queue に登録済みか調べる
-                check_status, check_body = _supabase_request(f"youtube_queue?id=eq.{video_id}&select=id", method='GET')
-                if check_status == 200:
-                    records = json.loads(check_body)
-                    if records:
-                        # 登録済みの場合はスキップ
-                        continue
                 
                 # 未登録の場合は pending で追加
                 logger.info(f"  🆕 新着動画を検出しました: {title} ({video_id})")
@@ -446,16 +454,26 @@ def monitor_playlists():
             if not videos:
                 continue
                 
+            v_ids = [v["video_id"] for v in videos if v.get("video_id")]
+            if not v_ids:
+                continue
+                
+            ids_param = ",".join(v_ids)
+            check_status, check_body = _supabase_request(f"youtube_queue?id=in.({ids_param})&select=id", method='GET')
+            existing_ids = set()
+            if check_status == 200 and check_body:
+                try:
+                    records = json.loads(check_body)
+                    existing_ids = {r["id"] for r in records}
+                except Exception:
+                    pass
+
             for v in videos:
                 video_id = v["video_id"]
+                if video_id in existing_ids:
+                    continue
                 title = v["title"]
                 url = v["url"]
-                
-                check_status, check_body = _supabase_request(f"youtube_queue?id=eq.{video_id}&select=id", method='GET')
-                if check_status == 200:
-                    records = json.loads(check_body)
-                    if records:
-                        continue
                 
                 logger.info(f"  🆕 新着動画を検出しました: {title} ({video_id})")
                 payload = {
