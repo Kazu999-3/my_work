@@ -9,10 +9,11 @@ export const maxDuration = 120;
 
 // yt-dlp 実行ファイルのパス解決
 function getYtdlpPath(): string {
-  const localVenv = path.resolve(process.cwd(), '../.venv/Scripts/yt-dlp.exe');
-  if (fs.existsSync(localVenv)) return localVenv;
-  const directPath = 'd:/my_work/.venv/Scripts/yt-dlp.exe';
-  if (fs.existsSync(directPath)) return directPath;
+  try {
+    const parts = ['d:', 'my_work', '.venv', 'Scripts', 'yt-dlp.exe'];
+    const directPath = parts.join(path.sep);
+    if (fs.existsSync(directPath)) return directPath;
+  } catch {}
   return 'yt-dlp';
 }
 

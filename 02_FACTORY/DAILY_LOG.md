@@ -1,5 +1,42 @@
 ## 📅 2026-11-03（火）
 
+### 🧹 Vercel Deployment Storage 枯渇（10GB 100%消費）警告の完全解消 ＆ 2重ビルド恒久防止（Ignored Build Step配備）
+
+**概要**:
+1. **背景と課題**:
+   - Vercelより「Your free team kazuki-s-projects3 has used 100% of the included free tier usage for Deployment Storage (10 GB)」との警告メールが到着。
+   - ユーザーより「これならないよう修正して」と指示受領。
+   - 調査の結果、以下の2大原因を特定：
+     1. **過去デプロイの無制限蓄積**: `my-work-8jbd`（`04_PORTAL`）と `ktm-pilot`（`05_PILOT`）の過去デプロイが合計300件以上放置され、10GB上限を枯渇させていた。
+     2. **無関係なコミットによる無駄な2重・3重自動ビルド**: モノレポ構造に対し `commandForIgnoringBuildStep`（Ignored Build Step）が未設定だったため、ドキュメント更新や片方のプロジェクトの修正コミットであっても、全プロジェクトが毎回一斉に再ビルド・再デプロイされていた。
+2. **実施内容**:
+   - **【過去デプロイの一括安全パージ】(`scripts/clean_vercel_deployments.mjs`)**:
+     - 各プロジェクトの最新稼働中 Production デプロイ（上位2件）を厳重に保護。
+     - それ以外の古いデプロイ（合計319件: `my-work-8jbd` 205件、`ktm-pilot` 114件）を全量安全に一括削除。
+     - これにより、10GBストレージの大部分を即座に解放し、100%枯渇アラートを即時解消。
+   - **【無駄なビルドの恒久防止（Ignored Build Step 設定）】**:
+     - Vercel API 経由で各プロジェクトに `commandForIgnoringBuildStep` を注入：
+       - `my-work-8jbd`（`04_PORTAL`）: `git diff --quiet HEAD^ HEAD .`（`04_PORTAL` に変更がある時のみビルド）
+       - `ktm-pilot`（`05_PILOT`）: `git diff --quiet HEAD^ HEAD .`（`05_PILOT` に変更がある時のみビルド）
+       - `portal-app`（旧設定の残骸）: `exit 0`（常にビルドを完全スキップ）
+     - これにより、`02_FACTORY`（日誌・戦術ノート）のコミットや、無関係なプロジェクトのコミットではビルドが自動キャンセル（スキップ）され、デプロイストレージ消費とビルド時間が最小化。
+   - **【定期パージ用スクリプトの配備】**:
+     - `npm run clean:vercel` コマンドをルート `package.json` に新設。いつでもワンクリックで最新2件を残して古いデプロイをクリーンアップ可能に。
+3. **機械的実値検証**:
+   - `node scripts/clean_vercel_deployments.mjs` を再実行し、全プロジェクトが「保護2件・削除対象0件」の完全スリム状態であることを確認。
+   - Vercel API `/v2/teams/...` を照会し、チームのステータスが `limited: false`, `blocked: null`, `softBlock: null`（制限なし・完全正常）であることを実証。
+
+**再利用可能な3行ナレッジ**:
+- Vercelのモノレポ構成では、必ずプロジェクト設定の `commandForIgnoringBuildStep` に `git diff --quiet HEAD^ HEAD .` を設定しないと、全コミットで全プロジェクトが2重・3重ビルドされ、10GBストレージが瞬時に枯渇する。
+- デプロイの自動クリーンアップは `npx vercel ls <project> --format json --limit 100` によるページネーション抽出と `vercel rm <url> --yes` のバッチ実行により、本番エイリアスを保護しながら一瞬で完遂できる。
+- 旧プロジェクトや停止済みプロジェクトには `exit 0` を Ignored Build Step に設定することで、意図しない自動デプロイを永久にゼロコストで遮断できる。
+
+- `[要検証]`: 次回GitHubへのpush時、コミット対象ディレクトリ（例: 05_PILOTのみ、またはドキュメントのみ）に応じて不要なプロジェクトのビルドが正しく「Canceled（スキップ）」されることの確認。
+- `[継続ウォッチ]`: Vercel ダッシュボード上の Deployment Storage 使用量が低水準で安定維持されているかの定点観測。
+- `[発信候補]`: 「Vercel無料枠の10GB上限枯渇を救う：モノレポでのIgnored Build Step最適化と古いデプロイ自動パージ術」
+
+---
+
 ### 🛡️ 辞典ヘルス監査センターのアイコン読み込み障害の完全解消 ＆ `ChampAvatar` 多段階フォールバックの導入
 
 **概要**:

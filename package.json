@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "clean:vercel": "node scripts/clean_vercel_deployments.mjs"
+  },
   "dependencies": {
     "pg": "^8.23.0"
   }
