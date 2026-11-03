@@ -359,30 +359,109 @@ def _clean_facts(facts):
     return out
 
 
-def generate_article(title, channel, transcript, api_key, model, is_short=False, reanalysis=None):
-    """字幕 → ①事実抽出 → ②記事化。戻り値は記事の dict（title/summary/genre/tags/champion/analysis_meta）。
+def _is_truncated(text):
+    """文末が途中で切れているか（句点・カッコ等で終わっていない、または不自然な途切れ）"""
+    if not text:
+        return True
+    s = text.strip()
+    if len(s) < 200:
+        return False
+    last_char = s[-1]
+    # 正常な文末終端文字: 句点、感嘆符、閉じ括弧、マークダウン装飾末尾など
+    valid_ends = ("。", "！", "？", "!", "?", "）", "」", "』", "]", "}", ")", "*", "`", "#", ">", "|", "〜", "~", "…")
+    if last_char in valid_ends:
+        return False
+    return True
 
-    事実が1件も取れなかった時は記事を作らず ValueError（中身の無い記事を承認待ちに積まない）。
+
+def _check_article_quality(article, is_short=False, fact_count=0):
+    """記事の品質（タイトル・本文・文字数・文末途切れ）を検証する。問題があれば (False, 理由) を返す。"""
+    if not _valid_article(article):
+        return False, "title または summary が不足しています"
+
+    summary = (article.get("summary") or "").strip()
+    chars = len(summary)
+    min_chars = 250 if is_short else 750
+    if chars < min_chars:
+        return False, f"文字数が少なすぎます（{chars}字 / 基準: {min_chars}字以上）"
+
+    if _is_truncated(summary):
+        return False, f"本文が文の途中で終わっています（末尾: '{summary[-1]}')。句点で完結させてください"
+
+    return True, "OK"
+
+
+def generate_article(title, channel, transcript, api_key, model, is_short=False, reanalysis=None):
+    """字幕 → ①事実抽出（自己修復・最大3回） → ②記事化（完全性検証・最大3回）。
+    戻り値は記事の dict（title/summary/genre/tags/champion/analysis_meta）。
+
+    基準:
+      - 事実抽出: 通常動画は4件以上、Shortsは1件以上。不足時は指示を強化して最大3回まで再抽出。
+      - 記事化: 通常動画は750字以上、文末完結（途切れなし）。不備時は最大3回まで再生成。
+      - 3回試行しても基準を満たせない場合は ValueError / RuntimeError（不完全な記事を保存させない）。
     """
-    extraction = call_gemini_json(
-        build_extract_prompt(title, channel, transcript, is_short=is_short, reanalysis=reanalysis),
-        api_key, model, max_tokens=8192, temperature=0.1, log_prefix="抽出")
-    facts = _clean_facts(extraction.get("facts"))
-    extraction["facts"] = facts
-    if not facts:
-        raise ValueError("字幕から使える事実が1件も見つかりませんでした（実況なし・雑談のみの動画の可能性）")
+    min_facts = 1 if is_short else 4
+    extraction = None
+    facts = []
+
+    # ① 事実抽出（自己修復・自律リトライ最大3回）
+    for attempt in range(3):
+        extra_note = ""
+        if attempt > 0:
+            extra_note = (
+                f"\n\n【再抽出・深掘り指示（試行 {attempt + 1}/3）】\n"
+                f"前回の抽出では事実が不足していました（{len(facts)}件 / 必要: {min_facts}件以上）。\n"
+                f"動画内の小さな判断（ウェーブ管理、リコールタイミング、スキル使用順・温存理由、アイテム選択の理由、対面との間合いやトレード条件等）、\n"
+                f"プレイヤーが口にした具体的な判断・理由・数値を一切取りこぼさず、細部まで徹底的に抽出してください。"
+            )
+        prompt = build_extract_prompt(title, channel, transcript, is_short=is_short, reanalysis=reanalysis)
+        if extra_note:
+            prompt += extra_note
+
+        temp = 0.1 if attempt == 0 else (0.25 if attempt == 1 else 0.4)
+        try:
+            extraction = call_gemini_json(prompt, api_key, model, max_tokens=8192, temperature=temp, log_prefix=f"抽出-{attempt + 1}")
+            facts = _clean_facts(extraction.get("facts"))
+            extraction["facts"] = facts
+            if len(facts) >= min_facts:
+                break
+            print(f"[抽出] 事実が基準未満です（{len(facts)}件 < {min_facts}件）。指示を強化して再試行 ({attempt + 1}/3)")
+        except Exception as e:
+            if attempt == 2:
+                raise
+            print(f"[抽出] エラー発生: {e}。再試行 ({attempt + 1}/3)")
+            time.sleep(2)
+
+    if not facts or len(facts) < min_facts:
+        raise ValueError(f"字幕から十分な事実を抽出できませんでした（{len(facts)}件 / 基準: {min_facts}件以上）。実況なし・雑談動画の可能性があります")
+
     if is_short:
         extraction["video_type"] = "shorts"
 
+    # ② 記事化（完全性検証・自律リトライ最大3回）
     article = None
-    for attempt in range(2):
-        article = call_gemini_json(build_write_prompt(title, channel, extraction, reanalysis=reanalysis),
-                                   api_key, model, max_tokens=8192, temperature=0.3, log_prefix="記事化")
-        if _valid_article(article):
+    for attempt in range(3):
+        extra_prompt = ""
+        if attempt > 0 and article:
+            _, reason = _check_article_quality(article, is_short=is_short, fact_count=len(facts))
+            extra_prompt = (
+                f"\n\n【再生成指示（試行 {attempt + 1}/3）】\n"
+                f"前回の出力に以下の不備がありました: {reason}\n"
+                f"抽出された事実（全{len(facts)}件）のすべての項目を省略せず、状況・行動・理由を具体的に完全な日本語で記述してください。\n"
+                f"文字数は必ず{'250' if is_short else '800'}文字以上とし、文末は必ず句点（。）で文章を完結させてください。絶対に文の途中で切れてはいけません。"
+            )
+        base_prompt = build_write_prompt(title, channel, extraction, reanalysis=reanalysis)
+        temp = 0.25 if attempt == 0 else (0.35 if attempt == 1 else 0.5)
+        article = call_gemini_json(base_prompt + extra_prompt, api_key, model, max_tokens=8192, temperature=temp, log_prefix=f"記事化-{attempt + 1}")
+
+        ok, reason = _check_article_quality(article, is_short=is_short, fact_count=len(facts))
+        if ok:
             break
-        print(f"[記事化] 必要な項目が欠けています。再試行 ({attempt + 1}/2)")
-    if not _valid_article(article):
-        raise RuntimeError("記事化の出力に title / summary がありませんでした")
+        print(f"[記事化] 品質基準不合格 ({reason})。再試行 ({attempt + 1}/3)")
+
+    ok, reason = _check_article_quality(article, is_short=is_short, fact_count=len(facts))
+    if not ok:
+        raise RuntimeError(f"記事の品質基準を満たせませんでした（3回試行後も不合格: {reason}）")
 
     if not article.get("champion") or article.get("champion") == "Unknown":
         article["champion"] = extraction.get("champion") or "Unknown"

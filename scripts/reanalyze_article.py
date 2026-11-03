@@ -177,7 +177,7 @@ def main():
             if model == models[-1]:
                 out(False, f"再解析に失敗しました（Gemini応答のJSON解釈エラー: {e}）"[:400])
         except ValueError as e:
-            if "字幕から使える事実が1件も見つかりませんでした" in str(e):
+            if "字幕から" in str(e) or "実況なし" in str(e) or "事実" in str(e):
                 # 映像直接解析が有効ならフォールバックを試みる
                 if yw.ENABLE_VIDEO_ANALYSIS and transcript:
                     print(f"  [フォールバック] 字幕から事実が取れなかったため映像直接解析を試みます: {title_src}")
@@ -190,7 +190,18 @@ def main():
                         break
                     except Exception as ve:
                         print(f"  [フォールバック失敗] 映像直接解析も失敗: {ve}")
-                out(False, f"{e}。この動画は実況・字幕からは記事にできません", skipped=True, is_content_issue=True)
+
+                # 実況がなく記事化不能と確定したため、元の記事を承認待ちから __DELETED__ へ自動退避
+                try:
+                    old_tags = list(dict.fromkeys((row.get("tags") or []) + ["__DELETED__", "実況なし自動除外"]))
+                    yw.sb("PATCH", f"personal_knowledge?id=eq.{article_id}", {
+                        "tags": old_tags,
+                    })
+                    print(f"  [自動退避] 実況・事実なし動画のため元記事 #{article_id} を __DELETED__ に退避しました")
+                except Exception as pe:
+                    print(f"  [自動退避失敗] {pe}")
+
+                out(False, f"{e}。実況・事実なし動画のため承認待ちから除外（__DELETED__）しました", skipped=True, is_content_issue=True)
             notes.append(f"{model}: ValueError ({str(e)[:80]})")
             if model == models[-1]:
                 out(False, f"再解析に失敗しました: {e}"[:400])
