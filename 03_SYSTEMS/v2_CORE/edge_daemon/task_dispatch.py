@@ -147,8 +147,9 @@ class TaskDispatchMixin:
                     elif result.get("skipped"):
                         if result.get("is_quota"):
                             # クォータ枯渇等の一時的な見送りは failed にせず pending に戻して後で消化
-                            logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り。pending に戻します: {result.get('message')}")
+                            logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り。pending に戻して60秒待機します: {result.get('message')}")
                             self.update_task_status(task_id, "pending", result=result, error_message=None)
+                            time.sleep(60)
                         else:
                             # 実況・事実なし等のコンテンツ起因は再試行せず failed で記録（承認画面では「再解析不可（実況なし等）」として静かに表示）
                             logger.info(f"⏭ [article_reanalyze] コンテンツ理由で見送り: {result.get('message')}")
