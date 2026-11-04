@@ -17,6 +17,10 @@ export async function POST(req: NextRequest) {
     if (!type || !title) {
       return NextResponse.json({ error: 'type と title は必須です。' }, { status: 400 });
     }
+    // ユーザー要望: 記事の再解析（完了/失敗）は承認画面上で完結するため通知センターへの登録を遮断
+    if (type === 'edge_task' && (String(title).includes('記事の再解析') || url === '/admin/review')) {
+      return NextResponse.json({ success: true, skipped: true });
+    }
     // 失敗は #エラーログ にも送る。level を送らない古い送り元(PCデーモン・herald)は「❌」始まりの見出しで判定する
     const isError = level === 'error' || String(title).startsWith('❌');
     const row = await createAdminNotification({ type, title, body, url, icon, data, level: isError ? 'error' : undefined });

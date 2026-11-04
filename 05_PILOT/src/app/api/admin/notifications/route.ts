@@ -14,6 +14,7 @@ export async function GET() {
       .from('admin_notifications')
       .select('*')
       .not('type', 'in', PORTAL_TYPES_FILTER)
+      .not('title', 'like', '%記事の再解析%')
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -23,6 +24,7 @@ export async function GET() {
       .from('admin_notifications')
       .select('id', { count: 'exact', head: true })
       .not('type', 'in', PORTAL_TYPES_FILTER)
+      .not('title', 'like', '%記事の再解析%')
       .eq('read', false);
 
     return NextResponse.json({
