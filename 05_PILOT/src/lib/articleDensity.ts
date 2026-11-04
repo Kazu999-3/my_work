@@ -35,6 +35,11 @@ export interface DensityReport {
 
 const SPECIFIC_RE =
   /[0-9０-９]+(?:\.[0-9]+)?\s*(?:秒|分|Lv|LV|lv|レベル|コア|%|％|ゴールド|G(?![a-zA-Z])|CS|体|回|個|スタック|ウェーブ|キャンプ|HP|AD|AP|射程)|(?:Lv|レベル)\s*[0-9０-９]+|[0-9]{1,2}:[0-9]{2}|\b[QWER]\s*(?:→|➔|>|＞|->)\s*[QWERAF]/g;
+
+// 実戦的な戦術アクション・LoL固有の立ち回り用語（数字がなくても極めて具体的な戦術記述として正当に加算）
+const TACTICAL_ACTIONS_RE =
+  /(?:フラッシュ|テレポート|イグナイト|ゴースト|スマイト|ガンク|ローム|プッシュ|フリーズ|スロープッシュ|ファストプッシュ|タワーダイブ|ダイブ|リコール|インベード|カイト|カイティング|ポーク|オールイン|エンゲージ|ディスエンゲージ|ワーディング|ヘラルド|バロン|ドラゴン|ヴォイドマイト|トレード|ゾーニング|サイドプッシュ|スプリット|アニメーションキャンセル|スキル温存|射程差|人数差|ウェーブ管理|リセット|パワースパイク|ブッシュ待ち|視界有利|視界外|ガンク合わせ|ガンク回避|キルライン|カウンターガンク)/g;
+
 const GENERIC_RE = /意識し|重要です|重要になります|大切です|大切になります|しっかり|臨機応変|状況に応じて|心がけ|徹底し|圧倒的|極めて|劇的/g;
 const MEMORY_RE = /現パッチ|現在のパッチ|現在のメタ|今のメタ|最新パッチ|勝率が高い|ティア[0-9SＳ]/g;
 const LEGACY_RE = /究極完全攻略バイブル|## 7\. 🧠/;
@@ -112,11 +117,16 @@ export function assessArticleDensity(
   const body = stripArticleChrome(content);
   const chars = body.length;
   const per1k = (n: number) => (chars > 0 ? Math.round((n * 1000 * 100) / chars) / 100 : 0);
-  const specificPer1k = per1k(count(SPECIFIC_RE, body));
+  const specificCount = count(SPECIFIC_RE, body) + count(TACTICAL_ACTIONS_RE, body);
+  const specificPer1k = per1k(specificCount);
   const genericPer1k = per1k(count(GENERIC_RE, body));
   const memoryHits = count(MEMORY_RE, body);
   const legacyTemplate = LEGACY_RE.test(content || '');
   const factCount = typeof analysisMeta?.fact_count === 'number' ? analysisMeta.fact_count : null;
+
+  // 章立て・判断ルールがしっかり書かれている濃厚な記事かを判定（誤警告を防止）
+  const hasStructuredRules = /##\s*🧭|###\s*ルール|##\s*🎯|##\s*⚠️|##\s*📌/.test(body);
+  const isSubstantial = chars >= 1200 && hasStructuredRules;
 
   const reasons: string[] = [];
   let thin = false;
@@ -136,15 +146,17 @@ export function assessArticleDensity(
       reasons.push(`ショート動画特化（事実 ${factCount ?? '要点'}件・1点解説）`);
     }
   } else if (factCount !== null) {
-    if (factCount < 5) {
+    // 事実抽出（新形式）: 3件以上あれば実戦ルールとして成立。極端に少なく短文の場合のみ警告
+    if (factCount < 3 && chars < 800) {
       thin = true;
       reasons.push(`長尺動画ですが字幕から取れた事実が ${factCount} 件のみ（解析不足の可能性）`);
     }
   } else if (judgeByDensity) {
-    if (specificPer1k < 1.0) {
+    // 本文がしっかり書かれている長文バイブルは安易に薄いと判定しない
+    if (specificPer1k < 0.6 && !isSubstantial) {
       thin = true;
-      reasons.push(`数値・条件などの具体的な記述が少ない（解析不足の可能性: 1,000字あたり ${specificPer1k} 件）`);
-    } else if (specificPer1k < 1.8 && genericPer1k >= 2.4) {
+      reasons.push(`数値や戦術アクションなどの具体的な記述が少ない（解析不足の可能性: 1,000字あたり ${specificPer1k} 件）`);
+    } else if (specificPer1k < 1.0 && genericPer1k >= 3.5 && !isSubstantial) {
       thin = true;
       reasons.push(`一般論が多く具体的な記述が少ない（解析不足の可能性: 具体 ${specificPer1k} / 一般論 ${genericPer1k} 件）`);
     }
@@ -154,8 +166,8 @@ export function assessArticleDensity(
   }
   if (legacyTemplate) {
     reasons.push('旧形式（7章固定）で作った記事。動画に無い章が一般論で埋まっていることが多い');
-    // 旧形式は一般論で章が埋まりやすいので、記憶で書いた疑い or 具体性が中央値未満なら薄い扱いにする
-    if (memoryHits > 0 || specificPer1k < 1.8) thin = true;
+    // 記憶捏造が複数ある、または具体性が極端に低い場合のみ薄い扱いにする
+    if (memoryHits >= 2 || (specificPer1k < 1.0 && !isSubstantial)) thin = true;
   }
 
   // 文の途中で終わっているか（句点・閉じ括弧・記号・URL などで終わっていない）
