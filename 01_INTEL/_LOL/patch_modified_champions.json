@@ -1,62 +1,53 @@
 {
-  "old_patch": "16.20.1",
-  "new_patch": "16.21.1",
-  "detected_at": "2026-10-21T00:39:24.532133+00:00",
+  "old_patch": "16.21.1",
+  "new_patch": "16.22.1",
+  "detected_at": "2026-11-04T02:23:01.477258+00:00",
   "total_champions": 173,
-  "modified_count": 6,
+  "modified_count": 3,
   "champions": [
     {
-      "id": "Azir",
-      "name": "アジール",
-      "type": "stats_changed",
-      "diffs": {
-        "mpperlevel": {
-          "old": 40,
-          "new": 50
-        }
-      }
-    },
-    {
-      "id": "Jinx",
-      "name": "ジンクス",
+      "id": "Mel",
+      "name": "メル",
       "type": "stats_changed",
       "diffs": {
         "hp": {
           "old": 630,
-          "new": 610
-        }
-      }
-    },
-    {
-      "id": "Locke",
-      "name": "ロック",
-      "type": "stats_changed",
-      "diffs": {
-        "mpperlevel": {
-          "old": 70,
-          "new": 60
-        }
-      }
-    },
-    {
-      "id": "MonkeyKing",
-      "name": "ウーコン",
-      "type": "stats_changed",
-      "diffs": {
-        "hpregen": {
-          "old": 3.5,
-          "new": 5.5
-        }
-      }
-    },
-    {
-      "id": "Sion",
-      "name": "サイオン",
-      "type": "stats_changed",
-      "diffs": {
+          "new": 590
+        },
         "hpperlevel": {
-          "old": 87,
-          "new": 95
+          "old": 99,
+          "new": 107
+        },
+        "mp": {
+          "old": 480,
+          "new": 455
+        },
+        "mpperlevel": {
+          "old": 28,
+          "new": 38
+        },
+        "armorperlevel": {
+          "old": 5.2,
+          "new": 5.4
+        },
+        "attackdamage": {
+          "old": 54,
+          "new": 52
+        },
+        "attackspeedperlevel": {
+          "old": 2.5,
+          "new": 2.75
+        }
+      }
+    },
+    {
+      "id": "Thresh",
+      "name": "スレッシュ",
+      "type": "stats_changed",
+      "diffs": {
+        "attackdamage": {
+          "old": 56,
+          "new": 54
         }
       }
     },
@@ -65,9 +56,9 @@
       "name": "ビクター",
       "type": "stats_changed",
       "diffs": {
-        "movespeed": {
-          "old": 335,
-          "new": 330
+        "hpperlevel": {
+          "old": 100,
+          "new": 105
         }
       }
     }
