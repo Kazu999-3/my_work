@@ -139,23 +139,31 @@ class TaskDispatchMixin:
                 # PC の IP なら字幕の取り直しが通りやすいので、こちらが先に拾っても問題ない
                 import json as _json
                 logger.info(f"🔁 [article_reanalyze] 記事 #{payload.get('article_id')} を再解析")
-                result = self._run_subprocess_task("scripts/reanalyze_article.py",
-                                                   args=[_json.dumps(payload, ensure_ascii=False)], timeout=1200)
-                if result.get("success"):
-                    self.update_task_status(task_id, "completed", result=result)
-                elif result.get("skipped"):
-                    if result.get("is_quota"):
-                        # クォータ枯渇等の一時的な見送りは failed にせず pending に戻して後で消化
-                        logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り。pending に戻します: {result.get('message')}")
-                        self.update_task_status(task_id, "pending", result=result, error_message=None)
+                try:
+                    result = self._run_subprocess_task("scripts/reanalyze_article.py",
+                                                       args=[_json.dumps(payload, ensure_ascii=False)], timeout=1200)
+                    if result.get("success"):
+                        self.update_task_status(task_id, "completed", result=result)
+                    elif result.get("skipped"):
+                        if result.get("is_quota"):
+                            # クォータ枯渇等の一時的な見送りは failed にせず pending に戻して後で消化
+                            logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り。pending に戻します: {result.get('message')}")
+                            self.update_task_status(task_id, "pending", result=result, error_message=None)
+                        else:
+                            # 実況・事実なし等のコンテンツ起因は再試行せず failed で記録（承認画面では「再解析不可（実況なし等）」として静かに表示）
+                            logger.info(f"⏭ [article_reanalyze] コンテンツ理由で見送り: {result.get('message')}")
+                            self.update_task_status(task_id, "failed", result=result,
+                                                    error_message=str(result.get("message") or "実況・字幕なしのため見送り")[:1500])
                     else:
-                        # 実況・事実なし等のコンテンツ起因は再試行せず failed で記録（承認画面では「再解析不可（実況なし等）」として静かに表示）
-                        logger.info(f"⏭ [article_reanalyze] コンテンツ理由で見送り: {result.get('message')}")
-                        self.update_task_status(task_id, "failed", result=result,
-                                                error_message=str(result.get("message") or "実況・字幕なしのため見送り")[:1500])
-                else:
-                    self.update_task_status(task_id, "failed", result=result,
-                                            error_message=str(result.get("message") or "再解析に失敗しました")[:1500])
+                        # システム・API・ネットワーク一時エラー: 再解析完了まで裏の解析キュー(pending)に保持
+                        logger.warning(f"⚠️ [article_reanalyze] 一時エラーのため解析キュー(pending)に戻します: {result.get('message')}")
+                        self.update_task_status(task_id, "pending", result=result,
+                                                error_message=f"一時エラーのため再試行待機中: {str(result.get('message') or '')[:200]}")
+                except TimeoutError as te:
+                    # ユーザー要望: タイムアウトしても failed にせず、再解析が完了するまで裏で解析キューに入れて待機・再試行
+                    logger.warning(f"⏰ [article_reanalyze] 記事 #{payload.get('article_id')} がタイムアウトしました。裏の解析キュー(pending)に戻します: {te}")
+                    self.update_task_status(task_id, "pending",
+                                            error_message="タイムアウトのため裏で解析キュー待機中（次回自動再試行）")
 
             elif task_type == "youtube_rotation":
                 # 完了済み動画を少数ずつ再解析キューへ戻すローテーション(2026-09-21新設)。

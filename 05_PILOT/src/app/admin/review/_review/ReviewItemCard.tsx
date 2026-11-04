@@ -350,10 +350,29 @@ export default function ReviewItemCard({
             </div>
           )}
           {task?.status === 'failed' && (
-            <div className="p-2 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-300 flex items-start gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span className="break-words">再解析に失敗: {(task.error || '理由不明').split('\n')[0].slice(0, 150)}</span>
-            </div>
+            (() => {
+              const err = task.error || '';
+              const isRetryable = err.includes('タイムアウト') || err.includes('時間制限') || err.includes('429') || err.includes('過負荷') || err.includes('利用上限') || err.includes('待機中');
+              if (isRetryable) {
+                return (
+                  <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-800/50 text-[11px] text-amber-200 flex flex-wrap items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                    <span>裏の解析キューで待機中（{err.split('\n')[0].slice(0, 100)}）</span>
+                    {onReload && (
+                      <button type="button" onClick={onReload} className="underline cursor-pointer ml-auto">
+                        最新を読込
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <div className="p-2 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-300 flex items-start gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span className="break-words">再解析に失敗: {(err || '理由不明').split('\n')[0].slice(0, 150)}</span>
+                </div>
+              );
+            })()
           )}
           {thin && item.density && item.density.reasons.length > 0 && (
             <div className="p-2 rounded-lg bg-amber-950/25 border border-amber-800/40 text-[11px] text-amber-200/90 flex items-start gap-1.5">

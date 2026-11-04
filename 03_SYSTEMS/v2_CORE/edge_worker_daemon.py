@@ -260,6 +260,8 @@ class EdgeWorkerDaemon(TaskDispatchMixin, SchedulerLoopsMixin):
             import json
             clean_message = None
             is_skip = False
+            is_quota = False
+            is_content_issue = False
             try:
                 last_line = res.stdout.strip().splitlines()[-1] if res.stdout.strip() else ""
                 stdout_json = json.loads(last_line)
@@ -267,33 +269,44 @@ class EdgeWorkerDaemon(TaskDispatchMixin, SchedulerLoopsMixin):
                     if stdout_json.get("message"):
                         clean_message = stdout_json["message"]
                     is_skip = bool(stdout_json.get("skipped"))
+                    is_quota = bool(stdout_json.get("is_quota"))
+                    is_content_issue = bool(stdout_json.get("is_content_issue"))
             except Exception:
                 pass
 
             # JSONのskippedフラグ以外にも、エラー文言やログからクォータ枯渇起因を包括判定
-            if not is_skip:
-                all_text = f"{clean_message or ''} {res.stdout[-1000:]} {res.stderr[-1000:]}".lower()
+            all_text = f"{clean_message or ''} {res.stdout[-1000:]} {res.stderr[-1000:]}".lower()
+            if not is_content_issue:
+                content_issue_keywords = (
+                    "字幕から使える事実が1件も見つかりません",
+                    "この動画は字幕からは記事にできません",
+                    "この動画は実況・字幕からは記事にできません",
+                    "実況なし・雑談のみの動画の可能性",
+                )
+                if any(kw in all_text for kw in content_issue_keywords):
+                    is_skip = True
+                    is_content_issue = True
+
+            if not is_quota:
                 quota_keywords = (
                     "quota exhausted", "resource_exhausted", "resourceexhausted",
                     "429", "apiクォータ制限", "api制限のため今回の定期更新は安全にスキップ",
-                    "too many requests", "利用上限"
+                    "too many requests", "利用上限", "503", "unavailable", "high demand"
                 )
                 if any(kw in all_text for kw in quota_keywords):
                     is_skip = True
+                    is_quota = True
                     if not clean_message:
-                        clean_message = "APIクォータ制限のため安全にスキップされました（既存データは保護されています）"
+                        clean_message = "APIクォータ制限・一時過負荷のため安全にスキップ（自動再開）"
 
-            # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)は
-            # 本物のバグではないため、例外にして「要対応」リストへ積むと本当に対応が
-            # 必要なタスクに埋もれて分かりにくくなっていた(2026-08-14発覚。同一チャンピオンの
-            # スキップが何件も並び、しかもログ末尾が二重切り詰めで意味不明な断片
-            # 「WARNI」等になっていた)。completedとして扱い、result.skippedで
-            # 区別できるようにする。
+            # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)
             if is_skip:
                 logger.warning(f"⏭ 安全にスキップされました(要対応扱いしません): {clean_message}")
                 return {
                     "success": False,
                     "skipped": True,
+                    "is_quota": is_quota,
+                    "is_content_issue": is_content_issue,
                     "message": clean_message,
                     "stdout": res.stdout,
                     "stderr": res.stderr[-50000:],

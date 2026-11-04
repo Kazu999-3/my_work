@@ -117,8 +117,8 @@ TASK_MAP = {
     "lol_trend_collect": ("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", build_no_args, 280),
     "dict_synthesizer": ("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py", build_no_args, 280),
     # 承認画面の「🔁 再解析」（2026-10-19）。保存済みの字幕から2回 Gemini を呼ぶ。
-    # 2026-11-04: 1200秒タイムアウトによるDiscordノイズ防止のため300秒に短縮
-    "article_reanalyze": ("scripts/reanalyze_article.py", build_reanalyze_args, 300),
+    # 長尺動画や混雑時は時間がかかるため600秒。タイムアウト時も裏の解析キュー(pending)で継続する
+    "article_reanalyze": ("scripts/reanalyze_article.py", build_reanalyze_args, 600),
     # 注意: champion_db_bulk_updateはここのTASK_MAPに加えない。
     # champ_db_bulk_updater.pyはd:/my_work/...を直接ハードコードしており、champ-dict-update.yml
     # 側は"Setup d:/my_work path"ステップでシンボリックリンクを張って対処しているが、
@@ -454,6 +454,16 @@ def main():
 
                 err = f"{clean_message}\n（詳細ログ末尾: {res.stderr[-300:]}）" if clean_message else f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
                 print(f"❌ 失敗: {task_type} — {err}", file=sys.stderr)
+                if task_type == "article_reanalyze":
+                    # 再解析は完了するまで裏の解析キュー(pending)に保持して自動再試行
+                    print(f"⏸ 一時エラーのため再試行キュー(pending)に戻します: {task_type} ({task_id})")
+                    sb("PATCH", f"edge_tasks?id=eq.{task_id}", {
+                        "status": "pending",
+                        "executor": None,
+                        "error_message": f"一時エラーのため再試行待機中: {clean_message or '次回再試行'}",
+                        "updated_at": now_iso()
+                    })
+                    continue
                 complete_task(task_id, "failed", error_message=err[:2000])
                 notify_portal(task_type, payload, False, detail=err, task_id=task_id)
                 continue
@@ -466,6 +476,16 @@ def main():
 
         except subprocess.TimeoutExpired:
             err = f"タイムアウト({timeout}秒)"
+            if task_type == "article_reanalyze":
+                # ユーザー要望: タイムアウトしても failed に落とさず再解析完了まで裏で解析キューに入れて待機
+                print(f"⏸ タイムアウトのため解析キュー(pending)に戻します: {task_type} ({task_id})")
+                sb("PATCH", f"edge_tasks?id=eq.{task_id}", {
+                    "status": "pending",
+                    "executor": None,
+                    "error_message": f"タイムアウト({timeout}秒)のため解析キュー待機中（次回自動再試行）",
+                    "updated_at": now_iso()
+                })
+                continue
             complete_task(task_id, "failed", error_message=err)
             notify_portal(task_type, payload, False, detail=err, task_id=task_id)
             print(f"❌ タイムアウト: {task_type} ({task_id})", file=sys.stderr)

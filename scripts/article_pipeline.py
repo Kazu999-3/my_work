@@ -28,7 +28,7 @@ import time
 import urllib.error
 import urllib.request
 
-PROMPT_VERSION = "2stage-v1"
+PROMPT_VERSION = "2stage-v2-hybrid"
 
 # 抽出する事実の分類（承認画面の「深掘りしたい観点」と同じキー）
 CATEGORIES = {
@@ -204,37 +204,75 @@ _TYPE_STYLE = {
 }
 
 
-def build_write_prompt(title, channel, extraction, reanalysis=None):
-    """② 抜き出した事実だけから記事を書く（A・C・E・F・G・H）"""
-    vtype = extraction.get("video_type") if extraction.get("video_type") in VIDEO_TYPES else "other"
+def build_write_prompt(title, channel, extraction, transcript="", is_short=False, reanalysis=None):
+    """② 抽出された客観的事実（骨格）に、字幕のリアルタイム思考プロセス・文脈を肉付けして濃厚な実戦バイブルを執筆（ハイブリッド統合）"""
+    vtype = extraction.get("video_type") if extraction.get("video_type") in VIDEO_TYPES else ("shorts" if is_short else "other")
     facts_json = json.dumps(extraction.get("facts") or [], ensure_ascii=False, indent=1)
     used = sorted({f.get("category") for f in (extraction.get("facts") or []) if f.get("category") in CATEGORIES})
     used_labels = "、".join(CATEGORIES[c] for c in used) or "（なし）"
-    return f"""あなたは League of Legends のコーチです。下の「事実リスト」だけを材料に、日本語の攻略記事（Markdown）を書いてください。
+
+    transcript_section = ""
+    if transcript:
+        # 字幕文脈（最大25,000文字）を肉付け・思考プロセス参照用として提供
+        transcript_section = f"""
+【参照用: 字幕全文（思考プロセス・文脈・発言の機微の肉付け用）】
+{transcript[:25000]}
+"""
+
+    return f"""あなたは League of Legends の最高峰戦術アナリスト・プロコーチです。
+下の「事実リスト（検証済みの客観的事実・骨格）」を主軸とし、字幕の生きた文脈やプレイヤーの思考プロセスを肉付けして、
+読者が自分の実戦でそのまま再現できる、圧倒的密度と読み応えを持つ日本語の攻略バイブル（Markdown）を執筆してください。
 
 動画タイトル: {title}
 チャンネル: {channel}
-動画の種類: {VIDEO_TYPES[vtype]}
+動画の種類: {VIDEO_TYPES.get(vtype, "一般攻略")}
 事実がある分類: {used_labels}
+{transcript_section}
+【執筆の鉄則・ハイブリッド統合ルール】
+1. **事実リストの完全網羅**: 抽出された事実（facts）はすべて網羅し、各記述の末尾にタイムスタンプ `[実演 MM:SS]`（ts があれば）を明記する。
+2. **生きた文脈・思考プロセスの肉付け**: 単なる事実の箇条書きに終わらせず、字幕からプレイヤーが口にしている「細かな判断基準・気付き・心理戦・ゲーム展開の機微」を積極的に拾い上げ、読み応えのある厚み（通常動画: 1,800〜3,500文字程度、Shorts: 400〜800文字程度）を持たせる。
+3. **具体的な理由の説明軸（旧仕様の強み）**:
+   - マクロ（試合運び）… リソース / テンポ / 視界 / 経験値 / オブジェクトのいずれかで説明
+   - メカニクス（操作）… 射程 / クールダウン / 硬直 / 判定 / 反応時間のいずれかで説明
+   - ビルド（構成）… パワースパイク / ステータス効率 / 対面の脅威のいずれかで説明
+   単に「強いから」「プロがやっているから」ではなく、上記の論理的理由で読者を納得させること。
+4. **ハルシネーション（嘘の捏造）の絶対排除**: 字幕や事実に存在しない架空のアイテム・ルーン・パッチ数値の捏造は厳禁。
+5. **uncertain の固有名詞**: uncertain が true の固有名詞には、直後に `[要確認]` を付与する。
 
-【書き方】
-- {_TYPE_STYLE[vtype]}
-- 見出しは「事実がある分類」だけ作る。事実の無い分類の見出しは作らない。決まった章立てや文字数の目安は無い。事実が少なければ短い記事でよい（水増し禁止）
-- 1つの記述は「状況（condition）→ 行動（claim）→ 理由（reason）」の順で、数値（numbers）があれば必ず書く
-- 各記述の末尾に、事実の ts を `[MM:SS]` の形で付ける（ts が null の事実には付けない）
-- uncertain が true の事実に出てくる固有名詞には、その直後に `[要確認]` を付ける
-- 事実リストに無い内容（あなたの知識・現パッチの評価・一般論・励まし）は一切書かない
-- 最後に「## ⚠️ よくあるミス」を、事実リストに mindset のミスがある時だけ作る
-- 冒頭に `## 🎯 この動画で分かること` として、記事全体の要点を3行以内で書く（事実リストから言えることだけ）
+【推奨する記事構成（Markdown）】
+## 🎯 この動画で学べること
+（記事全体の要点・動画の核となる価値を3行以内で簡潔に提示）
+
+## 🧭 実戦判断ルール
+### ルール1: <分かりやすく具体的なルール名> [実演 MM:SS]
+- **状況**: いつ・何が成立している時か（ウェーブ状況、敵味方の位置、パワースパイクなど）
+- **行動**: 何をするか（ピンポイントな操作・移動・仕掛け）
+- **理由**: 上記の説明軸（リソース/テンポ/硬直等）に基づいた論理的理由
+- **反例**: その条件が崩れたらどうするか / やってはいけないNG行動
+（※事実リストと字幕の重要ポイントを「ルール2」「ルール3」...と順次展開）
+
+## ⚠️ よくあるミスと回避策
+- **ミス**: 一般プレイヤーが陥りがちな典型的なNG行動
+- **なぜ悪いか**: どのような不利益（デッド、リソース損、テンポ喪失）が生じるか
+- **直し方**: 正しい立ち回り・リカバリー手順
+
+## 📌 前提と適応環境
+（対象レート帯、有利・不利対面、パッチ前提など。言及がなければ「明示なし」）
+
+## 🤁 実戦への問いかけ（思考トリガー）
+（読者がこの知識を実戦で発動するための、具体的シチュエーションに基づく1行の問い。「何を学んだか？」等の汎用的な問いは絶対厳禁。例：「相手JGがLv3でBotガンクに姿を見せたとき、自分のトップ側ヘラルド判断はどう動かすか？」）
+
+## 🌾 拾い上げ（Harvest）
+- **要検証**: 実戦・カスタムで試すべき仮説やコンボ
+- **継続ウォッチ**: パッチ推移やメタ変化における注意点
+
 {reanalysis_instructions({k: v for k, v in (reanalysis or {}).items() if k != "previous_article"}) if reanalysis else ""}
-【出力前の自己点検】書き終えたら、各文について「事実リストのどれかに根拠があるか」を確認し、根拠の無い文を削除してから出力すること。
-
-【出力】純粋な JSON のみ
-{{"title": "<記事の内容が分かる具体的な日本語タイトル。誇張語（究極・最強・完全など）は使わない>",
+【出力】純粋な JSON のみ（Markdownコードブロック不要）
+{{"title": "<具体的でわかりやすい日本語記事タイトル。誇張語（究極・神・完全など）は避け、学べる内容を明示>",
  "summary": "<Markdown 本文>",
  "genre": "<LoL攻略 / ビルド / マクロ / その他 のどれか>",
- "tags": ["<最大5つ。複数チャンピオンを扱う動画なら '複数チャンピオン' を必ず含める>"],
- "champion": "<主題のチャンピオンの英語ID（単一なら 'Camille'、複数チャンピオンを扱うならカンマ区切りで 'Camille, Darius, Renekton'。無ければ 'Unknown'）>",
+ "tags": ["<最大5つ。複数チャンピオンを扱うなら '複数チャンピオン' を含める>"],
+ "champion": "<主題のチャンピオンの英語ID（単一なら 'Camille'、複数チャンピオンなら 'Camille, Darius'。無ければ 'Unknown'）>",
  "is_multi_champion": <複数チャンピオン対象なら true, 単一なら false>}}
 
 事実リスト:
@@ -448,9 +486,9 @@ def generate_article(title, channel, transcript, api_key, model, is_short=False,
                 f"\n\n【再生成指示（試行 {attempt + 1}/3）】\n"
                 f"前回の出力に以下の不備がありました: {reason}\n"
                 f"抽出された事実（全{len(facts)}件）のすべての項目を省略せず、状況・行動・理由を具体的に完全な日本語で記述してください。\n"
-                f"文字数は必ず{'250' if is_short else '800'}文字以上とし、文末は必ず句点（。）で文章を完結させてください。絶対に文の途中で切れてはいけません。"
+                f"文字数は必ず{'300' if is_short else '1000'}文字以上とし、文末は必ず句点（。）で文章を完結させてください。絶対に文の途中で切れてはいけません。"
             )
-        base_prompt = build_write_prompt(title, channel, extraction, reanalysis=reanalysis)
+        base_prompt = build_write_prompt(title, channel, extraction, transcript=transcript, is_short=is_short, reanalysis=reanalysis)
         temp = 0.25 if attempt == 0 else (0.35 if attempt == 1 else 0.5)
         article = call_gemini_json(base_prompt + extra_prompt, api_key, model, max_tokens=8192, temperature=temp, log_prefix=f"記事化-{attempt + 1}")
 

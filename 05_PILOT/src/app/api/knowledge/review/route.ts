@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
       const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
       const { data } = await supabase
         .from('edge_tasks')
-        .select('status, payload, error_message, created_at')
+        .select('id, status, payload, error_message, created_at')
         .eq('task_type', 'article_reanalyze')
         .or(`created_at.gte.${since},status.in.(pending,running)`)
         .order('created_at', { ascending: true })
@@ -140,13 +140,48 @@ export async function GET(req: NextRequest) {
       taskRows = data || [];
       edgeTasksCache = { data: taskRows, timestamp: now };
     }
+    const tasksToSelfHeal: string[] = [];
     for (const t of taskRows || []) {
       const aid = Number((t as any).payload?.article_id);
       if (!aid) continue;
-      reanalysisTasks[aid] = { status: t.status, error: t.error_message, createdAt: t.created_at };
-      if (t.status === 'pending' || t.status === 'running') {
+      const errMsg = String(t.error_message || '');
+      const isRetryableError =
+        t.status === 'failed' &&
+        (errMsg.includes('タイムアウト') ||
+         errMsg.includes('時間制限') ||
+         errMsg.includes('429') ||
+         errMsg.includes('RESOURCE_EXHAUSTED') ||
+         errMsg.includes('利用上限') ||
+         errMsg.includes('過負荷') ||
+         errMsg.includes('一時エラー'));
+
+      if (isRetryableError && t.id) {
+        tasksToSelfHeal.push(t.id);
+      }
+
+      const effectiveStatus = isRetryableError ? 'pending' : t.status;
+      reanalysisTasks[aid] = { status: effectiveStatus, error: t.error_message, createdAt: t.created_at };
+      if (effectiveStatus === 'pending' || effectiveStatus === 'running') {
         runningTaskArticleIds.add(aid);
       }
+    }
+
+    // タイムアウトや一時過負荷で failed に落ちていたタスクを自動で pending に復旧（解析キュー維持）
+    if (tasksToSelfHeal.length > 0) {
+      void Promise.resolve(
+        supabase
+          .from('edge_tasks')
+          .update({
+            status: 'pending',
+            executor: null,
+            error_message: 'タイムアウト/一時過負荷のため解析キューに自動復帰中',
+            updated_at: new Date().toISOString(),
+          })
+          .in('id', tasksToSelfHeal)
+      ).then(
+        () => console.log(`[ReanalyzeSelfHeal] ${tasksToSelfHeal.length}件のタイムアウト/過負荷タスクをpendingに自動復旧しました`),
+        (e: unknown) => console.error('[ReanalyzeSelfHeal] 復旧エラー:', e)
+      );
     }
 
     // 再解析（2026-10-19）: 再解析版がある記事は元の記事を一覧から外し、再解析版のカードで新旧を比べる
