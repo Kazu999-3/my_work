@@ -28,7 +28,7 @@ import time
 import urllib.error
 import urllib.request
 
-PROMPT_VERSION = "2stage-v2-hybrid"
+PROMPT_VERSION = "2stage-v2-hybrid-merged"
 
 # 抽出する事実の分類（承認画面の「深掘りしたい観点」と同じキー）
 CATEGORIES = {
@@ -205,7 +205,7 @@ _TYPE_STYLE = {
 
 
 def build_write_prompt(title, channel, extraction, transcript="", is_short=False, reanalysis=None):
-    """② 抽出された客観的事実（骨格）に、字幕のリアルタイム思考プロセス・文脈を肉付けして濃厚な実戦バイブルを執筆（ハイブリッド統合）"""
+    """② 抽出された客観的事実（骨格）に、字幕のリアルタイム思考プロセス、および前回の旧版記事を融合して濃厚な新旧統合実戦バイブルを執筆"""
     vtype = extraction.get("video_type") if extraction.get("video_type") in VIDEO_TYPES else ("shorts" if is_short else "other")
     facts_json = json.dumps(extraction.get("facts") or [], ensure_ascii=False, indent=1)
     used = sorted({f.get("category") for f in (extraction.get("facts") or []) if f.get("category") in CATEGORIES})
@@ -219,8 +219,42 @@ def build_write_prompt(title, channel, extraction, transcript="", is_short=False
 {transcript[:25000]}
 """
 
+    merged_section = ""
+    prev_article = (reanalysis.get("previous_article") or "").strip() if reanalysis else ""
+    if prev_article:
+        merged_section = f"""
+【最重要: 新旧自動統合指示（前回の記事と新事実の完全融合）】
+以下は以前作成された「前回の記事（旧版）」です。
+今回は前回の記事を単純に切り捨てるのではなく、**「旧版の良質な解説・構成・背景説明」と「今回新たに抽出された客観的事実・ルール」を最高純度でブレンドした完全統合バイブル**を執筆してください。
+
+<<<前回の記事（旧版）
+{prev_article[:12000]}
+前回の記事>>>
+
+【統合の3原則】
+1. **旧版の良質な文脈・解説の継承**:
+   - 旧版に書かれている「丁寧な背景説明」「チャンピオンの立ち回り解説」「ウェーブや試合展開の描写」「分かりやすい見出し展開」など、読者にとって有益な記述・文脈を積極的に継承し、記事全体の厚みと読みやすさを維持してください。
+2. **新版の客観的事実・4点ルールでアップデート**:
+   - 旧版に存在した漠然とした一般論や、字幕と一致しないAIの記憶による記述は排除し、今回抽出された「タイムスタンプ付き客観的事実（facts）」「状況・行動・理由・反例の4点ルール」を核として旧版の記述を大幅に補強・刷新してください。
+3. **シームレスな1本の完成記事**:
+   - 「旧版パート」「新版パート」のように分離・つぎはぎするのではなく、初めて読む読者が違和感なく圧倒的な説得力を感じる「究極の1本の統合記事」として自然に融合させてください。
+"""
+
+    reanalysis_req_section = ""
+    if reanalysis:
+        req_lines = ["【再解析の個別リクエスト】"]
+        if reanalysis.get("reason"):
+            req_lines.append(f"- 再解析の理由: {REASONS.get(reanalysis['reason'], reanalysis['reason'])}")
+        focus_list = [f for f in (reanalysis.get("focus") or []) if f in CATEGORIES]
+        if focus_list:
+            req_lines.append(f"- 特に深掘り・強化すべき観点: {'、'.join(CATEGORIES[f] for f in focus_list)}")
+        if reanalysis.get("note"):
+            req_lines.append(f"- 管理者の個別メモ: {reanalysis['note'][:500]}")
+        if len(req_lines) > 1:
+            reanalysis_req_section = "\n".join(req_lines) + "\n"
+
     return f"""あなたは League of Legends の最高峰戦術アナリスト・プロコーチです。
-下の「事実リスト（検証済みの客観的事実・骨格）」を主軸とし、字幕の生きた文脈やプレイヤーの思考プロセスを肉付けして、
+下の「事実リスト（検証済みの客観的事実・骨格）」を主軸とし、字幕の生きた文脈やプレイヤーの思考プロセス、さらに前回の旧版記事の良質な解説を融合して、
 読者が自分の実戦でそのまま再現できる、圧倒的密度と読み応えを持つ日本語の攻略バイブル（Markdown）を執筆してください。
 
 動画タイトル: {title}
@@ -228,6 +262,8 @@ def build_write_prompt(title, channel, extraction, transcript="", is_short=False
 動画の種類: {VIDEO_TYPES.get(vtype, "一般攻略")}
 事実がある分類: {used_labels}
 {transcript_section}
+{merged_section}
+{reanalysis_req_section}
 【執筆の鉄則・ハイブリッド統合ルール】
 1. **事実リストの完全網羅**: 抽出された事実（facts）はすべて網羅し、各記述の末尾にタイムスタンプ `[実演 MM:SS]`（ts があれば）を明記する。
 2. **生きた文脈・思考プロセスの肉付け**: 単なる事実の箇条書きに終わらせず、字幕からプレイヤーが口にしている「細かな判断基準・気付き・心理戦・ゲーム展開の機微」を積極的に拾い上げ、読み応えのある厚み（通常動画: 1,800〜3,500文字程度、Shorts: 400〜800文字程度）を持たせる。
@@ -266,7 +302,6 @@ def build_write_prompt(title, channel, extraction, transcript="", is_short=False
 - **要検証**: 実戦・カスタムで試すべき仮説やコンボ
 - **継続ウォッチ**: パッチ推移やメタ変化における注意点
 
-{reanalysis_instructions({k: v for k, v in (reanalysis or {}).items() if k != "previous_article"}) if reanalysis else ""}
 【出力】純粋な JSON のみ（Markdownコードブロック不要）
 {{"title": "<具体的でわかりやすい日本語記事タイトル。誇張語（究極・神・完全など）は避け、学べる内容を明示>",
  "summary": "<Markdown 本文>",

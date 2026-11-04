@@ -53,7 +53,12 @@ export default function CompareModal({ item, busy, onClose, onAdopt, onDiscard, 
       <div className="bg-stone-900 border border-stone-700/80 rounded-2xl max-w-6xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden">
         <div className="p-3.5 border-b border-stone-800 flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <h2 className="text-sm font-black text-stone-100">🆚 再解析版と元の記事を比べる</h2>
+            <h2 className="text-sm font-black text-stone-100 flex items-center gap-1.5">
+              <span>🆚 新旧統合版と元の記事を比べる</span>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                ✨ 自動統合
+              </span>
+            </h2>
             <p className="text-[11px] text-stone-400">
               {reasonLabel && <>理由: {reasonLabel}</>}
               {focusLabels.length > 0 && <> ／ 観点: {focusLabels.join('、')}</>}
@@ -77,13 +82,13 @@ export default function CompareModal({ item, busy, onClose, onAdopt, onDiscard, 
                 view === v ? 'bg-amber-500/15 border-amber-500/60 text-amber-200' : 'bg-stone-950 border-stone-700 text-stone-400'
               }`}
             >
-              {v === 'new' ? '🆕 再解析版' : '📄 元の記事'}
+              {v === 'new' ? '✨ 新旧統合版' : '📄 元の記事'}
             </button>
           ))}
         </div>
         <div className="p-3 flex gap-3 overflow-hidden">
           <div className={`${view === 'new' ? 'flex' : 'hidden'} sm:flex flex-1 min-w-0`}>
-            {pane(`🆕 再解析版: ${item.title}`, item.content, item.density, 'border-emerald-800/60')}
+            {pane(`✨ 新旧統合版（旧版の文脈＋新版の事実ルール）: ${item.title}`, item.content, item.density, 'border-emerald-800/60')}
           </div>
           <div className={`${view === 'old' ? 'flex' : 'hidden'} sm:flex flex-1 min-w-0`}>
             {original
@@ -112,7 +117,7 @@ export default function CompareModal({ item, busy, onClose, onAdopt, onDiscard, 
             disabled={busy}
             className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <Eye className="w-3.5 h-3.5" /> 新しい版で承認へ進む
+            <Eye className="w-3.5 h-3.5" /> 統合版で承認へ進む
           </button>
         </div>
       </div>

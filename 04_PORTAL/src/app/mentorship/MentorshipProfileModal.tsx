@@ -426,7 +426,7 @@ export function MentorshipProfileModal({
                 {/* 自己紹介文 */}
                 <div className="space-y-1">
                   <div className="text-[11px] font-bold text-muted-strong">自己紹介・意気込み</div>
-                  <p className="text-xs text-foreground-soft leading-relaxed whitespace-pre-wrap bg-background p-3 rounded-2xl border border-border font-medium">
+                  <p className="text-xs text-foreground-soft leading-relaxed whitespace-pre-wrap break-words bg-background p-3 rounded-2xl border border-border font-medium">
                     {bio || '（自己紹介文が未記入です）'}
                   </p>
                 </div>

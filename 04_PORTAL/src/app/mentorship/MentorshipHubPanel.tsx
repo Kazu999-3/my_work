@@ -1151,7 +1151,7 @@ export default function MentorshipHubPanel() {
                     </div>
 
                     {cleanNotes && (
-                      <div className="p-2.5 bg-primary-50/60 rounded-xl border border-primary-edge-soft text-xs text-foreground-soft italic leading-relaxed">
+                      <div className="p-2.5 bg-primary-50/60 rounded-xl border border-primary-edge-soft text-xs text-foreground-soft italic leading-relaxed whitespace-pre-wrap break-words">
                         「{cleanNotes}」
                       </div>
                     )}
@@ -1435,9 +1435,9 @@ export default function MentorshipHubPanel() {
                             <span>🌱 弟子の実感:</span>
                             <span>{'⭐'.repeat(match.meta.checkins[0].pupilFeedback.rating || 5)}</span>
                           </div>
-                          <p className="text-foreground font-medium pl-1">{match.meta.checkins[0].pupilFeedback.growthNote}</p>
+                          <p className="text-foreground font-medium pl-1 whitespace-pre-wrap break-words">{match.meta.checkins[0].pupilFeedback.growthNote}</p>
                           {match.meta.checkins[0].pupilFeedback.challenges && (
-                            <p className="text-muted text-[10px] pl-1">🎯 次の課題: {match.meta.checkins[0].pupilFeedback.challenges}</p>
+                            <p className="text-muted text-[10px] pl-1 whitespace-pre-wrap break-words">🎯 次の課題: {match.meta.checkins[0].pupilFeedback.challenges}</p>
                           )}
                         </div>
                       )}
@@ -1445,9 +1445,9 @@ export default function MentorshipHubPanel() {
                       {match.meta.checkins[0].mentorFeedback && (
                         <div className="bg-surface/70 rounded-xl p-2 space-y-0.5 border border-border/50 text-[11px]">
                           <div className="font-bold text-primary-800">👑 師匠のアドバイス:</div>
-                          <p className="text-foreground font-medium pl-1">{match.meta.checkins[0].mentorFeedback.advice}</p>
+                          <p className="text-foreground font-medium pl-1 whitespace-pre-wrap break-words">{match.meta.checkins[0].mentorFeedback.advice}</p>
                           {match.meta.checkins[0].mentorFeedback.praise && (
-                            <p className="text-muted text-[10px] pl-1">✨ 褒めポイント: {match.meta.checkins[0].mentorFeedback.praise}</p>
+                            <p className="text-muted text-[10px] pl-1 whitespace-pre-wrap break-words">✨ 褒めポイント: {match.meta.checkins[0].mentorFeedback.praise}</p>
                           )}
                         </div>
                       )}

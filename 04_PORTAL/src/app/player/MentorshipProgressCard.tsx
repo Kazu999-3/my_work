@@ -433,7 +433,7 @@ export default function MentorshipProgressCard({
               ) : (
                 <div className="bg-background dark:bg-stone-900/30 border border-border/60 dark:border-stone-800/60 rounded-2xl p-3.5 text-xs text-foreground-subtle leading-relaxed min-h-[48px] flex items-center">
                   {match.meta?.progressNotes ? (
-                    <p className="whitespace-pre-wrap">{match.meta.progressNotes}</p>
+                    <p className="whitespace-pre-wrap break-words">{match.meta.progressNotes}</p>
                   ) : (
                     <p className="text-faint italic text-[11px]">
                       まだメモは登録されていません。「メモを編集」から今週のテーマや振り返りを記録しましょう。

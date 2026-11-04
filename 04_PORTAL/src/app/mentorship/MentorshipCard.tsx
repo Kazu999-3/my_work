@@ -6,7 +6,7 @@ import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getRankBadgeStyle } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../lib/championConstants';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { Clock, Sparkles, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Sparkles, Zap } from 'lucide-react';
 
 interface MentorshipCardProps {
   profile: MentorshipProfile;
@@ -46,7 +46,7 @@ export function MentorshipCard({
   const isMentor = profile.role_type === 'MENTOR';
   const displayRank = profile.latest_rank || profile.current_rank;
   const rankBadge = getRankBadgeStyle(displayRank);
-  const [isBioExpanded, setIsBioExpanded] = useState(false);
+
 
   return (
     <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-surface/95 dark:bg-surface dark:border-border backdrop-blur-sm shadow-md ${
@@ -65,7 +65,11 @@ export function MentorshipCard({
             <Sparkles size={13} className="text-stone-950 animate-bounce" />
             <span>AI相性スコア: <strong>{matchScore}%</strong></span>
           </span>
-          {matchReason && <span className="opacity-90 font-bold truncate max-w-[200px]">{matchReason}</span>}
+          {matchReason && (
+            <span className="opacity-90 font-bold break-words text-right" title={matchReason}>
+              {matchReason}
+            </span>
+          )}
         </div>
       )}
 
@@ -318,21 +322,12 @@ export function MentorshipCard({
           );
         })()}
 
-        {/* 自己紹介文 (シンプル化: 2行折りたたみ) */}
+        {/* 自己紹介文（コメント見切れ防止: 全文表示 ＆ 自動折り返し） */}
         {profile.bio && (
           <div className="p-3 bg-background/90 dark:bg-background rounded-2xl border border-border text-xs text-foreground-soft dark:text-stone-100 leading-relaxed font-medium">
-            <p className={`whitespace-pre-wrap ${!isBioExpanded ? 'line-clamp-2' : ''}`}>
+            <p className="whitespace-pre-wrap break-words">
               {profile.bio}
             </p>
-            {profile.bio.length > 80 && (
-              <button
-                type="button"
-                onClick={() => setIsBioExpanded(!isBioExpanded)}
-                className="mt-1 text-[11px] text-primary-700 dark:text-primary-400 font-bold hover:underline cursor-pointer flex items-center gap-0.5"
-              >
-                <span>{isBioExpanded ? '閉じる ▲' : '続きを読む ▼'}</span>
-              </button>
-            )}
           </div>
         )}
 
