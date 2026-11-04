@@ -142,8 +142,8 @@ def main():
         except Exception as e:  # GitHub Actions の IP は YouTube に弾かれやすい（RateLimited 等）
             print(f"字幕の取り直しに失敗: {e}", file=sys.stderr)
 
-    # 稼働実績のある健全なモデルプール（429過負荷時は即座に空き枠のあるモデルへフェイルオーバー）
-    fallback_pool = [yw.GEMINI_MODEL, "gemini-3.1-flash-lite", "gemini-3-flash-preview"]
+    # 稼働実績のある健全なモデルプール（429過負荷を避け、即座に応答可能なモデルを最優先）
+    fallback_pool = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3-flash-preview", yw.GEMINI_MODEL]
     # 順序を保ちつつ重複排除
     models = list(dict.fromkeys([yw.VIDEO_MODEL] + fallback_pool if use_high else fallback_pool))
     article, used_model, notes = None, None, []

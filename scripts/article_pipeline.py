@@ -350,7 +350,9 @@ def call_gemini_json(prompt, api_key, model, max_tokens=8192, temperature=0.2, r
             except Exception:
                 pass
             if err.code == 429:
-                wait = 20 * (attempt + 1)
+                if attempt >= 1:
+                    raise GeminiQuotaError(f"Gemini 429 レート制限: {detail}") from err
+                wait = 5
                 print(f"[{log_prefix}] 429 レート制限。{wait}秒待って再試行 ({attempt + 1}/{retries})")
                 time.sleep(wait)
                 continue
@@ -465,6 +467,8 @@ def generate_article(title, channel, transcript, api_key, model, is_short=False,
                 break
             print(f"[抽出] 事実が基準未満です（{len(facts)}件 < {min_facts}件）。指示を強化して再試行 ({attempt + 1}/3)")
         except Exception as e:
+            if isinstance(e, GeminiQuotaError):
+                raise
             if attempt == 2:
                 raise
             print(f"[抽出] エラー発生: {e}。再試行 ({attempt + 1}/3)")
