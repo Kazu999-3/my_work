@@ -329,19 +329,22 @@ export async function notifyAiMentorshipMatch(params: {
       : '・高い総合プレイスタイル適合度';
 
     const embed = {
-      title: `🤖 【AI仲人】おすすめの師弟ペアリング提案！`,
+      title: `🤖 【AI仲人からのおすすめ紹介】（※ 自動成立ではありません）`,
       description:
-        `AIが希望レーンや実力差、プレイスタイルを分析したところ、お二人の相性スコアが **【${matchResult.score}%】** と非常に高いことがわかりました！✨\n\n` +
-        `お互いに声をかけづらい場合は、AIが代わりに背中を押します！ぜひ一度お話ししてみませんか？🤝`,
+        `希望レーンや実力差を分析したところ、お二人の相性スコアが **【${matchResult.score}%】** と非常に高いことがわかりました！✨\n\n` +
+        `**📌 はじめての方へ（安心ガイド）:**\n` +
+        `・**まだペアは成立していません**（勝手に組まれたり自動成立することはありません）。\n` +
+        `・「教えてみたい」「話を聞いてみたい」と思ったら、ポータルから気軽に声をかけてみてください。\n` +
+        `・**忙しい時や気分じゃない時は、そのままスルーしていただいて全く問題ありません！**🤝`,
       color: 0x8b5cf6, // Purple
       fields: [
         {
-          name: `🥋 師匠（指導者）`,
+          name: `🥋 師匠（指導者・先輩）`,
           value: `👤 ${mentor.player_name} (${mentorMention})\n📈 ランク: **${mentor.current_rank || 'UNRANKED'}**\n🛡️ レーン: \`${mentorLanes}\``,
           inline: true,
         },
         {
-          name: `🌱 弟子（修行希望）`,
+          name: `🌱 弟子（修行希望・後輩）`,
           value: `👤 ${pupil.player_name} (${pupilMention})\n📈 ランク: **${pupil.current_rank || 'UNRANKED'}**\n🛡️ 希望: \`${pupilLanes}\``,
           inline: true,
         },
@@ -352,11 +355,11 @@ export async function notifyAiMentorshipMatch(params: {
         },
       ],
       footer: {
-        text: 'KTM AI Matchmaker | ポータルからオファーを送ると、相手の個別案内チャンネルに届きます',
+        text: 'KTM AI Matchmaker | どちらからでもオファー可能 ＆ 見送り時はスルーでOKです',
       },
     };
 
-    const content = `✨ **【AI仲人の推薦】** ${pupilMention} さん 🤝 ${mentorMention} さん、お二人の相性スコアは **${matchResult.score}%** です！`;
+    const content = `💡 **【AI仲人からのおすすめ紹介】** ${pupilMention} さん 🤝 ${mentorMention} さん\n*（※ 自動成立や強制ではありません。興味がある時のきっかけ用通知です！）*`;
 
     const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
@@ -374,7 +377,7 @@ export async function notifyAiMentorshipMatch(params: {
               {
                 type: 2,
                 style: 5, // Link
-                label: '🤝 ポータルでオファーを送る',
+                label: '🤝 ポータルで相手を見る・声をかける',
                 url: `${PORTAL_BASE_URL}/mentorship`,
               },
             ],
