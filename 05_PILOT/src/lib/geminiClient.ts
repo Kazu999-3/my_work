@@ -20,6 +20,43 @@ export interface GeminiOptions {
   timeoutMs?: number;
 }
 
+export function formatGeminiError(status: number, errText: string): string {
+  if (status === 429) {
+    // 1. "Please retry in 2h48m17.77s" などの正規表現抽出
+    const retryMatch = errText.match(/Please retry in\s+((?:(\d+)h)?(?:(\d+)m)?(?:([\d.]+)s)?)/i);
+    let waitTimeStr = '';
+
+    if (retryMatch) {
+      const hours = retryMatch[2] ? `${retryMatch[2]}時間` : '';
+      const mins = retryMatch[3] ? `${retryMatch[3]}分` : '';
+      const secs = retryMatch[4] ? `${Math.round(parseFloat(retryMatch[4]))}秒` : '';
+      waitTimeStr = `${hours}${mins}${hours ? '' : secs}` || 'しばらくの間';
+    } else {
+      // details 内の retryDelay (例: "10097s")
+      const delayMatch = errText.match(/"retryDelay":\s*"(\d+)(?:\.\d+)?s"/);
+      if (delayMatch) {
+        const totalSecs = parseInt(delayMatch[1], 10);
+        const h = Math.floor(totalSecs / 3600);
+        const m = Math.floor((totalSecs % 3600) / 60);
+        waitTimeStr = h > 0 ? `${h}時間${m}分` : `${m}分`;
+      }
+    }
+
+    const isFreeTierLimit = /limit:\s*20|Free Tier|per day limit/i.test(errText);
+
+    if (waitTimeStr) {
+      return `⏳ Gemini APIの${isFreeTierLimit ? '1日上限（無料枠: 20回）' : '利用制限'}に達しました。あと【約${waitTimeStr}】後に再開できます。（※お急ぎの場合は「直接統合」で承認するか、時間をおいてお試しください）`;
+    }
+    return `⏳ Gemini APIの利用上限（429）に達しました。しばらく時間をおいてから再試行するか、「直接統合」で承認してください。`;
+  }
+
+  if (status === 503) {
+    return '⚠️ Gemini APIのサーバーが一時的に混雑しています（503）。少し待ってから再試行してください。';
+  }
+
+  return `Gemini API エラー (${status}): ${errText.slice(0, 180)}`;
+}
+
 export async function callGemini(prompt: string, options: GeminiOptions = {}): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_FREE;
   if (!apiKey) {
@@ -58,7 +95,7 @@ export async function callGemini(prompt: string, options: GeminiOptions = {}): P
       if (!res.ok) {
         const errText = await res.text().catch(() => '');
         console.warn(`[Gemini ${model}] エラー status: ${res.status}`, errText);
-        lastError = new Error(`Gemini API エラー (${res.status}): ${errText}`);
+        lastError = new Error(formatGeminiError(res.status, errText));
         continue;
       }
 

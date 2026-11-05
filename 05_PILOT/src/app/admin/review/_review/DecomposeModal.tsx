@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Scissors, CheckCircle2, AlertTriangle, RefreshCw, X, Shield, BookOpen, Compass, Tag, ExternalLink, Swords } from 'lucide-react';
+import { Scissors, CheckCircle2, AlertTriangle, RefreshCw, X, Shield, BookOpen, Compass, Tag, ExternalLink, Swords, Clock } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
 import { LANE_OPTIONS, type LaneKey } from './types';
 import type { DecomposedInsight } from '@/lib/knowledgeDecompose';
@@ -96,12 +96,27 @@ export default function DecomposeModal({
         {/* コンテンツエリア */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs flex-1">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-600 text-rose-200 text-xs flex items-start gap-2 shadow-sm">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div className="flex-1">{error}</div>
+            <div className={`p-3.5 rounded-xl border text-xs flex items-start gap-3 shadow-md ${
+              error.includes('⏳') || error.includes('無料枠') || error.includes('429')
+                ? 'bg-amber-950/80 border-amber-600/80 text-amber-200'
+                : 'bg-rose-950/80 border-rose-600 text-rose-200'
+            }`}>
+              {error.includes('⏳') || error.includes('無料枠') || error.includes('429') ? (
+                <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
+              ) : (
+                <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1 space-y-1">
+                <div className="font-bold text-[13px] leading-snug">
+                  {error.includes('⏳') ? 'APIの利用枠上限（待機中）' : 'ナレッジ分解エラー'}
+                </div>
+                <div className="text-[11px] leading-relaxed opacity-90 whitespace-pre-wrap">
+                  {error}
+                </div>
+              </div>
               <button
                 onClick={onRetry}
-                className="px-2 py-1 rounded bg-rose-800 hover:bg-rose-700 text-white text-[11px] font-bold"
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-[11px] font-bold shrink-0 transition-colors"
               >
                 再試行
               </button>
