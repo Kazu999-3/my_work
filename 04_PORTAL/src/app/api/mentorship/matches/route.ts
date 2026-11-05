@@ -54,11 +54,11 @@ export interface MatchMeta {
 
 export function parseNotesMeta(notes: string | null): MatchMeta {
   const defaultMeta: MatchMeta = {
-    durationKey: '14_DAYS',
-    durationLabel: '🔥 2週間育成コース（14日・推奨）',
-    durationDays: 14,
+    durationKey: '30_DAYS',
+    durationLabel: '🎯 約1ヶ月（推奨・標準コース）',
+    durationDays: 30,
     commStyle: 'VC_ACTIVE',
-    autoRenew: true,
+    autoRenew: false,
     message: '',
     fromDiscordId: '',
     progressNotes: '',
@@ -87,15 +87,15 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     .replace(/\[AUTORENEW:[^\]]+\]/g, '')
     .trim();
 
-  const durKey = durMatch ? durMatch[1] : '14_DAYS';
-  const durationInfo = MENTORSHIP_DURATIONS[durKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+  const durKey = durMatch ? durMatch[1] : '30_DAYS';
+  const durationInfo = MENTORSHIP_DURATIONS[durKey] || MENTORSHIP_DURATIONS['30_DAYS'];
 
   return {
     durationKey: durKey,
     durationLabel: durationInfo.label,
     durationDays: durationInfo.days,
     commStyle: 'VC_ACTIVE',
-    autoRenew: renewMatch ? renewMatch[1] === 'true' : true,
+    autoRenew: renewMatch ? renewMatch[1] === 'true' : false,
     message: cleanMsg,
     fromDiscordId: fromMatch ? fromMatch[1] : '',
     progressNotes: '',
@@ -104,14 +104,14 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
 }
 
 export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
-  const durKey = meta.durationKey || '14_DAYS';
-  const durInfo = MENTORSHIP_DURATIONS[durKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+  const durKey = meta.durationKey || '30_DAYS';
+  const durInfo = MENTORSHIP_DURATIONS[durKey] || MENTORSHIP_DURATIONS['30_DAYS'];
   const fullMeta: MatchMeta = {
     durationKey: durKey,
     durationLabel: durInfo.label,
     durationDays: durInfo.days,
     commStyle: meta.commStyle || 'VC_ACTIVE',
-    autoRenew: meta.autoRenew !== undefined ? meta.autoRenew : true,
+    autoRenew: meta.autoRenew !== undefined ? meta.autoRenew : false,
     message: meta.message || '',
     fromDiscordId: meta.fromDiscordId || '',
     cancelReason: meta.cancelReason || '',
@@ -543,9 +543,9 @@ export async function POST(request: Request) {
       targetProfileId,
       matchId,
       message = '',
-      durationKey = '14_DAYS',
+      durationKey = '30_DAYS',
       commStyle = 'VC_ACTIVE',
-      autoRenew = true,
+      autoRenew = false,
       extendDays,
       reason = '円満解散（スケジュール都合・合意済み）',
     } = body;
@@ -975,13 +975,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, message: '既に師弟ペアが成立しています。' });
       }
 
-      const durObj = MENTORSHIP_DURATIONS[durationKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+      const durObj = MENTORSHIP_DURATIONS[durationKey] || MENTORSHIP_DURATIONS['30_DAYS'];
       const meta: MatchMeta = {
-        durationKey: durationKey || '14_DAYS',
+        durationKey: durationKey || '30_DAYS',
         durationLabel: durObj.label,
         durationDays: durObj.days,
         commStyle,
-        autoRenew: true,
+        autoRenew: false,
         message: message.trim() || '指導を引き受けました！よろしくお願いします！',
         fromDiscordId: session.discordId,
         progressNotes: '',
@@ -1274,9 +1274,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const durObj = MENTORSHIP_DURATIONS[durationKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+    const durObj = MENTORSHIP_DURATIONS[durationKey] || MENTORSHIP_DURATIONS['30_DAYS'];
     const notesJson = encodeNotesMeta({
-      durationKey,
+      durationKey: durationKey || '30_DAYS',
       durationLabel: durObj.label,
       durationDays: durObj.days,
       commStyle,

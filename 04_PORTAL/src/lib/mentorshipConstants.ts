@@ -32,22 +32,53 @@ export const MENTORSHIP_DURATIONS: Record<string, { label: string; shortLabel: s
     badgeColor: 'bg-primary-100 text-primary-900 border-primary-edge',
   },
   '14_DAYS': {
-    label: '🔥 2週間育成コース（14日・推奨）',
-    shortLabel: '🔥 2週間育成',
+    label: '☕ 約2週間（お試し短期・14日）',
+    shortLabel: '約2週間',
     days: 14,
-    badgeColor: 'bg-danger-100 text-danger-900 border-danger-edge',
+    badgeColor: 'bg-surface-subtle text-foreground border-stone-400',
   },
   '30_DAYS': {
-    label: '🏆 1ヶ月ガチ特訓コース（30日）',
-    shortLabel: '🏆 1ヶ月特訓',
+    label: '🏆 約1ヶ月（標準コース・30日・推奨）',
+    shortLabel: '約1ヶ月',
     days: 30,
-    badgeColor: 'bg-primary-200 text-primary-950 border-primary-edge-strong',
+    badgeColor: 'bg-primary-100 text-primary-900 border-primary-edge',
+  },
+  '60_DAYS': {
+    label: '🔥 約2ヶ月（じっくり育成・60日）',
+    shortLabel: '約2ヶ月',
+    days: 60,
+    badgeColor: 'bg-danger-100 text-danger-900 border-danger-edge',
   },
   'INDEFINITE': {
     label: '♾️ 目標達成まで（期限なし）',
     shortLabel: '♾️ 期限なし',
     days: 90,
     badgeColor: 'bg-surface-hover text-stone-950 border-stone-500',
+  },
+};
+
+/**
+ * 掲示板登録・オファー申請で選択可能な明確な期間（3パターン）
+ * ※「相談して決める（期限なし）」はいつまで続くかの不安を防ぐため廃止
+ */
+export const DURATION_OPTIONS: Record<string, { label: string; shortLabel: string; days: number; desc: string }> = {
+  '14_DAYS': {
+    label: '☕ 約2週間（お試し短期）',
+    shortLabel: '約2週間',
+    days: 14,
+    desc: '週末1〜2回のカスタムでサクッとポイントを教わりたい時',
+  },
+  '30_DAYS': {
+    label: '🏆 約1ヶ月（標準コース・推奨）',
+    shortLabel: '約1ヶ月',
+    days: 30,
+    desc: '週1回ペースで3〜4回。一番無理なく上達できる標準期間',
+  },
+  '60_DAYS': {
+    label: '🔥 約2ヶ月（じっくり育成）',
+    shortLabel: '約2ヶ月',
+    days: 60,
+    desc: 'ロール転向やランク昇格など、腰を据えて取り組みたい時',
   },
 };
 

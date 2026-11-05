@@ -6,6 +6,7 @@ import { ALL_CHAMPIONS, CHAMPION_JA } from '../../lib/championConstants';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { getKtmRank, RANKS as MMR_RANKS } from '../../lib/mmr';
 import { getChampIcon } from '../../lib/ddragonClient';
+import { DURATION_OPTIONS } from '../../lib/mentorshipConstants';
 import { Search, Plus, X, Sparkles, Volume2, Video, Swords, BookOpen, Clock, Shield, Check } from 'lucide-react';
 
 interface MentorshipProfileModalProps {
@@ -107,6 +108,7 @@ export function MentorshipProfileModal({
   const [isChampDropdownOpen, setIsChampDropdownOpen] = useState(false);
   const [currentRank, setCurrentRank] = useState('SILVER');
   const [selectedCommStyles, setSelectedCommStyles] = useState<string[]>(['VC通話']);
+  const [preferredDuration, setPreferredDuration] = useState<string>('30_DAYS');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [bio, setBio] = useState('');
   const [activeHours, setActiveHours] = useState('');
@@ -167,6 +169,9 @@ export function MentorshipProfileModal({
       setSelectedCommStyles(Array.from(extractedStyles));
       setSelectedTags(otherTags);
 
+      const foundDuration = rawTags.find((t) => t.startsWith('duration:'))?.replace('duration:', '') || profile.preferred_duration || '30_DAYS';
+      setPreferredDuration(foundDuration);
+
       setBio(profile.bio || '');
       setActiveHours(profile.active_hours || '');
       setMaxPupils(profile.max_pupils || 2);
@@ -179,6 +184,7 @@ export function MentorshipProfileModal({
       setSelectedChampions([]);
       setCurrentRank(RANKS.includes(userRank) ? userRank : 'SILVER');
       setSelectedCommStyles(['VC通話']);
+      setPreferredDuration('30_DAYS');
       setSelectedTags([]);
       setBio('');
       setActiveHours('平日 21:00〜24:00 / 休日');
@@ -251,8 +257,9 @@ export function MentorshipProfileModal({
     e.preventDefault();
     setIsSaving(true);
     try {
-      // 通話・指導スタイルと他のタグを統合
-      const finalTags = Array.from(new Set([...selectedCommStyles, ...selectedTags]));
+      // 通話・指導スタイルと他のタグ、活動期間タグを統合
+      const filteredOtherTags = selectedTags.filter((t) => !t.startsWith('duration:'));
+      const finalTags = Array.from(new Set([...selectedCommStyles, ...filteredOtherTags, `duration:${preferredDuration}`]));
 
       await onSave({
         id: initialProfile?.id,
@@ -261,6 +268,7 @@ export function MentorshipProfileModal({
         champions: selectedChampions,
         current_rank: currentRank,
         tags: finalTags,
+        preferred_duration: preferredDuration,
         bio,
         active_hours: activeHours,
         status: 'OPEN',
@@ -422,6 +430,22 @@ export function MentorshipProfileModal({
                     </div>
                   </div>
                 )}
+
+                {/* 活動期間の目安 ＆ 活動時間帯 */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                  <div className="flex items-center gap-1 font-bold">
+                    <span>⏱️</span>
+                    <span className="text-muted-strong">{isMentor ? '指導期間:' : '希望期間:'}</span>
+                    <span className="text-foreground-soft font-semibold">{DURATION_OPTIONS[preferredDuration]?.shortLabel || '約1ヶ月'}</span>
+                  </div>
+                  {activeHours && (
+                    <div className="flex items-center gap-1 font-bold">
+                      <Clock size={12} className="text-primary-600" />
+                      <span className="text-muted-strong">時間帯:</span>
+                      <span className="text-foreground-soft font-semibold">{activeHours}</span>
+                    </div>
+                  )}
+                </div>
 
                 {/* 自己紹介文 */}
                 <div className="space-y-1">
@@ -734,11 +758,61 @@ export function MentorshipProfileModal({
                 </div>
               </div>
 
-              {/* 6. ひとことメッセージ ＆ 例文テンプレート */}
+              {/* 6. 希望する活動期間の目安 */}
+              <div className="space-y-2.5">
+                <label className="block text-xs font-black text-foreground-subtle flex items-center gap-1.5">
+                  <span className="w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[11px] flex items-center justify-center font-black">6</span>
+                  <span>{isMentor ? '指導期間の目安（一区切りの期間）' : '希望する相談期間（一区切りの期間）'}</span>
+                </label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {Object.entries(DURATION_OPTIONS).map(([key, opt]) => {
+                    const isSelected = preferredDuration === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setPreferredDuration(key)}
+                        className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? isMentor
+                              ? 'bg-primary-50 dark:bg-primary-950/40 border-primary-edge text-primary-950 dark:text-primary-200 ring-2 ring-primary-500/30 shadow-xs'
+                              : 'bg-success-50 dark:bg-success-950/40 border-success-edge text-success-950 dark:text-success-200 ring-2 ring-success-500/30 shadow-xs'
+                            : 'bg-background border-border text-foreground hover:bg-surface-subtle'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-black flex items-center justify-between">
+                            <span>{opt.label}</span>
+                            {isSelected && <span className="text-xs">✓</span>}
+                          </div>
+                          <div className="text-[11px] text-muted leading-tight mt-1">{opt.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="p-3 rounded-2xl bg-surface-subtle border border-border text-[11px] text-muted-strong leading-relaxed space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-foreground-soft">
+                    <span>💡</span>
+                    <span>活動期間と継続のルール</span>
+                  </div>
+                  <p>
+                    指定した期間が満了すると、一度キリよく活動終了（卒業）となります。
+                    <strong className="text-primary-700 dark:text-primary-400 font-bold ml-1">
+                      「もっと教わりたい・続けたい」場合は、満了後に改めて掲示板から【継続依頼（オファー）】を出す形となります
+                    </strong>
+                    （自動延長はありません）。
+                  </p>
+                </div>
+              </div>
+
+              {/* 7. ひとことメッセージ ＆ 例文テンプレート */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <label className="block text-xs font-black text-foreground-subtle flex items-center gap-1.5">
-                    <span className="w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[11px] flex items-center justify-center font-black">6</span>
+                    <span className="w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[11px] flex items-center justify-center font-black">7</span>
                     ひとことメッセージ
                   </label>
                   <span className="text-[11px] text-primary-700 font-bold flex items-center gap-1">
@@ -769,7 +843,7 @@ export function MentorshipProfileModal({
                 />
               </div>
 
-              {/* 7. 登録中のテーマタグ（不要なタグの消去・全削除） */}
+              {/* 8. 登録中のテーマタグ（不要なタグの消去・全削除） */}
               {selectedTags.length > 0 && (
                 <div className="space-y-2 p-3.5 bg-background border border-border rounded-2xl">
                   <div className="flex items-center justify-between">

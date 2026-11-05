@@ -6,6 +6,7 @@ import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getRankBadgeStyle } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../lib/championConstants';
 import { getChampIcon } from '../../lib/ddragonClient';
+import { DURATION_OPTIONS } from '../../lib/mentorshipConstants';
 import { Clock, Sparkles, Zap } from 'lucide-react';
 
 interface MentorshipCardProps {
@@ -46,6 +47,9 @@ export function MentorshipCard({
   const isMentor = profile.role_type === 'MENTOR';
   const displayRank = profile.latest_rank || profile.current_rank;
   const rankBadge = getRankBadgeStyle(displayRank);
+
+  const rawDurationTag = (profile.tags || []).find(t => t.startsWith('duration:'))?.replace('duration:', '') || profile.preferred_duration || '30_DAYS';
+  const displayDuration = DURATION_OPTIONS[rawDurationTag]?.shortLabel || '約1ヶ月';
 
 
   return (
@@ -331,14 +335,21 @@ export function MentorshipCard({
           </div>
         )}
 
-        {/* 活動時間帯 */}
-        {profile.active_hours && (
-          <div className="flex items-center gap-1.5 text-xs text-muted">
-            <Clock size={12} className="text-primary-600 dark:text-primary-400" />
-            <span className="font-bold text-muted-strong">活動時間:</span>
-            <span className="font-semibold text-foreground-soft dark:text-stone-100">{profile.active_hours}</span>
+        {/* 希望活動期間 ＆ 活動時間帯 */}
+        <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-muted pt-0.5">
+          <div className="flex items-center gap-1">
+            <span>⏱️</span>
+            <span className="font-bold text-muted-strong">{isMentor ? '指導期間:' : '希望期間:'}</span>
+            <span className="font-semibold text-foreground-soft dark:text-stone-100">{displayDuration}</span>
           </div>
-        )}
+          {profile.active_hours && (
+            <div className="flex items-center gap-1">
+              <Clock size={12} className="text-primary-600 dark:text-primary-400" />
+              <span className="font-bold text-muted-strong">活動時間:</span>
+              <span className="font-semibold text-foreground-soft dark:text-stone-100">{profile.active_hours}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 下部アクションバー */}

@@ -370,8 +370,8 @@ export default function MentorshipHubPanel() {
   const handleSendRequest = async (
     targetProfileId: string,
     message: string,
-    durationKey: string = '14_DAYS',
-    autoRenew: boolean = true,
+    durationKey: string = '30_DAYS',
+    autoRenew: boolean = false,
     // ⚠️ 2026-09-30 追加: サーバーは commStyle を受け取りDBにも保存していたが、
     // UIから送っていなかったため全員 'VC_ACTIVE'(通話歓迎)で固定されていた。
     commStyle: string = 'VC_ACTIVE'
@@ -1119,7 +1119,7 @@ export default function MentorshipHubPanel() {
               const partner = req.mentor_discord_id === myDiscordId ? req.pupil : req.mentor;
               const isPartnerMentor = partner?.role_type === 'MENTOR';
               const cleanNotes = req.meta?.message || (req.notes || '').replace(/\[FROM:[^\]]+\]\s*/, '');
-              const durationLabel = req.meta?.durationLabel || '2週間育成コース';
+              const durationLabel = req.meta?.durationLabel || '約1ヶ月（標準コース）';
 
               return (
                 <div
@@ -1143,11 +1143,6 @@ export default function MentorshipHubPanel() {
                       <span className="px-2 py-0.5 rounded-lg bg-primary-100 text-primary-900 font-bold border border-primary-edge-soft">
                         ⏱️ 希望期間: {durationLabel}
                       </span>
-                      {req.meta?.autoRenew && (
-                        <span className="px-2 py-0.5 rounded-lg bg-success-100 text-success-800 font-bold border border-success-edge-soft">
-                          ⚡ 満了時そのまま継続
-                        </span>
-                      )}
                     </div>
 
                     {cleanNotes && (
@@ -1302,7 +1297,7 @@ export default function MentorshipHubPanel() {
               match.mentor_discord_id === myDiscordId || match.pupil_discord_id === myDiscordId;
             const isCompleted = match.status === 'COMPLETED';
             const isExpired = match.isExpired;
-            const durationLabel = match.meta?.durationLabel || '2週間育成コース';
+            const durationLabel = match.meta?.durationLabel || '約1ヶ月（標準コース）';
             const remainingDays = match.remainingDays;
 
             return (
@@ -1323,7 +1318,7 @@ export default function MentorshipHubPanel() {
                     <div className="flex items-center gap-2">
                       <span className="text-base">{isCompleted ? '🎓' : isExpired ? '⏳' : '🤝'}</span>
                       <span className="text-xs font-black text-foreground">
-                        {isCompleted ? '完了した相談ペア' : isExpired ? '期間満了（延長・完了待ち）' : '活動中の相談ペア'}
+                        {isCompleted ? '完了した相談ペア' : isExpired ? '期間満了（完了・再オファー待ち）' : '活動中の相談ペア'}
                       </span>
                     </div>
 
@@ -1372,11 +1367,6 @@ export default function MentorshipHubPanel() {
                     <span className="text-muted-strong font-medium">
                       開始: {new Date(match.started_at || match.created_at).toLocaleDateString('ja-JP')}
                     </span>
-                    {match.meta?.autoRenew && !isCompleted && (
-                      <span className="text-success-700 font-bold text-[10px]">
-                        (自動継続ON)
-                      </span>
-                    )}
                   </div>
 
                                     {/* ⚔️ カスタム同伴実績バッジ */}

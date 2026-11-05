@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
-import { COMMUNICATION_STYLES } from '../../lib/mentorshipConstants';
+import { COMMUNICATION_STYLES, DURATION_OPTIONS } from '../../lib/mentorshipConstants';
 import { Send, X, Clock, RefreshCw } from 'lucide-react';
 
 interface MentorshipRequestModalProps {
@@ -30,14 +30,25 @@ export function MentorshipRequestModal({
   onSubmit,
 }: MentorshipRequestModalProps) {
   const [message, setMessage] = useState('');
-  const [durationKey, setDurationKey] = useState('14_DAYS');
-  const [autoRenew, setAutoRenew] = useState(true);
+  const [durationKey, setDurationKey] = useState('30_DAYS');
+  const [autoRenew, setAutoRenew] = useState(false);
   // ⚠️ 2026-09-30 追加: サーバーは commStyle を10箇所で扱いDBにも保存していたが、
   // UIから一度も送っておらず**全員 'VC_ACTIVE'(通話歓迎)で固定**されていた。
   // 「通話は苦手だからテキストで教わりたい」人が意思表示できず、師弟の相性を左右する
   // 情報が失われていた（選択肢 COMMUNICATION_STYLES は定義だけで参照0件だった）。
   const [commStyle, setCommStyle] = useState('VC_ACTIVE');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (targetProfile) {
+      const partnerDuration = (targetProfile.tags || []).find((t) => t.startsWith('duration:'))?.replace('duration:', '') || targetProfile.preferred_duration;
+      if (partnerDuration && DURATION_OPTIONS[partnerDuration]) {
+        setDurationKey(partnerDuration);
+      } else {
+        setDurationKey('30_DAYS');
+      }
+    }
+  }, [targetProfile]);
 
   if (!isOpen || !targetProfile) return null;
 
@@ -109,18 +120,35 @@ export function MentorshipRequestModal({
             )}
           </div>
 
-          {/* 相談期間の目安 (2週間) */}
-          <div className="p-3 bg-secondary-50/70 border border-secondary-edge-soft rounded-2xl space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-black text-secondary-900">
-              <Clock size={14} className="text-secondary-600" />
-              <span>相談期間の目安: 約2週間</span>
-              <span className="text-[10px] text-secondary-700 bg-surface px-1.5 py-0.2 rounded border border-secondary-edge font-bold ml-auto">
-                自然消滅防止Botつき
-              </span>
+          {/* 活動期間の選択 ＆ 継続ルール */}
+          <div className="space-y-2">
+            <label className="block text-xs font-black text-foreground-subtle flex items-center gap-1.5">
+              <Clock size={14} className="text-primary-600" />
+              <span>活動期間の目安（お相手の希望にあわせて選択）</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {Object.entries(DURATION_OPTIONS).map(([key, opt]) => {
+                const isSelected = durationKey === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setDurationKey(key)}
+                    className={`p-2.5 rounded-2xl border text-left transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-primary-100 border-primary-edge ring-2 ring-primary-300'
+                        : 'bg-surface border-border hover:border-border'
+                    }`}
+                  >
+                    <div className="text-xs font-black text-foreground">{opt.label}</div>
+                    <div className="text-[10px] text-muted-strong font-medium leading-tight mt-0.5">{opt.desc}</div>
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-[11px] text-secondary-800 leading-relaxed font-medium">
-              2週間経つとDiscord Botから継続・完了の確認通知が届きます。いつでも気軽に終了・延長が可能です。
-            </p>
+            <div className="p-2.5 bg-secondary-50/70 border border-secondary-edge-soft rounded-2xl text-[11px] text-secondary-900 leading-relaxed font-medium">
+              💡 <strong>満了後の継続について</strong>: 期間満了で一旦円満修了となります。<strong>「さらに指導を受けたい・続けたい」場合は、満了後に改めて掲示板から【継続依頼（オファー）】を送信してください</strong>（自動延長はありません）。
+            </div>
           </div>
 
           {/* 希望するやりとりの形 */}
