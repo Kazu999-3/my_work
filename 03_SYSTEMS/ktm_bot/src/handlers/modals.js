@@ -396,7 +396,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
         flags: 64
       }
     });
-  }}
+  }
 
   if (customId.startsWith('edit_recruit_modal:')) {
     const getVal = (cid) => interaction.data.components.find(c => c.components[0].custom_id === cid).components[0].value;

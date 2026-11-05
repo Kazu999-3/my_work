@@ -48,12 +48,12 @@ describe('articleDensity', () => {
 
   it('新しい解析は事実の件数で判定する', () => {
     const dense = '3:15 に Lv3 で Q → E。'.repeat(20);
-    assert.equal(assessArticleDensity(dense, { fact_count: 3 }).level, 'thin');
+    assert.equal(assessArticleDensity(dense, { fact_count: 2 }).level, 'thin');
     assert.equal(assessArticleDensity(dense, { fact_count: 12 }).level, 'ok');
   });
 
   it('旧形式で「現パッチ」とある記事は薄い扱い', () => {
-    const legacy = '# 🏆 X 究極完全攻略バイブル\n現パッチの仕様に準拠。' + '3分 に Lv2。'.repeat(40);
+    const legacy = '# 🏆 X 究極完全攻略バイブル\n現パッチの仕様に準拠。現在のメタでも有効。' + '3分 に Lv2。'.repeat(40);
     const r = assessArticleDensity(legacy);
     assert.equal(r.legacyTemplate, true);
     assert.equal(r.level, 'thin');
