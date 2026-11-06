@@ -147,11 +147,13 @@ def search_videos(query, want):
     """
     # 尺で弾く分を見越して多めに取得する
     n = max(want * 5, 10)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from yt_dlp_cookies import get_ffmpeg_cli_args
     cmd = get_yt_dlp_cmd() + [
         f"ytsearch{n}:{query}",
         "--flat-playlist", "--skip-download",
         "--print", "%(id)s\t%(title)s\t%(channel)s\t%(duration)s",
-    ]
+    ] + get_ffmpeg_cli_args()
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     except subprocess.TimeoutExpired:

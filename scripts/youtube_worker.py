@@ -288,8 +288,9 @@ def fetch_subtitles(url, vid):
     # 2026-09-21: ここはシークレット(YOUTUBE_COOKIES_TXT)しか見ておらず、ローカルの
     # `.env`に設定された YT_DLP_COOKIES_FROM が効かなかったため、共通モジュールへ集約した。
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from yt_dlp_cookies import get_cookie_cli_args
+    from yt_dlp_cookies import get_cookie_cli_args, get_ffmpeg_cli_args
     cmd.extend(get_cookie_cli_args())
+    cmd.extend(get_ffmpeg_cli_args())
     # ⚠️ 2026-09-23: 429（Too Many Requests）はその場で待って再試行する。
     # 従来は1回叩いて429なら即RateLimitedにしていたため、次のワーカー起動まで
     # 何分も空いたうえに retry_count だけが減っていった。実測では59件のエラーのうち

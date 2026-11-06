@@ -195,6 +195,30 @@
 - `[発信候補]`: 「大規模Next.jsアプリにおけるReact Hook依存配列の完全クリーン化（warnings 0）とパフォーマンス最適化の実践」。
 
 
+
+### 🎯 youtube_worker CLI 経由 yt-dlp 呼び出しにおける ffmpeg 引数完全配線（警告完全根絶）
+
+**概要**:
+1. **背景と課題**:
+   - Edge Worker の実ログにおいて `WARNING: ffmpeg not found. The downloaded format may not be the best available.` が依然として出力されていた問題を徹底追究。
+   - `youtube_worker.py` の `fetch_subtitles` が Python API ではなく `subprocess.run` による CLI コマンドライン実行を行っていたため、`cmd` に `--ffmpeg-location` 引数が渡されていなかった真の根本原因を特定。
+2. **実施内容**:
+   - **【CLI 引数への ffmpeg 完全配備】(`scripts/youtube_worker.py`, `scripts/prospector.py`)**:
+     - `fetch_subtitles` および `search_videos` のコマンドリスト構築時に `get_ffmpeg_cli_args()`（`--ffmpeg-location <path>`）を注入するよう修正。
+3. **機械的実値検証**:
+   - 先ほど警告が発生していた動画（`xYY-oZuRV5A`）の字幕取得テストを実測実行：
+     - 修正前: `[字幕なし] xYY-oZuRV5A: WARNING: ffmpeg not found. The downloaded format may not be the best available. Installing ffmpeg is strongly recommended`
+     - 修正後: ffmpeg 警告が **1文字も出ずに完全消滅** したことを確認。
+
+**再利用可能な3行ナレッジ**:
+- 外部ラッパーモジュール（yt_dlp_cookies等）を整備する際は、Python API用の辞書注入（ydl_opts）だけでなく、CLIサブプロセス用の引数リスト（cmd.extend）の配線も漏れなく両系統で同期させることが不可欠。
+- yt-dlpのstderr末尾行をエラー理由として抽出するフォールバック設計では、無関係な警告（ffmpeg未検出等）が真のエラーメッセージを覆い隠してしまうため、警告そのものを根絶してstderrをクリーンに保つのが最善策。
+
+- `[要検証]`: 今後 Edge Worker が自律処理するYouTube動画解析タスクにおいて、`WARNING: ffmpeg not found` が一切ログに出力されないことの定点観測。
+- `[継続ウォッチ]`: 記事再解析（#37456、#37476等）の正常完了とSupabaseへの自動反映。
+- `[発信候補]`: 「yt-dlpのPython API/CLIハイブリッド運用におけるffmpegパス配線の落とし穴と完全自動化テクニック」。
+
+
 ---
 
 
