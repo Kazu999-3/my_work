@@ -72,6 +72,36 @@
 - `[発信候補]`: 「890超のMarkdownノート群をLLM Wikiリンターで完全メンテする設計：孤立ゼロとプレースホルダー分離の知見」。
 
 
+
+### 🛡️ セキュリティ脆弱性監査＆自動修正 ＆ Edge Worker用 ffmpeg パス自動配線
+
+**概要**:
+1. **背景と課題**:
+   - リポジトリのDependabot警告（高リスク脆弱性）の全量監査と修正。
+   - Edge Worker（yt-dlp）実行時に発生していた `WARNING: ffmpeg not found` 警告の解消。
+2. **実施内容**:
+   - **【ktm_bot の高リスク脆弱性解消】(`03_SYSTEMS/ktm_bot/package-lock.json`)**:
+     - `undici`（GHSA-4qv8-2p9j-2685 等）および `wrangler` / `miniflare` に起因する高リスク脆弱性（High 1件、Moderate 2件）を `npm audit fix` により完全解消（脆弱性: 0件）。
+   - **【04_PORTAL の脆弱性精密監査】(`04_PORTAL/package.json`)**:
+     - `minimatch`（GHSA-g3hv-75wg-m249: globparts amplification DoS）を調査。現在npm/上流で修正版が未リリースのゼロデイアドバイザリであることを確認。Next.js 16/React 19 との整合性を保つため破壊的なダウングレード（Next.js 15）を回避し、テスト167件全件PASS・型チェックPASSを維持。
+   - **【ffmpeg パス自動配線 ＆ .venv 内完結配備】(`scripts/yt_dlp_cookies.py`, `.venv/Scripts/ffmpeg.exe`)**:
+     - システム管理者権限での外部インストールを行わず、`.venv` 内に既存の `imageio_ffmpeg` バイナリ（FFmpeg 7.1 Essentials Build）を検出・活用するアーキテクチャを確立。
+     - `scripts/yt_dlp_cookies.py` に `get_ffmpeg_path()`, `apply_ffmpeg_opts()`, `get_ffmpeg_cli_args()` を配備し、yt-dlp のオプション設定で自動的に `ffmpeg_location` を注入するよう統合。
+3. **機械的実値検証**:
+   - `03_SYSTEMS/ktm_bot`: `found 0 vulnerabilities`, 構文チェック PASS。
+   - `04_PORTAL`: 単体テスト 167件全件PASS・型チェック PASS。
+   - `yt_dlp_cookies.py`: `apply_cookie_opts` 実行時に `ffmpeg_location` が自動注入されることを実測確認済み。
+
+**再利用可能な3行ナレッジ**:
+- Dependabotでゼロデイや修正版未リリースのDoS脆弱性が報告された際、安易に `npm audit fix --force` で別メジャーバージョンへ破壊的ダウングレードさせると最新フレームワークとの互換性が崩壊するため、Advisoryの patched_versions をAPI実測確認して判断するのが鉄則。
+- Windows環境でCLIツールが要求する `ffmpeg` は、システム全体にwingetや管理者権限で導入せずとも、Pythonの `imageio_ffmpeg` 内包バイナリを仮想環境（.venv）にハードリンク/パス解決することで、ポータブルかつセキュアに即時解決できる。
+- yt-dlpのラッパーモジュール（`yt_dlp_cookies`）でcookie解決と同時に `ffmpeg_location` を自動注入するフックを設けることで、呼び出し側のスクリプト修正を最小限に抑えつつ警告と画質劣化を完全根絶できる。
+
+- `[要検証]`: 次回 `reanalyze_article.py` 実行時に yt-dlp の ffmpeg 警告がログから完全に消滅したことの実測確認。
+- `[継続ウォッチ]`: minimatch の GitHub Advisory (GHSA-g3hv-75wg-m249) における上流パッチのリリース動向。
+- `[発信候補]`: 「ポータブルなAI自動化環境構築：imageio-ffmpegを活用したyt-dlpの警告ゼロ化＆Windows環境汚染防止テクニック」。
+
+
 ---
 
 

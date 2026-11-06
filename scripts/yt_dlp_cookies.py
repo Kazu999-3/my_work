@@ -34,11 +34,55 @@ cookie の設定が3つのスクリプトでバラバラになっており、実
 """
 
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
 _TEMP_COOKIE_FILE = None
-_BROWSER_COOKIE_USABLE = {}  # ブラウザ名 -> 読み取り可否(プロセス内で1度だけ判定)
+_BROWSER_COOKIE_USABLE = {}
+_FFMPEG_PATH = None
+
+
+def get_ffmpeg_path() -> str | None:
+    """ffmpeg の実行可能パスを取得する（imageio_ffmpeg / システムPATH / .venv/Scripts）。"""
+    global _FFMPEG_PATH
+    if _FFMPEG_PATH is not None:
+        return _FFMPEG_PATH
+
+    # 1. imageio_ffmpeg
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and Path(exe).exists():
+            _FFMPEG_PATH = exe
+            return _FFMPEG_PATH
+    except Exception:
+        pass
+
+    # 2. .venv/Scripts/ffmpeg.exe
+    venv_ffmpeg = Path(__file__).resolve().parent.parent / ".venv" / "Scripts" / "ffmpeg.exe"
+    if venv_ffmpeg.exists():
+        _FFMPEG_PATH = str(venv_ffmpeg)
+        return _FFMPEG_PATH
+
+    # 3. システムPATH
+    sys_ffmpeg = shutil.which("ffmpeg")
+    if sys_ffmpeg:
+        _FFMPEG_PATH = sys_ffmpeg
+        return _FFMPEG_PATH
+
+    return None
+
+
+def apply_ffmpeg_opts(ydl_opts: dict) -> dict:
+    """yt-dlp のオプション辞書に ffmpeg_location を自動設定する。"""
+    ffmpeg_exe = get_ffmpeg_path()
+    if ffmpeg_exe:
+        ydl_opts["ffmpeg_location"] = ffmpeg_exe
+        ffmpeg_dir = str(Path(ffmpeg_exe).parent)
+        if ffmpeg_dir not in os.environ.get("PATH", ""):
+            os.environ["PATH"] = f"{ffmpeg_dir};{os.environ.get('PATH', '')}"
+    return ydl_opts  # ブラウザ名 -> 読み取り可否(プロセス内で1度だけ判定)
 
 
 def _browser_cookies_usable(browser, verbose=True):
@@ -97,7 +141,9 @@ def apply_cookie_opts(ydl_opts, verbose=True):
     yt-dlp の Python API 用 opts 辞書へ cookie 設定を追加して返す。
     どの方式が使われたか(あるいは未設定か)を必ずログ出力し、
     「設定したつもりで効いていない」状態に気づけるようにする。
+    また、ffmpeg のパスも自動検出し配線する。
     """
+    apply_ffmpeg_opts(ydl_opts)
     cookie_file = resolve_cookie_file()
     if cookie_file:
         ydl_opts["cookiefile"] = cookie_file
@@ -130,6 +176,14 @@ def apply_cookie_opts(ydl_opts, verbose=True):
             "（字幕なし動画の音声取得は403で失敗する可能性があります）。"
         )
     return ydl_opts
+
+
+def get_ffmpeg_cli_args():
+    """yt-dlp を CLI 実行する場合に ffmpeg パスを渡す引数を返す。"""
+    exe = get_ffmpeg_path()
+    if exe:
+        return ["--ffmpeg-location", exe]
+    return []
 
 
 def get_cookie_cli_args():
