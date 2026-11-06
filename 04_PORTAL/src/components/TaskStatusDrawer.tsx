@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useVisiblePolling } from '../lib/useVisiblePolling';
 import { createPortal } from 'react-dom';
 import { Zap, RefreshCw, Activity, AlertTriangle, CheckCircle2, X } from 'lucide-react';
@@ -84,18 +84,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    const handleResize = () => calculateCoords();
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleResize, true);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleResize, true);
-    };
-  }, [open]);
-
-  const calculateCoords = () => {
+  const calculateCoords = useCallback(() => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const drawerWidth = Math.min(384, window.innerWidth - 32);
@@ -121,7 +110,18 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
     }
 
     setCoords({ top, left, right });
-  };
+  }, [align]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleResize = () => calculateCoords();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize, true);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize, true);
+    };
+  }, [open, calculateCoords]);
 
   const toggleOpen = () => {
     setOpen((v) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { ALL_CHAMPIONS, CHAMPION_JA } from '../../lib/championConstants';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -120,7 +120,7 @@ export function MentorshipProfileModal({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // プロフィールデータをフォーム状態に反映するヘルパー
-  const loadProfileData = (targetRole: 'PUPIL' | 'MENTOR', profile?: MentorshipProfile | null) => {
+  const loadProfileData = useCallback((targetRole: 'PUPIL' | 'MENTOR', profile?: MentorshipProfile | null) => {
     setRoleType(targetRole);
     if (profile) {
       setLanes(profile.lanes || []);
@@ -190,7 +190,7 @@ export function MentorshipProfileModal({
       setActiveHours('平日 21:00〜24:00 / 休日');
       setMaxPupils(2);
     }
-  };
+  }, [user]);
 
   // 初期値のロード
   useEffect(() => {
@@ -198,7 +198,7 @@ export function MentorshipProfileModal({
     const targetRole = initialProfile?.role_type || defaultRole;
     const targetProf = initialProfile || (myProfiles ? myProfiles[targetRole] : null);
     loadProfileData(targetRole, targetProf);
-  }, [initialProfile, isOpen, defaultRole]);
+  }, [initialProfile, isOpen, defaultRole, myProfiles, loadProfileData]);
 
   // 役割（弟子 ⇄ 師匠）を切り替えたときの連動
   const handleRoleChange = (newRole: 'PUPIL' | 'MENTOR') => {

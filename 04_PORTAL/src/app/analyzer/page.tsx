@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Target, AlertTriangle, RefreshCw, Swords } from 'lucide-react';
 import { PlayerCompareView } from './PlayerCompareView';
 import AnalyzerSearchPanel from './_analyzer/AnalyzerSearchPanel';
@@ -44,7 +44,7 @@ export default function PlayerAnalyzerPage() {
   }, []);
 
   // 検索履歴の保存ヘルパー
-  const saveRecentSearch = (raw: string) => {
+  const saveRecentSearch = useCallback((raw: string) => {
     try {
       const trimmed = raw.trim();
       if (!trimmed) return;
@@ -55,9 +55,9 @@ export default function PlayerAnalyzerPage() {
     } catch {
       // ignore
     }
-  };
+  }, [recentSearches]);
 
-  const removeRecentSearch = (e: React.MouseEvent, target: string) => {
+  const removeRecentSearch = useCallback((e: React.MouseEvent, target: string) => {
     e.stopPropagation();
     try {
       const updated = recentSearches.filter((s) => s !== target);
@@ -66,7 +66,7 @@ export default function PlayerAnalyzerPage() {
     } catch {
       // ignore
     }
-  };
+  }, [recentSearches]);
 
   const clearAllRecents = () => {
     setRecentSearches([]);
@@ -95,7 +95,7 @@ export default function PlayerAnalyzerPage() {
   }, []);
 
   // 統合解析の実行
-  const handleRunAnalysis = async (
+  const handleRunAnalysis = useCallback(async (
     targetRawInput?: string,
     targetT?: string
   ) => {
@@ -142,7 +142,7 @@ export default function PlayerAnalyzerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [summonerInput, targetTier, saveRecentSearch]);
 
   // URLクエリパラメータがある場合のみ初回自動解析（なければ待機）
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function PlayerAnalyzerPage() {
         handleRunAnalysis(full);
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, handleRunAnalysis]);
 
   if (isAuthenticated === null) {
     return (

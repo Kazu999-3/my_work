@@ -73,7 +73,7 @@ export function useCasinoData(user: any) {
       if (remaining <= 0) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [activeMatch?.announcedAt, activeMatch?.createdAt, activeMatch?.isAnnounced]);
+  }, [activeMatch]);
 
   const isBetLocked = useMemo(() => {
     if (!activeMatch) return true;

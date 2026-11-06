@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { X, Sparkles, RefreshCw, CheckCircle, AlertCircle, Shield, Award, Users } from "lucide-react";
 
 interface RoleSyncConfig {
@@ -51,7 +51,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
   };
 
   // 設定読み込み
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/discord/role-sync", { credentials: "include" });
@@ -68,11 +68,11 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchConfig();
-  }, []);
+  }, [fetchConfig]);
 
   // 1. ロール自動セットアップ
   const handleSetup = async () => {

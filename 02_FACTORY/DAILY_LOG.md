@@ -164,6 +164,37 @@
 - `[発信候補]`: 「LoLオーバーレイ開発の落とし穴：Python動的型付けにおけるNoneType比較クラッシュとGUIメインループの例外隔離設計」。
 
 
+
+### 💎 champions_index全173体パッチURL正規化 ＆ 04_PORTAL React Hook依存配列健全化（ESLint警告0件達成）
+
+**概要**:
+1. **背景と課題**:
+   - `05_PILOT/src/data/champions_index.json` 内の全173体のチャンピオン画像URLが `14.24.1`（2024年の旧パッチ）の固定値となっており、新チャンピオン（Ambessa, Mel等）の画像割れリスクを抱えていた。
+   - `04_PORTAL` の ESLint 厳格スキャン（`--max-warnings 0`）により、7箇所の `useEffect` 依存配列漏れおよびクロージャ参照バグのリスクを検出。
+2. **実施内容**:
+   - **【全173体パッチURLの現行化】(`05_PILOT/src/data/champions_index.json`)**:
+     - 全173件の `14.24.1` を現行公式パッチ **`16.21.1`** へ一括置換。新チャンピオン画像割れを構造的に予防。
+   - **【React Hook依存配列・useCallback完全健全化】(`04_PORTAL/src/app/...`)**:
+     - `analyzer/page.tsx`: `saveRecentSearch`, `removeRecentSearch`, `handleRunAnalysis` を `useCallback` でメモ化し、URLパラメータによる初回自動解析の依存配列を整合。
+     - `ScratchModal.tsx`: `onFinished` コールバックを `useEffect` の依存配列に追加。
+     - `DiscordRoleSyncModal.tsx`: `fetchConfig` を `useCallback` でラップし、依存配列に指定。
+     - `MentorshipProfileModal.tsx`: `loadProfileData` を `useCallback` 化し、`user` 依存を正しく追跡。
+     - `NotificationBell.tsx` & `TaskStatusDrawer.tsx`: `calculateCoords` を `align` 依存の `useCallback` で定義した上で `useEffect` の依存配列へ配置。画面リサイズ・スクロール連動の健全性を確保。
+     - `useCasinoData.ts`: `activeMatch` オブジェクトを依存配列に正規化。
+3. **機械的実値検証**:
+   - `04_PORTAL`: `npx eslint src --max-warnings 0` 実行 ➔ **エラー0件・警告0件（完全クリーン）達成**。単体テスト167件全件PASS、型チェックPASS。
+   - `05_PILOT`: 単体テスト59件全件PASS、型チェックPASS。
+
+**再利用可能な3行ナレッジ**:
+- JSONデータ内に埋め込まれる静的CDN URL（DDragonアイコン等）は、パッチ移行時に見落とされやすいため、定期リンターや一括更新スクリプトで現行パッチ（16.x）との整合性を監視・更新するのが重要。
+- React Hook の依存配列漏れ（react-hooks/exhaustive-deps）は、関数を useCallback で適切にメモ化して依存に含めることで、古いステートを参照するバグ（stale closures）と無限再レンダリングを同時に防止できる。
+- CIやローカルチェックで `npx eslint src --max-warnings 0` をパスさせる水準を保つことで、潜在的なライフサイクルバグを本番デプロイ前に確実に排除できる。
+
+- `[要検証]`: 04ポータルと05パイロット双方で、新チャンピオン（Ambessa/Mel）のアイコンがキャッシュなし状態でも100%正しく表示されることの実機確認。
+- `[継続ウォッチ]`: 今後追加されるReactコンポーネントにおけるHooks依存配列の厳格遵守。
+- `[発信候補]`: 「大規模Next.jsアプリにおけるReact Hook依存配列の完全クリーン化（warnings 0）とパフォーマンス最適化の実践」。
+
+
 ---
 
 

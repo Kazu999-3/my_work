@@ -54,7 +54,7 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, [isOpen, resultData]);
+  }, [isOpen, resultData, onFinished]);
 
   if (!isOpen || !resultData) return null;
 
