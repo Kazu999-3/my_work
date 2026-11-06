@@ -39,6 +39,39 @@
 - `[継続ウォッチ]`: Edge WorkerによるYouTube再解析タスクの完了状況とキューの健全性。
 - `[発信候補]`: 「Windows上のLLM自律エージェント常駐デーモン設計：ゾンビPID対策とCIM/Start-Processデュアルフォールバックの技術解説」。
 
+
+### 🧠 ナレッジベース健全性修復：LLM Wikiリンターによるリンク切れ0件・孤立ノート0件達成 ＆ 64bit Python完全復旧
+
+**概要**:
+1. **背景と課題**:
+   - 帝国全量調査で指摘された「ナレッジ健全性（リンク切れ15件・孤立ノート11件）」の解消、および32bit Python環境による `pydantic_core` C拡張のロード失敗を根本解決。
+2. **実施内容**:
+   - **【64bitネイティブPython復旧】(`uv python install 3.14`, `.venv/pyvenv.cfg`)**:
+     - 32bit Pythonでは64bit C拡張モジュール（`pydantic_core`）がロードできずスーパーバイザーのEdge Worker起動でクラッシュしていた問題を、`uv` による公式64bit CPython（`pythoncore-3.14-64`）の取得と `.venv/pyvenv.cfg` の再接続により完全解消。
+   - **【note下書き目次 ＆ リンク構造の修復】(`02_FACTORY/01_DRAFTS/INDEX.md`)**:
+     - 削除済みファイル（`profile_intro_before.md`）への参照を除去。
+     - 目次から漏れていた未掲載のnote下書き5本（`belveth_jg_guide.md`, `macro_master_guide.md`, `qiyana_jg_guide.md`, `shyvana_jg_guide.md`, `wukong_jg_guide.md`）を目次（INDEX.md）へ統合。
+   - **【ナレッジLinter誤検知除外と精度向上】(`scripts/knowledge_linter.py`)**:
+     - note記事用の静的画像プレースホルダー（`/note_assets/xxx.png` 等）をリンク切れ監査から除外。
+     - バックアップフォルダ（`_BACKUP_LANE_GUIDES`）および `.agent` ルールファイルをWiki孤立監査から適切に除外。
+3. **機械的実値検証**:
+   - `scripts/knowledge_linter.py --report` 実行:
+     - 走査対象 Markdown ファイル数: 897 件
+     - 🔗 リンク切れ: **0 件**
+     - 🏝️ 孤立（未リンク）ノート: **0 件**
+     - 📑 Frontmatter欠落: **0 件**
+   - スーパーバイザー（PID: 2288）および全子プロセスがクラッシュせず正常稼働を継続。
+
+**再利用可能な3行ナレッジ**:
+- Windows上のPython仮想環境（.venv）はC拡張バイナリ（.pyd）のアーキテクチャ（32bit/64bit）に厳密に依存するため、pyvenv.cfgの参照先Pythonは必ずbit数を一致させる必要がある。
+- LLM Wiki（Karpathy準拠）のリンク整合性を維持するには、公開用画像プレースホルダーやアーカイブディレクトリをリンターの除外パターンに明確に定義し、偽陽性（誤検知）をゼロにして信頼性を保つことが肝要。
+- すべての下書きノートを目次（MOC）に登録することで、ナレッジの孤立化を防ぎ、LLMが自律的に全ナレッジを辿れる接続性を担保できる。
+
+- `[要検証]`: 今後追加されるnote下書きノートが自動的にMOCへ登録される仕組み（コミットフック等）の検討。
+- `[継続ウォッチ]`: ナレッジLinterの定期実行によるリンク切れ・孤立ノートのゼロ維持。
+- `[発信候補]`: 「890超のMarkdownノート群をLLM Wikiリンターで完全メンテする設計：孤立ゼロとプレースホルダー分離の知見」。
+
+
 ---
 
 

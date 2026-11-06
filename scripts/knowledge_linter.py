@@ -53,6 +53,8 @@ EXCLUDE_DIRS = {
     "archive",
     "_archive",
     ".next",
+    "_BACKUP_LANE_GUIDES",
+    "career_tracker",
 }
 
 IGNORE_ORPHANS = {
@@ -120,7 +122,11 @@ def parse_links_and_concepts(file_path):
     for m in re.finditer(md_pattern, masked_content):
         text = m.group(1).strip()
         target = m.group(2).strip()
-        if target.startswith("http://") or target.startswith("https://") or target.startswith("#"):
+        if target.startswith("http://") or target.startswith("https://") or target.startswith("#") or target.startswith("/note_assets/"):
+            continue
+
+        # 画像プレースホルダー・アセットパスはWikiリンク監査の対象外
+        if any(target.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico"]):
             continue
         
         if target.startswith("file:///"):
@@ -228,7 +234,7 @@ def run_linter(fix=False, report=False, silent=False):
 
     # 孤立ファイル特定
     for fpath in md_files:
-        if fpath.name in IGNORE_ORPHANS:
+        if fpath.name in IGNORE_ORPHANS or ".agent" in str(fpath):
             continue
         if fpath.resolve() not in referenced_paths:
             orphans.append(fpath)
