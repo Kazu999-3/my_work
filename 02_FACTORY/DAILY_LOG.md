@@ -134,6 +134,36 @@
 - `[発信候補]`: 「LoL内戦自動化：LCU APIとNext.js 16を繋ぐMatch Watcherの耐障害性設計とVercelデプロイURL整合性の知見」。
 
 
+
+### 🚨 HUD Overlay（ゲーム内ステルスHUD）の初動JG予測 TypeError クラッシュ根絶 ＆ フレーム防護ガード実装
+
+**概要**:
+1. **背景と課題**:
+   - `00_LOGS/overlay.log` の生ログ精査により、初動3分JGルート予測において `TypeError: '<' not supported between instances of 'NoneType' and 'int'` が発生し、HUD Overlay がゲーム中に即死クラッシュを繰り返していた致命的バグを特定。
+   - `analyze_frame` 呼び出しに例外防護（`try...except`）が無く、1フレームのパース失敗でプロセス全体が道連れで落ちる設計になっていた。
+2. **実施内容**:
+   - **【初動JG予測の完全フォールバック化】(`03_SYSTEMS/v2_CORE/_LOL/overlay/early_pathing_engine.py`)**:
+     - プレイヤー自身のJGクリアタイム（`my_fastest_clear`）が未登録・None の場合でも、早期ガンカー（165s）、フルクリア（195s）、標準（190s）へ安全にフォールバックするロジックを配備。
+     - 速度比較を `bool(my_fastest_clear and fastest_clear_sec and my_fastest_clear < fastest_clear_sec)` で多重防護し、NoneType 比較エラーを100%根絶。
+   - **【メインループのフレーム解析フェイルセーフ】(`03_SYSTEMS/v2_CORE/_LOL/overlay/run_overlay.py`)**:
+     - `update_all` 内の `state_engine.analyze_frame` を `try...except` でラップし、予期せぬパース異常時もログを記録して安全に次フレームへ継続する耐障害性を実装。
+   - **【プロセス再起動 ＆ スーパーバイザー自動復旧】**:
+     - スーパーバイザーの死活監視ループにより HUD Overlay（新PID: 21404）が自動再起動され、安定稼働をログ実測確認。
+3. **機械的実値検証**:
+   - 未登録チャンピオン（`UnknownChamp`）での JG 予測実行テストを実施：
+     - 修正前: `CRASH CAUGHT: <class 'TypeError'> '<' not supported between instances of 'NoneType' and 'int'`（100%クラッシュ）
+     - 修正後: `SUCCESS: ⚖️ 主導権柔軟対応型, my_fastest_clear: 190, enemy_fastest_clear: 190`（完全正常終了）
+
+**再利用可能な3行ナレッジ**:
+- 外部APIや辞書データから動的に取得する数値パラメータを大小比較（`<` や `>`）する際は、キーの存在確認だけでなく値のNone判定と安全なフォールバック値を必須とすること（PythonのNoneType比較TypeError防止）。
+- リアルタイムゲーム連携ツール（毎秒ポーリングするGUIアプリ等）では、1フレームの解析例外でプロセス全体を終了させず、フレーム単位で安全に例外隔離して次フレームへ復帰するループ構造が安定稼働の鉄則。
+- デーモン監視環境では、修正後にプロセスを停止させるだけでスーパーバイザーが自律的に新コードでプロセスを再起動するため、安全かつ無停止でホットフィックスを展開できる。
+
+- `[要検証]`: 次回LoL実戦プレイ時に、ジャングラーピック時もHUD Overlayがクラッシュせず画面上に正常展開されることの実機確認。
+- `[継続ウォッチ]`: `00_LOGS/overlay.log` に未処理例外（[FATAL]）が一切記録されないことの定点観測。
+- `[発信候補]`: 「LoLオーバーレイ開発の落とし穴：Python動的型付けにおけるNoneType比較クラッシュとGUIメインループの例外隔離設計」。
+
+
 ---
 
 

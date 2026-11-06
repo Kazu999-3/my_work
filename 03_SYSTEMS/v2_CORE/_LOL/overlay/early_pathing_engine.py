@@ -101,7 +101,14 @@ def analyze_early_jungle_pathing(
         my_jg = normalize_champion_id(my_jg_name or my_champion)
         my_data = detail_map.get(my_jg, {})
         my_jt = my_data.get("jungleTiming", {})
-        my_fastest_clear = my_jt.get("fastestClearSec") if isinstance(my_jt, dict) else 190
+        my_fastest_clear = my_jt.get("fastestClearSec") if isinstance(my_jt, dict) else None
+        if not my_fastest_clear:
+            if my_jg in EARLY_GANKERS:
+                my_fastest_clear = 165
+            elif my_jg in FULL_CLEAR_FARMERS:
+                my_fastest_clear = 195
+            else:
+                my_fastest_clear = 190
 
         my_spike_early = 4 if my_jg in EARLY_GANKERS else (2 if my_jg in FULL_CLEAR_FARMERS else 3)
         enemy_spike_early = 4 if is_early_ganker else (2 if is_full_clearer else 3)
@@ -121,7 +128,7 @@ def analyze_early_jungle_pathing(
             step2 = f"2:55スカトルは敵 {enemy_norm} と鉢合わない逆側を即座に狩り、無駄な2v2衝突を完全回避。"
             step3 = "フルクリア完了後、無理なガンクはせず一度リコール（靴＋素材購入）してテンポ維持。"
         else:
-            is_faster = (my_fastest_clear < fastest_clear_sec)
+            is_faster = bool(my_fastest_clear and fastest_clear_sec and my_fastest_clear < fastest_clear_sec)
             plan_type = "contest" if is_faster else "avoid"
             plan_title = "⚡ クリア速度先行型" if is_faster else "⚖️ 主導権柔軟対応型"
             plan_summary = (

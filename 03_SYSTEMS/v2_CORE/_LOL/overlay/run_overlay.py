@@ -406,7 +406,12 @@ def main():
         else:
             raw_data = live_client.fetch_all_game_data()
             if raw_data:
-                state = state_engine.analyze_frame(raw_data)
+                try:
+                    state = state_engine.analyze_frame(raw_data)
+                except Exception as e:
+                    print(f"⚠️ [Overlay] フレーム解析エラー: {e}")
+                    traceback.print_exc()
+                    state = {"active": True, "error": str(e)}
             else:
                 state = {"active": False}
 
