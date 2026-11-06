@@ -91,10 +91,7 @@ note記事や発信コンテンツの制作において、**「AIが単独で勝
      3. **UIパネル (`ChampionScoutPanel.tsx`)**: `/admin/youtube` 画面でロール別の未開拓状況（0本数）を一覧化し、個別ワンクリック補給および上位一括補給を実現。
    - **技術スタック**: Next.js (`05_PILOT`), Supabase, yt-dlp, TailwindCSS
    - **現在のステップ**: 実装完了・本番稼働中
-     4. 師弟募集掲示板（Discord）でのレーンアイコン動的判定（TOP: ⚔️, JG: 🌲, MID: ⚡, ADC/BOT: 🏹, SUP: 🛡️）
-   - **技術スタック**: Next.js, React, Recharts, TailwindCSS
-   - **現在のステップ**: Step 1（完了・稼働中）
-10. **師弟マイルストーン中間チェックイン ＆ 成長カルテ (Mentorship Milestone Check-in & Growth Card) [NEW]**:
+11. **師弟マイルストーン中間チェックイン ＆ 成長カルテ (Mentorship Milestone Check-in & Growth Card) [NEW]**:
     - **目的**: 師弟成立後の関係継続と弟子の成長実感を最大化するため、7日経過またはKTMカスタム3戦消化時にDiscord上で1分クイック振り返りを発火し、マイページ・ペアカードへ成長カルテとして蓄積する。
     - **MVPの範囲**:
       1. 発火条件: 師弟結成（ACTIVE）から「7日経過」または「KTMカスタム3戦消化」のどちらか早い方を自動判定

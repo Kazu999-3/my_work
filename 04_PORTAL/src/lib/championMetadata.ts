@@ -211,6 +211,7 @@ export const CHAMPION_METADATA: Record<string, ChampionMeta> = {
   Vladimir: { id: 'Vladimir', name: 'ブラッドミア', ruby: 'ぶらっどみあ', region: 'Noxus', roles: ['MID', 'TOP'], class: 'Mage' },
   Volibear: { id: 'Volibear', name: 'ボリベア', ruby: 'ぼりべあ', region: 'Freljord', roles: ['TOP', 'JG'], class: 'Fighter' },
   Warwick: { id: 'Warwick', name: 'ワーウィック', ruby: 'わうぃっく', region: 'Zaun', roles: ['JG', 'TOP'], class: 'Fighter' },
+  MonkeyKing: { id: 'MonkeyKing', name: 'ウーコン', ruby: 'うこん', region: 'Ionia', roles: ['TOP', 'JG'], class: 'Fighter' },
   Wukong: { id: 'Wukong', name: 'ウーコン', ruby: 'うこん', region: 'Ionia', roles: ['TOP', 'JG'], class: 'Fighter' },
   Xayah: { id: 'Xayah', name: 'ザヤ', ruby: 'ざや', region: 'Ionia', roles: ['ADC'], class: 'Marksman' },
   Xerath: { id: 'Xerath', name: 'ゼラス', ruby: 'ぜらす', region: 'Shurima', roles: ['SUP', 'MID'], class: 'Mage' },

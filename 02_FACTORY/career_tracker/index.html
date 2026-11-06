@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>転職管理トラッカー | Career Tracker (インライン編集型)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --purple: #8b5cf6;
+      --purple-light: #f5f3ff;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", Meiryo, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 4px;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+
+    /* Controls Panel */
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1.4fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    @media (max-width: 1100px) {
+      .filter-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .search-input-wrap {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-main);
+      background: #f8fafc;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    select.filter-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-main);
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    select.filter-select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    /* Inline Table View */
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+      min-width: 1550px;
+      table-layout: fixed;
+    }
+
+    thead {
+      background: #f1f5f9;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 57px;
+      z-index: 20;
+    }
+
+    th {
+      padding: 10px 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    tbody tr.is-new-row {
+      background: #eff6ff;
+    }
+
+    td {
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+
+    /* Spreadsheet-like Inline Inputs */
+    .cell-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--text-main);
+      background: transparent;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .cell-input:hover {
+      background: #ffffff;
+      border-color: var(--border);
+    }
+
+    .cell-input:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      overflow: visible;
+    }
+
+    .cell-input-company {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .cell-input-salary {
+      font-weight: 700;
+      text-align: right;
+      padding-right: 4px;
+    }
+
+    .cell-select {
+      width: 100%;
+      padding: 6px 18px 6px 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text-main);
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-select:hover {
+      background: #ffffff;
+      border-color: var(--border);
+    }
+
+    .cell-select:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--border-focus);
+    }
+
+    /* Status Select Badge Style */
+    .status-badge-select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 4px 18px 4px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      border: 1px solid transparent;
+      background-position: right 6px center;
+      background-repeat: no-repeat;
+      background-size: 8px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    }
+
+    .status-badge-select:focus {
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    .badge-status-書類準備 { background-color: #f1f5f9; color: #475569; }
+    .badge-status-応募済 { background-color: #e0f2fe; color: #0369a1; }
+    .badge-status-書類通過 { background-color: #dbeafe; color: #1d4ed8; }
+    .badge-status-1次面接 { background-color: #ede9fe; color: #6d28d9; }
+    .badge-status-2次面接 { background-color: #fae8ff; color: #a21caf; }
+    .badge-status-最終面接 { background-color: #fef3c7; color: #b45309; }
+    .badge-status-内定 { background-color: #dcfce7; color: #15803d; font-weight: 800; }
+    .badge-status-見送り { background-color: #fee2e2; color: #b91c1c; }
+    .badge-status-辞退 { background-color: #f1f5f9; color: #64748b; }
+
+    /* Star Select */
+    .star-select {
+      color: #f59e0b;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    /* URL link combo */
+    .url-cell-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .link-btn {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .link-btn:hover {
+      background: var(--primary-light);
+    }
+
+    /* Date Cell */
+    .date-badge {
+      font-size: 10px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 700;
+      margin-left: 4px;
+      white-space: nowrap;
+    }
+    .date-badge-today { background: var(--danger-light); color: var(--danger); }
+    .date-badge-soon { background: var(--warning-light); color: var(--warning); }
+
+    /* Action delete btn */
+    .del-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .del-btn:hover {
+      color: var(--danger);
+      background: var(--danger-light);
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    /* Add row banner */
+    .quick-add-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .save-indicator {
+      font-size: 11px;
+      color: var(--success);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .save-indicator.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">💼</div>
+        <div>
+          <span class="brand-title">転職管理トラッカー</span>
+          <span class="brand-subtitle">インライン編集スプレッドシート</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="save-indicator" id="saveIndicator">✓ 自動保存完了</span>
+        <button class="btn btn-secondary btn-sm" onclick="exportData()" title="データをJSONファイルとしてダウンロード保存">
+          📥 エクスポート
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="triggerImport()" title="JSONファイルからデータを復元">
+          📤 インポート
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
+        <button class="btn btn-primary" onclick="addNewRow()">
+          ＋ 新規行を追加
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Summary KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">総エントリー数</div>
+        <div class="kpi-value" id="kpi-total">0</div>
+        <div class="kpi-sub">登録企業</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">選考中</div>
+        <div class="kpi-value" style="color: var(--primary);" id="kpi-active">0</div>
+        <div class="kpi-sub">面接・書類選考中</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">内定獲得</div>
+        <div class="kpi-value" style="color: var(--success);" id="kpi-offers">0</div>
+        <div class="kpi-sub">オファー通知企業</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">選考中 平均月収</div>
+        <div class="kpi-value" id="kpi-avg-salary">0<span style="font-size: 13px; font-weight: normal; margin-left: 2px;">万円</span></div>
+        <div class="kpi-sub">年収換算 約 <span id="kpi-est-annual">0</span> 万円</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">近日アクション</div>
+        <div class="kpi-value" style="color: var(--warning);" id="kpi-upcoming">0</div>
+        <div class="kpi-sub">7日以内の面接/締切</div>
+      </div>
+    </div>
+
+    <!-- Filters & Search Controls -->
+    <div class="panel">
+      <div class="filter-grid">
+        <!-- Search -->
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="社名・職種・魅力・メモを即時検索..." oninput="applyFilters()">
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <select id="statusFilter" class="filter-select" onchange="applyFilters()">
+            <option value="">選考状況: 全て</option>
+            <option value="_active">【進行中のみ】</option>
+            <option value="書類準備">書類準備</option>
+            <option value="応募済">応募済</option>
+            <option value="書類通過">書類通過</option>
+            <option value="1次面接">1次面接</option>
+            <option value="2次面接">2次面接</option>
+            <option value="最終面接">最終面接</option>
+            <option value="内定">内定</option>
+            <option value="見送り">見送り</option>
+            <option value="辞退">辞退</option>
+          </select>
+        </div>
+
+        <!-- Source Filter -->
+        <div>
+          <select id="sourceFilter" class="filter-select" onchange="applyFilters()">
+            <option value="">応募媒体: 全て</option>
+            <option value="マイナビ転職">マイナビ転職</option>
+            <option value="エン転職">エン転職</option>
+            <option value="リクナビNEXT">リクナビNEXT</option>
+            <option value="doda">doda</option>
+            <option value="indeed">indeed</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+
+        <!-- Work Style Filter -->
+        <div>
+          <select id="workStyleFilter" class="filter-select" onchange="applyFilters()">
+            <option value="">勤務形態: 全て</option>
+            <option value="フルリモート">フルリモート</option>
+            <option value="ハイブリッド">ハイブリッド</option>
+            <option value="出社">出社</option>
+          </select>
+        </div>
+
+        <!-- Sort Select -->
+        <div>
+          <select id="sortSelect" class="filter-select" onchange="applyFilters()">
+            <option value="priority_desc">志望度が高い順 (★5→1)</option>
+            <option value="salary_desc">月収が高い順</option>
+            <option value="salary_asc">月収が低い順</option>
+            <option value="next_action_asc">次回選考が近い順</option>
+            <option value="updated_desc">最近更新した順</option>
+            <option value="company_asc">社名順 (五十音)</option>
+          </select>
+        </div>
+
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="addNewRow()">
+            ＋ 行追加
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spreadsheet-like Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 95px;">志望度</th>
+            <th style="width: 240px;">企業名 <span style="color:var(--danger)">*</span></th>
+            <th style="width: 200px;">応募職種</th>
+            <th style="width: 125px;">選考状況</th>
+            <th style="width: 135px;">応募媒体</th>
+            <th style="width: 110px;">想定月収(万)</th>
+            <th style="width: 125px;">勤務形態</th>
+            <th style="width: 155px;">次回選考日</th>
+            <th style="width: 250px;">魅力・志望理由</th>
+            <th style="width: 180px;">求人URL</th>
+            <th style="width: 50px; text-align: center;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="applicationTableBody">
+          <!-- Dynamically generated rows -->
+        </tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+        <div style="font-weight: 700; margin-bottom: 4px;">表示する応募データがありません</div>
+        <div style="font-size: 13px; margin-bottom: 12px;">右上の「＋ 新規行を追加」から直接入力を開始できます。</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadSampleData()">
+          ✨ サンプルデータを復元して試す
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'career_tracker_data_v1';
+    let applications = [];
+
+    const SOURCE_OPTIONS = ['マイナビ転職', 'エン転職', 'リクナビNEXT', 'doda', 'indeed', 'その他'];
+    const STATUS_OPTIONS = ['書類準備', '応募済', '書類通過', '1次面接', '2次面接', '最終面接', '内定', '見送り', '辞退'];
+    const WORK_OPTIONS = ['ハイブリッド', 'フルリモート', '出社'];
+    const PRIORITY_OPTIONS = [
+      { val: 5, label: '★★★★★' },
+      { val: 4, label: '★★★★☆' },
+      { val: 3, label: '★★★☆☆' },
+      { val: 2, label: '★★☆☆☆' },
+      { val: 1, label: '★☆☆☆☆' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      render();
+    });
+
+    function loadData() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          applications = JSON.parse(stored);
+        } else {
+          applications = getInitialSampleData();
+          saveData();
+        }
+      } catch (e) {
+        console.error('Failed to load data:', e);
+        applications = [];
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(applications));
+        showSaveIndicator();
+      } catch (e) {
+        alert('保存に失敗しました: ' + e.message);
+      }
+    }
+
+    let saveTimer = null;
+    function showSaveIndicator() {
+      const el = document.getElementById('saveIndicator');
+      el.classList.add('show');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 1500);
+    }
+
+    function getInitialSampleData() {
+      const today = new Date();
+      const inThreeDays = new Date(today);
+      inThreeDays.setDate(today.getDate() + 3);
+      const inSevenDays = new Date(today);
+      inSevenDays.setDate(today.getDate() + 7);
+      const formatDate = (d) => d.toISOString().split('T')[0];
+
+      return [
+        {
+          id: 'sample-1',
+          company_name: '株式会社ネクストイノベーション',
+          job_title: 'フロントエンドエンジニア',
+          status: '1次面接',
+          source: 'マイナビ転職',
+          salary: 55,
+          work_style: 'フルリモート',
+          priority: 5,
+          next_action_date: formatDate(inThreeDays),
+          attraction: '裁量労働制、AIプロダクト、高年収',
+          job_url: 'https://example.com/job/101',
+          job_notes: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'sample-2',
+          company_name: 'グローバルクラウド株式会社',
+          job_title: '法人営業（SaaS）',
+          status: '書類通過',
+          source: 'リクナビNEXT',
+          salary: 48,
+          work_style: 'ハイブリッド',
+          priority: 4,
+          next_action_date: formatDate(inSevenDays),
+          attraction: '福利厚生充実、プライム上場',
+          job_url: 'https://example.com/job/202',
+          job_notes: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'sample-3',
+          company_name: 'フロンティアテック合同会社',
+          job_title: 'Webディレクター',
+          status: '内定',
+          source: 'indeed',
+          salary: 50,
+          work_style: 'フルリモート',
+          priority: 4,
+          next_action_date: '',
+          attraction: 'フルリモート、優秀な開発組織',
+          job_url: 'https://example.com/job/303',
+          job_notes: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+    }
+
+    // Add a new empty row to top
+    function addNewRow() {
+      const now = new Date().toISOString();
+      const newEntry = {
+        id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        company_name: '',
+        job_title: '',
+        status: '応募済',
+        source: 'マイナビ転職',
+        priority: 3,
+        salary: null,
+        work_style: 'ハイブリッド',
+        next_action_date: '',
+        attraction: '',
+        job_url: '',
+        job_notes: '',
+        created_at: now,
+        updated_at: now,
+        isNew: true
+      };
+
+      // Unshift to top of list
+      applications.unshift(newEntry);
+      saveData();
+      render();
+
+      // Focus company name input of the new row
+      setTimeout(() => {
+        const firstInput = document.querySelector(`input[data-id="${newEntry.id}"][data-field="company_name"]`);
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 50);
+    }
+
+    // Render Table
+    function render() {
+      const tbody = document.getElementById('applicationTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const filtered = getFilteredAndSortedData();
+
+      updateKPIs(applications);
+
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      } else {
+        emptyState.style.display = 'none';
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      filtered.forEach(app => {
+        const tr = document.createElement('tr');
+        if (app.isNew) tr.classList.add('is-new-row');
+
+        // Priority options
+        const priorityOpts = PRIORITY_OPTIONS.map(p => 
+          `<option value="${p.val}" ${app.priority === p.val ? 'selected' : ''}>${p.label}</option>`
+        ).join('');
+
+        // Status options
+        const statusOpts = STATUS_OPTIONS.map(st => 
+          `<option value="${st}" ${app.status === st ? 'selected' : ''}>${st}</option>`
+        ).join('');
+
+        // Source options
+        const sourceOpts = SOURCE_OPTIONS.map(s => 
+          `<option value="${s}" ${app.source === s ? 'selected' : ''}>${s}</option>`
+        ).join('');
+
+        // Work style options
+        const workOpts = WORK_OPTIONS.map(w => 
+          `<option value="${w}" ${app.work_style === w ? 'selected' : ''}>${w}</option>`
+        ).join('');
+
+        // Date Alert Badge
+        let dateBadge = '';
+        if (app.next_action_date) {
+          const diffDays = Math.ceil((new Date(app.next_action_date) - new Date(todayStr)) / (1000 * 60 * 60 * 24));
+          if (app.next_action_date === todayStr) {
+            dateBadge = `<span class="date-badge date-badge-today">本日</span>`;
+          } else if (diffDays > 0 && diffDays <= 3) {
+            dateBadge = `<span class="date-badge date-badge-soon">あと${diffDays}日</span>`;
+          }
+        }
+
+        tr.innerHTML = `
+          <!-- 志望度 -->
+          <td>
+            <select class="cell-select star-select" data-id="${app.id}" data-field="priority" onchange="handleCellChange(this)" title="志望度: ★${app.priority}">
+              ${priorityOpts}
+            </select>
+          </td>
+
+          <!-- 企業名 -->
+          <td>
+            <input type="text" class="cell-input cell-input-company" data-id="${app.id}" data-field="company_name" 
+              value="${escapeHtml(app.company_name)}" title="${escapeHtml(app.company_name)}" placeholder="社名を入力..." onchange="handleCellChange(this)">
+          </td>
+
+          <!-- 応募職種 -->
+          <td>
+            <input type="text" class="cell-input" data-id="${app.id}" data-field="job_title" 
+              value="${escapeHtml(app.job_title || '')}" title="${escapeHtml(app.job_title || '')}" placeholder="職種 (エンジニア, 営業等)..." onchange="handleCellChange(this)">
+          </td>
+
+          <!-- 選考状況 -->
+          <td>
+            <select class="status-badge-select badge-status-${escapeHtml(app.status)}" data-id="${app.id}" data-field="status" onchange="handleStatusChange(this)" title="選考フェーズ">
+              ${statusOpts}
+            </select>
+          </td>
+
+          <!-- 応募媒体 -->
+          <td>
+            <select class="cell-select" data-id="${app.id}" data-field="source" onchange="handleCellChange(this)" title="応募媒体">
+              ${sourceOpts}
+            </select>
+          </td>
+
+          <!-- 想定月収 -->
+          <td>
+            <div style="display:flex; align-items:center; gap:3px;">
+              <input type="number" class="cell-input cell-input-salary" data-id="${app.id}" data-field="salary" 
+                value="${app.salary != null ? app.salary : ''}" placeholder="0" min="0" step="1" onchange="handleCellChange(this)" title="想定月収: ${app.salary || 0}万円">
+              <span style="font-size:12px; color:var(--text-muted); font-weight:600;">万</span>
+            </div>
+          </td>
+
+          <!-- 勤務形態 -->
+          <td>
+            <select class="cell-select" data-id="${app.id}" data-field="work_style" onchange="handleCellChange(this)" title="勤務形態">
+              ${workOpts}
+            </select>
+          </td>
+
+          <!-- 次回選考日 -->
+          <td>
+            <div style="display:flex; align-items:center; gap:2px;">
+              <input type="date" class="cell-input" style="font-size:12px; padding:4px 6px;" data-id="${app.id}" data-field="next_action_date" 
+                value="${app.next_action_date || ''}" onchange="handleCellChange(this)" title="次回選考日 / 提出期日">
+              ${dateBadge}
+            </div>
+          </td>
+
+          <!-- 魅力・志望理由 -->
+          <td>
+            <input type="text" class="cell-input" data-id="${app.id}" data-field="attraction" 
+              value="${escapeHtml(app.attraction || '')}" title="${escapeHtml(app.attraction || '')}" placeholder="惹かれた点・メモ..." onchange="handleCellChange(this)">
+          </td>
+
+          <!-- 求人URL -->
+          <td>
+            <div class="url-cell-wrap">
+              <input type="url" class="cell-input" style="font-size:11px;" data-id="${app.id}" data-field="job_url" 
+                value="${escapeHtml(app.job_url || '')}" title="${escapeHtml(app.job_url || '')}" placeholder="https://..." onchange="handleUrlChange(this)">
+              ${app.job_url ? `<a href="${escapeHtml(app.job_url)}" target="_blank" rel="noopener noreferrer" class="link-btn" title="求人URLを別タブで開く">🔗</a>` : ''}
+            </div>
+          </td>
+
+          <!-- 操作 -->
+          <td style="text-align: center;">
+            <button class="del-btn" onclick="deleteEntry('${app.id}')" title="この行を削除">🗑️</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Direct cell change handler
+    function handleCellChange(el) {
+      const id = el.getAttribute('data-id');
+      const field = el.getAttribute('data-field');
+      const val = el.value.trim();
+
+      const app = applications.find(a => a.id === id);
+      if (!app) return;
+
+      if (field === 'priority' || field === 'salary') {
+        app[field] = val ? parseInt(val, 10) : null;
+      } else {
+        app[field] = val;
+      }
+
+      app.updated_at = new Date().toISOString();
+      delete app.isNew;
+
+      saveData();
+      updateKPIs(applications);
+    }
+
+    // Status change handler (needs class update for badge color)
+    function handleStatusChange(el) {
+      const id = el.getAttribute('data-id');
+      const newStatus = el.value;
+
+      const app = applications.find(a => a.id === id);
+      if (!app) return;
+
+      app.status = newStatus;
+      app.updated_at = new Date().toISOString();
+      delete app.isNew;
+
+      // Update badge class dynamically without full redraw to avoid jumping
+      el.className = `status-badge-select badge-status-${newStatus}`;
+
+      saveData();
+      updateKPIs(applications);
+
+      // If active filter is on, re-render to reflect hide/show
+      const currentStatusFilter = document.getElementById('statusFilter').value;
+      if (currentStatusFilter) {
+        render();
+      }
+    }
+
+    // URL change handler (updates link icon)
+    function handleUrlChange(el) {
+      handleCellChange(el);
+      render(); // redraw to refresh the link button
+    }
+
+    // Delete
+    function deleteEntry(id) {
+      const app = applications.find(a => a.id === id);
+      const name = (app && app.company_name) ? `「${app.company_name}」` : 'この行';
+      if (confirm(`${name}のデータを削除しますか？`)) {
+        applications = applications.filter(a => a.id !== id);
+        saveData();
+        render();
+      }
+    }
+
+    // Filter & Sort calculation
+    function getFilteredAndSortedData() {
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const source = document.getElementById('sourceFilter').value;
+      const workStyle = document.getElementById('workStyleFilter').value;
+      const sort = document.getElementById('sortSelect').value;
+
+      return applications.filter(app => {
+        if (search) {
+          const matchCompany = (app.company_name || '').toLowerCase().includes(search);
+          const matchJob = (app.job_title || '').toLowerCase().includes(search);
+          const matchAttraction = (app.attraction || '').toLowerCase().includes(search);
+          const matchNotes = (app.job_notes || '').toLowerCase().includes(search);
+          if (!matchCompany && !matchJob && !matchAttraction && !matchNotes) return false;
+        }
+
+        if (status === '_active') {
+          if (['内定', '見送り', '辞退'].includes(app.status)) return false;
+        } else if (status && app.status !== status) {
+          return false;
+        }
+
+        if (source && app.source !== source) return false;
+        if (workStyle && app.work_style !== workStyle) return false;
+
+        return true;
+      }).sort((a, b) => {
+        switch (sort) {
+          case 'priority_desc':
+            return (b.priority || 0) - (a.priority || 0);
+          case 'salary_desc':
+            return (b.salary || 0) - (a.salary || 0);
+          case 'salary_asc':
+            return (a.salary || 0) - (b.salary || 0);
+          case 'next_action_asc':
+            if (!a.next_action_date) return 1;
+            if (!b.next_action_date) return -1;
+            return a.next_action_date.localeCompare(b.next_action_date);
+          case 'updated_desc':
+            return (b.updated_at || '').localeCompare(a.updated_at || '');
+          case 'company_asc':
+            return (a.company_name || '').localeCompare(b.company_name || '', 'ja');
+          default:
+            return 0;
+        }
+      });
+    }
+
+    function updateKPIs(data) {
+      const total = data.length;
+      const active = data.filter(d => !['内定', '見送り', '辞退'].includes(d.status)).length;
+      const offers = data.filter(d => d.status === '内定').length;
+
+      const activeSalaries = data
+        .filter(d => !['見送り', '辞退'].includes(d.status) && d.salary > 0)
+        .map(d => Number(d.salary));
+      
+      const avgSalary = activeSalaries.length > 0 
+        ? Math.round(activeSalaries.reduce((acc, cur) => acc + cur, 0) / activeSalaries.length) 
+        : 0;
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const inSevenDays = new Date(today);
+      inSevenDays.setDate(today.getDate() + 7);
+
+      const upcoming = data.filter(d => {
+        if (!d.next_action_date) return false;
+        const target = new Date(d.next_action_date);
+        return target >= today && target <= inSevenDays;
+      }).length;
+
+      document.getElementById('kpi-total').textContent = total;
+      document.getElementById('kpi-active').textContent = active;
+      document.getElementById('kpi-offers').textContent = offers;
+      document.getElementById('kpi-avg-salary').firstChild.nodeValue = avgSalary;
+      document.getElementById('kpi-est-annual').textContent = avgSalary ? Math.round(avgSalary * 14) : 0;
+      document.getElementById('kpi-upcoming').textContent = upcoming;
+    }
+
+    function applyFilters() {
+      render();
+    }
+
+    function loadSampleData() {
+      applications = getInitialSampleData();
+      saveData();
+      render();
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(applications, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const todayStr = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `career_tracker_backup_${todayStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function triggerImport() {
+      document.getElementById('importFile').click();
+    }
+
+    function handleImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed)) {
+            if (confirm(`現在のデータに加えて、インポートした ${parsed.length} 件を取り込みますか？\n（キャンセルを押すと置き換えます）`)) {
+              applications = [...parsed, ...applications];
+            } else {
+              applications = parsed;
+            }
+            saveData();
+            render();
+            alert('インポート完了しました！');
+          } else {
+            alert('無効なファイル形式です。');
+          }
+        } catch (err) {
+          alert('インポート失敗: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>

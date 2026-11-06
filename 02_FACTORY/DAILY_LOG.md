@@ -1,3 +1,47 @@
+## 📅 2026-11-06（金）
+
+### 🚨 帝国全量調査：常駐スーパーバイザー復旧・Egress 0MB防衛・画像割れ根絶・セキュリティ全面修復
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーからの「バグや不具合、他と整合取れてない箇所や改善点など諸々全量調査して大量に発見して」という要請に基づき、リポジトリ全体・実行環境・ドキュメントを全量スキャン。
+   - 統合スーパーバイザーのゾンビPIDロックによる常駐サービス全停止、.venv仮想環境のリンク切れ、ビルド時のSupabase全件フェッチ（憲法違反）、新チャンプ画像割れ、管理画面エッジ保護の漏れなど、計28件の不整合・潜在バグを特定。
+2. **実施内容**:
+   - **【スーパーバイザー ＆ .venv復旧】(`scripts/sovereign_supervisor.py`, `scripts/start_supervisor.ps1`, `.venv/pyvenv.cfg`)**:
+     - 単なるOpenProcessハンドル判定から、プロセス名がPythonであるか実測検証する `is_pid_alive_and_python` ガードへ刷新。ゾンビPIDを自動クリアして起動継続するよう改善。
+     - `pyvenv.cfg` の古いPythonパスを実在する `Python314-32` に再接続し、.venvの実行不能を根絶。
+     - `start_supervisor.ps1` にWMIブロック時の `Start-Process` フォールバックを導入。スーパーバイザー自身および全子プロセス（Edge Worker, Match Watcher, HUD Overlay）の完全自動復旧に成功。
+   - **【憲法最上位鉄則の防衛（Egress 0MB）】(`05_PILOT/scripts/compile_champions.mjs`)**:
+     - ローカルキャッシュ（champions_summary.json / details）が存在する場合はSupabase全件フェッチをスキップするZero Egressガードを新設。ビルド・起動時の無駄なデータ転送を0MBに抑制。
+     - フォールバックパッチを `14.24.1` から現行の `16.21.1` へ同期。
+   - **【画像割れ ＆ チャンピオン識別子SSoT統一】(`05_PILOT/src/app/_champions/MatchupPicker.tsx`, `LaneMaintenanceModal.tsx`, `04_PORTAL/src/lib/championConstants.ts`, `championMetadata.ts`)**:
+     - ハードコードされていた `14.1.1` / `14.24.1` のCDN画像URLを `getChampIcon()` に一本化し、新チャンピオン（Ambessa, Mel等）の画像404 Not Foundを根絶。
+     - `ALL_CHAMPIONS` および `CHAMPION_JA` / `CHAMPION_METADATA` にDDragon公式ID `MonkeyKing` を正式配備。
+   - **【セキュリティ ＆ APIクエリ改善】(`04_PORTAL/src/proxy.ts`, `04_PORTAL/src/app/api/balancer/route.ts`, `05_PILOT/src/app/overlay/page.tsx`)**:
+     - Next.js 16エッジプロキシの `matcher` に `/ktm-admin/:path*` を追加し、未認証アクセスをエッジで即時遮断。
+     - バランサーAPIの参加者戦績集計にて、大文字小文字混在プレイヤーが0勝0敗扱いになるクエリ漏れを正規化。
+     - オーバーレイ画面にタブ非表示時のポーリング休止制御（`document.hidden`）を追加し、裏画面での無駄な通信を削減。
+   - **【憲法 ＆ ナレッジベース整合性修復】(`ANTIGRAVITY.md`, `01_INTEL/NEXUS_INDEX.md`, `02_FACTORY/TODO.md`, `02_FACTORY/career_tracker/`)**:
+     - `ANTIGRAVITY.md` の「10.」重複およびインデント崩れテキストを「11. 師弟マイルストーン...」へ正しく連番修復。
+     - 新規制作「転職管理トラッカー」を帝国の総合索引（NEXUS_INDEX）およびTODOへ正式登録し、フロントマターを付与。
+3. **機械的実値検証**:
+   - `04_PORTAL`: 単体テスト 167件全件PASS・型チェック PASS（エラー0件）。
+   - `05_PILOT`: 単体テスト 59件全件PASS・型チェック PASS（エラー0件）。
+   - `ktm_bot`: 全JSファイル構文チェック PASS（エラー0件）。
+   - スーパーバイザー: プロセス起動・死活監視ループ稼働中をログ実測確認済み。
+
+**再利用可能な3行ナレッジ**:
+- PIDファイルによる二重起動防止は、PIDのハンドルオープン成否だけでなくプロセス名（Python/node等）まで実測照合しないと、異常終了後のゾンビPID再利用によって永久起動不能に陥る。
+- ビルドスクリプト（prebuild等）でのDB全件ダウンロードは、ローカルキャッシュ存在チェックによる早期リターンを設けることで、SupabaseのEgress枠（5GB）枯渇事故を100%防止できる。
+- 静的アセットURL（DDragon等）に古い固定パッチ番号を埋め込むと、新キャラ追加時にサイレントに画像割れ（404）を引き起こすため、常にクライアントヘルパー（getChampIcon）を通すのが鉄則。
+
+- `[要検証]`: 次回PC再起動時に、Start-Processフォールバックを備えたスタートアップが正常にスーパーバイザーを立ち上げるかの実測確認。
+- `[継続ウォッチ]`: Edge WorkerによるYouTube再解析タスクの完了状況とキューの健全性。
+- `[発信候補]`: 「Windows上のLLM自律エージェント常駐デーモン設計：ゾンビPID対策とCIM/Start-Processデュアルフォールバックの技術解説」。
+
+---
+
+
 ## 📅 2026-11-05（木）
 
 ### ⏳ Gemini API 429エラー（利用枠上限）の残り時間自動抽出 ＆ 日本語安心表示UI実装

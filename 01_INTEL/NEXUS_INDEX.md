@@ -96,6 +96,7 @@
 - **[STRATEGY_ASSETS (戦略アセット)](file:///d:/my_work/02_FACTORY/STRATEGY_ASSETS/INDEX.md)**: リサーチとSNS販促素材の索引。
 - **[PROMO (販促ドラフト)](file:///d:/my_work/02_FACTORY/PROMO/)**: `THREADS/`（Xスレッド自動生成分）・`SOCIAL/`・`FUNNELS/`。個別ファイルは生成物のため索引には列挙しない。
 - **[03_ASSETS (定常アセット・ナレッジ)](file:///d:/my_work/02_FACTORY/03_ASSETS/)**
+  - **[転職管理トラッカー (career_tracker)](file:///d:/my_work/02_FACTORY/career_tracker/index.html)**: 単一HTML・LocalStorage完結型の選考・応募進捗管理ツール（[憲法](file:///d:/my_work/02_FACTORY/career_tracker/ANTIGRAVITY.md)）。
   - **[アフィリエイト知識 (affiliate_knowledge.md)](file:///d:/my_work/02_FACTORY/03_ASSETS/affiliate_knowledge.md)**: ASPや案件ごとの提携情報・攻略法。
   - **[アフィリエイトリンク集 (affiliate_links.json)](file:///d:/my_work/02_FACTORY/03_ASSETS/affiliate_links.json)**: すぐにコピペで使える計測リンク一覧。
   - **[note執筆プロトコル (forge_note_protocol.md)](file:///d:/my_work/02_FACTORY/03_ASSETS/forge_note_protocol.md)**: 売れる記事構成・トーン＆マナーの強制仕様。
@@ -107,8 +108,10 @@
 ## ⚙️ 3. システム開発 ＆ 管理 (Systems Domain)
 Sovereign OS のポータルサイト、API、エッジワーカーなど。
 
-- **[04_PORTAL (ポータル Web アプリ)](file:///d:/my_work/04_PORTAL/)**:
-  - Next.js 製の大会運営（KTM）・MMRバランサー・YouTube監視ポータル。
+- **[05_PILOT (Sovereign OS 戦略・分析パイロットコックピット)](file:///d:/my_work/05_PILOT/)**:
+  - Next.js 製の個人戦術コックピット（全173体チャンピオン辞典・AIコーチ・動画解析・レーン攻略）。
+- **[04_PORTAL (KTM 大会・コミュニティ運営ポータル)](file:///d:/my_work/04_PORTAL/)**:
+  - Next.js 製の大会運営（KTM）・MMRバランサー・勝敗予想・師弟掲示板ポータル。
 - **[KTM Bot テスト仕様](file:///d:/my_work/03_SYSTEMS/ktm_bot/_tests_v3/)**: [`TEST_SPEC_WORKER.md`](file:///d:/my_work/03_SYSTEMS/ktm_bot/_tests_v3/TEST_SPEC_WORKER.md) / [`TEST_SPEC_GAS.md`](file:///d:/my_work/03_SYSTEMS/ktm_bot/_tests_v3/TEST_SPEC_GAS.md)
 - **[KTM Bot 利用ガイド (KTM_USER_GUIDE.md)](file:///d:/my_work/03_SYSTEMS/ktm_bot/KTM_USER_GUIDE.md)**:
   Discord コマンド（`/recruit` `/lane` `/balance` `/bet` `/tip` 等）のメンバー向け説明書。

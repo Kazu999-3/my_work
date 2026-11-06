@@ -23,7 +23,7 @@ const CUSTOM_ROLES_FILE = path.join(OUTPUT_DIR, 'custom_roles.json');
 const ITEM_DICT_FILE = path.join(OUTPUT_DIR, 'item_dictionary.json');
 const OPGG_META_FILE = path.join(OUTPUT_DIR, 'opgg_lane_meta.json');
 
-const FALLBACK_PATCH = '14.24.1';
+const FALLBACK_PATCH = '16.21.1';
 
 // .env.local 簡易ローダー
 function loadEnv() {
@@ -409,6 +409,19 @@ async function main() {
   const laneRolesMap = {};
   const libraryKnowledgeMap = {};
   const globalGuideMap = {};
+
+  const forceSupabase = process.argv.includes('--force-supabase') || process.env.FORCE_SUPABASE === 'true';
+  const hasLocalCache = fs.existsSync(SUMMARY_FILE) && fs.existsSync(DETAILS_FILE);
+
+  if (hasLocalCache && !forceSupabase) {
+    console.log('🛡️ [憲法防衛: Egress 0MB] ローカルキャッシュ(champions_summary.json / details)が存在するため、Supabase全件フェッチをスキップします (--force-supabase で強制更新可能)');
+    try {
+      compileNoteDrafts();
+    } catch (draftErr) {
+      console.warn('⚠️ note ドラフトの事前生成をスキップ:', draftErr);
+    }
+    return;
+  }
 
   if (supabase) {
     try {

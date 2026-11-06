@@ -50,6 +50,8 @@ export default function OverlayPage() {
     let mounted = true;
 
     const poll = async () => {
+      // 画面が非表示（裏タブ）の時はCPUとネットワークを節約するためスキップ
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const res = await fetch('/api/overlay/live-client-data');
         if (res.ok) {
@@ -66,9 +68,22 @@ export default function OverlayPage() {
 
     poll();
     const timer = setInterval(poll, 1000);
+
+    const onVisibilityChange = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        poll();
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
+
     return () => {
       mounted = false;
       clearInterval(timer);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      }
     };
   }, []);
 

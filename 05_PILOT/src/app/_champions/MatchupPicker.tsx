@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Shield, AlertTriangle, Zap, CheckCircle2, XCircle, HelpCircle, ArrowRight, Swords } from 'lucide-react';
 import { JG_MATCHUP_PROFILES, EnemyJgProfile, MatchupAdvice } from '@/data/jg_matchups';
+import { getChampIcon } from '@/lib/ddragonClient';
 
 interface MatchupPickerProps {
   onSelectMyChampion: (champId: string) => void;
@@ -128,7 +129,7 @@ export const MatchupPicker: React.FC<MatchupPickerProps> = ({
                 }`}
               >
                 <img
-                  src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${e.id}.png`}
+                  src={getChampIcon(e.id)}
                   alt={e.name}
                   className="w-5 h-5 rounded-full object-cover"
                   onError={(ev) => {
@@ -148,7 +149,7 @@ export const MatchupPicker: React.FC<MatchupPickerProps> = ({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <img
-                src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${enemyProfile.id}.png`}
+                src={getChampIcon(enemyProfile.id)}
                 alt={enemyProfile.name}
                 className="w-12 h-12 rounded-2xl border-2 border-rose-500/60 object-cover shadow-md"
               />
@@ -213,7 +214,7 @@ export const MatchupPicker: React.FC<MatchupPickerProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <img
-                        src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${advice.myChampId}.png`}
+                        src={getChampIcon(advice.myChampId)}
                         alt={advice.myChampName}
                         className="w-9 h-9 rounded-xl border border-zinc-700 object-cover group-hover:scale-105 transition"
                       />

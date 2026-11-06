@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Check, RotateCcw, Save, ShieldAlert, Sparkles } from 'lucide-react';
+import { getChampIcon } from '@/lib/ddragonClient';
 
 interface ChampionInfo {
   id: string;
@@ -211,7 +212,7 @@ export default function LaneMaintenanceModal({
             filteredChamps.map((c) => {
               const roles = localRoles[c.id] || ['TOP'];
               const primary = roles[0] || 'TOP';
-              const imgUrl = `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${c.id}.png`;
+              const imgUrl = getChampIcon(c.id);
 
               return (
                 <div

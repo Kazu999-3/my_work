@@ -161,19 +161,49 @@ class ManagedService:
             self.log_fp = None
 
 
+def is_pid_alive_and_python(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+        kernel32 = ctypes.windll.kernel32
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return False
+        try:
+            exit_code = wintypes.DWORD()
+            STILL_ACTIVE = 259
+            if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                if exit_code.value != STILL_ACTIVE:
+                    return False
+            buf = ctypes.create_unicode_buffer(1024)
+            size = wintypes.DWORD(len(buf))
+            if hasattr(kernel32, "QueryFullProcessImageNameW") and kernel32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
+                exe_name = buf.value.lower()
+                if "python" not in exe_name:
+                    return False
+            return True
+        finally:
+            kernel32.CloseHandle(handle)
+    except Exception:
+        return False
+
+
 def ensure_single_instance():
     if PID_FILE.exists():
         try:
             old_pid = int(PID_FILE.read_text(encoding="utf-8").strip())
-            # プロセスの生存確認 (Windows)
-            import ctypes
-            kernel32 = ctypes.windll.kernel32
-            SYNCHRONIZE = 0x00100000
-            handle = kernel32.OpenProcess(SYNCHRONIZE, False, old_pid)
-            if handle != 0:
-                kernel32.CloseHandle(handle)
+            if is_pid_alive_and_python(old_pid):
                 log(f"⚠️ すでに Sovereign Supervisor が稼働中です (PID: {old_pid})。終了します。")
                 sys.exit(0)
+            else:
+                log(f"ℹ️ 過去の PID ファイル ({old_pid}) は停止または別プロセスのため、クリアして起動を継続します。")
+                try:
+                    PID_FILE.unlink()
+                except Exception:
+                    pass
         except Exception:
             pass
 

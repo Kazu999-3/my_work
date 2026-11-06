@@ -97,7 +97,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const isAdminGuardedRoute = path.startsWith('/admin') || path.startsWith('/api/admin');
+  const isAdminGuardedRoute = path.startsWith('/admin') || path.startsWith('/api/admin') || path.startsWith('/ktm-admin');
   if (!isAdminGuardedRoute) {
     return NextResponse.next();
   }
@@ -143,5 +143,5 @@ export async function proxy(req: NextRequest) {
 // 以前は全ページ・全API・アイコン等の静的ファイルのたびに起動しており、Vercel 無料枠の
 // Fluid Active CPU（月4時間）を無駄に使っていた
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/ktm-admin/:path*', '/ktm-admin'],
 };

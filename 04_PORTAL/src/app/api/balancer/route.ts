@@ -23,22 +23,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '参加者が多すぎます（100人まで）。' }, { status: 400 });
     }
 
-    // 1. ktm_players から該当プレイヤーの情報を取得
+    // 1. ktm_players から該当プレイヤーの情報を取得（大文字小文字の揺れも考慮）
     const names = participants.map(p => p.name);
+    const playerQueryNames = Array.from(new Set([
+      ...names,
+      ...names.map(n => n.toLowerCase()),
+      ...names.map(n => n.toUpperCase())
+    ]));
     const { data: playersData, error: pError } = await supabase
       .from('ktm_players')
       .select('*')
-      .in('name', names);
+      .in('name', playerQueryNames);
 
     if (pError || !playersData) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
     }
 
-    // 各参加者の実際の戦績（試合数・勝率）を Supabase から取得・集計 (大文字小文字の揺れに対応するため、検索クエリ用リストを拡張)
+    // 各参加者の実際の戦績（試合数・勝率）を Supabase から取得・集計
+    // DB上の正規名や大文字小文字の揺れに対応するため、検索クエリ用リストを網羅
+    const dbNames: string[] = (playersData || []).map((p: any) => String(p.name || '')).filter(Boolean);
     const namesQuery = Array.from(new Set([
       ...names,
-      ...names.map(n => n.toLowerCase()),
-      ...names.map(n => n.toUpperCase())
+      ...dbNames,
+      ...names.map((n: string) => n.toLowerCase()),
+      ...names.map((n: string) => n.toUpperCase()),
+      ...dbNames.map((n: string) => n.toLowerCase()),
+      ...dbNames.map((n: string) => n.toUpperCase()),
     ]));
     const { data: participantsStats, error: statsError } = await fetchAllRows((from, to) =>
       supabase
