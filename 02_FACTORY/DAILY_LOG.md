@@ -102,6 +102,38 @@
 - `[発信候補]`: 「ポータブルなAI自動化環境構築：imageio-ffmpegを活用したyt-dlpの警告ゼロ化＆Windows環境汚染防止テクニック」。
 
 
+
+### 🚨 Match Watcher 試合リザルト404送信エラー根絶 ＆ Next.js 16 Turbopackビルド最適化
+
+**概要**:
+1. **背景と課題**:
+   - 常駐 Match Watcher の実ログ調査により、LoLの試合終了リザルト送信が `https://ktm-sovereign-portal.vercel.app/api/match/record`（存在しない旧URL）へのアクセスにより `HTTP 404: DEPLOYMENT_NOT_FOUND` で全滅していた致命的不具合を特定。
+   - プロダクションビルド（`next build`）実走により、Next.js 16 Turbopack の複数ロックファイル警告および `execFile` によるプロジェクト全ソースファイルトレース警告を検出。
+2. **実施内容**:
+   - **【Match Watcher 送信先URL本番同期】(`scripts/ktm_match_watcher.mjs`)**:
+     - `.env` の `PORTAL_URL` を最優先で読み取り、フォールバックURLを現行本番の `https://my-work-8jbd.vercel.app` に更新（末尾スラッシュの安全なトリムガード付き）。
+     - スーパーバイザーの死活監視ループにより Match Watcher（新PID: 19464）が自動再起動し、本番URLへの接続とLCU通信確立をログ実測確認。
+   - **【フェスティバルPick画面の旧URL表示修正】(`04_PORTAL/src/app/festival/pick/page.tsx`)**:
+     - 画面フッターのクレジットURLを `ktm-portal`（死にリンク）から `https://my-work-8jbd.vercel.app/festival/pick` へ修正。
+   - **【Turbopack root 設定配備】(`04_PORTAL/next.config.ts`)**:
+     - `turbopack: { root: path.resolve(__dirname) }` を明記し、複数ロックファイル存在によるワークスペース推定警告を完全解消。ビルド時間を13.3秒に短縮。
+   - **【TurbopackIgnore によるバンドル肥大化抑止】(`05_PILOT/src/app/api/youtube/scout-champion/route.ts`)**:
+     - `execFile(/*turbopackIgnore: true*/ ytdlp, ...)` を付与し、Next.js による不要なプロジェクト全ファイルトレース警告を解消。
+3. **機械的実値検証**:
+   - `04_PORTAL`: `next build` 実行 ➔ 62/62静的ページ生成完了、警告0件・エラー0件。テスト167件全件PASS。
+   - `05_PILOT`: `next build` 実行 ➔ Zero Egress ガード発動（Supabase転送0MB）、26/26ページ生成完了、警告0件・エラー0件。テスト59件全件PASS。
+   - Match Watcher: `🌐 送信先ポータル: https://my-work-8jbd.vercel.app`, `✨ LoLクライアントを検出しました！ (Port: 56245)` の生ログ実測確認済み。
+
+**再利用可能な3行ナレッジ**:
+- 常駐プロセスやクライアントツールの外部通信先は、.envのキー名不一致や旧デフォルトURLへのフォールバックによりサイレントに404送信失敗を起こしやすいため、ログのHTTPステータス実測監視が不可欠。
+- Next.js 16 (Turbopack) のモノレポ/複数ロックファイル構成では、next.config.ts に turbopack.root を明示することでビルド速度の向上と不要なルート推論の警告を根絶できる。
+- Next.js の API Routes から child_process (yt-dlp等) を呼び出す際は、/*turbopackIgnore: true*/ を付与しないとプロジェクト全ファイルがサーバーバンドルにトレースされ、デプロイ容量肥大化を招く。
+
+- `[要検証]`: 次回内戦・カスタム終了時に、`logs/match_watcher.log` にて `https://my-work-8jbd.vercel.app/api/match/record` への送信が HTTP 200 で成功したことの実測確認。
+- `[継続ウォッチ]`: 本番ポータルの過去試合履歴（`/history`）に新規試合データが自動反映されることの確認。
+- `[発信候補]`: 「LoL内戦自動化：LCU APIとNext.js 16を繋ぐMatch Watcherの耐障害性設計とVercelデプロイURL整合性の知見」。
+
+
 ---
 
 

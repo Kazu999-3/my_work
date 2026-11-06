@@ -31,6 +31,7 @@ function searchYoutubeVideos(query: string, maxResults = 3): Promise<YtdlpVideo[
   const ytdlp = getYtdlpPath();
   return new Promise((resolve) => {
     execFile(
+      /*turbopackIgnore: true*/
       ytdlp,
       [`ytsearch${maxResults}:${query}`, '--dump-json', '--flat-playlist'],
       { timeout: 35000, maxBuffer: 10 * 1024 * 1024 },

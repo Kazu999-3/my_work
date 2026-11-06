@@ -117,7 +117,7 @@ function loadEnv() {
 }
 
 const env = loadEnv();
-const PORTAL_URL = process.env.KTM_PORTAL_URL || env.NEXT_PUBLIC_APP_URL || 'https://ktm-sovereign-portal.vercel.app';
+const PORTAL_URL = (process.env.KTM_PORTAL_URL || env.PORTAL_URL || env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app').replace(/\/$/, '');
 const BOT_SECRET = process.env.PORTAL_BOT_SECRET || env.PORTAL_BOT_SECRET || '';
 
 // 自己署名証明書を許可するHTTPS Agent

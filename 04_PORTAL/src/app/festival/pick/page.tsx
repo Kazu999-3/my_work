@@ -1946,7 +1946,7 @@ function CapturePreviewModal({
           {/* フッター情報（キャプチャ用クレジット） */}
           <div className="flex items-center justify-between text-[9px] text-stone-500 border-t border-stone-800/80 pt-1 px-1 shrink-0">
             <span>KTM Weekend Custom Official Portal</span>
-            <span>https://ktm-portal.vercel.app/festival/pick</span>
+            <span>https://my-work-8jbd.vercel.app/festival/pick</span>
           </div>
         </div>
       </div>

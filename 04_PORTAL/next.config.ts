@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   // 2026-10-19: 他サイトの iframe に埋め込めないようにする（管理画面を透明に重ねてボタンを押させるクリックジャッキング対策）。
   // 自分のページを iframe で使っている箇所は無い（OBS のブラウザソースは直接開くので影響しない）
   async headers() {
