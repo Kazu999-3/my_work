@@ -40,8 +40,48 @@ interface Stats {
   };
   knowledge: { facts: number; library: number; laneGuides: number; matchupMemos: number; matchupLog: number };
   dictHealth: { verified: number; aiGenerated: number; stale: number };
+  roleCoverage?: Record<string, { total: number; covered: number; pct: number }>;
+  pendingReviews?: number;
   recruitmentActivities?: RecruitmentActivity[];
   generatedAt: string;
+}
+
+function calculateOverallHealth(stats: Stats): {
+  score: number;
+  status: 'optimal' | 'healthy' | 'attention' | 'critical';
+  label: string;
+  colorCls: string;
+  badgeCls: string;
+  breakdown: { label: string; score: number; max: number; desc: string }[];
+} {
+  const failed24h = stats.tasks24h.failed;
+  const taskScore = failed24h === 0 ? 25 : failed24h <= 2 ? 18 : failed24h <= 5 ? 10 : 0;
+  const naCount = stats.needsAttention.failedTasks.length + (stats.needsAttention.youtubeErrorCount > 0 ? 1 : 0);
+  const errorScore = naCount === 0 ? 25 : naCount === 1 ? 15 : naCount <= 3 ? 8 : 0;
+  const totalDict = stats.dictHealth.verified + stats.dictHealth.aiGenerated + stats.dictHealth.stale;
+  const stalePct = totalDict > 0 ? (stats.dictHealth.stale / totalDict) * 100 : 0;
+  const dictScore = stalePct <= 5 ? 25 : stalePct <= 20 ? 20 : stalePct <= 40 ? 12 : 5;
+  const libCount = stats.knowledge.library;
+  const kbScore = libCount >= 50 ? 25 : libCount >= 20 ? 20 : libCount >= 5 ? 15 : 10;
+  const total = taskScore + errorScore + dictScore + kbScore;
+
+  const breakdown = [
+    { label: 'タスク実績', score: taskScore, max: 25, desc: failed24h === 0 ? '直近24h失敗なし' : `${failed24h}件失敗` },
+    { label: '要対応アラート', score: errorScore, max: 25, desc: naCount === 0 ? 'アラートゼロ' : `${naCount}件のアラート` },
+    { label: '辞典の鮮度', score: dictScore, max: 25, desc: `要更新率 ${Math.round(stalePct)}%` },
+    { label: '戦術ライブラリ', score: kbScore, max: 25, desc: `${libCount}記事蓄積中` },
+  ];
+
+  if (total >= 90) {
+    return { score: total, status: 'optimal', label: '絶好調 (OPTIMAL)', colorCls: 'text-emerald-400', badgeCls: 'bg-emerald-950/40 border-emerald-600/70 text-emerald-300', breakdown };
+  }
+  if (total >= 70) {
+    return { score: total, status: 'healthy', label: '安定稼働 (HEALTHY)', colorCls: 'text-teal-400', badgeCls: 'bg-teal-950/40 border-teal-600/70 text-teal-300', breakdown };
+  }
+  if (total >= 50) {
+    return { score: total, status: 'attention', label: '軽度アラート (ATTENTION)', colorCls: 'text-amber-400', badgeCls: 'bg-amber-950/40 border-amber-600/70 text-amber-300', breakdown };
+  }
+  return { score: total, status: 'critical', label: '要対応 (CRITICAL)', colorCls: 'text-rose-400', badgeCls: 'bg-rose-950/40 border-rose-600/70 text-rose-300', breakdown };
 }
 
 const TASK_LABELS: Record<string, string> = {
@@ -186,6 +226,89 @@ export default function OpsDashboardPage() {
         {error && (
           <div className="p-3 rounded-xl bg-rose-950/30 text-rose-400 border border-rose-800/60 text-xs font-bold">{error}</div>
         )}
+
+        {/* 🏛️ 総合ヘルススコア 100点満点メーター ＆ ショートカット */}
+        {stats && (() => {
+          const health = calculateOverallHealth(stats);
+          return (
+            <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3.5 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-zinc-400">🏛️ システム総合ヘルススコア</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${health.badgeCls}`}>
+                      {health.label}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-3xl font-black font-mono tracking-tight ${health.colorCls}`}>
+                      {health.score}
+                    </span>
+                    <span className="text-xs text-zinc-500 font-bold font-mono">/ 100 点</span>
+                  </div>
+                </div>
+
+                {/* ⚡ 重要運用アクション直行ショートカット群 */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href="/admin/review"
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <span>📝 記事承認</span>
+                    {typeof stats.pendingReviews === 'number' && stats.pendingReviews > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-zinc-950 font-mono text-[10px] font-black">
+                        {stats.pendingReviews}
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link
+                    href="/admin/youtube"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-750 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <span>🎬 YouTubeキュー</span>
+                    {stats.needsAttention.youtubeErrorCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono text-[10px] font-black">
+                        {stats.needsAttention.youtubeErrorCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link
+                    href="/admin/dict-maintenance"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-750 text-zinc-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <span>📖 辞書メンテナンス</span>
+                    {stats.dictHealth.stale > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-amber-600/60 text-amber-200 font-mono text-[10px] font-bold">
+                        {stats.dictHealth.stale}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+              </div>
+
+              {/* 4大指標の内訳グリッド */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-zinc-800/80">
+                {health.breakdown.map((b, i) => (
+                  <div key={i} className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-850 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-bold">
+                      <span className="text-zinc-400">{b.label}</span>
+                      <span className="font-mono text-zinc-200">{b.score}/{b.max}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${(b.score / b.max) * 100}%` }}
+                        className={`h-full ${b.score === b.max ? 'bg-emerald-400' : b.score >= 15 ? 'bg-teal-400' : 'bg-amber-400'}`}
+                      />
+                    </div>
+                    <div className="text-[10px] text-zinc-500 truncate">{b.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 要対応 */}
         {stats && (
@@ -511,6 +634,47 @@ export default function OpsDashboardPage() {
                 <Stat label="AI生成（最新パッチ）" value={stats.dictHealth.aiGenerated} />
                 <Stat label="要更新（旧パッチ・空）" value={<span className={stats.dictHealth.stale > 0 ? 'text-amber-400' : ''}>{stats.dictHealth.stale}</span>} />
               </div>
+
+              {/* 🗺️ ロール別・戦術カバー率プログレスバー */}
+              {stats.roleCoverage && (
+                <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
+                    <span className="flex items-center gap-1.5">
+                      <span>🗺️ レーン・ロール別 戦術カバー率</span>
+                      <span className="text-[10px] text-zinc-500 font-normal">（解説記事の存在するチャンピオン比率）</span>
+                    </span>
+                    <Link href="/admin/review" className="text-[11px] text-amber-400 hover:underline">
+                      未承認記事の審査へ →
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                    {(['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const).map((r) => {
+                      const data = stats.roleCoverage![r] || { total: 0, covered: 0, pct: 0 };
+                      const roleIcons: Record<string, string> = { TOP: '⚔️', JG: '🌲', MID: '🧙', BOT: '🏹', SUP: '🛡️' };
+                      return (
+                        <div key={r} className="p-2.5 rounded-lg bg-zinc-900/80 border border-zinc-850 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="flex items-center gap-1 text-zinc-200">
+                              <span>{roleIcons[r]}</span>
+                              <span>{r}</span>
+                            </span>
+                            <span className="font-mono text-amber-400">{data.pct}%</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              style={{ width: `${data.pct}%` }}
+                              className={`h-full ${data.pct >= 80 ? 'bg-emerald-400' : data.pct >= 50 ? 'bg-teal-400' : 'bg-amber-400'}`}
+                            />
+                          </div>
+                          <div className="text-[10px] text-zinc-500 font-mono text-right">
+                            {data.covered} / {data.total} 体
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </Card>
           </>
         )}

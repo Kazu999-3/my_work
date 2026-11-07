@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 import { supabase } from '@/lib/supabaseClient';
 import { taskKey } from '@/lib/youtubeUrl';
 import { getCalendarPatch } from '@/lib/ddragonClient';
@@ -51,7 +53,7 @@ export async function GET() {
       recentTasks, ytErrors, metricsRow, dictFacts,
       players, matches, pendingBets, tasks24h,
       factsCount, libraryCount, laneGuidesCount, memosCount, matchupLogCount,
-      lastRecruitment, recruitmentLogs,
+      lastRecruitment, recruitmentLogs, pendingReviews, coveredChampsRows,
     ] = await Promise.all([
       supabase.from('edge_tasks').select('id, task_type, payload, status, error_message, updated_at')
         .in('status', ['failed', 'completed']).in('task_type', ATTENTION_TASK_TYPES)
@@ -74,6 +76,10 @@ export async function GET() {
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
       supabase.from('recruitments').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('recruitment_activity_logs').select('*').order('created_at', { ascending: false }).limit(40),
+      supabase.from('personal_knowledge').select('id', { count: 'exact', head: true })
+        .eq('review_status', 'pending').or('tags.is.null,tags.not.cs.{__DELETED__}'),
+      supabase.from('personal_knowledge').select('champion')
+        .or('tags.is.null,tags.not.cs.{__DELETED__}'),
     ]);
 
     // (task_type, payload) ごとに最新の1件だけを見て、それが失敗のままのものを「要対応」とする。
@@ -116,6 +122,55 @@ export async function GET() {
       else if (side === 'red') { redAmount += amt; redCount++; }
     }
 
+    // ロール別カバー率の算出
+    const coveredSet = new Set(
+      (coveredChampsRows.data || [])
+        .map((r: any) => String(r.champion || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const summaryPath = path.resolve(process.cwd(), 'src/data/champions_summary.json');
+    let summaryChampions: any[] = [];
+    if (fs.existsSync(summaryPath)) {
+      try {
+        summaryChampions = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+      } catch (_) {}
+    }
+
+    const roleDefs = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
+    const roleStats: Record<string, { total: number; covered: number; pct: number }> = {
+      TOP: { total: 0, covered: 0, pct: 0 },
+      JG: { total: 0, covered: 0, pct: 0 },
+      MID: { total: 0, covered: 0, pct: 0 },
+      BOT: { total: 0, covered: 0, pct: 0 },
+      SUP: { total: 0, covered: 0, pct: 0 },
+    };
+
+    for (const c of summaryChampions) {
+      const cId = String(c.id || '').toLowerCase();
+      const isCovered = coveredSet.has(cId);
+      const roles: string[] = Array.isArray(c.roles) ? c.roles : [];
+      for (const r of roles) {
+        let normR: 'TOP' | 'JG' | 'MID' | 'BOT' | 'SUP' | null = null;
+        if (r === 'TOP') normR = 'TOP';
+        else if (r === 'JG' || r === 'JUNGLE') normR = 'JG';
+        else if (r === 'MID' || r === 'MIDDLE') normR = 'MID';
+        else if (r === 'BOT' || r === 'BOTTOM' || r === 'ADC') normR = 'BOT';
+        else if (r === 'SUP' || r === 'UTILITY' || r === 'SUPPORT') normR = 'SUP';
+
+        if (normR && roleStats[normR]) {
+          roleStats[normR].total++;
+          if (isCovered) roleStats[normR].covered++;
+        }
+      }
+    }
+
+    for (const r of roleDefs) {
+      if (roleStats[r].total > 0) {
+        roleStats[r].pct = Math.round((roleStats[r].covered / roleStats[r].total) * 100);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       needsAttention: {
@@ -149,6 +204,8 @@ export async function GET() {
         matchupLog: matchupLogCount.count ?? 0,
       },
       dictHealth,
+      roleCoverage: roleStats,
+      pendingReviews: pendingReviews.count ?? 0,
       recruitmentActivities: (recruitmentLogs.data || []) as any[],
       generatedAt: new Date().toISOString(),
     });
