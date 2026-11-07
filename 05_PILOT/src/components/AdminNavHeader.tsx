@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  ClipboardCheck, Video, Activity, Edit3, Shield, ArrowLeft 
+  ClipboardCheck, Video, Activity, Edit3, Shield, ArrowLeft, Briefcase 
 } from 'lucide-react';
 
 interface AdminTab {
@@ -26,6 +26,7 @@ const DICT_TABS: AdminTab[] = [
 
 const SYSTEM_TABS: AdminTab[] = [
   { name: 'ダッシュボード', href: '/admin/dashboard', icon: Shield },
+  { name: '転職トラッカー', href: '/career', icon: Briefcase },
 ];
 
 interface AdminNavHeaderProps {

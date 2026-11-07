@@ -285,6 +285,13 @@ export default function OpsDashboardPage() {
                       </span>
                     )}
                   </Link>
+
+                  <Link
+                    href="/career"
+                    className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <span>💼 転職トラッカー</span>
+                  </Link>
                 </div>
               </div>
 
