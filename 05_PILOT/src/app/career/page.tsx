@@ -14,7 +14,7 @@ export default function CareerTrackerPage() {
   };
 
   return (
-    <div className="max-w-[1700px] mx-auto px-4 sm:px-6 py-4 flex flex-col h-[calc(100vh-70px)]">
+    <div className="w-full px-2 sm:px-4 py-3 flex flex-col h-[calc(100vh-65px)]">
       {/* 🧭 上部ツールバー */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 bg-zinc-900/90 border border-zinc-800 rounded-2xl px-4 py-2.5 shadow-lg backdrop-blur-md">
         <div className="flex items-center gap-3">
