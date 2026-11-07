@@ -223,6 +223,26 @@ function getNotificationMeta(n: AdminNotification) {
       defaultUrl: '/admin/dashboard',
     };
   }
+  if (n.type === 'local_daemon_down') {
+    return {
+      icon: AlertCircle,
+      color: 'text-rose-400',
+      bg: 'bg-rose-500/10',
+      border: 'border-rose-500/30',
+      label: 'デーモン状態',
+      defaultUrl: '/admin/youtube',
+    };
+  }
+  if (n.type === 'onboarding_message') {
+    return {
+      icon: Info,
+      color: 'text-indigo-400',
+      bg: 'bg-indigo-500/10',
+      border: 'border-indigo-500/30',
+      label: '個別案内',
+      defaultUrl: n.url || '/ktm-admin',
+    };
+  }
   return {
     icon: Info,
     color: 'text-sky-400',
@@ -409,7 +429,8 @@ export default function NotificationBell() {
                 const meta = getNotificationMeta(n);
                 const Icon = meta.icon;
                 const isExpanded = expandedIds.has(n.id);
-                const targetUrl = n.url || meta.defaultUrl;
+                // url が未指定または "/" の場合、適切な管理画面へフォールバック
+                const targetUrl = (!n.url || n.url === '/' || n.url === '') ? meta.defaultUrl : n.url;
 
                 return (
                   <div
@@ -480,18 +501,37 @@ export default function NotificationBell() {
                     {/* 直行アクションリンク */}
                     {targetUrl && (
                       <div className="pl-7 pt-1 flex justify-end">
-                        <Link
-                          href={resolveNotificationUrl(targetUrl).href}
-                          {...(resolveNotificationUrl(targetUrl).external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                          onClick={() => {
+                        {(() => {
+                          const resolved = resolveNotificationUrl(targetUrl);
+                          const btnClass = "text-[10px] px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-300 border border-zinc-700 flex items-center gap-1 font-bold transition cursor-pointer";
+                          const handleLinkClick = (e: React.MouseEvent) => {
+                            e.stopPropagation();
                             if (!n.read) markAsRead(n.id);
                             setIsOpen(false);
-                          }}
-                          className="text-[10px] px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-300 border border-zinc-700 flex items-center gap-1 font-bold transition"
-                        >
-                          <span>該当画面を開く</span>
-                          <ExternalLink size={10} />
-                        </Link>
+                          };
+
+                          return resolved.external ? (
+                            <a
+                              href={resolved.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={handleLinkClick}
+                              className={btnClass}
+                            >
+                              <span>該当画面を開く</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          ) : (
+                            <Link
+                              href={resolved.href}
+                              onClick={handleLinkClick}
+                              className={btnClass}
+                            >
+                              <span>該当画面を開く</span>
+                              <ExternalLink size={10} />
+                            </Link>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

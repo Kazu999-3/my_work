@@ -145,21 +145,40 @@ class TaskDispatchMixin:
                     if result.get("success"):
                         self.update_task_status(task_id, "completed", result=result)
                     elif result.get("skipped"):
-                        if result.get("is_quota"):
-                            # クォータ枯渇等の一時的な見送りは failed にせず pending に戻して後で消化
-                            logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り。pending に戻して60秒待機します: {result.get('message')}")
-                            self.update_task_status(task_id, "pending", result=result, error_message=None)
-                            time.sleep(60)
+                        if result.get("is_video_unavailable"):
+                            # 動画削除・非公開は恒久エラーとして failed に退避し、キューの目詰まりを完全防止
+                            logger.info(f"🚫 [article_reanalyze] 動画削除・非公開のためタスクを failed で完了: {result.get('message')}")
+                            self.update_task_status(task_id, "failed", result=result,
+                                                    error_message=str(result.get("message") or "動画が削除・非公開のため再解析不可")[:1500])
+                        elif result.get("is_quota"):
+                            # リトライ回数（retry_count）をカウントし、上限（3回）を超えたら failed にする（無限ループ防止防護柵）
+                            current_retries = int(payload.get("_retry_count", 0)) + 1
+                            payload["_retry_count"] = current_retries
+                            if current_retries >= 3:
+                                logger.error(f"❌ [article_reanalyze] クォータ制限リトライ上限到達（{current_retries}回）。タスクを failed に退避: ID: {task_id}")
+                                self.update_task_status(task_id, "failed", result=result,
+                                                        error_message=f"リトライ上限超過(3回連続一時見送り): {result.get('message')}")
+                            else:
+                                logger.warning(f"⏸ [article_reanalyze] クォータ制限のため一時見送り（試行 {current_retries}/3回目）。pending に戻して15秒待機します: {result.get('message')}")
+                                self.update_task_status(task_id, "pending", result=result, error_message=None)
+                                time.sleep(15)
                         else:
                             # 実況・事実なし等のコンテンツ起因は再試行せず failed で記録（承認画面では「再解析不可（実況なし等）」として静かに表示）
                             logger.info(f"⏭ [article_reanalyze] コンテンツ理由で見送り: {result.get('message')}")
                             self.update_task_status(task_id, "failed", result=result,
                                                     error_message=str(result.get("message") or "実況・字幕なしのため見送り")[:1500])
                     else:
-                        # システム・API・ネットワーク一時エラー: 再解析完了まで裏の解析キュー(pending)に保持
-                        logger.warning(f"⚠️ [article_reanalyze] 一時エラーのため解析キュー(pending)に戻します: {result.get('message')}")
-                        self.update_task_status(task_id, "pending", result=result,
-                                                error_message=f"一時エラーのため再試行待機中: {str(result.get('message') or '')[:200]}")
+                        # システム・API・ネットワーク一時エラー: 最大3回まで再試行
+                        current_retries = int(payload.get("_retry_count", 0)) + 1
+                        payload["_retry_count"] = current_retries
+                        if current_retries >= 3:
+                            logger.error(f"❌ [article_reanalyze] 一時エラーリトライ上限到達（{current_retries}回）。タスクを failed に退避: ID: {task_id}")
+                            self.update_task_status(task_id, "failed", result=result,
+                                                    error_message=f"リトライ上限超過(3回連続エラー): {result.get('message')}")
+                        else:
+                            logger.warning(f"⚠️ [article_reanalyze] 一時エラーのため解析キュー(pending)に戻します（試行 {current_retries}/3回目）: {result.get('message')}")
+                            self.update_task_status(task_id, "pending", result=result,
+                                                    error_message=f"一時エラーのため再試行待機中({current_retries}/3回): {str(result.get('message') or '')[:200]}")
                 except TimeoutError as te:
                     # ユーザー要望: タイムアウトしても failed にせず、再解析が完了するまで裏で解析キューに入れて待機・再試行
                     logger.warning(f"⏰ [article_reanalyze] 記事 #{payload.get('article_id')} がタイムアウトしました。裏の解析キュー(pending)に戻します: {te}")

@@ -140,7 +140,16 @@ def main():
             if transcript:
                 source = "字幕を取り直した"
         except Exception as e:  # GitHub Actions の IP は YouTube に弾かれやすい（RateLimited 等）
-            print(f"字幕の取り直しに失敗: {e}", file=sys.stderr)
+            err_msg = str(e)
+            print(f"字幕の取り直しに失敗: {err_msg}", file=sys.stderr)
+            # 動画がYouTube上で削除・非公開・利用不能の場合は、映像解析やAPI無駄打ちを行わず恒久エラーとして即時退避
+            if any(k in err_msg for k in ("This video is unavailable", "Video unavailable", "Private video", "This video has been removed")):
+                try:
+                    old_tags = list(dict.fromkeys((row.get("tags") or []) + ["__DELETED__", "動画削除済自動除外"]))
+                    yw.sb("PATCH", f"personal_knowledge?id=eq.{article_id}", {"tags": old_tags})
+                except Exception:
+                    pass
+                out(False, f"動画がYouTube上で削除または非公開のため再解析不可: {err_msg}"[:300], skipped=True, is_video_unavailable=True)
 
     # 稼働実績のある健全なモデルプール（429過負荷を避け、即座に応答可能なモデルを最優先）
     fallback_pool = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3-flash-preview", yw.GEMINI_MODEL]

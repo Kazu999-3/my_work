@@ -327,7 +327,8 @@ def ensure_local_daemon_healthy():
     notify_bell(
         "local_daemon_down",
         "🔴 PCの常駐デーモンが応答していません",
-        f"edge_worker_daemon.py のハートビートが{round(age_minutes)}分以上更新されていません。"
+        f"edge_worker_daemon.py のハートビートが{round(age_minutes)}分以上更新されていません。",
+        url="/admin/youtube"
     )
 
 

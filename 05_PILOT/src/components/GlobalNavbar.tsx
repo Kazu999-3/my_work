@@ -82,7 +82,7 @@ export default function GlobalNavbar() {
           </Link>
 
           {/* PC向けメニューバー (日常メイン + 管理・運用ドロップダウン) */}
-          <nav className="hidden md:flex items-center gap-1.5 text-xs font-bold min-w-0">
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 text-xs font-bold min-w-0">
             {PRIMARY_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -91,7 +91,7 @@ export default function GlobalNavbar() {
                   key={item.href}
                   href={item.href}
                   title={item.name}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 relative ${
+                  className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 relative ${
                     isActive
                       ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-950/40 font-black'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800'
@@ -113,7 +113,7 @@ export default function GlobalNavbar() {
               <button
                 type="button"
                 onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all whitespace-nowrap border ${
+                className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap border ${
                   isAdminActive
                     ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm'
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border-transparent hover:border-zinc-800'
@@ -169,17 +169,18 @@ export default function GlobalNavbar() {
 
             <button
               onClick={() => setIsIngestModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition border border-amber-500/40 cursor-pointer shadow-sm whitespace-nowrap"
+              className="flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition border border-amber-500/40 cursor-pointer shadow-sm whitespace-nowrap"
               title="URLやメモからAIで戦術を自動取込"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">📥 戦術取込</span>
+              <span className="hidden xl:inline">📥 戦術取込</span>
+              <span className="hidden sm:inline xl:hidden">📥 取込</span>
             </button>
 
-            {/* スマホ用ハンバーガーボタン */}
+            {/* スマホ・タブレット用ハンバーガーボタン */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+              className="lg:hidden p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
               aria-label="メニューを開く"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -189,9 +190,9 @@ export default function GlobalNavbar() {
         </div>
       </header>
 
-      {/* 📱 スマホ用全画面ドロワーメニュー */}
+      {/* 📱 スマホ・タブレット用全画面ドロワーメニュー */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-zinc-950/95 backdrop-blur-xl pt-16 px-4 pb-24 space-y-4 animate-in fade-in slide-in-from-top-4 duration-150 overflow-y-auto">
+        <div className="lg:hidden fixed inset-0 z-40 bg-zinc-950/95 backdrop-blur-xl pt-16 px-4 pb-24 space-y-4 animate-in fade-in slide-in-from-top-4 duration-150 overflow-y-auto">
           {/* 日常メニュー */}
           <div>
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-2 mb-2">
