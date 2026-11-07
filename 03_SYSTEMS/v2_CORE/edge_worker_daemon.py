@@ -180,19 +180,21 @@ class EdgeWorkerDaemon(TaskDispatchMixin, SchedulerLoopsMixin):
             logger.error(f"❌ タスク取得中に通信エラーが発生しました: {e}")
             return None
 
-    def update_task_status(self, task_id: str, status: str, result: dict = None, error_message: str = None):
+    def update_task_status(self, task_id: str, status: str, result: dict = None, error_message: str = None, payload: dict = None):
         """タスク実行後のステータス更新"""
         url = f"{self.supabase_url}/rest/v1/edge_tasks?id=eq.{task_id}"
         now_str = datetime.now(timezone.utc).isoformat()
-        payload = {
+        body = {
             "status": status,
             "updated_at": now_str,
             "result": result or {},
             "error_message": error_message,
             "executor": "local"
         }
+        if payload is not None:
+            body["payload"] = payload
         try:
-            res = httpx.patch(url, headers=self.headers, json=payload, timeout=10)
+            res = httpx.patch(url, headers=self.headers, json=body, timeout=10)
             if res.status_code in (200, 204):
                 logger.info(f"✅ タスクステータスを '{status}' に更新完了: ID: {task_id}")
             else:
