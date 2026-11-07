@@ -615,6 +615,41 @@ export default function ReviewPage() {
                 表示中を全選択（{selected.size}/{items.length}）
               </label>
 
+              {/* 🎯 チャンプ確定のみ全選択ボタン */}
+              {(() => {
+                const determinedItems = items.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion);
+                if (determinedItems.length === 0) return null;
+                const isAllDeterminedSelected = determinedItems.length > 0 && determinedItems.every((i) => selected.has(i.id));
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isAllDeterminedSelected) {
+                        setSelected((prev) => {
+                          const next = new Set(prev);
+                          determinedItems.forEach((i) => next.delete(i.id));
+                          return next;
+                        });
+                      } else {
+                        setSelected((prev) => {
+                          const next = new Set(prev);
+                          determinedItems.forEach((i) => next.add(i.id));
+                          return next;
+                        });
+                      }
+                    }}
+                    className={`px-2 py-0.5 rounded-lg border text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                      isAllDeterminedSelected
+                        ? 'bg-emerald-500/20 border-emerald-500/80 text-emerald-300 shadow-xs'
+                        : 'bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:text-white hover:border-emerald-500/50'
+                    }`}
+                    title="チャンピオンが1体特定できている安全な記事のみを一括選択"
+                  >
+                    <span>🎯 チャンプ確定のみ選択（{determinedItems.length}件）</span>
+                  </button>
+                );
+              })()}
+
               {/* ⌨️ キーボードショートカット案内バッジ */}
               <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-400 bg-zinc-950/80 px-2.5 py-1 rounded-lg border border-zinc-800">
                 <span className="text-zinc-500 font-bold">⌨️ ショートカット:</span>

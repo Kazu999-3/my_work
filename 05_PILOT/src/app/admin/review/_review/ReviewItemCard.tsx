@@ -25,6 +25,7 @@ import {
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 import { extractArticleSummary, stripArticleChrome } from '@/lib/articleDensity';
 import { detectChampionsFromText } from '@/lib/championDetector';
+import { calculateFreshness } from '@/lib/patchFreshness';
 
 // 承認待ちの記事カード（スリムアコーディオン設計：デフォルト150px、詳細トグルで事実・本文・編集フォームを展開）
 // 2026-10-28: 一覧のスクロール負荷激減・1画面3〜4枚表示・爆速判断（Eキーで詳細開閉）に対応
@@ -86,6 +87,7 @@ export default function ReviewItemCard({
   const summary = useMemo(() => extractArticleSummary(item.content), [item.content]);
   const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
   const detected = useMemo(() => detectChampionsFromText(item.title, summary), [item.title, summary]);
+  const freshness = useMemo(() => calculateFreshness(item.title, item.content, item.created_at), [item.title, item.content, item.created_at]);
 
   // 📺 YouTube動画ID抽出 ＆ プレイリスト（PLPiEXmmDzgcs）連携
   const targetPlaylistId = 'PLPiEXmmDzgcs';
@@ -141,7 +143,7 @@ export default function ReviewItemCard({
       data-review-card={item.id}
       className={`relative overflow-hidden p-3.5 md:p-4 rounded-2xl border space-y-2.5 transition duration-150 ${
         isFocused
-          ? 'ring-2 ring-amber-500/90 border-amber-500/80 bg-zinc-900 shadow-xl shadow-amber-500/10'
+          ? 'ring-2 ring-amber-400 border-amber-400/90 border-l-4 border-l-amber-400 bg-zinc-900 shadow-xl shadow-amber-500/15'
           : isSelected
           ? 'border-amber-500/50 bg-amber-950/20'
           : 'border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-900/90'
@@ -171,10 +173,26 @@ export default function ReviewItemCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <h3 className="text-sm font-bold text-white break-words leading-snug">{item.title}</h3>
             {isFocused && (
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500 text-zinc-950 font-mono tracking-wider animate-pulse">
-                FOCUS (A:承認 X:却下 E:詳細)
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500 text-zinc-950 font-mono tracking-wider animate-pulse flex items-center gap-1">
+                <span>FOCUS</span>
+                <span className="opacity-75">[A:承認 X:却下 E:詳細]</span>
               </span>
             )}
+            {/* 🕒 パッチ鮮度バッジ（ジョージぱぱ原則） */}
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shadow-sm flex items-center gap-1 ${
+                freshness.freshness === 'fresh'
+                  ? 'bg-emerald-950/60 border-emerald-600/70 text-emerald-300'
+                  : freshness.freshness === 'moderate'
+                  ? 'bg-amber-950/60 border-amber-600/70 text-amber-300'
+                  : 'bg-rose-950/60 border-rose-600/70 text-rose-300'
+              }`}
+              title={`公開: ${freshness.publishedAt || '不明'} (${freshness.daysAgo}日前) / 推定パッチ: ${freshness.estimatedPatch}`}
+            >
+              {freshness.freshness === 'fresh' ? '🔥' : freshness.freshness === 'moderate' ? '⏳' : '⚠️'}
+              <span>{freshness.label}</span>
+              <span className="opacity-75 font-mono text-[9px]">{freshness.estimatedPatch}</span>
+            </span>
             {/* 動画種別バッジ（Shorts短尺か長尺動画かを一目で識別） */}
             {item.is_atomic ? (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-teal-300 border-teal-800/60 bg-teal-950/40">
@@ -571,7 +589,7 @@ export default function ReviewItemCard({
             <button
               type="button"
               onClick={onToggleDetails}
-              className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-sm ${
+              className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-sm ${
                 isDetailsOpen
                   ? 'bg-amber-500/20 border-amber-500/70 text-amber-200'
                   : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white'
@@ -579,7 +597,8 @@ export default function ReviewItemCard({
               title="詳細な事実リスト・本文・編集フォームを展開 (E)"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-              <span>詳細・修正 (E)</span>
+              <span>詳細・修正</span>
+              <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-amber-300">E</kbd>
               {isDetailsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />}
             </button>
           )}
@@ -589,10 +608,12 @@ export default function ReviewItemCard({
             type="button"
             onClick={() => onPreview()}
             disabled={busy}
-            className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+            className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
             title="統合先をプレビュー確認してから承認 (P)"
           >
-            <Eye className="w-3.5 h-3.5" /> プレビュー
+            <Eye className="w-3.5 h-3.5" />
+            <span>プレビュー</span>
+            <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-zinc-300">P</kbd>
           </button>
 
           {/* 📺 プレイリスト追加ボタン（1STEP直接追加） */}
@@ -651,10 +672,12 @@ export default function ReviewItemCard({
               type="button"
               onClick={() => onReject()}
               disabled={busy}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-900/60 text-zinc-400 hover:text-rose-400 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-900/60 text-zinc-400 hover:text-rose-400 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
               title="却下 (X)"
             >
-              <XCircle className="w-3.5 h-3.5" /> 却下
+              <XCircle className="w-3.5 h-3.5" />
+              <span>却下</span>
+              <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-rose-300">X</kbd>
             </button>
           )}
         </div>
@@ -667,20 +690,24 @@ export default function ReviewItemCard({
                 type="button"
                 onClick={() => onDecompose()}
                 disabled={busy}
-                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-purple-600/60 text-purple-300 hover:text-purple-200 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-purple-600/60 text-purple-300 hover:text-purple-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
                 title="モーダルを開いて各チャンピオンの知見を確認・編集してから統合 (D)"
               >
-                <Scissors className="w-3.5 h-3.5 text-purple-400" /> 確認して分解 (D)
+                <Scissors className="w-3.5 h-3.5 text-purple-400" />
+                <span>確認して分解</span>
+                <kbd className="px-1 py-0.2 rounded bg-purple-950/80 border border-purple-500/60 text-[9px] font-mono font-bold text-purple-200">D</kbd>
               </button>
               {onApprove && (
                 <button
                   type="button"
                   onClick={() => onApprove()}
                   disabled={busy}
-                  className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
+                  className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
                   title="確認なしで裏で各チャンピオンに自動分解し、教本へ直接統合 (A)"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-300" /> ⚡ 自動分解して承認 (A)
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>⚡ 自動分解して承認</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-amber-400 text-zinc-950 text-[10px] font-mono font-black shadow-xs">A</kbd>
                 </button>
               )}
             </>
@@ -691,10 +718,12 @@ export default function ReviewItemCard({
                   type="button"
                   onClick={() => onDecompose()}
                   disabled={busy}
-                  className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   title="複数知見に分割 (D)"
                 >
-                  <Scissors className="w-3.5 h-3.5" /> 分解
+                  <Scissors className="w-3.5 h-3.5" />
+                  <span>分解</span>
+                  <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-zinc-300">D</kbd>
                 </button>
               )}
               {onApprove && (
@@ -702,10 +731,12 @@ export default function ReviewItemCard({
                   type="button"
                   onClick={() => onApprove()}
                   disabled={busy}
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-emerald-950/40 transition"
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-emerald-950/40 transition"
                   title="現在の設定で即座に承認して教本へ統合 (A)"
                 >
-                  <Zap className="w-3.5 h-3.5" /> ⚡ 即時承認（統合） (A)
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>⚡ 即時承認（統合）</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-emerald-400 text-zinc-950 text-[10px] font-mono font-black shadow-xs">A</kbd>
                 </button>
               )}
             </>
