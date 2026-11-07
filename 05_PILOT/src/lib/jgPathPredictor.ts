@@ -242,7 +242,7 @@ export function aggregateJgPath(paths: SingleGameJgPath[]): JgPathSummary {
         midGankRate: 0,
         botGankRate: 0,
         dominantLane: 'LOW_ACTIVITY',
-        advice: 'ガンクデータなし。3:30前後の最初のリバー視界切れに注意してください。',
+        advice: 'ガンクデータなし。2:55前後の最初のリバー視界切れ（スカトル湧き）に注意してください。',
       },
       firstObjective: {
         dominantType: 'BALANCED',
@@ -251,7 +251,7 @@ export function aggregateJgPath(paths: SingleGameJgPath[]): JgPathSummary {
         advice: 'オブジェクトデータなし。',
       },
       bulletPoints: [
-        '🌲 敵JGデータなし: 3:30前後の河川視界を警戒',
+        '🌲 敵JGデータなし: 2:55前後の河川視界（スカトル湧き）を警戒',
         '👁️ レーン戦序盤は両サイドの視界を均等に確保',
         '⚔️ 初手オブジェクト(5:00)の寄りに注意',
       ],

@@ -641,7 +641,7 @@ class MatchupCardWidget(QWidget):
                 gank_list = state.get("jg_gank_targets", [])
                 gank_str = "\n".join(gank_list[:2]) if gank_list else "・各レーンのウェーブ状況・スペルを確認中..."
                 self.phase_action_label.setText(gank_str)
-                obj_plan = state.get("jg_objective_plan", "3:30 スカットル ➔ 5:00 グラブ")
+                obj_plan = state.get("jg_objective_plan", "2:55 スカットル ➔ 5:00 グラブ")
                 self.phase_trigger_label.setText(f"🐉 目標: {obj_plan}")
             self.phase_frame.setVisible(True)
             curr_phase_str = "JG_MAIN"

@@ -239,7 +239,7 @@ class ToastAlertWidget(QWidget):
             early_pathing = state.get("early_pathing", {})
             enemy_jg = state.get("enemy_jg", "")
             badge = early_pathing.get("badge_text", "🚨 ガンク警戒")
-            clr_str = early_pathing.get("clear_time_str", "2:40〜3:30")
+            clr_str = early_pathing.get("clear_time_str", "2:30〜2:55")
             is_early = early_pathing.get("is_early_ganker", False)
             detail_text = f"Lv3急襲警戒（敵クリア: {clr_str}）" if is_early else f"初動危険帯（敵クリア: {clr_str}）"
             events.append({

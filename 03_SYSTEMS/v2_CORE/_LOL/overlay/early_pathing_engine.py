@@ -45,15 +45,15 @@ def analyze_early_jungle_pathing(
 
     if not fastest_clear_sec:
         if is_early_ganker:
-            fastest_clear_sec = 165  # 約2分45秒 (3キャンプ〜4キャンプ)
+            fastest_clear_sec = 135  # 2026年仕様: 約2分15秒 (3キャンプ〜4キャンプ速攻ガンク)
         elif is_full_clearer:
-            fastest_clear_sec = 195  # 約3分15秒 (フルクリア)
+            fastest_clear_sec = 165  # 2026年仕様: 約2分45秒 (2:55スカトル前のフルクリア)
         else:
-            fastest_clear_sec = 190  # 約3分10秒
+            fastest_clear_sec = 155  # 2026年仕様: 約2分35秒 (標準クリア)
 
     # 危険帯の秒数範囲（初動クリア完了直前〜スカトル消化直後）
-    danger_start_sec = max(140, fastest_clear_sec - 15)
-    danger_end_sec = fastest_clear_sec + 35
+    danger_start_sec = max(115, fastest_clear_sec - 15)
+    danger_end_sec = fastest_clear_sec + 30
 
     is_gank_danger = (danger_start_sec <= game_time_sec <= danger_end_sec)
     
@@ -104,11 +104,11 @@ def analyze_early_jungle_pathing(
         my_fastest_clear = my_jt.get("fastestClearSec") if isinstance(my_jt, dict) else None
         if not my_fastest_clear:
             if my_jg in EARLY_GANKERS:
-                my_fastest_clear = 165
+                my_fastest_clear = 135
             elif my_jg in FULL_CLEAR_FARMERS:
-                my_fastest_clear = 195
+                my_fastest_clear = 165
             else:
-                my_fastest_clear = 190
+                my_fastest_clear = 155
 
         my_spike_early = 4 if my_jg in EARLY_GANKERS else (2 if my_jg in FULL_CLEAR_FARMERS else 3)
         enemy_spike_early = 4 if is_early_ganker else (2 if is_full_clearer else 3)

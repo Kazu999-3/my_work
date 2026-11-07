@@ -64,7 +64,7 @@ export interface JgBenchmark {
   firstClearTimeSec: number | null; // 1周目フルクリア完了秒（例: 205秒 = 3:25）
   firstClearTimeStr: string | null;
   firstClearGrade: 'S' | 'A' | 'SLOW' | null;
-  firstClearTargetStr: string; // "3:15〜3:30 (プロ/OTP基準)"
+  firstClearTargetStr: string; // "2:40〜2:55 (2026年プロ/OTP基準)"
   tenMinCsTarget: {
     actual: number;
     target: number; // 72 CS (FORESTER 10分0/0/0 勝率50.9%維持ライン)
@@ -427,12 +427,12 @@ export function analyzePostgameJgMetrics(
   if (level4Ev && level4Ev.timestamp <= 300_000) {
     firstClearTimeSec = Math.floor(level4Ev.timestamp / 1000);
     firstClearTimeStr = fmtMs(level4Ev.timestamp);
-    if (firstClearTimeSec <= 205) {
-      firstClearGrade = 'S'; // 3:25以内
-    } else if (firstClearTimeSec <= 215) {
-      firstClearGrade = 'A'; // 3:35以内（スカトル3:30に間に合う）
+    if (firstClearTimeSec <= 165) {
+      firstClearGrade = 'S'; // 2:45以内 (2026年神速フルクリア)
+    } else if (firstClearTimeSec <= 175) {
+      firstClearGrade = 'A'; // 2:55以内 (スカトル2:55湧きにジャスト同期)
     } else {
-      firstClearGrade = 'SLOW'; // 3:35超
+      firstClearGrade = 'SLOW'; // 2:55超 (スカトルに遅参)
     }
   }
 
@@ -512,7 +512,7 @@ export function analyzePostgameJgMetrics(
     firstClearTimeSec,
     firstClearTimeStr,
     firstClearGrade,
-    firstClearTargetStr: '3:15〜3:30 (プロ/OTP基準)',
+    firstClearTargetStr: '2:40〜2:55 (2026年プロ/OTP基準)',
     tenMinCsTarget,
     tenMinGoldBorder: {
       diff: goldDiff10,

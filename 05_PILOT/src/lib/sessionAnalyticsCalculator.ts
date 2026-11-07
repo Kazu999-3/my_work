@@ -66,7 +66,7 @@ export const ROLE_CONFIGS: { [role: string]: RoleConfig } = {
     visionLabelA: '🛡️ 自陣・リバー防衛視界',
     visionLabelB: '⚡ 敵陣ディープ視界',
     specialMetricName: '1周目フルクリア ＆ 敵JG察知',
-    defaultActionGuideline: '3:30フルクリア後に即リコールせず、敵ラプター裏へディープワードを刺してプッシュレーンへのカウンター介入を挟むこと。',
+    defaultActionGuideline: '2:55フルクリア（スカトル同期）後に即リコールせず、敵ラプター裏へディープワードを刺してプッシュレーンへのカウンター介入を挟むこと。',
   },
   MIDDLE: {
     roleId: 'MIDDLE',

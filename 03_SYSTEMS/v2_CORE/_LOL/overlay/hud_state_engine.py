@@ -718,7 +718,7 @@ class HudStateEngine:
                     jg_gank_targets.append(f"🎯 {r_name} ({e_champ}): 互角 ➔ ガンク成功でレーン完全崩壊")
 
         if game_time_sec < 300:
-            jg_objective_plan = "🌲 3:30 スカットル争奪 ➔ 5:00 ヴォイドグラブ先行"
+            jg_objective_plan = "🌲 2:55 スカットル争奪 ➔ 5:00 ヴォイドグラブ先行"
         elif game_time_sec < 840:
             jg_objective_plan = f"🐉 ヴォイドグラブ ＆ ドラゴン確保 (スマイト: {smite_damage}dmg)"
         elif game_time_sec < 1200:
