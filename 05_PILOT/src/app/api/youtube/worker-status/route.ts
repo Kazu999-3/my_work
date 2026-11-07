@@ -17,9 +17,9 @@ export async function GET() {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
     const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
-    const [hb, pendingTasks, failed24h, lastCompleted, completed24h, pendingVideos, latestFailure, failedTasks] = await Promise.all([
+    const [hb, pendingTasks, failed24h, lastCompleted, completed24h, pendingVideos, latestFailure, failedTasks, processingVideo] = await Promise.all([
       supabase.from('edge_tasks').select('updated_at, payload').eq('id', LOCAL_HEARTBEAT_ID).maybeSingle(),
-      supabase.from('edge_tasks').select('id, task_type, status, created_at')
+      supabase.from('edge_tasks').select('id, task_type, status, created_at, payload')
         .in('status', ['pending', 'running']).not('id', 'in', `(${HEARTBEAT_IDS.join(',')})`)
         .order('created_at', { ascending: true }).limit(20),
       supabase.from('edge_tasks').select('id', { count: 'exact', head: true })
@@ -33,11 +33,14 @@ export async function GET() {
         .eq('status', 'failed').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('edge_tasks').select('id')
         .eq('status', 'failed').gte('created_at', since24h).order('created_at', { ascending: false }).limit(50),
+      supabase.from('youtube_queue').select('id, title, channel_name, url, updated_at')
+        .eq('status', 'processing').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
     ]);
     if (hb.error) throw hb.error;
 
     const lastBeat = hb.data?.updated_at ? new Date(hb.data.updated_at) : null;
     const diffSec = lastBeat ? Math.floor((Date.now() - lastBeat.getTime()) / 1000) : null;
+    const runningTask = (pendingTasks.data || []).find((t: any) => t.status === 'running') || null;
 
     return NextResponse.json({
       success: true,
@@ -48,7 +51,8 @@ export async function GET() {
         status: (hb.data?.payload as any)?.status || null,
       },
       tasks: {
-        waiting: pendingTasks.data || [],
+        running: runningTask,
+        waiting: (pendingTasks.data || []).filter((t: any) => t.status !== 'running'),
         failed24h: failed24h.count || 0,
         failedTaskIds: (failedTasks.data || []).map((t: any) => String(t.id)),
         latestFailure: latestFailure.data
@@ -57,6 +61,7 @@ export async function GET() {
       },
       videos: {
         pending: pendingVideos.count || 0,
+        processing: processingVideo.data || null,
         completed24h: completed24h.count || 0,
         lastCompletedAt: lastCompleted.data?.updated_at || null,
       },

@@ -7,12 +7,18 @@ import { RefreshCw, Cpu, Gamepad2, MapPin, Terminal, CheckCircle2, AlertTriangle
 interface Status {
   worker: { active: boolean; lastHeartbeat: string | null; diffSeconds: number | null; status: string | null };
   tasks: {
+    running?: { id: string; task_type: string; status: string; created_at: string; payload?: any } | null;
     waiting: { id: string; task_type: string; status: string; created_at: string }[];
     failed24h: number;
     failedTaskIds?: string[];
     latestFailure: { task_type: string; error_message: string; updated_at: string } | null;
   };
-  videos: { pending: number; completed24h: number; lastCompletedAt: string | null };
+  videos: {
+    pending: number;
+    processing?: { id: string; title: string; channel_name?: string; url?: string; updated_at?: string } | null;
+    completed24h: number;
+    lastCompletedAt: string | null;
+  };
 }
 
 function ago(iso: string | null): string {
@@ -181,6 +187,42 @@ export default function WorkerStatusPanel() {
               <Gamepad2 className="w-3.5 h-3.5 text-amber-400/80 shrink-0" />
             </div>
           </div>
+
+          {/* ⚡ リアルタイム処理中ライブモニター */}
+          {(data.tasks.running || data.videos.processing) && (
+            <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/60 shadow-md shadow-amber-950/30 space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black text-amber-300">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                  <span>⚡ 現在処理中のタスク（リアルタイム実行中）</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/40">
+                  LIVE
+                </span>
+              </div>
+              {data.videos.processing && (
+                <div className="text-xs text-zinc-200 bg-zinc-950/70 p-2.5 rounded-lg border border-amber-800/40 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 font-bold">
+                    <span>🎬 動画解析中 (youtube_queue)</span>
+                    <span className="text-amber-400 font-mono text-[10px]">{ago(data.videos.processing.updated_at || null)} 開始</span>
+                  </div>
+                  <div className="font-bold text-white truncate">{data.videos.processing.title}</div>
+                  {data.videos.processing.channel_name && (
+                    <div className="text-[10px] text-zinc-400">📺 {data.videos.processing.channel_name}</div>
+                  )}
+                </div>
+              )}
+              {data.tasks.running && !data.videos.processing && (
+                <div className="text-xs text-zinc-200 bg-zinc-950/70 p-2.5 rounded-lg border border-amber-800/40 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-amber-300">⚙️ {data.tasks.running.task_type}</span>
+                    <span className="text-[11px] text-zinc-400 ml-2">ID: {data.tasks.running.id.slice(0, 8)}...</span>
+                  </div>
+                  <span className="text-zinc-400 font-mono text-[10px]">{ago(data.tasks.running.created_at)} 経過</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 実測数値カード */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">

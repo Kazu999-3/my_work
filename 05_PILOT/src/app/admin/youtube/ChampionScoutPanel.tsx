@@ -76,7 +76,7 @@ export default function ChampionScoutPanel() {
       if (!res.ok || !json.success) throw new Error(json.error || json.message || 'スカウトに失敗しました');
 
       showMsg(
-        `🎯 【${champ.jpName}】の解説動画を ${json.addedCount} 本キューに追加しました！`,
+        `🎯 【${champ.jpName}】の解説動画を ${json.addedCount} 本、⚡ 優先度: 高（先頭割り込み）でキューに追加しました！`,
         true
       );
       fetchData();

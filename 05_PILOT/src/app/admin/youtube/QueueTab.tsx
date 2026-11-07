@@ -350,6 +350,40 @@ export default function QueueTab() {
 
       {/* 一覧 */}
       <div className="space-y-2">
+        {items.length > 0 && (
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs">
+            <label className="flex items-center gap-2 text-zinc-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="accent-amber-500 w-4 h-4 cursor-pointer"
+                checked={selected.size === items.length && items.length > 0}
+                onChange={() => setSelected(selected.size === items.length ? new Set() : new Set(items.map((i) => i.id)))}
+              />
+              <span className="font-bold">表示中を全選択（{selected.size}/{items.length}）</span>
+            </label>
+            {selected.size > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => closeToPlaylist(Array.from(selected))}
+                  disabled={busy !== null}
+                  className="px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-700/60 text-[11px] font-bold text-amber-300 hover:bg-amber-900/60 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="選択した動画をYouTube手動確認用プレイリストへ追加してクローズします"
+                >
+                  <ListVideo className="w-3 h-3" /> プレイリスト送致 ({selected.size})
+                </button>
+                <button
+                  type="button"
+                  onClick={closeSelected}
+                  disabled={busy !== null}
+                  className="px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-800/60 text-[11px] font-bold text-rose-400 hover:bg-rose-950/70 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  <XCircle className="w-3 h-3" /> 一括クローズ ({selected.size})
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="py-12 text-center text-zinc-500 text-xs">キューを取得中...</div>
         ) : items.length === 0 ? (

@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { championId, limit = 2, action, role } = body;
+    const { championId, limit = 2, action, role, priority = 'high' } = body;
 
     // ─────────────────────────────────────────────────────────
     // 一括補給アクション (action === 'batch')
@@ -203,6 +203,7 @@ export async function POST(req: NextRequest) {
             title: v.title,
             url,
             status: 'pending',
+            priority,
             channel_name: v.uploader || v.channel || `[Scout] ${t.jpName}`,
             duration_sec: v.duration || null,
             date_added: Math.floor(Date.now() / 1000),
@@ -264,6 +265,7 @@ export async function POST(req: NextRequest) {
         title: v.title,
         url,
         status: 'pending',
+        priority,
         channel_name: v.uploader || v.channel || `[Scout] ${championId}`,
         duration_sec: v.duration || null,
         date_added: Math.floor(Date.now() / 1000),
