@@ -314,6 +314,11 @@ ADキャリーとしてはあまり適していません
 ## 🎯 主要対面特化ミクロ (Matchup Tips)
 
 <!-- DB_MATCHUP_SENTINEL_START -->
+### vs Caitlyn
+## 【記事】【ビルド】Gluttonous Greaves選択による生存力と勝率の向上
+
+ブーツ選択において、Berserker's Greavesではなく『Gluttonous Greaves（吸血ブーツ）』を選択することで、勝率が5%向上するデータがある。この吸血により集団戦での粘り強いカイトが可能になる。ビルドはYun TalまたはStormrazorから、Runaan's Hurricane、Infinity Edgeへと進める。射程外からポークしてくるCaitlynはレーン戦で完封される恐れがあるためBAN推奨。
+
 ### vs GLOBAL
 集団戦ではRを起点に立ち回る必要がある。スキルポイント配分については、Eの最大レベルを優先するためにRの2ポイント目を遅らせる戦術も検討の余地がある。
 
@@ -611,6 +616,12 @@ ADキャリーとしてはあまり適していません
 ---
 
 Runaan's Hurricaneの性能微減調整が入ったものの、ZeriのQとパッシブのシナジーによる複数体へのダメージ効率の良さから、依然として必須のコアアイテムとして機能します。
+
+---
+
+## 【記事】【ビルド】Gluttonous Greaves選択による生存力と勝率の向上
+
+ブーツ選択において、Berserker's Greavesではなく『Gluttonous Greaves（吸血ブーツ）』を選択することで、勝率が5%向上するデータがある。この吸血により集団戦での粘り強いカイトが可能になる。ビルドはYun TalまたはStormrazorから、Runaan's Hurricane、Infinity Edgeへと進める。射程外からポークしてくるCaitlynはレーン戦で完封される恐れがあるためBAN推奨。
 
 ### vs Mordekaiser
 モルデカイザーのRもレベルを上げても性能がほとんど変わらないチャンピオンの一例として挙げられている。
