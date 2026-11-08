@@ -212,7 +212,6 @@ export const CHAMPION_METADATA: Record<string, ChampionMeta> = {
   Volibear: { id: 'Volibear', name: 'ボリベア', ruby: 'ぼりべあ', region: 'Freljord', roles: ['TOP', 'JG'], class: 'Fighter' },
   Warwick: { id: 'Warwick', name: 'ワーウィック', ruby: 'わうぃっく', region: 'Zaun', roles: ['JG', 'TOP'], class: 'Fighter' },
   MonkeyKing: { id: 'MonkeyKing', name: 'ウーコン', ruby: 'うこん', region: 'Ionia', roles: ['TOP', 'JG', 'MID'], class: 'Fighter' },
-  Wukong: { id: 'Wukong', name: 'ウーコン', ruby: 'うこん', region: 'Ionia', roles: ['TOP', 'JG', 'MID'], class: 'Fighter' },
   Xayah: { id: 'Xayah', name: 'ザヤ', ruby: 'ざや', region: 'Ionia', roles: ['ADC'], class: 'Marksman' },
   Xerath: { id: 'Xerath', name: 'ゼラス', ruby: 'ぜらす', region: 'Shurima', roles: ['SUP', 'MID'], class: 'Mage' },
   XinZhao: { id: 'XinZhao', name: 'シン・ジャオ', ruby: 'しんじゃお', region: 'Demacia', roles: ['JG', 'TOP', 'MID'], class: 'Fighter' },
@@ -230,6 +229,9 @@ export const CHAMPION_METADATA: Record<string, ChampionMeta> = {
 };
 
 export function getChampionMetadata(id: string): ChampionMeta {
+  if (id === 'Wukong' && CHAMPION_METADATA['MonkeyKing']) {
+    return CHAMPION_METADATA['MonkeyKing'];
+  }
   if (CHAMPION_METADATA[id]) {
     return CHAMPION_METADATA[id];
   }
@@ -276,7 +278,7 @@ export const FESTIVAL_THEMES: FestivalTheme[] = [
     category: 'mechanics',
     champIds: [
       'Yasuo', 'Malphite', 'Diana', 'Alistar', 'Zac',
-      'Orianna', 'Wukong', 'Nautilus', 'Rakan', 'Chogath',
+      'Orianna', 'MonkeyKing', 'Nautilus', 'Rakan', 'Chogath',
       'Yone', 'Gragas', 'Janna', 'Rell', 'Ornn'
     ]
   },
@@ -396,7 +398,7 @@ export const FESTIVAL_THEMES: FestivalTheme[] = [
       'Ahri', 'Akali', 'Hwei', 'Irelia', 'Ivern',
       'Jhin', 'Karma', 'Kayn', 'Kennen', 'LeeSin',
       'Lillia', 'MasterYi', 'Rakan', 'Sett', 'Shen',
-      'Syndra', 'Varus', 'Wukong', 'Xayah', 'Yasuo',
+      'Syndra', 'Varus', 'MonkeyKing', 'Xayah', 'Yasuo',
       'Yone', 'Zed'
     ]
   },

@@ -45,6 +45,8 @@ import {
   Share2,
   Link2,
   Shield,
+  Save,
+  FolderOpen,
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
 import CustomSubNav from "../../../components/CustomSubNav";
@@ -197,6 +199,86 @@ export default function FestivalPickPage() {
       toast.error("URLのコピーに失敗しました");
     }
   }, [activeTheme, playerCount, picksPerPlayer, teamMode, viewMode]);
+
+  // 💾 一時保存（LocalStorage）
+  const [hasSavedData, setHasSavedData] = useState(false);
+  const [savedTimeLabel, setSavedTimeLabel] = useState<string | null>(null);
+
+  // マウント時に保存データの有無をチェック
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem("ktm_festival_pick_saved_state");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setHasSavedData(true);
+        if (parsed.savedAt) {
+          const d = new Date(parsed.savedAt);
+          setSavedTimeLabel(`${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleSaveState = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const payload = {
+        savedAt: new Date().toISOString(),
+        excludedIds: Array.from(excludedIds),
+        draftResults,
+        playerCount,
+        picksPerPlayer,
+        teamMode,
+        viewMode,
+        activeThemeId: activeTheme?.id || null,
+      };
+      localStorage.setItem("ktm_festival_pick_saved_state", JSON.stringify(payload));
+      setHasSavedData(true);
+      const now = new Date();
+      setSavedTimeLabel(`${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`);
+      toast.success("💾 現在の状態（除外設定＆ドラフト候補・確定状況）を一時保存しました！");
+    } catch (e) {
+      toast.error("一時保存に失敗しました");
+    }
+  }, [excludedIds, draftResults, playerCount, picksPerPlayer, teamMode, viewMode, activeTheme]);
+
+  const handleRestoreState = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem("ktm_festival_pick_saved_state");
+      if (!raw) {
+        toast.info("一時保存されたデータはありません");
+        return;
+      }
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.excludedIds)) {
+        setExcludedIds(new Set(data.excludedIds));
+      }
+      if (Array.isArray(data.draftResults) && data.draftResults.length > 0) {
+        setDraftResults(data.draftResults);
+      }
+      if (data.playerCount && data.playerCount >= 2 && data.playerCount <= 10) {
+        setPlayerCount(data.playerCount);
+      }
+      if (data.picksPerPlayer && data.picksPerPlayer >= 1 && data.picksPerPlayer <= 3) {
+        setPicksPerPlayer(data.picksPerPlayer);
+      }
+      if (typeof data.teamMode === "boolean") {
+        setTeamMode(data.teamMode);
+      }
+      if (data.viewMode) {
+        setViewMode(data.viewMode);
+      }
+      if (data.activeThemeId) {
+        const targetTheme = FESTIVAL_THEMES.find((t) => t.id === data.activeThemeId);
+        if (targetTheme) setActiveTheme(targetTheme);
+      }
+      toast.success("📂 一時保存されていたお祭りピック状態を復元しました！");
+    } catch (e) {
+      toast.error("復元に失敗しました");
+    }
+  }, []);
 
   // 🎲 今日のテーマおまかせダイス
   const handleRandomThemeDice = useCallback(() => {
@@ -555,6 +637,30 @@ ${bodyText}
               {copiedShareUrl ? <Check className="w-3.5 h-3.5 text-success-500" /> : <Share2 className="w-3.5 h-3.5 text-primary-500" />}
               <span>{copiedShareUrl ? "コピー完了！" : "🔗 設定共有"}</span>
             </button>
+
+            {/* 💾 一時保存ボタン */}
+            <button
+              type="button"
+              onClick={handleSaveState}
+              className="px-3.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-foreground text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              title="除外設定やドラフト結果をブラウザに一時保存します"
+            >
+              <Save className="w-3.5 h-3.5 text-blue-500" />
+              <span>💾 一時保存</span>
+            </button>
+
+            {/* 📂 復元ボタン */}
+            {hasSavedData && (
+              <button
+                type="button"
+                onClick={handleRestoreState}
+                className="px-3.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/40 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer animate-fade-in"
+                title={`前回保存した状態を復元します${savedTimeLabel ? ` (${savedTimeLabel} 保存)` : ""}`}
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-blue-500" />
+                <span>📂 復元 {savedTimeLabel && <span className="text-[10px] opacity-75 font-mono">({savedTimeLabel})</span>}</span>
+              </button>
+            )}
 
             {excludedIds.size > 0 && (
               <button
@@ -1453,6 +1559,15 @@ ${bodyText}
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
+                  onClick={handleSaveState}
+                  className="px-3.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                  title="現在のピック確定状況・ドラフト結果を一時保存します"
+                >
+                  <Save className="w-4 h-4 text-blue-500" />
+                  <span>💾 一時保存</span>
+                </button>
+                <button
+                  type="button"
                   onClick={handleDraftRoulette}
                   disabled={isDraftRolling}
                   className="px-3.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
@@ -1677,7 +1792,7 @@ function CapturePreviewModal({
   onClose: () => void;
 }) {
   const [copiedPool, setCopiedPool] = useState(false);
-  const [scaleMode, setScaleMode] = useState<"auto" | "compact" | "tiny">("auto");
+  const [scaleMode, setScaleMode] = useState<"auto" | "compact" | "tiny" | "micro">("auto");
 
   // ピック可能なチャンピオンのみを抽出
   const pool = useMemo(() => {
@@ -1729,13 +1844,14 @@ function CapturePreviewModal({
   // 候補数に応じた自動スケール判定
   const effectiveSize = useMemo(() => {
     if (scaleMode !== "auto") return scaleMode;
-    if (pool.length > 80) return "tiny";
+    if (pool.length > 100) return "micro";
+    if (pool.length > 55) return "tiny";
     return "compact";
   }, [scaleMode, pool.length]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in select-none">
-      <div className="bg-[#0b0d13] text-[#f1f3f5] border-2 border-primary-500/60 rounded-2xl w-full max-w-[1400px] h-[96vh] shadow-2xl flex flex-col overflow-hidden">
+      <div className="bg-[#0b0d13] text-[#f1f3f5] border-2 border-primary-500/60 rounded-2xl w-full max-w-[1440px] max-h-[96vh] shadow-2xl flex flex-col overflow-hidden">
         {/* モーダル上部操作バー（キャプチャ外コントロール） */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[#141822] border-b border-stone-800 text-xs shrink-0">
           <div className="flex items-center gap-2">
@@ -1743,7 +1859,7 @@ function CapturePreviewModal({
               <Camera className="w-4 h-4" /> 1枚キャプチャ用プレビュー
             </span>
             <span className="text-[11px] text-stone-400 hidden sm:inline">
-              （スクロール不要で1画面に全収まるように縮小配置しています）
+              （全体が美しく収まり、はみ出し時はスクロールして全体を確認できます）
             </span>
           </div>
 
@@ -1791,8 +1907,8 @@ function CapturePreviewModal({
               <button
                 type="button"
                 onClick={() => setScaleMode("auto")}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                  scaleMode === "auto" ? "bg-stone-700 text-white" : "text-stone-400"
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                  scaleMode === "auto" ? "bg-stone-700 text-white" : "text-stone-400 hover:text-white"
                 }`}
               >
                 自動
@@ -1800,8 +1916,8 @@ function CapturePreviewModal({
               <button
                 type="button"
                 onClick={() => setScaleMode("compact")}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                  scaleMode === "compact" ? "bg-stone-700 text-white" : "text-stone-400"
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                  scaleMode === "compact" ? "bg-stone-700 text-white" : "text-stone-400 hover:text-white"
                 }`}
               >
                 中
@@ -1809,11 +1925,20 @@ function CapturePreviewModal({
               <button
                 type="button"
                 onClick={() => setScaleMode("tiny")}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                  scaleMode === "tiny" ? "bg-stone-700 text-white" : "text-stone-400"
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                  scaleMode === "tiny" ? "bg-stone-700 text-white" : "text-stone-400 hover:text-white"
                 }`}
               >
                 極小
+              </button>
+              <button
+                type="button"
+                onClick={() => setScaleMode("micro")}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                  scaleMode === "micro" ? "bg-stone-700 text-white" : "text-stone-400 hover:text-white"
+                }`}
+              >
+                最小
               </button>
             </div>
 
@@ -1836,10 +1961,10 @@ function CapturePreviewModal({
           </div>
         </div>
 
-        {/* ── 📸 キャプチャ対象エリア（はみ出さず1画面に完全収まる16:9比率風ボード） ── */}
+        {/* ── 📸 キャプチャ対象エリア（はみ出し時もスクロール・全閲覧可能ボード） ── */}
         <div
           id="capture-board-area"
-          className="flex-1 p-3 sm:p-4 bg-gradient-to-b from-[#0f121a] via-[#090b0f] to-[#06070a] flex flex-col justify-between overflow-hidden"
+          className="flex-1 p-3 sm:p-4 bg-gradient-to-b from-[#0f121a] via-[#090b0f] to-[#06070a] flex flex-col justify-between overflow-y-auto min-h-0"
         >
           {/* ボードヘッダー */}
           <div className="flex items-center justify-between border-b border-primary-500/40 pb-2 shrink-0">
@@ -1873,16 +1998,16 @@ function CapturePreviewModal({
             </div>
           )}
 
-          {/* ── メイン配置コンテナ（flex-1 で余白に合わせて等分配置・縦スクロールなし） ── */}
+          {/* ── メイン配置コンテナ（内容量に応じて自然に展開・見切れゼロ） ── */}
           {pool.length > 0 && (
-            <div className="flex-1 my-2 overflow-hidden flex flex-col justify-center">
+            <div className="flex-1 my-2 overflow-y-auto min-h-0 flex flex-col justify-start">
               {/* ① 地域別グループ表示 */}
               {captureGroupBy === "region" && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1.5 h-full content-start overflow-hidden">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1.5 content-start">
                   {poolByRegion.map(([regKey, champs]) => (
                     <div
                       key={regKey}
-                      className="bg-[#121622]/90 border border-stone-800/90 rounded-lg p-1.5 flex flex-col gap-1 shadow-2xs overflow-hidden"
+                      className="bg-[#121622]/90 border border-stone-800/90 rounded-lg p-1.5 flex flex-col gap-1 shadow-2xs"
                     >
                       <div className="flex items-center justify-between border-b border-stone-800 pb-0.5 text-[10px]">
                         <span className="font-bold flex items-center gap-1 text-stone-200 truncate">
@@ -1894,7 +2019,7 @@ function CapturePreviewModal({
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap gap-1 content-start overflow-hidden">
+                      <div className="flex flex-wrap gap-1 content-start">
                         {champs.map((c) => (
                           <CompactCaptureIcon key={c.id} meta={c} size={effectiveSize} />
                         ))}
@@ -1906,11 +2031,11 @@ function CapturePreviewModal({
 
               {/* ② ロール別グループ表示 */}
               {captureGroupBy === "role" && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 h-full content-start overflow-hidden">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 content-start">
                   {poolByRole.map(([role, champs]) => (
                     <div
                       key={role}
-                      className="bg-[#121622]/90 border border-stone-800/90 rounded-lg p-2 flex flex-col gap-1.5 shadow-2xs overflow-hidden"
+                      className="bg-[#121622]/90 border border-stone-800/90 rounded-lg p-2 flex flex-col gap-1.5 shadow-2xs"
                     >
                       <div className="flex items-center justify-between border-b border-stone-800 pb-1 text-xs">
                         <span className="font-bold flex items-center gap-1.5 text-stone-200">
@@ -1922,7 +2047,7 @@ function CapturePreviewModal({
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap gap-1 content-start overflow-hidden">
+                      <div className="flex flex-wrap gap-1 content-start">
                         {champs.map((c) => (
                           <CompactCaptureIcon key={`${role}-${c.id}`} meta={c} size={effectiveSize} showName />
                         ))}
@@ -1934,7 +2059,7 @@ function CapturePreviewModal({
 
               {/* ③ コンパクト全一覧（名簿形式・画面にギッシリ整列） */}
               {captureGroupBy === "flat" && (
-                <div className="bg-[#121622]/90 border border-stone-800/90 rounded-xl p-2.5 flex flex-wrap gap-1 sm:gap-1.5 content-start overflow-hidden h-full">
+                <div className="bg-[#121622]/90 border border-stone-800/90 rounded-xl p-2.5 flex flex-wrap gap-1 sm:gap-1.5 content-start">
                   {pool.map((c) => (
                     <CompactCaptureIcon key={c.id} meta={c} size={effectiveSize} showName />
                   ))}
@@ -1961,22 +2086,23 @@ function CompactCaptureIcon({
   showName = false,
 }: {
   meta: ChampionMeta;
-  size?: "compact" | "tiny";
+  size?: "compact" | "tiny" | "micro";
   showName?: boolean;
 }) {
+  const isMicro = size === "micro";
   const isTiny = size === "tiny";
+
+  const iconBox = isMicro ? "w-4 h-4 rounded-xs" : isTiny ? "w-5 h-5 rounded" : "w-6 h-6 rounded-md";
+  const fontSize = isMicro ? "text-[7.5px] max-w-[40px]" : isTiny ? "text-[8.5px] max-w-[48px]" : "text-[9.5px] max-w-[58px]";
+  const minWidth = showName ? (isMicro ? "min-w-[46px]" : isTiny ? "min-w-[54px]" : "min-w-[68px]") : "";
 
   return (
     <div
-      className={`flex items-center gap-1 bg-[#181d2a] border border-stone-700/60 rounded-md p-0.5 px-1 shadow-2xs shrink-0 select-none ${
-        showName ? (isTiny ? "min-w-[55px]" : "min-w-[68px]") : ""
-      }`}
+      className={`flex items-center gap-0.5 sm:gap-1 bg-[#181d2a] border border-stone-700/60 rounded-md p-0.5 px-0.5 sm:px-1 shadow-2xs shrink-0 select-none ${minWidth}`}
       title={`${meta.name} (${REGIONS[meta.region]?.name || meta.region})`}
     >
       <div
-        className={`${
-          isTiny ? "w-5 h-5 rounded" : "w-6 h-6 rounded-md"
-        } overflow-hidden border border-stone-600/80 shrink-0`}
+        className={`${iconBox} overflow-hidden border border-stone-600/80 shrink-0`}
       >
         <img
           src={getChampIcon(meta.id)}
@@ -1985,9 +2111,7 @@ function CompactCaptureIcon({
         />
       </div>
       <span
-        className={`${
-          isTiny ? "text-[8.5px] max-w-[45px]" : "text-[9.5px] max-w-[58px]"
-        } font-bold text-stone-200 truncate leading-none px-0.5`}
+        className={`${fontSize} font-bold text-stone-200 truncate leading-none px-0.5`}
       >
         {meta.name}
       </span>
