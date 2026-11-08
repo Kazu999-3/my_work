@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
 import CustomSubNav from "../../../components/CustomSubNav";
+import FestivalTournamentDraftModal from "./FestivalTournamentDraftModal";
 
 type ViewMode = "region" | "role" | "class" | "theme" | "all";
 
@@ -88,6 +89,9 @@ export default function FestivalPickPage() {
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [captureGroupBy, setCaptureGroupBy] = useState<"region" | "role" | "flat">("region");
   const [copiedPool, setCopiedPool] = useState(false);
+
+  // ⚔️ 大会式 5v5 ドラフトピックモーダル
+  const [showTournamentDraftModal, setShowTournamentDraftModal] = useState(false);
 
   // チャンピオンクリックで ❌ のトグル
   const toggleExclude = useCallback((id: string) => {
@@ -613,6 +617,17 @@ ${bodyText}
             >
               <Dices className={`w-3.5 h-3.5 ${isThemeRolling ? "animate-spin" : ""}`} />
               <span>🎲 テーマおまかせダイス</span>
+            </button>
+
+            {/* ⚔️ 大会式 5v5 ドラフトピックボタン */}
+            <button
+              type="button"
+              onClick={() => setShowTournamentDraftModal(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-rose-600 hover:from-blue-500 hover:to-rose-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer"
+              title="プロ大会形式（B1 ➔ R1,R2 ➔ B2,B3...）で5v5のチャンピオンピックをシミュレート"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-300" />
+              <span>⚔️ 大会式ドラフト (5v5)</span>
             </button>
 
             {/* 📸 キャプチャ用1枚プレビューボタン */}
@@ -1604,6 +1619,15 @@ ${bodyText}
           onClose={() => setShowCaptureModal(false)}
         />
       )}
+
+      {/* ── ⚔️ 大会式 5v5 ドラフトピックモーダル ── */}
+      <FestivalTournamentDraftModal
+        isOpen={showTournamentDraftModal}
+        onClose={() => setShowTournamentDraftModal(false)}
+        excludedIds={excludedIds}
+        allChamps={ALL_METADATA_CHAMPIONS}
+        activeTheme={activeTheme}
+      />
     </div>
   );
 }
