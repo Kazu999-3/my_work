@@ -481,6 +481,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                           {satRate}%
                         </span>
                         {prop.id === 'E' && <span className="text-[10px] bg-amber-400 text-amber-950 px-1 py-0.2 rounded font-black">ハンデ</span>}
+                        {prop.id === 'F' && <span className="text-[10px] bg-purple-600 text-white px-1 py-0.2 rounded font-black">🎪 お祭り</span>}
                       </button>
                     );
                   })}
@@ -575,6 +576,21 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                       <Sparkles size={14} />
                       推定MMRを反映してチーム分けを微調整する
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 🎪 案F選択時: お祭りランダム説明バナー */}
+              {balanceResult.id === 'F' && (
+                <div className="p-4 rounded-2xl bg-purple-50 border-2 border-purple-200 dark:bg-purple-950/20 dark:border-purple-800/40 shadow-xs space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🎪</span>
+                    <div>
+                      <h3 className="text-xs font-black text-purple-950 dark:text-purple-200">案F：お祭り完全ランダム（闇鍋シャッフル）</h3>
+                      <p className="text-[11px] text-purple-800 dark:text-purple-300">
+                        実力・希望ロール・レート差を一切考慮せず、完全なくじ引きで決定されたお祭り構成です！普段と違うロールや予想外の対面をお楽しみください。
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

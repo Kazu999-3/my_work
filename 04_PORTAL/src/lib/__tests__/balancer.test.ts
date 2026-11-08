@@ -92,16 +92,22 @@ test('coreBalanceTeams: 10人未満は例外を投げる', () => {
   assert.throws(() => coreBalanceTeams(players, emptyCtx()));
 });
 
-test('coreBalanceProposals: 5案(A/B/C/D/E)をすべて有効な編成で返す', () => {
+test('coreBalanceProposals: 6案(A/B/C/D/E/F)をすべて有効な編成で返す', () => {
   const players = tenPlayers();
   const proposals = coreBalanceProposals(players, emptyCtx());
-  assert.equal(proposals.length, 5);
-  assert.deepEqual(proposals.map(p => p.id), ['A', 'B', 'C', 'D', 'E']);
+  assert.equal(proposals.length, 6);
+  assert.deepEqual(proposals.map(p => p.id), ['A', 'B', 'C', 'D', 'E', 'F']);
   for (const prop of proposals) {
     assertValidResult(prop, players.map(p => p.name));
     assert.ok(prop.mmrDiff >= 0, 'mmrDiffは非負');
     assert.ok(typeof prop.title === 'string' && prop.title.length > 0);
   }
+
+  // 案F（お祭りランダム）の特性検証
+  const f = proposals.find(p => p.id === 'F')!;
+  assert.equal(f.isFestivalMode, true);
+  assert.ok(f.title.includes('案F'));
+  assert.ok(f.title.includes('お祭り'));
 });
 
 test('coreBalanceProposals: 案B(戦力均等)はMMR差が過大にならない', () => {

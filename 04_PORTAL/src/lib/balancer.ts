@@ -95,11 +95,12 @@ export interface BalanceResult {
 }
 
 export interface ProposalResult extends BalanceResult {
-  id: string; // 'A' | 'B' | 'C'
+  id: string; // 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
   title: string;
   teamBlueMMR: number;
   teamRedMMR: number;
   mmrDiff: number;
+  isFestivalMode?: boolean;
 }
 
 // ==========================================
@@ -1099,6 +1100,59 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
     teamBlueMMR: mmrBlueE,
     teamRedMMR: mmrRedE,
     mmrDiff: Math.abs(mmrBlueE - mmrRedE)
+  });
+
+  // 案F: お祭りランダム (完全ランダムシャッフル / 闇鍋)
+  const shuffledPlayers = [...players];
+  for (let i = shuffledPlayers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
+  }
+
+  const teamBlueF: AssignedPlayer[] = shuffledPlayers.slice(0, 5).map((p, idx) => {
+    const role = ROLES[idx];
+    const mmr = p.effectiveRates ? p.effectiveRates[role] : (p.rates ? p.rates[role] : (p.avgMMR || 1200));
+    return {
+      ...p,
+      currentRole: role,
+      mmr,
+      mainLane: p.pref1 || 'ALL',
+      subLane: p.pref2 || '-',
+    };
+  });
+
+  const teamRedF: AssignedPlayer[] = shuffledPlayers.slice(5, 10).map((p, idx) => {
+    const role = ROLES[idx];
+    const mmr = p.effectiveRates ? p.effectiveRates[role] : (p.rates ? p.rates[role] : (p.avgMMR || 1200));
+    return {
+      ...p,
+      currentRole: role,
+      mmr,
+      mainLane: p.pref1 || 'ALL',
+      subLane: p.pref2 || '-',
+    };
+  });
+
+  const mmrBlueF = teamBlueF.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedF = teamRedF.reduce((s, p) => s + p.mmr, 0);
+
+  const reportF = [
+    "💡 **【コンセプト：お祭りランダム（完全闇鍋）】**\n実力・希望ロール・レート差を一切考慮せず、完全ランダム（くじ引き）でチームとレーンを決定するお祭りエンジョイ案です。\n**こんな時におすすめ**: 日曜のお祭りカスタムや、普段と違うロール・予想外のカオスな展開を楽しみたい時におすすめです。"
+  ];
+
+  proposals.push({
+    teamBlue: teamBlueF,
+    teamRed: teamRedF,
+    spectators: [],
+    balanceReport: reportF,
+    unallowedHigherMatchups: [],
+    banProtect: null,
+    id: 'F',
+    title: '案F（お祭りランダム）',
+    teamBlueMMR: mmrBlueF,
+    teamRedMMR: mmrRedF,
+    mmrDiff: Math.abs(mmrBlueF - mmrRedF),
+    isFestivalMode: true,
   });
 
   return proposals.sort((a, b) => a.id.localeCompare(b.id));

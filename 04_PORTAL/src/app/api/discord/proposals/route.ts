@@ -38,10 +38,10 @@ export async function POST(request: Request) {
     }
 
     const icons: Record<string, string> = { TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨' };
-    const colors = [0x3498db, 0x2ecc71, 0xf1c40f, 0xe67e22]; // A青 B緑 C黄 D橙
-    const letters = ['🇦', '🇧', '🇨', '🇩'];
+    const colors = [0x3498db, 0x2ecc71, 0xf1c40f, 0xe67e22, 0x9b59b6, 0xe91e63]; // A青 B緑 C黄 D橙 E紫 F桃
+    const letters = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫'];
 
-    const embeds = proposals.slice(0, 4).map((prop: any, i: number) => {
+    const embeds = proposals.slice(0, 6).map((prop: any, i: number) => {
       const matchups = ['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
         const b = (prop.teamBlue || []).find((p: any) => (p.currentRole || p.role) === role);
         const r = (prop.teamRed || []).find((p: any) => (p.currentRole || p.role) === role);
@@ -62,18 +62,24 @@ export async function POST(request: Request) {
         ? ` | 👀 観戦: ${prop.spectators.map((s: any) => typeof s === 'string' ? s : s.name).join(', ')}`
         : '';
 
+      const isFestival = prop.isFestivalMode || prop.id === 'F';
+      const footerText = isFestival
+        ? `🎪 お祭り完全ランダム（MMR変動なし） | 第一希望: ${mainCount}/10人${specList}`
+        : `MMR差: ${prop.mmrDiff ?? '-'} | 第一希望: ${mainCount}/10人 | 勝利予想 B${bluePct}%:R${100 - bluePct}%${specList}`;
+
       return {
         title: `${letters[i]} ${prop.title || `案${prop.id || i + 1}`}`,
         description: matchups,
         color: colors[i % colors.length],
         footer: {
-          text: `MMR差: ${prop.mmrDiff ?? '-'} | 第一希望: ${mainCount}/10人 | 勝利予想 B${bluePct}%:R${100 - bluePct}%${specList}`,
+          text: footerText,
         },
       };
     });
 
+    const activeLetters = letters.slice(0, embeds.length).join('');
     const payload = {
-      content: '🗳️ **チーム分け候補が出ました！** 好みの案にリアクション（🇦🇧🇨🇩）で投票してください。\n採用案は後ほど「チーム分け完了」で通知されます。',
+      content: `🗳️ **チーム分け候補が出ました！** 好みの案にリアクション（${activeLetters}）で投票してください。\n採用案は後ほど「チーム分け完了」で通知されます。`,
       embeds,
     };
 

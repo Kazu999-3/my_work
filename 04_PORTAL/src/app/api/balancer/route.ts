@@ -458,7 +458,8 @@ export async function POST(request: Request) {
       'B': [],
       'C': [],
       'D': [],
-      'E': []
+      'E': [],
+      'F': []
     };
 
     // BL-02: 探索強度（常に200=精密をデフォルト固定）
@@ -498,7 +499,7 @@ export async function POST(request: Request) {
       });
     };
 
-    const conceptIds = ['A', 'B', 'C', 'D', 'E'];
+    const conceptIds = ['A', 'B', 'C', 'D', 'E', 'F'];
     conceptIds.forEach(id => {
       const group = proposalsGrouped[id] || [];
       sortProposals(group);
