@@ -69,36 +69,41 @@ export async function sendEventUsersNotification(env, options = {}) {
         const m2 = b.isMatch2Ready ? '第2戦: 確定' : `第2戦: あと${b.match2Remaining}名`;
         state = `**${m1} / ${m2}**`;
       } else {
-        state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名**`;
-      }
-
-      // 2026-10-20: 土曜の「基準 / 対象」（帯で出場者を絞っていた頃の表示）は 10/17 の全員出場への変更で実態と合わなくなったため外した
-      let rankInfo = '';
-      if (s.target.dayKey === 'sat') {
-        if (s.status.breakdown?.spectatorTotal > 0) {
-          rankInfo += `（※観戦枠: ${s.status.breakdown.spectatorTotal}名）`;
-        }
-      } else {
-        rankInfo = '（ランク不問・お祭りルール🎪）';
+        state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名で開催確定**`;
       }
 
       const link = guildId
-        ? ` → [募集カードを開く](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
+        ? ` → [カードへジャンプ](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
         : '';
-      return `${def.emoji} **${def.name}**　${s.target.label} 21:00\n　出場対象: **${s.status.joined}/10名** ${rankInfo} → ${state}${link}`;
+
+      const lines = [
+        `${def.emoji} **${def.name}**　${s.target.label} 21:00〜`,
+        `　エントリー: **${s.status.joined}/10名** → ${state}${link}`
+      ];
+
+      if (s.target.dayKey === 'sat') {
+        lines.push('　🛡️ **実力均等**: チーム戦力を五分五分に自動調整！初心者・低ランクでも安心して参加できます');
+      } else if (s.target.dayKey === 'sun') {
+        lines.push('　🎪 **今週のお題**: **「🎲 完全ランダム編成 ＆ 対面レート差デバフ縛りルーレット！」**（ランク不問）');
+      }
+
+      return lines.join('\n');
     });
 
+    const isSunOnly = summaries.length === 1 && summaries[0].target.dayKey === 'sun';
+    const embedColor = isSunOnly ? (RECRUITMENT_COLORS.recruitingSun || 0xe67e22) : (RECRUITMENT_COLORS.recruitingSat || 0x2980b9);
+
     const embed = {
-      title: '📣 週末カスタム 残り枠のお知らせ',
+      title: '📣 週末定期カスタム 残り枠のお知らせ',
       description: [
         dayLines.join('\n\n'),
         '',
-        '💡 土曜は**全員出場が基本**。チームはMMRで五分五分に組みます。',
-        '💡 日曜は**ランク不問のお祭り枠**。誰でも気楽に参加できます。',
-        '💡 21:00の第1試合だけ参加する「1戦のみ」や途中参加も大歓迎！各募集カードからどうぞ。',
+        '---',
+        '🔰 **「低ランクだけど迷惑かけない…？」** ➔ **まったく気にせず押してください！**',
+        '💡 「21:00〜の1戦のみ参加」や「ご飯終わりの途中合流」も大歓迎です！',
       ].join('\n'),
-      color: RECRUITMENT_COLORS.recruiting,
-      footer: { text: 'KTM Bot | 週末カスタム リマインド' },
+      color: embedColor,
+      footer: { text: 'KTM Bot | 週末カスタム リマインド ｜ 各募集カードからエントリーできます' },
       timestamp: new Date().toISOString(),
     };
 
@@ -147,10 +152,11 @@ export async function sendEventUsersNotification(env, options = {}) {
       .join('\n');
 
     const contentLines = [
-      `${prefix}📢 **【${shortText}】** 参加できる方はエントリーをお願いします！`
+      `${prefix}📢 **【週末カスタム 残り枠のお知らせ】**`,
+      `🔥 **${shortText || '開催間近！'}** 開催確定まであと少し！エントリーお待ちしています！`
     ];
     if (cardLinks) {
-      contentLines.push('', '👉 **募集カードを開く:**', cardLinks);
+      contentLines.push('', '👉 **募集カードを開いてエントリー:**', cardLinks);
     }
 
     messageBody.content = contentLines.join('\n');
@@ -163,7 +169,7 @@ export async function sendEventUsersNotification(env, options = {}) {
         return {
           type: 2,
           style: 5,
-          label: `👉 ${def.name} カードへ`,
+          label: `👉 ${def.emoji}【${def.label}】募集カードを開く`,
           url: `https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId}`
         };
       });
