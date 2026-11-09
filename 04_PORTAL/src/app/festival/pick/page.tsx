@@ -51,6 +51,8 @@ import {
 import { toast } from "../../../components/Toaster";
 import CustomSubNav from "../../../components/CustomSubNav";
 import FestivalTournamentDraftModal from "./FestivalTournamentDraftModal";
+import SundayThemeModal from "./SundayThemeModal";
+import { SundayFestivalTheme } from "../../../lib/sundayFestivalTheme";
 
 type ViewMode = "region" | "role" | "class" | "theme" | "all";
 
@@ -92,6 +94,10 @@ export default function FestivalPickPage() {
 
   // ⚔️ 大会式 5v5 ドラフトピックモーダル
   const [showTournamentDraftModal, setShowTournamentDraftModal] = useState(false);
+
+  // 🎪 日曜お祭りお題モーダル＆現在のお題
+  const [showSundayThemeModal, setShowSundayThemeModal] = useState(false);
+  const [sundayTheme, setSundayTheme] = useState<SundayFestivalTheme | null>(null);
 
   // チャンピオンクリックで ❌ のトグル
   const toggleExclude = useCallback((id: string) => {
@@ -222,6 +228,16 @@ export default function FestivalPickPage() {
         }
       }
     } catch {}
+
+    // 今週の日曜お祭りお題を取得
+    fetch("/api/festival/theme")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok && data.theme) {
+          setSundayTheme(data.theme);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleSaveState = useCallback(() => {
@@ -606,6 +622,19 @@ ${bodyText}
                 </span>
               )}
             </div>
+
+            {/* 🎪 日曜お祭りお題設定ボタン */}
+            <button
+              type="button"
+              onClick={() => setShowSundayThemeModal(true)}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer"
+              title="日曜お祭りカスタムの今週のお題を設定・確認します（Discordリマインドに自動連動）"
+            >
+              <span className="text-sm">🎪</span>
+              <span className="truncate max-w-[180px]">
+                今週: {sundayTheme?.title?.replace(/^[^\w\s\u3000-\u30FF\u4E00-\u9FA5]+/, "").trim() || "未定"}
+              </span>
+            </button>
 
             {/* 🎲 今日のテーマおまかせダイス */}
             <button
@@ -1627,6 +1656,13 @@ ${bodyText}
         excludedIds={excludedIds}
         allChamps={ALL_METADATA_CHAMPIONS}
         activeTheme={activeTheme}
+      />
+
+      {/* ── 🎪 今週の日曜お祭りお題設定モーダル ── */}
+      <SundayThemeModal
+        isOpen={showSundayThemeModal}
+        onClose={() => setShowSundayThemeModal(false)}
+        onThemeSaved={(t) => setSundayTheme(t)}
       />
     </div>
   );

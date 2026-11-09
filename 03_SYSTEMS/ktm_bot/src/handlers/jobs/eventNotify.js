@@ -1,6 +1,7 @@
 import { CONFIG } from '../../config.js';
 import { fetchWithRetry } from '../../utils/api.js';
 import { notifyAdminError } from '../../utils/alert.js';
+import { fetchSupabase } from '../../utils/supabase.js';
 import { getDayDef, DAY_CAPACITY, RECRUITMENT_COLORS, resolveWeekendTargets } from '../../utils/recruitmentStatus.js';
 import { fetchRecentBotMessages, closePeriodicCard, loadDayRecruitmentSummary, resolveGuildId, cleanupOldReminderMessages } from './periodicCards.js';
 
@@ -60,6 +61,23 @@ export async function sendEventUsersNotification(env, options = {}) {
 
     const guildId = await resolveGuildId(env, channelId);
 
+    // 日曜のお祭りお題をDB（ktm_settings）から取得（未設定や未定の場合は「未定」にフォールバック）
+    let sundayThemeText = '未定（当日集まったメンバーで相談・決定！）';
+    try {
+      const settingsRows = await fetchSupabase(env, 'ktm_settings', 'key=eq.sunday_festival_theme&select=value');
+      const val = settingsRows?.[0]?.value;
+      if (val && typeof val === 'object' && val.title) {
+        const titleStr = String(val.title).trim();
+        if (val.id === 'undecided' || titleStr.includes('未定')) {
+          sundayThemeText = '未定（当日集まったメンバーで相談・決定！）';
+        } else {
+          sundayThemeText = titleStr;
+        }
+      }
+    } catch (themeErr) {
+      console.warn('[EventNotify] お祭りお題の取得に失敗 (未定にフォールバック):', themeErr);
+    }
+
     const dayLines = summaries.map((s) => {
       const def = getDayDef(s.target.dayKey);
       let state;
@@ -84,7 +102,7 @@ export async function sendEventUsersNotification(env, options = {}) {
       if (s.target.dayKey === 'sat') {
         lines.push('　🛡️ **実力均等**: チーム戦力を五分五分に自動調整！初心者・低ランクでも安心して参加できます');
       } else if (s.target.dayKey === 'sun') {
-        lines.push('　🎪 **今週のお題**: **「🎲 完全ランダム編成 ＆ 対面レート差デバフ縛りルーレット！」**（ランク不問）');
+        lines.push(`　🎪 **今週のお題**: **「${sundayThemeText}」**（ランク不問・お祭り枠✨）`);
       }
 
       return lines.join('\n');
