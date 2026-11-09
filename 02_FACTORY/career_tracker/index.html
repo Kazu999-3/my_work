@@ -457,7 +457,35 @@
     .date-badge-today { background: var(--danger-light); color: var(--danger); }
     .date-badge-soon { background: var(--warning-light); color: var(--warning); }
 
-    /* Action delete btn */
+    /* Action delete & AI research btn */
+    .ai-research-btn {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+    }
+    .ai-research-btn:hover {
+      background: #2563eb;
+      color: white;
+      border-color: #1d4ed8;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+    }
+    .ai-research-btn.loading {
+      opacity: 0.7;
+      pointer-events: none;
+      background: #f1f5f9;
+      color: #64748b;
+      border-color: #cbd5e1;
+    }
+
     .del-btn {
       background: transparent;
       border: none;
@@ -807,7 +835,7 @@
             <th style="width: 155px;">次回選考日</th>
             <th style="width: 250px;">魅力・志望理由</th>
             <th style="width: 180px;">求人URL</th>
-            <th style="width: 50px; text-align: center;">操作</th>
+            <th style="width: 120px; text-align: center;">操作</th>
           </tr>
         </thead>
         <tbody id="applicationTableBody">
@@ -1119,8 +1147,11 @@
           </td>
 
           <!-- 操作 -->
-          <td style="text-align: center;">
-            <button class="del-btn" onclick="deleteEntry('${app.id}')" title="この行を削除">🗑️</button>
+          <td style="text-align: center; white-space: nowrap;">
+            <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: center;">
+              <button class="ai-research-btn" id="ai-btn-${app.id}" onclick="triggerAiResearch('${app.id}')" title="社名と職種から給与・勤務形態・魅力をAIリサーチして自動補完">✨ リサーチ</button>
+              <button class="del-btn" onclick="deleteEntry('${app.id}')" title="この行を削除">🗑️</button>
+            </div>
           </td>
         `;
 
@@ -1568,6 +1599,75 @@
       }).catch(() => {
         prompt('以下のコードをコピーしてブックマークのURLに登録してください:', code);
       });
+    }
+
+    async function triggerAiResearch(id) {
+      const app = applications.find(a => a.id === id);
+      if (!app) return;
+
+      if (!app.company_name || !app.company_name.trim()) {
+        alert('⚠️ 企業名を入力してから「✨ リサーチ」を押してください。');
+        const compInput = document.querySelector(`input[data-id="${id}"][data-field="company_name"]`);
+        if (compInput) compInput.focus();
+        return;
+      }
+
+      const btn = document.getElementById(`ai-btn-${id}`);
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.classList.add('loading');
+        btn.innerHTML = '🔄 リサーチ中...';
+      }
+
+      try {
+        const res = await fetch('/api/career/research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_name: app.company_name,
+            job_title: app.job_title || ''
+          })
+        });
+
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json.error || 'AIリサーチに失敗しました');
+        }
+
+        const data = json.data;
+
+        // 不足情報を賢く補完（既存データがある場合は追記または補完）
+        if (data.salary && (!app.salary || app.salary === 0)) {
+          app.salary = data.salary;
+        }
+        if (data.work_style && (!app.work_style || app.work_style === '出社')) {
+          app.work_style = data.work_style;
+        }
+        if (data.attraction) {
+          app.attraction = app.attraction ? `${app.attraction} / ${data.attraction}` : data.attraction;
+        }
+        if (data.job_notes) {
+          app.job_notes = app.job_notes ? `${app.job_notes}\n${data.job_notes}` : data.job_notes;
+        }
+        if (data.job_url && !app.job_url) {
+          app.job_url = data.job_url;
+        }
+
+        app.updated_at = new Date().toISOString();
+        delete app.isNew;
+        saveData();
+        render();
+
+        alert(`✨「${app.company_name}」の情報をAIリサーチして補完しました！\n\n・想定月収: ${data.salary || '-'}万円\n・勤務形態: ${data.work_style}\n・魅力: ${data.attraction.substring(0, 50)}...\n・企業URL: ${data.job_url || 'なし'}`);
+      } catch (err) {
+        console.error('AI Research Error:', err);
+        alert('AIリサーチ失敗: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.classList.remove('loading');
+          btn.innerHTML = origHtml;
+        }
+      }
     }
   </script>
 </body>
