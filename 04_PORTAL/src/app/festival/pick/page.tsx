@@ -53,6 +53,7 @@ import CustomSubNav from "../../../components/CustomSubNav";
 import FestivalTournamentDraftModal from "./FestivalTournamentDraftModal";
 import SundayThemeModal from "./SundayThemeModal";
 import { SundayFestivalTheme } from "../../../lib/sundayFestivalTheme";
+import { getRoleChampionsBreakdown } from "../../../lib/laneMeta";
 
 type ViewMode = "region" | "role" | "class" | "theme" | "all";
 
@@ -548,22 +549,41 @@ ${bodyText}
     return map;
   }, [filteredChamps]);
 
-  // ロール別グループ
+  // ロール別グループ＆Lolalytics過去30日準拠の内訳（通常 / オフメタ）
+  const roleBreakdowns = useMemo(() => {
+    const filterSet = new Set(filteredChamps.map((c) => c.id));
+    const result: Record<ChampionRole, { standard: ChampionMeta[]; offmeta: ChampionMeta[]; all: ChampionMeta[] }> = {
+      TOP: { standard: [], offmeta: [], all: [] },
+      JG: { standard: [], offmeta: [], all: [] },
+      MID: { standard: [], offmeta: [], all: [] },
+      ADC: { standard: [], offmeta: [], all: [] },
+      SUP: { standard: [], offmeta: [], all: [] },
+    };
+
+    ROLES_LIST.forEach((role) => {
+      const b = getRoleChampionsBreakdown(role);
+      const std = b.standard.filter((c) => filterSet.has(c.id));
+      const off = b.offmeta.filter((c) => filterSet.has(c.id));
+      result[role] = {
+        standard: std,
+        offmeta: off,
+        all: [...std, ...off],
+      };
+    });
+
+    return result;
+  }, [filteredChamps]);
+
   const roleGroups = useMemo(() => {
     const map: Record<ChampionRole, ChampionMeta[]> = {
-      TOP: [],
-      JG: [],
-      MID: [],
-      ADC: [],
-      SUP: [],
+      TOP: roleBreakdowns.TOP.all,
+      JG: roleBreakdowns.JG.all,
+      MID: roleBreakdowns.MID.all,
+      ADC: roleBreakdowns.ADC.all,
+      SUP: roleBreakdowns.SUP.all,
     };
-    filteredChamps.forEach((c) => {
-      c.roles.forEach((r) => {
-        if (map[r]) map[r].push(c);
-      });
-    });
     return map;
-  }, [filteredChamps]);
+  }, [roleBreakdowns]);
 
   // クラス別グループ
   const classGroups = useMemo(() => {
@@ -1079,14 +1099,20 @@ ${bodyText}
           </div>
         )}
 
-        {/* ② ロール別モード */}
+        {/* ② ロール別モード（Lolalytics過去30日実測統計準拠: 通常 vs オフメタ枠） */}
         {viewMode === "role" && (
           <div className="space-y-6">
             {ROLES_LIST.map((role) => {
-              const champs = roleGroups[role] || [];
-              if (champs.length === 0) return null;
-              const champIds = champs.map((c) => c.id);
-              const excludedCount = champIds.filter((id) => excludedIds.has(id)).length;
+              const breakdown = roleBreakdowns[role];
+              const standardChamps = breakdown.standard;
+              const offmetaChamps = breakdown.offmeta;
+              const allChamps = breakdown.all;
+              if (allChamps.length === 0) return null;
+
+              const allIds = allChamps.map((c) => c.id);
+              const standardIds = standardChamps.map((c) => c.id);
+              const offmetaIds = offmetaChamps.map((c) => c.id);
+              const excludedCount = allIds.filter((id) => excludedIds.has(id)).length;
 
               const roleLabelMap: Record<ChampionRole, { label: string; icon: string }> = {
                 TOP: { label: "トップ (TOP)", icon: "🛡️" },
@@ -1099,47 +1125,106 @@ ${bodyText}
               return (
                 <div
                   key={role}
-                  className="bg-surface rounded-2xl border border-border p-4 shadow-xs"
+                  className="bg-surface rounded-2xl border border-border p-4 shadow-xs space-y-4"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
+                  {/* ロール見出し ＆ 一括操作バー */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xl">{roleLabelMap[role].icon}</span>
                       <h2 className="text-base font-black text-foreground">
                         {roleLabelMap[role].label}
                       </h2>
                       <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border">
-                        {champs.length - excludedCount} / {champs.length} 体
+                        {allChamps.length - excludedCount} / {allChamps.length} 体
+                      </span>
+                      <span className="text-[10px] text-muted-strong font-mono">
+                        (通常 {standardChamps.length} / 🎭オフメタ {offmetaChamps.length})
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 self-end sm:self-center">
+                    <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap">
+                      {offmetaIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleExcludeGroup(offmetaIds)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[11px] font-black border border-amber-500/30 transition cursor-pointer"
+                          title="Lolalytics過去30日でピック率0.5%未満のオフメタ・トロール枠を一括で除外します"
+                        >
+                          🎭 オフメタ一括 ❌
+                        </button>
+                      )}
+                      {standardIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleExcludeGroup(standardIds)}
+                          className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 text-[11px] font-black border border-purple-500/30 transition cursor-pointer"
+                          title="通常ピックを一括除外し、全員オフメタ縛りで遊ぶ時に使用します"
+                        >
+                          🌟 通常一括 ❌
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => handleExcludeGroup(champIds)}
+                        onClick={() => handleExcludeGroup(allIds)}
                         className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-[11px] font-bold border border-border transition cursor-pointer"
                       >
-                        ロール一括 ❌
+                        全除外 ❌
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleClearGroup(champIds)}
+                        onClick={() => handleClearGroup(allIds)}
                         className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-success-500/10 text-success-600 hover:text-success-700 text-[11px] font-bold border border-border transition cursor-pointer"
                       >
-                        一括解除
+                        全解除
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
-                    {champs.map((champ) => (
-                      <ChampionCard
-                        key={`${role}-${champ.id}`}
-                        meta={champ}
-                        isExcluded={excludedIds.has(champ.id)}
-                        onClick={() => toggleExclude(champ.id)}
-                      />
-                    ))}
-                  </div>
+                  {/* 🌟 通常ピックセクション */}
+                  {standardChamps.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-black text-foreground">
+                        <span className="p-1 rounded bg-primary-500/10 text-primary-500">🌟</span>
+                        <span>通常ピック</span>
+                        <span className="text-[10px] text-muted-strong font-normal font-mono">
+                          (Lolalytics過去30日: ピック率 ≧ 0.5% ｜ {standardChamps.length}体)
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
+                        {standardChamps.map((champ) => (
+                          <ChampionCard
+                            key={`${role}-std-${champ.id}`}
+                            meta={champ}
+                            isExcluded={excludedIds.has(champ.id)}
+                            onClick={() => toggleExclude(champ.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 🎭 オフメタ枠セクション */}
+                  {offmetaChamps.length > 0 && (
+                    <div className="space-y-2 pt-3 border-t border-border/50">
+                      <div className="flex items-center gap-2 text-xs font-black text-amber-600 dark:text-amber-400">
+                        <span className="p-1 rounded bg-amber-500/10 text-amber-500">🎭</span>
+                        <span>オフメタ枠</span>
+                        <span className="text-[10px] text-muted-strong font-normal font-mono">
+                          (Lolalytics過去30日: ピック率 &lt; 0.5% ｜ {offmetaChamps.length}体)
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
+                        {offmetaChamps.map((champ) => (
+                          <ChampionCard
+                            key={`${role}-off-${champ.id}`}
+                            meta={champ}
+                            isExcluded={excludedIds.has(champ.id)}
+                            onClick={() => toggleExclude(champ.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

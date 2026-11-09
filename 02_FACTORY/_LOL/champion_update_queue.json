@@ -1,7 +1,7 @@
 {
   "patch_version": "26.22",
-  "updated_at": "2026-11-09T02:06:50.020654+00:00",
-  "status": "suspended",
+  "updated_at": "2026-11-09T14:38:09.463420+00:00",
+  "status": "running",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
@@ -440,161 +440,161 @@
     },
     "Leona": {
       "name": "レオナ",
-      "status": "pending",
-      "updated_at": "2026-10-26T08:20:43.958013+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T03:07:04.507989+00:00",
       "error": null
     },
     "Lillia": {
       "name": "リリア",
-      "status": "pending",
-      "updated_at": "2026-10-26T08:22:03.543412+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T04:07:21.391538+00:00",
       "error": null,
       "note": "Patch 16.21.1 core monitoring."
     },
     "Lissandra": {
       "name": "リサンドラ",
-      "status": "pending",
-      "updated_at": "2026-10-26T08:22:53.484710+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T06:07:15.221878+00:00",
       "error": null
     },
     "Locke": {
       "name": "ロック",
-      "status": "pending",
-      "updated_at": "2026-10-26T08:24:23.799049+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T06:08:24.830204+00:00",
       "error": null,
       "note": "Patch 16.21.1 modified: ['mpperlevel']"
     },
     "Lucian": {
       "name": "ルシアン",
-      "status": "pending",
-      "updated_at": "2026-10-26T13:03:52.979324+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:37:05.201412+00:00",
       "error": null
     },
     "Lulu": {
       "name": "ルル",
-      "status": "pending",
-      "updated_at": "2026-10-26T17:03:40.636178+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:38:07.398753+00:00",
       "error": null
     },
     "Lux": {
       "name": "ラックス",
-      "status": "pending",
-      "updated_at": "2026-10-27T02:34:04.632713+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:41:03.244752+00:00",
       "error": null
     },
     "Malphite": {
       "name": "マルファイト",
-      "status": "pending",
-      "updated_at": "2026-10-27T06:34:00.736866+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:40:08.494293+00:00",
       "error": null
     },
     "Malzahar": {
       "name": "マルザハール",
-      "status": "pending",
-      "updated_at": "2026-10-27T07:54:44.779492+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:41:22.302391+00:00",
       "error": null
     },
     "Maokai": {
       "name": "マオカイ",
-      "status": "pending",
-      "updated_at": "2026-10-27T07:56:14.168267+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:42:32.997657+00:00",
       "error": null
     },
     "MasterYi": {
       "name": "マスター・イー",
-      "status": "pending",
-      "updated_at": "2026-10-27T07:57:19.306673+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:43:56.101541+00:00",
       "error": null
     },
     "Mel": {
       "name": "メル",
-      "status": "pending",
-      "updated_at": "2026-10-27T07:58:39.320553+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T08:44:52.831569+00:00",
       "error": null
     },
     "Milio": {
       "name": "ミリオ",
-      "status": "pending",
-      "updated_at": "2026-10-27T07:59:45.508145+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:42:03.908587+00:00",
       "error": null
     },
     "MissFortune": {
       "name": "ミス・フォーチュン",
-      "status": "pending",
-      "updated_at": "2026-10-27T09:04:37.657690+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:43:32.649645+00:00",
       "error": null
     },
     "MonkeyKing": {
       "name": "ウーコン",
-      "status": "pending",
-      "updated_at": "2026-10-27T09:07:00.225455+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:44:33.997868+00:00",
       "error": null,
       "note": "Patch 16.21.1 modified: ['hpregen']"
     },
     "Mordekaiser": {
       "name": "モルデカイザー",
-      "status": "pending",
-      "updated_at": "2026-10-27T09:08:29.988758+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:45:42.117009+00:00",
       "error": null
     },
     "Morgana": {
       "name": "モルガナ",
-      "status": "pending",
-      "updated_at": "2026-10-27T09:09:33.532494+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:47:00.872717+00:00",
       "error": null
     },
     "Naafiri": {
       "name": "ナフィーリ",
-      "status": "pending",
-      "updated_at": "2026-10-27T09:11:13.895205+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:48:23.804591+00:00",
       "error": null
     },
     "Nami": {
       "name": "ナミ",
-      "status": "pending",
-      "updated_at": "2026-10-27T11:34:31.637285+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:49:12.163481+00:00",
       "error": null
     },
     "Nasus": {
       "name": "ナサス",
-      "status": "pending",
-      "updated_at": "2026-10-27T21:35:00.649489+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:50:14.318664+00:00",
       "error": null
     },
     "Nautilus": {
       "name": "ノーチラス",
-      "status": "pending",
-      "updated_at": "2026-10-28T00:35:38.537372+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:51:28.717984+00:00",
       "error": null
     },
     "Neeko": {
       "name": "ニーコ",
-      "status": "pending",
-      "updated_at": "2026-10-28T03:36:21.487479+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T09:52:34.977778+00:00",
       "error": null
     },
     "Nidalee": {
       "name": "ニダリー",
-      "status": "pending",
-      "updated_at": "2026-10-28T07:46:33.717000+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T11:07:32.627120+00:00",
       "error": null
     },
     "Nilah": {
       "name": "ニーラ",
-      "status": "pending",
-      "updated_at": "2026-10-28T07:47:44.780459+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T12:07:06.088806+00:00",
       "error": null
     },
     "Nocturne": {
       "name": "ノクターン",
-      "status": "pending",
-      "updated_at": "2026-10-28T07:49:12.408197+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-09T14:37:54.575784+00:00",
       "error": null,
       "note": "Patch 16.21.1 core monitoring."
     },
     "Nunu": {
       "name": "ヌヌ＆ウィルンプ",
-      "status": "pending",
+      "status": "running",
       "updated_at": "2026-10-28T07:50:35.101544+00:00",
       "error": null
     },
