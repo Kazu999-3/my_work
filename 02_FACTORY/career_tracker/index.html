@@ -826,15 +826,16 @@
         <thead>
           <tr>
             <th style="width: 95px;">志望度</th>
-            <th style="width: 240px;">企業名 <span style="color:var(--danger)">*</span></th>
-            <th style="width: 200px;">応募職種</th>
-            <th style="width: 125px;">選考状況</th>
-            <th style="width: 135px;">応募媒体</th>
-            <th style="width: 110px;">想定月収(万)</th>
-            <th style="width: 125px;">勤務形態</th>
-            <th style="width: 155px;">次回選考日</th>
-            <th style="width: 250px;">魅力・志望理由</th>
-            <th style="width: 180px;">求人URL</th>
+            <th style="width: 210px;">企業名 <span style="color:var(--danger)">*</span></th>
+            <th style="width: 230px;">求人タイトル (見出し)</th>
+            <th style="width: 160px;">応募職種</th>
+            <th style="width: 120px;">選考状況</th>
+            <th style="width: 130px;">応募媒体</th>
+            <th style="width: 105px;">想定月収(万)</th>
+            <th style="width: 120px;">勤務形態</th>
+            <th style="width: 150px;">次回選考日</th>
+            <th style="width: 220px;">魅力・志望理由</th>
+            <th style="width: 160px;">求人URL</th>
             <th style="width: 120px; text-align: center;">操作</th>
           </tr>
         </thead>
@@ -919,7 +920,8 @@
         {
           id: 'job_global_commerce_' + Date.now(),
           company_name: '株式会社Global Commerce',
-          job_title: '採用人事（人事企画/制度設計/人事事務）',
+          job_headline: 'ワークライフバランス充実な人事【年休125日・土日祝休】',
+          job_title: '採用人事（企画・制度設計・事務）',
           status: '書類準備',
           source: 'リクナビNEXT',
           salary: 26,
@@ -935,6 +937,7 @@
         {
           id: 'sample-1',
           company_name: '株式会社ネクストイノベーション',
+          job_headline: '【自社AIプロダクト】裁量労働制のフロントエンド開発',
           job_title: 'フロントエンドエンジニア',
           status: '1次面接',
           source: 'マイナビ転職',
@@ -951,6 +954,7 @@
         {
           id: 'sample-2',
           company_name: 'グローバルクラウド株式会社',
+          job_headline: 'プライム上場グループ！急成長SaaSの法人営業',
           job_title: '法人営業（SaaS）',
           status: '書類通過',
           source: 'リクナビNEXT',
@@ -967,6 +971,7 @@
         {
           id: 'sample-3',
           company_name: 'フロンティアテック合同会社',
+          job_headline: '完全在宅＆フルフレックス！優秀な開発組織のディレクション',
           job_title: 'Webディレクター',
           status: '内定',
           source: 'indeed',
@@ -989,6 +994,7 @@
       const newEntry = {
         id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         company_name: '',
+        job_headline: '',
         job_title: '',
         status: '応募済',
         source: 'マイナビ転職',
@@ -1086,10 +1092,16 @@
               value="${escapeHtml(app.company_name)}" title="${escapeHtml(app.company_name)}" placeholder="社名を入力..." onchange="handleCellChange(this)">
           </td>
 
+          <!-- 求人タイトル (見出し) -->
+          <td>
+            <input type="text" class="cell-input" data-id="${app.id}" data-field="job_headline" 
+              value="${escapeHtml(app.job_headline || '')}" title="${escapeHtml(app.job_headline || '')}" placeholder="見出し・キャッチコピー..." onchange="handleCellChange(this)">
+          </td>
+
           <!-- 応募職種 -->
           <td>
             <input type="text" class="cell-input" data-id="${app.id}" data-field="job_title" 
-              value="${escapeHtml(app.job_title || '')}" title="${escapeHtml(app.job_title || '')}" placeholder="職種 (エンジニア, 営業等)..." onchange="handleCellChange(this)">
+              value="${escapeHtml(app.job_title || '')}" title="${escapeHtml(app.job_title || '')}" placeholder="職種 (人事, SE等)..." onchange="handleCellChange(this)">
           </td>
 
           <!-- 選考状況 -->
@@ -1435,11 +1447,12 @@
           items = [parsed];
         }
 
-        if (items.length > 0 && (items[0].company_name || items[0].job_title)) {
+        if (items.length > 0 && (items[0].company_name || items[0].job_title || items[0].job_headline)) {
           items.forEach(item => {
             applications.unshift({
               id: item.id || ('job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
               company_name: item.company_name || '新規企業',
+              job_headline: item.job_headline || '',
               job_title: item.job_title || '',
               status: item.status || '書類準備',
               source: SOURCE_OPTIONS.includes(item.source) ? item.source : 'その他',
@@ -1466,6 +1479,7 @@
 
       // 2. 生テキスト（リクナビ・doda等のコピー）からの自動パース（行ベース解析）
       let comp = '';
+      let headline = '';
       let title = '';
       let salary = 0;
       let work = '出社';
@@ -1516,14 +1530,19 @@
         comp = comp.replace(/\[|\]/g, '').replace(/\(https?:\/\/[^\)]+\)/g, '').split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/, '$1').trim();
       }
 
-      // 職種（「職種：」行、または先頭付近のタイトル）
+      // 求人タイトル（先頭付近の見出し・キャッチコピー）
+      const headlineCandidate = lines.find(l => l.length > 3 && l.length < 70 && !l.startsWith('http') && !l.includes('株式会社') && !l.includes('オファー') && !l.includes('お知らせ'));
+      if (headlineCandidate) {
+        headline = headlineCandidate.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/, '$1').trim();
+      }
+
+      // 職種（「職種：」行）
       for (const l of lines) {
         const m = l.match(/^(?:職種|募集職種)[：:\s]+([^\n\r]+)/);
         if (m) { title = m[1].trim(); break; }
       }
-      if (!title) {
-        const titleLine = lines.find(l => l.length > 3 && l.length < 50 && !l.startsWith('http') && !l.includes('株式会社') && !l.includes('オファー'));
-        if (titleLine) title = titleLine;
+      if (!title && headline) {
+        title = headline.substring(0, 30);
       }
       if (title) {
         title = title.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/, '$1').trim().substring(0, 50);
@@ -1555,6 +1574,7 @@
       const newEntry = {
         id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         company_name: comp || '名称未確認企業',
+        job_headline: headline || '',
         job_title: title.substring(0, 50),
         status: '書類準備',
         source: source,
@@ -1625,6 +1645,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             company_name: app.company_name,
+            job_headline: app.job_headline || '',
             job_title: app.job_title || ''
           })
         });
@@ -1637,6 +1658,12 @@
         const data = json.data;
 
         // 不足情報を賢く補完（既存データがある場合は追記または補完）
+        if (data.job_headline && !app.job_headline) {
+          app.job_headline = data.job_headline;
+        }
+        if (data.job_title && !app.job_title) {
+          app.job_title = data.job_title;
+        }
         if (data.salary && (!app.salary || app.salary === 0)) {
           app.salary = data.salary;
         }
