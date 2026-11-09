@@ -1,12 +1,12 @@
 "use client";
-import { detectUnallowedHigherMatchups, swapWholeTeams } from "../../../lib/balancer/teams";
+import { detectUnallowedHigherMatchups, swapWholeTeams, assignFestivalRestrictions } from "../../../lib/balancer/teams";
 
 import React, { Fragment, useState, useEffect, useMemo } from "react";
 import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle, Flame, ArrowLeftRight } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle, Flame, ArrowLeftRight, Dices } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../../lib/mmr";
 import { getPlayerTier } from "../../../lib/playerTier";
 import { BalancerVcManager, updateVcStatus } from "../components/BalancerVcManager";
@@ -580,16 +580,65 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                 </div>
               )}
 
-              {/* 🎪 案F選択時: お祭りランダム説明バナー */}
+              {/* 🎪 案F選択時: お祭りランダム ＆ 対面レート差解消縛りルーレット */}
               {balanceResult.id === 'F' && (
-                <div className="p-4 rounded-2xl bg-purple-50 border-2 border-purple-200 dark:bg-purple-950/20 dark:border-purple-800/40 shadow-xs space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🎪</span>
-                    <div>
-                      <h3 className="text-xs font-black text-purple-950 dark:text-purple-200">案F：お祭り完全ランダム（闇鍋シャッフル）</h3>
-                      <p className="text-[11px] text-purple-800 dark:text-purple-300">
-                        実力・希望ロール・レート差を一切考慮せず、完全なくじ引きで決定されたお祭り構成です！普段と違うロールや予想外の対面をお楽しみください。
-                      </p>
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-pink-500/10 border-2 border-purple-500/30 shadow-xs space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl p-1.5 bg-purple-500/20 rounded-xl border border-purple-500/30 shrink-0">🎲</span>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-black text-purple-950 dark:text-purple-200 flex items-center gap-2">
+                          案F：対面レート格差解消 ＆ ランダム縛りルーレット
+                          <span className="text-[10px] bg-purple-500/20 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
+                            格差自動アシスト
+                          </span>
+                        </h3>
+                        <p className="text-[11px] text-purple-800 dark:text-purple-300 mt-0.5">
+                          完全ランダムによる対面の実力差（MMR差）を自動監査！格上プレイヤーに「重度・中度・軽度」の縛りをランダム抽選し、格差を打ち消して白熱した接戦にします。
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = assignFestivalRestrictions(balanceResult.teamBlue, balanceResult.teamRed);
+                          setBalanceResult({
+                            ...balanceResult,
+                            teamBlue: updated.teamBlue,
+                            teamRed: updated.teamRed,
+                          });
+                          toast.success("🎲 対面のMMR格差に応じてランダム縛りルーレットを一括抽選しました！");
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-xs transition shadow-sm cursor-pointer flex items-center gap-1.5 animate-pulse hover:animate-none"
+                        title="格差に応じて格上プレイヤーにランダム縛りを割り当てます"
+                      >
+                        <Dices size={14} />
+                        <span>全レーンの縛りを一括抽選！ 🎲</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 縛りランクの早見表 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div className="p-2.5 rounded-xl bg-surface/80 border border-emerald-500/30 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs">🟢 軽度縛り (MMR差 50〜120)</span>
+                      </div>
+                      <p className="text-[10px] text-muted leading-tight">フラッシュ禁止 / 序盤5分リコール禁止 / ピンクワード義務 / 初期ポーション禁止</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-surface/80 border border-amber-500/30 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-600 dark:text-amber-400 text-xs">🟡 中度縛り (MMR差 120〜250)</span>
+                      </div>
+                      <p className="text-[10px] text-muted leading-tight">裸足の戦士（靴禁止） / サモスペ1枠制限 / キル譲渡マン / 逆張り1stアイテム</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-surface/80 border border-rose-500/30 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-rose-600 dark:text-rose-400 text-xs">🔴 重度縛り (MMR差 250以上・大幅格上)</span>
+                      </div>
+                      <p className="text-[10px] text-muted leading-tight">完成品アイテム禁止令 / サモスペ完全封印 / 6Lvまでスキル1つ封印 / 視界ワード禁止</p>
                     </div>
                   </div>
                 </div>
@@ -636,6 +685,21 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                         )}
                         {offB && <span className="text-[9px] bg-danger-100 border border-danger-edge text-danger-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-primary-100 border border-primary-edge text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
+                        {pB?.festivalRestriction && (
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 flex items-center gap-1 shadow-2xs ${
+                              pB.festivalRestriction.level === 'heavy'
+                                ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40'
+                                : pB.festivalRestriction.level === 'medium'
+                                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                                : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40'
+                            }`}
+                            title={`${pB.festivalRestriction.levelLabel}縛り: ${pB.festivalRestriction.description}`}
+                          >
+                            <span>{pB.festivalRestriction.level === 'heavy' ? '🔴' : pB.festivalRestriction.level === 'medium' ? '🟡' : '🟢'}</span>
+                            <span className="truncate max-w-[120px]">{pB.festivalRestriction.title}</span>
+                          </span>
+                        )}
                         <CasinoBadges player={pBData} />
                         {pB?.name && (pB.mainLane !== 'ALL' || pB.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-muted-strong px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
@@ -667,6 +731,21 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                         <span className="font-mono text-xs font-bold text-danger-700 shrink-0 bg-danger-100 px-2 py-0.5 rounded border border-danger-edge">{rMMR}</span>
                         {offR && <span className="text-[9px] bg-danger-100 border border-danger-edge text-danger-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-primary-100 border border-primary-edge text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
+                        {pR?.festivalRestriction && (
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 flex items-center gap-1 shadow-2xs ${
+                              pR.festivalRestriction.level === 'heavy'
+                                ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40'
+                                : pR.festivalRestriction.level === 'medium'
+                                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                                : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40'
+                            }`}
+                            title={`${pR.festivalRestriction.levelLabel}縛り: ${pR.festivalRestriction.description}`}
+                          >
+                            <span>{pR.festivalRestriction.level === 'heavy' ? '🔴' : pR.festivalRestriction.level === 'medium' ? '🟡' : '🟢'}</span>
+                            <span className="truncate max-w-[120px]">{pR.festivalRestriction.title}</span>
+                          </span>
+                        )}
                         <CasinoBadges player={pRData} />
                         {pR?.name && (pR.mainLane !== 'ALL' || pR.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-muted-strong px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">

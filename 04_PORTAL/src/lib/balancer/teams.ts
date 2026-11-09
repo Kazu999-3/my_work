@@ -152,6 +152,80 @@ export function applyManualSwap(balanceResult: any, players: any[], targetTeam: 
 }
 
 /** チーム分け結果のコピー用テキスト */
+export interface FestivalRestriction {
+  level: "light" | "medium" | "heavy";
+  levelLabel: string; // "軽度" | "中度" | "重度"
+  title: string;
+  description: string;
+  color: string;
+}
+
+export const FESTIVAL_RESTRICTIONS: Record<"light" | "medium" | "heavy", FestivalRestriction[]> = {
+  light: [
+    { level: "light", levelLabel: "軽度", title: "フラッシュ禁止", description: "ゴースト・TP・イグナイト等で戦う", color: "emerald" },
+    { level: "light", levelLabel: "軽度", title: "序盤5分リコール禁止", description: "5:00まで自発的リコール不可（デス帰宅のみ）", color: "emerald" },
+    { level: "light", levelLabel: "軽度", title: "ピンクワード義務", description: "リコールするたびにピンクワード1本買って即設置", color: "emerald" },
+    { level: "light", levelLabel: "軽度", title: "初期ポーション禁止", description: "赤ポ・詰め替えポーション購入禁止（ビスケットのみ可）", color: "emerald" },
+  ],
+  medium: [
+    { level: "medium", levelLabel: "中度", title: "裸足の戦士（靴禁止）", description: "試合終了までブーツ系の購入禁止", color: "amber" },
+    { level: "medium", levelLabel: "中度", title: "サモスペ1枠制限", description: "サモナースペルを1枠しか使用しない（キーを外す）", color: "amber" },
+    { level: "medium", levelLabel: "中度", title: "キル譲渡マン", description: "ソロキル以外、集団戦でのラストヒットを味方に譲る", color: "amber" },
+    { level: "medium", levelLabel: "中度", title: "逆張り1stアイテム", description: "1手目のコアアイテムを普段と逆属性（AP/AD）にする", color: "amber" },
+  ],
+  heavy: [
+    { level: "heavy", levelLabel: "重度", title: "完成品アイテム禁止令", description: "レジェンダリー完成品を作れず、素材アイテムのみで戦う", color: "rose" },
+    { level: "heavy", levelLabel: "重度", title: "サモスペ完全封印", description: "DもFもサモナースペルの使用一切禁止", color: "rose" },
+    { level: "heavy", levelLabel: "重度", title: "6Lvまでスキル1つ封印", description: "Lv6までQ/W/Eのどれか1スキルを取得・使用禁止", color: "rose" },
+    { level: "heavy", levelLabel: "重度", title: "視界ワード禁止", description: "黄ワード・赤レンズ・ピンクの使用・購入一切禁止", color: "rose" },
+  ],
+};
+
+/**
+ * 対面のMMR格差に基づいてランダムに縛りを抽選・割り当てる純粋関数
+ */
+export function assignFestivalRestrictions(teamBlue: any[], teamRed: any[]): { teamBlue: any[]; teamRed: any[] } {
+  const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+  const newBlue = teamBlue.map(p => ({ ...p, festivalRestriction: null }));
+  const newRed = teamRed.map(p => ({ ...p, festivalRestriction: null }));
+
+  roles.forEach(role => {
+    const pB = newBlue.find(p => p.currentRole === role);
+    const pR = newRed.find(p => p.currentRole === role);
+    if (!pB || !pR) return;
+
+    const diff = (pB.mmr || 1200) - (pR.mmr || 1200);
+
+    const pickRandom = (lvl: "light" | "medium" | "heavy") => {
+      const list = FESTIVAL_RESTRICTIONS[lvl];
+      return list[Math.floor(Math.random() * list.length)];
+    };
+
+    if (diff >= 250) {
+      // Blueが大幅格上 -> Blueに重度
+      pB.festivalRestriction = pickRandom("heavy");
+    } else if (diff >= 120) {
+      // Blueがやや格上 -> Blueに中度
+      pB.festivalRestriction = pickRandom("medium");
+    } else if (diff >= 50) {
+      // Blueが微格上 -> Blueに軽度
+      pB.festivalRestriction = pickRandom("light");
+    } else if (diff <= -250) {
+      // Redが大幅格上 -> Redに重度
+      pR.festivalRestriction = pickRandom("heavy");
+    } else if (diff <= -120) {
+      // Redがやや格上 -> Redに中度
+      pR.festivalRestriction = pickRandom("medium");
+    } else if (diff <= -50) {
+      // Redが微格上 -> Redに軽度
+      pR.festivalRestriction = pickRandom("light");
+    }
+    // 50未満は互角なので縛りなし
+  });
+
+  return { teamBlue: newBlue, teamRed: newRed };
+}
+
 export function buildResultCopyText(balanceResult: any): string {
   const blueAvg = balanceResult.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamBlue.length || 1);
   const redAvg = balanceResult.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamRed.length || 1);
@@ -162,12 +236,16 @@ export function buildResultCopyText(balanceResult: any): string {
   const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
   const blueLines = roles.map(r => {
     const p = balanceResult.teamBlue.find((x: any) => x.currentRole === r);
-    return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1200})` : `  ${r.padEnd(3, ' ')}: -`;
+    if (!p) return `  ${r.padEnd(3, ' ')}: -`;
+    const restr = p.festivalRestriction ? ` [${p.festivalRestriction.levelLabel}: ${p.festivalRestriction.title}]` : '';
+    return `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1200})${restr}`;
   }).join('\n');
 
   const redLines = roles.map(r => {
     const p = balanceResult.teamRed.find((x: any) => x.currentRole === r);
-    return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1200})` : `  ${r.padEnd(3, ' ')}: -`;
+    if (!p) return `  ${r.padEnd(3, ' ')}: -`;
+    const restr = p.festivalRestriction ? ` [${p.festivalRestriction.levelLabel}: ${p.festivalRestriction.title}]` : '';
+    return `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1200})${restr}`;
   }).join('\n');
 
   const specText = (balanceResult.spectators && balanceResult.spectators.length > 0)
