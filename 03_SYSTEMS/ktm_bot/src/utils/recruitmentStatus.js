@@ -13,23 +13,23 @@
 //   その再発経路自体が無くなる。差し替えが必要な箇所では replaceBanner() を使うこと。
 
 export const RECRUITMENT_COLORS = {
-  recruiting: 0xc89b3c,      // 琥珀色: 定員未達、募集中
-  confirmed: 0x2ecc71,       // 緑: 10名達成、開催確定
+  recruiting: 0x2980b9,        // 後方互換用（土曜ロイヤルブルー）
+  recruitingSat: 0x2980b9,     // 土曜（実力均等）: 鮮やかなロイヤルブルー
+  recruitingSun: 0xe67e22,     // 日曜（お祭り枠）: ビビッドオレンジ/ゴールド
+  confirmed: 0x2ecc71,         // 緑: 10名達成、開催確定
 };
 
 export const DAY_CAPACITY = 10;
 
-// 土曜=本戦カスタム / 日曜=お祭りカスタム の呼称・絵文字・ルール文言をここへ集約する。
-// 過去に「日曜・お祭り部門」と「日曜・お祭りカスタム」の呼称ゆれが発生しているため、
-// 表示に使う文字列は必ずここから引くこと。
+// 土曜=実力均等カスタム / 日曜=お祭りカスタム の呼称・絵文字・ルール文言をここへ集約する。
 export const DAY_DEFS = {
   sat: {
     key: 'sat',
     emoji: '⚔️',
     label: '土曜',
-    name: '土曜・本戦カスタム',
-    shortName: '土曜本戦カスタム',
-    rule: '実力伯仲の真剣勝負。参加者は全員出場が基本で、チームはMMRで五分五分に調整。格上との対面を「🛡️守ってほしい」にした人は保護、希望レーンは「希望レーンの強さ」で守ります（MMR変動あり）',
+    name: '土曜・実力均等カスタム',
+    shortName: '土曜・実力均等カスタム',
+    rule: 'チーム戦力をMMRで五分五分に自動調整！初心者・低ランクでも安心して参加できるエンジョイ本戦（MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -38,9 +38,9 @@ export const DAY_DEFS = {
     key: 'sun',
     emoji: '🎪',
     label: '日曜',
-    name: '日曜・お祭りカスタム',
-    shortName: '日曜お祭りカスタム',
-    rule: 'ランク不問のお祭り枠。特殊ルール/ランダム/オフメタ等なんでも歓迎（主催者が「お祭り扱い」にした試合はMMRが動きません）',
+    name: '日曜・お祭りカスタム（ランク不問）',
+    shortName: '日曜・お祭りカスタム',
+    rule: '勝敗気にせずワイワイ遊ぶお祭り枠！不慣れなチャンプやレーンの練習、特殊ルール等なんでも歓迎（MMR変動なし）',
     joinPrefix: 'join_periodic_sunday',
     showRank: false,
     buttonStyle: 3,   // Success (Green)
@@ -369,6 +369,7 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
     const joined = breakdown.eligibleTotal;
     const remaining = Math.max(0, capacity - joined);
     const isReady = breakdown.isMatch1Ready || (breakdown.match1Count === 0 && breakdown.isMatch2Ready);
+    const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
 
     return {
       total: breakdown.total,
@@ -376,7 +377,7 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
       capacity,
       remaining,
       isReady,
-      color: (breakdown.isMatch1Ready || breakdown.isMatch2Ready) ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+      color: (breakdown.isMatch1Ready || breakdown.isMatch2Ready) ? RECRUITMENT_COLORS.confirmed : recruitingColor,
       breakdown,
       dominantTierInfo,
     };
@@ -385,6 +386,7 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
   const joined = Math.max(0, Number(countOrLines) || 0);
   const remaining = Math.max(0, capacity - joined);
   const isReady = joined >= capacity;
+  const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
 
   return {
     total: joined,
@@ -392,7 +394,7 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
     capacity,
     remaining,
     isReady,
-    color: isReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+    color: isReady ? RECRUITMENT_COLORS.confirmed : recruitingColor,
     breakdown: null,
     dominantTierInfo: { key: '', text: '', rangeText: '' },
   };
@@ -544,23 +546,24 @@ export function buildRecruitmentContent(target, notificationRoleId) {
   const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
 
   if (target.dayKey === 'sat') {
-    const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
-    // 2026-10-17: 長くて読まれにくいとの指摘で短くした（基準の細かい説明は削り、要点だけ）
     return `📢 **【${def.shortName}】${label} 21:00〜** ${mention}
-⚔️ 実力伯仲の真剣勝負（チームは五分五分に自動調整）。初参加・初心者も歓迎です🔰
-🕒 21:00〜3戦ほど（24時頃から自由参加のメイヘム）
 
-⚖️ **チーム分け**
-・参加者は全員出場が基本。11人以上の回は試合ごとに交代します
-・格上とレーンで当たりたくない人は🛡️保護されます（マイページの「格上との対面」で変更可）
+🔰 **「低ランクだけど迷惑かけない…？」**
+➔ **まったく気にせず押してください！**
+KTMバランサーがチーム戦力を【五分五分】に自動調整するため、誰が入ってもフェアで楽しい試合になります！
+（20人集まれば「初中級部屋」「上級部屋」の2部屋同時開催！）
 
-🏷️ 🔰初参加 ｜ 🌱ライト(1〜14戦) ｜ 👑常連 ｜ 🎖️経験者 ｜ ⏳復帰勢`.trim();
+🕒 **開催時間**: 21:00〜3戦ほど（24時頃目安）
+💡 **気軽な参加大歓迎**: 「1戦だけ」「ご飯終わりの2戦目から」の途中参加・抜けも自由です！
+🛡️ **対面安心**: 格上とレーンで当たりたくない方は保護されます。`.trim();
   }
 
-  // 日曜は通知二重鳴り防止のためメンションを省き、被る凡例もカット
+  // 日曜は通知二重鳴り防止のためメンションを省く
   return `📢 **【${def.shortName}】${label} 21:00〜**
-🎪 **勝敗気にせず楽しむお祭り！** レート変動なし・ランク不問✨
-🔰 **初参加大歓迎！**: 最初のカスタム体験にも最適です。気軽にご参加ください！
-🕒 **ルール**: 不慣れなキャラ・レーンの練習や特殊ルール・ARAM等のワイワイ枠
-（※名簿アイコンの意味は土曜カードと共通です）`.trim();
+
+🎪 **勝敗気にせずワイワイ遊ぶお祭り枠！** レート変動なし・ランク不問✨
+不慣れなチャンプやレーンの練習、特殊ルール・ARAMなどなんでも大歓迎です！
+
+🔰 **「カスタム初めてで不安…」という方のデビューにも最適！**
+「まずは1戦だけ覗いてみる」も大歓迎ですので、ぜひ気軽にボタンを押してみてください！`.trim();
 }

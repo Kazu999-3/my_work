@@ -71,7 +71,9 @@ for (const dayKey of ['sat', 'sun']) {
     if (status.isReady !== expectedReady) {
       fail(`[${dayKey}/${c.label}] isReadyが人数と一致しません`);
     }
-    const expectedColor = status.isReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting;
+    const expectedColor = status.isReady
+      ? RECRUITMENT_COLORS.confirmed
+      : (dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat);
     if (status.color !== expectedColor) {
       fail(`[${dayKey}/${c.label}] colorが状態と一致しません(実際=0x${status.color.toString(16)})`);
     }
