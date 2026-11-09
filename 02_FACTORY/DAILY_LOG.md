@@ -1,5 +1,35 @@
 ## 📅 2026-11-09（月）
 
+### 📊 Lolalytics実測メタ・勝率・ビルド照会CLI（`scripts/lolalytics.mjs`）の配備 ＆ AI行動規範への組み込み
+
+**概要**:
+1. **背景と課題**:
+   - ユーザーより「普段の会話や質問でもLolalyticsの情報を参照してほしい」との要望を受領。
+   - LoLのチャンピオン勝率、メタ、推奨ビルド、カウンター相性などの議論において、AIの過去学習データによる推測や当て推量（ハルシネーション）を永久根絶し、Lolalytics（ロラリティクス）の実測統計（過去30日・1,100万戦規模）を対話の裏で瞬時に取得できる環境が求められた。
+2. **実施内容**:
+   - **【Lolalytics CLIツールの開発】(`scripts/lolalytics.mjs`)**:
+     - DataDragon（最新日本語データ）とLolalytics内部API（`rune`, `tier`, `counter`, `build-itemset`）を連携。
+     - `champ`: チャンピオンの基本戦績（順位/勝率/PR/BR/試合数/OTP勝率）、ルーン、1st〜2ndコアビルド勝率、有利・不利対面TOP5を日本語名で瞬時に表示。
+     - `tier`: レーン別Tierランキング（エメラルド以上・数千万戦統計）を勝率・ピック率・OTP勝率順に表示。
+     - `matchup`: 2体のチャンピオンの直接対決実測勝率・試合数を一発判定。
+   - **【プロジェクト憲法への明文化】(`.agent/rules/04_hallucination_prevention.md`)**:
+     - 第14項「LoL実測メタ・勝率・ビルド照会の絶対義務（Lolalytics CLI自動活用）」を新設。LoLの話題では必ずこのCLIを実行してから回答することを義務付け。
+3. **機械的実値検証**:
+   - `node d:/my_work/scripts/lolalytics.mjs champ aatrox top` ➔ 正常出力確認。
+   - `node d:/my_work/scripts/lolalytics.mjs matchup エイトロックス ダリウス top` ➔ 15,112試合の実測勝率を正常取得。
+   - `node d:/my_work/scripts/lolalytics.mjs tier adc` ➔ 5,777万戦ベースのTier表を正常取得。
+
+**再利用可能な3行ナレッジ**:
+- AIアシスタントにゲームや業務ドメインの生データを引かせる際は、LLMに推論させるのではなく、決定論的な専用CLI（`scripts/lolalytics.mjs`等）を用意してエージェントルールでその実行を義務付けるのが最も確実。
+- Lolalyticsの内部APIは `patch=30` を渡すことで直近30日間の膨大な実戦データ（1,000万戦以上）が得られ、パッチ初日のブレやサンプル不足に影響されない極めて堅牢なメタ判定が可能になる。
+- DataDragonの日本語辞書（`champion.json`, `item.json`, `runesReforged.json`）をマッピングすることで、外部APIの英語slugや数値IDを自然な日本語表記へ完全ローカライズしてユーザー・AI双方の可読性を最大化できる。
+
+- `[要検証]`: note記事執筆ワークフローにおける `scripts/lolalytics.mjs` 自動呼び出しの効率化。
+- `[継続ウォッチ]`: 新シーズン/新パッチ時のアイテムID・ルーンIDのDataDragon追従。
+- `[発信候補]`: 「当て推量を根絶する！Lolalytics API×CLIでAIのLoL知識を『世界1,100万戦実測』にする技術」。
+
+
+
 ### 📊 Lolalytics過去30日実測統計（1,136万戦）に基づく「通常ピック」vs「オフメタ枠」分離 ＆ ロール別UIアップデート
 
 **概要**:
