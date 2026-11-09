@@ -349,7 +349,8 @@ def check_soloq_coach(r: Report, cur):
 
 # pg_cron（migration 93）で動かしている定期呼び出し。消えた・止まった・呼び出し先がエラーを返す、を検知する。
 # 2026-10-07: 6月に手で登録された pg_cron 2本が毎回「0件」「見つからない」を返したまま数か月誰にも気づかれていなかった。
-EXPECTED_CRON_JOBS = ("poll-soloq-coach", "dispatch-edge-cloud-worker")
+# 2026-11-02: poll-soloq-coach は Vercel無料枠（CPU時間）保護のため停止（migration 124適用済）。監視対象から除外。
+EXPECTED_CRON_JOBS = ("dispatch-edge-cloud-worker",)
 
 
 def check_pg_cron(r: Report, cur):
