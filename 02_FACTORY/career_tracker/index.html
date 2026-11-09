@@ -681,7 +681,7 @@
           下の青いボタンをブラウザの<strong>ブックマークバーにドラッグ＆ドロップ</strong>（または右クリックしてURLをコピー）して保存してください。<br>
           求人ページ（リクナビ・doda等）で押すと、一発でデータがコピーされます！<br>
           <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <a href="javascript:(function(){const d=document,host=location.hostname;let comp='',title='',salary=0,work='出社',url=location.href,src='その他';if(host.includes('next.rikunabi'))src='リクナビNEXT';else if(host.includes('doda'))src='doda';else if(host.includes('mynavi'))src='マイナビ転職';else if(host.includes('indeed'))src='indeed';const compLink=Array.from(d.querySelectorAll('a[href*=\x22/company/\x22], a[href*=\x22/corp/\x22], [data-test*=\x22company\x22]')).find(a=>a.innerText&&a.innerText.trim().length>1);if(compLink)comp=compLink.innerText.trim();if(!comp){const el=d.querySelector('.rn3-companyName, .company-name, [class*=\x22companyName\x22], [class*=\x22company_name\x22], [class*=\x22CompanyName\x22]');if(el)comp=el.innerText.trim();}if(!comp){const m=d.body.innerText.match(/(?:社名|会社名|企業名)\s*[\n\r：:]+\s*([^\n\r]+)/);if(m)comp=m[1].trim();}if(!comp){const corp=d.body.innerText.match(/(?:株式会社[^\s\n\r　()（）「」【】]+|[^\s\n\r　()（）「」【】]+株式会社|合同会社[^\s\n\r　()（）「」【】]+|[^\s\n\r　()（）「」【】]+合同会社)/);if(corp)comp=corp[0].trim();}if(!comp)comp=(d.querySelector('h1, h2')?.innerText||d.title).trim();comp=comp.replace(/\[|\]/g,'').replace(/\(https?:\/\/[^\)]+\)/g,'').split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim();const jobLabel=d.body.innerText.match(/(?:職種|募集職種|仕事内容[：:\s]*職種)[：:\s\n]+([^\n\r]+)/);if(jobLabel)title=jobLabel[1].trim();else title=(d.querySelector('h1')?.innerText||d.title).trim();title=title.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim().substring(0,50);const bodyText=d.body.innerText,salMatch=bodyText.match(/月給\s*([0-9０-９]+)\s*万/);if(salMatch)salary=parseInt(salMatch[1].replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0)));if(bodyText.includes('完全在宅')||bodyText.includes('フルリモート'))work='フルリモート';else if(bodyText.includes('リモート')||bodyText.includes('在宅')||bodyText.includes('テレワーク'))work='ハイブリッド';const item={id:'job_'+Date.now(),company_name:comp||'名称未確認企業',job_title:title||'職種未確認',status:'書類準備',source:src,salary:salary||0,work_style:work,priority:3,next_action_date:'',attraction:comp+' / '+work,job_url:url,job_notes:'ブックマークレット取込',created_at:new Date().toISOString(),updated_at:new Date().toISOString()};navigator.clipboard.writeText(JSON.stringify([item],null,2)).then(()=>{alert('💼 「'+item.company_name+'」\n職種: '+item.job_title+'\n月給: '+item.salary+'万円\n\n求人データをコピーしました！\nトラッカーで「📋 貼り付け追加」を押すか、Ctrl+Vを押してください。');}).catch(()=>{prompt('データをコピーしてトラッカーに貼り付けてください:',JSON.stringify([item]));});})();" class="bookmarklet-badge" title="このボタンをマウスで上のブックマークバーへドラッグ＆ドロップしてください">💼 求人を取得（これをブックマークバーへドラッグ）</a>
+            <a href="javascript:(function(){const d=document,host=location.hostname;let comp='',title='',salary=0,work='出社',url=location.href,src='その他';if(host.includes('next.rikunabi'))src='リクナビNEXT';else if(host.includes('doda'))src='doda';else if(host.includes('mynavi'))src='マイナビ転職';else if(host.includes('indeed'))src='indeed';const lines=d.body.innerText.split('\n').map(l=>l.trim()).filter(Boolean);const links=Array.from(d.querySelectorAll('a[href*=\x22/company/\x22], a[href*=\x22/corp/\x22]'));for(const a of links){const t=(a.innerText||'').trim();if(t.length>1&&!t.includes('一覧')&&!t.includes('トップ')){comp=t;break;}}if(!comp){for(let i=0;i<lines.length-1;i++){if(/^(?:社名|会社名|企業名)$/.test(lines[i])){comp=lines[i+1];break;}}}if(!comp){for(const l of lines){if(/(?:株式会社|合同会社|有限会社)/.test(l)){if(!l.includes('リクルート')&&!l.includes('Indeed')&&!l.includes('転職')&&l.length<50){comp=l;break;}}}}if(comp){comp=comp.replace(/\[|\]/g,'').replace(/\(https?:\/\/[^\)]+\)/g,'').split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim();}for(const l of lines){const m=l.match(/^(?:職種|募集職種)[：:\s]+([^\n\r]+)/);if(m){title=m[1].trim();break;}}if(!title)title=(d.querySelector('h1')?.innerText||d.title).trim();title=title.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim().substring(0,50);const salMatch=d.body.innerText.match(/月給\s*([0-9０-９]+)\s*万/);if(salMatch)salary=parseInt(salMatch[1].replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0)));const bText=d.body.innerText;if(bText.includes('完全在宅')||bText.includes('フルリモート'))work='フルリモート';else if(bText.includes('リモート')||bText.includes('在宅')||bText.includes('テレワーク'))work='ハイブリッド';if(!comp){comp=prompt('企業名を自動判別できませんでした。企業名を入力してください:','')||'名称未確認企業';}const item={id:'job_'+Date.now(),company_name:comp,job_title:title||'職種未確認',status:'書類準備',source:src,salary:salary||0,work_style:work,priority:3,next_action_date:'',attraction:comp+' / '+work,job_url:url,job_notes:'ブックマークレット取込',created_at:new Date().toISOString(),updated_at:new Date().toISOString()};navigator.clipboard.writeText(JSON.stringify([item],null,2)).then(()=>{alert('💼 「'+item.company_name+'」\n職種: '+item.job_title+'\n月給: '+item.salary+'万円\n\n求人データをコピーしました！\nトラッカーで「📋 貼り付け追加」を押すか、Ctrl+Vを押してください。');}).catch(()=>{prompt('データをコピーしてトラッカーに貼り付けてください:',JSON.stringify([item]));});})();" class="bookmarklet-badge" title="このボタンをマウスで上のブックマークバーへドラッグ＆ドロップしてください">💼 求人を取得（これをブックマークバーへドラッグ）</a>
             <button class="btn btn-secondary btn-sm" onclick="copyBookmarkletCode()" style="font-size: 11px; padding: 4px 8px;">コードをコピー</button>
           </div>
         </div>
@@ -1433,7 +1433,7 @@
         // JSON でない場合はテキスト自然言語パーサーへ
       }
 
-      // 2. 生テキスト（リクナビ・doda等のコピー）からの自動パース
+      // 2. 生テキスト（リクナビ・doda等のコピー）からの自動パース（行ベース解析）
       let comp = '';
       let title = '';
       let salary = 0;
@@ -1452,34 +1452,47 @@
       else if (text.includes('en-japan') || text.includes('エン転職')) source = 'エン転職';
       else if (text.includes('indeed') || text.includes('インディード')) source = 'indeed';
 
-      // 企業名の徹底抽出（Markdownリンク、社名ラベル、株式会社ワード）
-      const mdLinkMatch = text.match(/\[([^\]]+(?:株式会社|合同会社|企業|グループ)[^\]]*)\]\(https?:\/\/[^\)]+\)/i) || text.match(/(?:社名|会社名|企業名)[：:\s\n]+\[([^\]]+)\]/);
-      if (mdLinkMatch) {
-        comp = mdLinkMatch[1].trim();
-      }
-      if (!comp) {
-        const compLabelMatch = text.match(/(?:社名|会社名|企業名)[：:\s\n]+([^\n\r]+)/);
-        if (compLabelMatch) {
-          let candidate = compLabelMatch[1].replace(/\[|\]/g, '').replace(/\(https?:\/\/[^\)]+\)/g, '').trim();
-          if (candidate.length > 1 && !candidate.startsWith('http')) comp = candidate;
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+      // 企業名の徹底抽出（行ベース走査）
+      // パターン1: 「社名」「会社名」「企業名」の次の行
+      for (let i = 0; i < lines.length - 1; i++) {
+        if (/^(?:社名|会社名|企業名)$/.test(lines[i])) {
+          comp = lines[i + 1];
+          break;
         }
       }
+
+      // パターン2: ページ先頭から「株式会社」「合同会社」等を含む行を検索
       if (!comp) {
-        const compWordMatch = text.match(/(?:株式会社[^\s\n\r　()（）「」【】]+|[^\s\n\r　()（）「」【】]+株式会社|合同会社[^\s\n\r　()（）「」【】]+|[^\s\n\r　()（）「」【】]+合同会社)/);
-        if (compWordMatch) comp = compWordMatch[0].trim();
+        for (const l of lines) {
+          if (/(?:株式会社|合同会社|有限会社)/.test(l)) {
+            if (!l.includes('リクルート') && !l.includes('Indeed') && !l.includes('転職') && l.length < 50) {
+              comp = l;
+              break;
+            }
+          }
+        }
       }
+
+      // パターン3: Markdownリンク表記 [社名](url)
+      if (!comp) {
+        const mdLinkMatch = text.match(/\[([^\]]+(?:株式会社|合同会社|企業|グループ)[^\]]*)\]\(https?:\/\/[^\)]+\)/i);
+        if (mdLinkMatch) comp = mdLinkMatch[1];
+      }
+
       if (comp) {
         comp = comp.replace(/\[|\]/g, '').replace(/\(https?:\/\/[^\)]+\)/g, '').split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/, '$1').trim();
       }
 
-      // 職種
-      const jobLabelMatch = text.match(/(?:職種|募集職種|仕事内容[：:\s]*職種)[：:\s\n]+([^\n\r]+)/);
-      if (jobLabelMatch) {
-        title = jobLabelMatch[1].trim();
-      } else {
-        // 先頭付近の見出し行を探す
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2 && l.length < 50 && !l.startsWith('http') && !l.includes('株式会社'));
-        if (lines.length > 0) title = lines[0];
+      // 職種（「職種：」行、または先頭付近のタイトル）
+      for (const l of lines) {
+        const m = l.match(/^(?:職種|募集職種)[：:\s]+([^\n\r]+)/);
+        if (m) { title = m[1].trim(); break; }
+      }
+      if (!title) {
+        const titleLine = lines.find(l => l.length > 3 && l.length < 50 && !l.startsWith('http') && !l.includes('株式会社') && !l.includes('オファー'));
+        if (titleLine) title = titleLine;
       }
       if (title) {
         title = title.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/, '$1').trim().substring(0, 50);
@@ -1549,7 +1562,7 @@
     });
 
     function copyBookmarkletCode() {
-      const code = "javascript:(function(){const d=document,host=location.hostname;let comp='',title='',salary=0,work='出社',url=location.href,src='その他';if(host.includes('next.rikunabi'))src='リクナビNEXT';else if(host.includes('doda'))src='doda';else if(host.includes('mynavi'))src='マイナビ転職';else if(host.includes('indeed'))src='indeed';const compLink=Array.from(d.querySelectorAll('a[href*=\x22/company/\x22], a[href*=\x22/corp/\x22], [data-test*=\x22company\x22]')).find(a=>a.innerText&&a.innerText.trim().length>1);if(compLink)comp=compLink.innerText.trim();if(!comp){const el=d.querySelector('.rn3-companyName, .company-name, [class*=\x22companyName\x22], [class*=\x22company_name\x22], [class*=\x22CompanyName\x22]');if(el)comp=el.innerText.trim();}if(!comp){const m=d.body.innerText.match(/(?:社名|会社名|企業名)\s*[\n\r：:]+\s*([^\n\r]+)/);if(m)comp=m[1].trim();}if(!comp){const corp=d.body.innerText.match(/(?:株式会社[^\s\n\r　()（）「」【】]+|[^\s\n\r　()（）「」【】]+株式会社|合同会社[^\s\n\r　()（）「」【】]+|[^\s\n\r　()（）「」【】]+合同会社)/);if(corp)comp=corp[0].trim();}if(!comp)comp=(d.querySelector('h1, h2')?.innerText||d.title).trim();comp=comp.replace(/\[|\]/g,'').replace(/\(https?:\/\/[^\)]+\)/g,'').split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim();const jobLabel=d.body.innerText.match(/(?:職種|募集職種|仕事内容[：:\s]*職種)[：:\s\n]+([^\n\r]+)/);if(jobLabel)title=jobLabel[1].trim();else title=(d.querySelector('h1')?.innerText||d.title).trim();title=title.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim().substring(0,50);const bodyText=d.body.innerText,salMatch=bodyText.match(/月給\s*([0-9０-９]+)\s*万/);if(salMatch)salary=parseInt(salMatch[1].replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0)));if(bodyText.includes('完全在宅')||bodyText.includes('フルリモート'))work='フルリモート';else if(bodyText.includes('リモート')||bodyText.includes('在宅')||bodyText.includes('テレワーク'))work='ハイブリッド';const item={id:'job_'+Date.now(),company_name:comp||'名称未確認企業',job_title:title||'職種未確認',status:'書類準備',source:src,salary:salary||0,work_style:work,priority:3,next_action_date:'',attraction:comp+' / '+work,job_url:url,job_notes:'ブックマークレット取込',created_at:new Date().toISOString(),updated_at:new Date().toISOString()};navigator.clipboard.writeText(JSON.stringify([item],null,2)).then(()=>{alert('💼 「'+item.company_name+'」\n職種: '+item.job_title+'\n月給: '+item.salary+'万円\n\n求人データをコピーしました！\nトラッカーで「📋 貼り付け追加」を押すか、Ctrl+Vを押してください。');}).catch(()=>{prompt('データをコピーしてトラッカーに貼り付けてください:',JSON.stringify([item]));});})();";
+      const code = "javascript:(function(){const d=document,host=location.hostname;let comp='',title='',salary=0,work='出社',url=location.href,src='その他';if(host.includes('next.rikunabi'))src='リクナビNEXT';else if(host.includes('doda'))src='doda';else if(host.includes('mynavi'))src='マイナビ転職';else if(host.includes('indeed'))src='indeed';const lines=d.body.innerText.split('\n').map(l=>l.trim()).filter(Boolean);const links=Array.from(d.querySelectorAll('a[href*=\x22/company/\x22], a[href*=\x22/corp/\x22]'));for(const a of links){const t=(a.innerText||'').trim();if(t.length>1&&!t.includes('一覧')&&!t.includes('トップ')){comp=t;break;}}if(!comp){for(let i=0;i<lines.length-1;i++){if(/^(?:社名|会社名|企業名)$/.test(lines[i])){comp=lines[i+1];break;}}}if(!comp){for(const l of lines){if(/(?:株式会社|合同会社|有限会社)/.test(l)){if(!l.includes('リクルート')&&!l.includes('Indeed')&&!l.includes('転職')&&l.length<50){comp=l;break;}}}}if(comp){comp=comp.replace(/\[|\]/g,'').replace(/\(https?:\/\/[^\)]+\)/g,'').split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim();}for(const l of lines){const m=l.match(/^(?:職種|募集職種)[：:\s]+([^\n\r]+)/);if(m){title=m[1].trim();break;}}if(!title)title=(d.querySelector('h1')?.innerText||d.title).trim();title=title.split(/[\n\r\t]/)[0].replace(/^[【「『](.*)[】」』]$/,'$1').trim().substring(0,50);const salMatch=d.body.innerText.match(/月給\s*([0-9０-９]+)\s*万/);if(salMatch)salary=parseInt(salMatch[1].replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0)));const bText=d.body.innerText;if(bText.includes('完全在宅')||bText.includes('フルリモート'))work='フルリモート';else if(bText.includes('リモート')||bText.includes('在宅')||bText.includes('テレワーク'))work='ハイブリッド';if(!comp){comp=prompt('企業名を自動判別できませんでした。企業名を入力してください:','')||'名称未確認企業';}const item={id:'job_'+Date.now(),company_name:comp,job_title:title||'職種未確認',status:'書類準備',source:src,salary:salary||0,work_style:work,priority:3,next_action_date:'',attraction:comp+' / '+work,job_url:url,job_notes:'ブックマークレット取込',created_at:new Date().toISOString(),updated_at:new Date().toISOString()};navigator.clipboard.writeText(JSON.stringify([item],null,2)).then(()=>{alert('💼 「'+item.company_name+'」\n職種: '+item.job_title+'\n月給: '+item.salary+'万円\n\n求人データをコピーしました！\nトラッカーで「📋 貼り付け追加」を押すか、Ctrl+Vを押してください。');}).catch(()=>{prompt('データをコピーしてトラッカーに貼り付けてください:',JSON.stringify([item]));});})();";
       navigator.clipboard.writeText(code).then(() => {
         alert('📋 ブックマークレットのコードをクリップボードにコピーしました！\nブラウザのブックマークのURL欄に貼り付けて保存してください。');
       }).catch(() => {
