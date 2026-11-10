@@ -75,7 +75,7 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                           {t}
                         </span>
                       ))}
-                      {/* 📊 OP.GG 公式メタデータ（選択中レーン連動） */}
+                      {/* 📊 Lolalytics 公式メタデータ（選択中レーン連動） */}
                       {currentLaneMeta ? (
                         <>
                           <span

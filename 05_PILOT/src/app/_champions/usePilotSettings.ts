@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import lolalyticsLaneMetaDefault from "@/data/lolalytics_lane_meta.json";
 
-// チャンピオン辞典の個人設定（お気に入り・レーン所属・アイテム翻訳辞書）と OP.GG レーンメタ。
+// チャンピオン辞典の個人設定（お気に入り・レーン所属・アイテム翻訳辞書）と Lolalytics レーンメタ。
 // 端末(localStorage)とDB(/api/pilot/settings)を同期する。2026-10-07 app/page.tsx から分離（処理は分離前と同じ）。
 export function usePilotSettings() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [customRoles, setCustomRoles] = useState<Record<string, string[]>>({});
   const [customItemDict, setCustomItemDict] = useState<Record<string, string>>({});
-  // 📊 OP.GG 公式メタデータ (全レーンの勝率・Tier・BAN率・順位)
-  const [opggMeta, setOpggMeta] = useState<any>(lolalyticsLaneMetaDefault);
+  // 📊 Lolalytics 実測メタデータ (全レーンの勝率・Tier・BAN率・順位)
+  const [laneMeta, setLaneMeta] = useState<any>(lolalyticsLaneMetaDefault);
 
   // localStorage および DB(ktm_settings / champion_lane_roles) からお気に入り・レーン設定・アイテム辞書を同期
   useEffect(() => {
@@ -99,8 +99,9 @@ export function usePilotSettings() {
           } catch {}
         }
 
-        if (data.opggMeta && typeof data.opggMeta === 'object') {
-          setOpggMeta(data.opggMeta);
+        const fetchedMeta = data.laneMeta || data.opggMeta;
+        if (fetchedMeta && typeof fetchedMeta === 'object') {
+          setLaneMeta(fetchedMeta);
         }
       })
       .catch((err) => {
@@ -145,5 +146,5 @@ export function usePilotSettings() {
     });
   };
 
-  return { favorites, customRoles, customItemDict, opggMeta, handleRolesSaved, handleDictionarySaved, toggleFavorite };
+  return { favorites, customRoles, customItemDict, laneMeta, opggMeta: laneMeta, handleRolesSaved, handleDictionarySaved, toggleFavorite };
 }

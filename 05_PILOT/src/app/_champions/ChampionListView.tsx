@@ -8,7 +8,7 @@ import type { ChampionSummary, ChampSort } from "./types";
 
 // 👑 チャンピオン一覧（検索・フィルター・カードグリッド）
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function ChampionListView({ search, setSearch, roleFilter, setRoleFilter, showFavoritesOnly, setShowFavoritesOnly, favorites, champSort, setChampSort, showMatchupPicker, setShowMatchupPicker, setIsLaneModalOpen, setFocusedLaneChampId, opggMeta, toggleFavorite, filteredChampions, selectChampion }: {
+export default function ChampionListView({ search, setSearch, roleFilter, setRoleFilter, showFavoritesOnly, setShowFavoritesOnly, favorites, champSort, setChampSort, showMatchupPicker, setShowMatchupPicker, setIsLaneModalOpen, setFocusedLaneChampId, laneMeta, toggleFavorite, filteredChampions, selectChampion }: {
   search: string;
   setSearch: (v: string) => void;
   roleFilter: string;
@@ -22,7 +22,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
   setShowMatchupPicker: (v: boolean) => void;
   setIsLaneModalOpen: (v: boolean) => void;
   setFocusedLaneChampId: (v: string | undefined) => void;
-  opggMeta: any;
+  laneMeta: any;
   toggleFavorite: (champId: string, e?: React.MouseEvent) => void;
   filteredChampions: ChampionSummary[];
   selectChampion: (id: string) => void;
@@ -110,7 +110,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                     onChange={(e) => setChampSort(e.target.value as any)}
                     className="bg-zinc-900 text-zinc-200 border border-zinc-700/80 rounded-lg px-2.5 py-1 text-xs font-bold focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
-                    <option value="tier">👑 ティア順 (OP.GG)</option>
+                    <option value="tier">👑 ティア順 (Lolalytics)</option>
                     <option value="name_ja">🔤 名前順 (五十音)</option>
                     <option value="name_en">🔤 英語名 (A-Z)</option>
                     <option value="win_rate">📈 勝率順</option>
@@ -131,11 +131,11 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
               {filteredChampions.map((c) => {
                 const isFav = favorites.includes(c.id);
                 const cardRole = roleFilter !== "ALL" ? (roleFilter === "BOT" ? "ADC" : roleFilter) : (c.roles[0] === "BOT" ? "ADC" : c.roles[0] || "TOP");
-                let cardMeta = opggMeta?.lanes?.[cardRole]?.[c.id];
+                let cardMeta = laneMeta?.lanes?.[cardRole]?.[c.id];
                 if (!cardMeta && roleFilter === "ALL") {
                   for (const lane of ["TOP", "JG", "MID", "ADC", "SUP"]) {
-                    if (opggMeta?.lanes?.[lane]?.[c.id]) {
-                      cardMeta = opggMeta.lanes[lane][c.id];
+                    if (laneMeta?.lanes?.[lane]?.[c.id]) {
+                      cardMeta = laneMeta.lanes[lane][c.id];
                       break;
                     }
                   }
@@ -199,7 +199,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                         </button>
                       </div>
 
-                      {/* OP.GGメタ指標 ＆ サブロール ＆ AIコーチ */}
+                      {/* Lolalyticsメタ指標 ＆ サブロール ＆ AIコーチ */}
                       <div className="flex items-center justify-between mt-1 pt-1 border-t border-zinc-800/40 text-[9px] gap-1">
                         {cardMeta ? (
                           <div className="flex items-center gap-1 shrink-0">

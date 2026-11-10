@@ -1,9 +1,9 @@
 import type { ChampionSummary } from "@/app/_champions/types";
 
-// チャンピオン辞典の一覧で使う、OP.GG レーンメタからの Tier・順位・勝率の取得と並び替え用スコア。
+// チャンピオン辞典の一覧で使う、Lolalytics レーンメタからの Tier・順位・勝率の取得と並び替え用スコア。
 // 2026-10-07 app/page.tsx から分離（計算内容は分離前と同じ）。
 
-/** OP.GG レーンメタのキーに正規化する (TOP, JG, MID, ADC, SUP) */
+/** Lolalytics レーンメタのキーに正規化する (TOP, JG, MID, ADC, SUP) */
 export function normalizeLaneKey(role: string): string {
   if (!role) return "TOP";
   const upper = role.toUpperCase();
@@ -26,17 +26,17 @@ export interface ChampTierMeta {
  * 全ロール表示で第1ロールのデータが無い時は、他レーンのうち最も Tier が高いものを使う。
  * tierScore: OP(0) → 60000点台, Tier 1 → 50000点台 … 圏外 → 0点
  */
-export function getChampTierMeta(c: ChampionSummary, opggMeta: any, roleFilter: string): ChampTierMeta {
-  if (!opggMeta?.lanes) return { tier: undefined, tierNum: 99, rank: 999, winRate: 0, tierScore: 0 };
+export function getChampTierMeta(c: ChampionSummary, laneMeta: any, roleFilter: string): ChampTierMeta {
+  if (!laneMeta?.lanes) return { tier: undefined, tierNum: 99, rank: 999, winRate: 0, tierScore: 0 };
 
   let m: any = null;
   if (roleFilter !== "ALL") {
-    m = opggMeta.lanes[normalizeLaneKey(roleFilter)]?.[c.id];
+    m = laneMeta.lanes[normalizeLaneKey(roleFilter)]?.[c.id];
   } else {
-    m = opggMeta.lanes[normalizeLaneKey(c.roles[0] || "TOP")]?.[c.id];
+    m = laneMeta.lanes[normalizeLaneKey(c.roles[0] || "TOP")]?.[c.id];
     if (!m) {
       for (const lane of ["TOP", "JG", "MID", "ADC", "SUP"]) {
-        const candidate = opggMeta.lanes[lane]?.[c.id];
+        const candidate = laneMeta.lanes[lane]?.[c.id];
         if (candidate && (!m || (candidate.tierNum ?? 5) < (m.tierNum ?? 5))) m = candidate;
       }
     }
@@ -66,9 +66,9 @@ export function getChampTierMeta(c: ChampionSummary, opggMeta: any, roleFilter: 
  */
 export function filterAndSortChampions(
   displayChampions: ChampionSummary[],
-  opts: { search: string; roleFilter: string; showFavoritesOnly: boolean; favorites: string[]; champSort: string; opggMeta: any; aliases: Record<string, string[]> },
+  opts: { search: string; roleFilter: string; showFavoritesOnly: boolean; favorites: string[]; champSort: string; laneMeta: any; aliases: Record<string, string[]> },
 ): ChampionSummary[] {
-  const { search, roleFilter, showFavoritesOnly, favorites, champSort, opggMeta, aliases: CHAMP_ALIASES } = opts;
+  const { search, roleFilter, showFavoritesOnly, favorites, champSort, laneMeta, aliases: CHAMP_ALIASES } = opts;
   const list = displayChampions.filter((c) => {
     const q = search.trim().toLowerCase();
     
@@ -93,7 +93,7 @@ export function filterAndSortChampions(
     return matchSearch && matchRole && matchFav;
   });
 
-  const getChampMeta = (c: ChampionSummary) => getChampTierMeta(c, opggMeta, roleFilter);
+  const getChampMeta = (c: ChampionSummary) => getChampTierMeta(c, laneMeta, roleFilter);
 
   list.sort((a, b) => {
     if (champSort === "tier") {

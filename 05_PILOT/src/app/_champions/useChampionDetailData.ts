@@ -9,13 +9,13 @@ import { getDynamicPickGuide } from "@/lib/pickGuideDynamic";
 import type { ChampionDetail, BuildPreset } from "./types";
 
 // 選択中チャンピオン（URL ?c=）から計算する表示用の値。2026-10-07 app/page.tsx から分離（計算内容は分離前と同じ）。
-export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, customItemDict, buildPreset, opggMeta }: {
+export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, customItemDict, buildPreset, laneMeta }: {
   rawChampParam: string | null;
   vsEnemyId: string;
   customRoles: Record<string, string[]>;
   customItemDict: Record<string, string>;
   buildPreset: BuildPreset;
-  opggMeta: any;
+  laneMeta: any;
 }) {
   // チャンピオン詳細データの取得
   const selectedDetail: ChampionDetail | null = useMemo(() => {
@@ -57,12 +57,12 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
     }
   }, [availableRoles, currentRole]);
 
-  // 選択中レーンに対応する OP.GG 公式メタデータ
+  // 選択中レーンに対応する Lolalytics 公式メタデータ
   const currentLaneMeta = useMemo(() => {
     if (!selectedDetail) return null;
     const laneKey = currentRole === "BOT" ? "ADC" : currentRole;
-    return opggMeta?.lanes?.[laneKey]?.[selectedDetail.id] || null;
-  }, [selectedDetail, currentRole, opggMeta]);
+    return laneMeta?.lanes?.[laneKey]?.[selectedDetail.id] || null;
+  }, [selectedDetail, currentRole, laneMeta]);
 
   // アーキタイプ判定
   const archetype: ChampionArchetype = useMemo(() => {

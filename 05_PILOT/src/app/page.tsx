@@ -85,14 +85,14 @@ function PilotApp() {
     knowledgeLoading, knowledgeCopied, setKnowledgeCopied, openKnowledgeModal,
   } = useKnowledgeModal();
 
-  // お気に入り・レーン所属・アイテム辞書・OP.GGメタ（端末とDBを同期）
-  const { favorites, customRoles, customItemDict, opggMeta, handleRolesSaved, handleDictionarySaved, toggleFavorite } = usePilotSettings();
+  // お気に入り・レーン所属・アイテム辞書・Lolalyticsメタ（端末とDBを同期）
+  const { favorites, customRoles, customItemDict, laneMeta, handleRolesSaved, handleDictionarySaved, toggleFavorite } = usePilotSettings();
 
   // 選択中チャンピオンの詳細・レーン・アーキタイプ・ビルド・テンポ指標・ピック判断
   const {
     selectedDetail, vsEnemyDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta,
     archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, measuredSpikes, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
-  } = useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, customItemDict, buildPreset, opggMeta });
+  } = useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, customItemDict, buildPreset, laneMeta });
 
   // カスタムレーン設定を反映したチャンピオン一覧
   const displayChampions = useMemo(() => {
@@ -108,8 +108,8 @@ function PilotApp() {
 
   // チャンピオン一覧フィルタ ＆ ソート（Tier・名前・勝率・ナレッジ数対応）
   const filteredChampions = useMemo(
-    () => filterAndSortChampions(displayChampions, { search, roleFilter, showFavoritesOnly, favorites, champSort, opggMeta, aliases: CHAMP_ALIASES }),
-    [displayChampions, search, roleFilter, showFavoritesOnly, favorites, champSort, opggMeta],
+    () => filterAndSortChampions(displayChampions, { search, roleFilter, showFavoritesOnly, favorites, champSort, laneMeta, aliases: CHAMP_ALIASES }),
+    [displayChampions, search, roleFilter, showFavoritesOnly, favorites, champSort, laneMeta],
   );
 
 
@@ -233,7 +233,7 @@ function PilotApp() {
           /* =========================================================
              👑 チャンピオン一覧 (エイリアス検索・お気に入り対応)
              ========================================================= */
-          <ChampionListView search={search} setSearch={setSearch} roleFilter={roleFilter} setRoleFilter={setRoleFilter} showFavoritesOnly={showFavoritesOnly} setShowFavoritesOnly={setShowFavoritesOnly} favorites={favorites} champSort={champSort} setChampSort={setChampSort} showMatchupPicker={showMatchupPicker} setShowMatchupPicker={setShowMatchupPicker} setIsLaneModalOpen={setIsLaneModalOpen} setFocusedLaneChampId={setFocusedLaneChampId} opggMeta={opggMeta} toggleFavorite={toggleFavorite} filteredChampions={filteredChampions} selectChampion={selectChampion} />
+          <ChampionListView search={search} setSearch={setSearch} roleFilter={roleFilter} setRoleFilter={setRoleFilter} showFavoritesOnly={showFavoritesOnly} setShowFavoritesOnly={setShowFavoritesOnly} favorites={favorites} champSort={champSort} setChampSort={setChampSort} showMatchupPicker={showMatchupPicker} setShowMatchupPicker={setShowMatchupPicker} setIsLaneModalOpen={setIsLaneModalOpen} setFocusedLaneChampId={setFocusedLaneChampId} laneMeta={laneMeta} toggleFavorite={toggleFavorite} filteredChampions={filteredChampions} selectChampion={selectChampion} />
         )}
       </main>
 
