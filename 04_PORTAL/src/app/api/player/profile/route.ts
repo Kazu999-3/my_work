@@ -54,23 +54,34 @@ export async function GET(request: Request) {
     // 3. 該当試合の情報と参加者を一括取得
     const { data: matches, error: mErr } = await supabase
       .from('ktm_matches')
-      .select('id, created_at, winning_team')
+      .select('id, created_at, winning_team, riot_match_id')
       .in('id', matchIds);
 
     if (mErr) throw mErr;
+
+    // お祭りカスタム出席記録（EXHIBITION / DRAW）はレート非干渉のため戦績集計から完全除外
+    const validMatches = (matches || []).filter((m: any) =>
+      m.winning_team !== 'DRAW' &&
+      m.riot_match_id !== 'EXHIBITION' &&
+      !String(m.riot_match_id || '').startsWith('FESTIVAL')
+    );
+    const validMatchIdSet = new Set(validMatches.map((m: any) => String(m.id)));
+    const officialPlayerMatches = playerMatches.filter((p: any) =>
+      validMatchIdSet.has(String(p.match_id)) && p.team !== 'FESTIVAL'
+    );
 
     const { data: allParts, error: apErr } = await fetchAllRows((from, to) =>
       supabase
         .from('ktm_match_participants')
         .select('match_id, role, team, champion_name, player_name')
-        .in('match_id', matchIds)
+        .in('match_id', Array.from(validMatchIdSet))
         .range(from, to)
     );
 
     if (apErr) throw apErr;
 
     const matchMap = new Map<string, any>();
-    (matches || []).forEach((m: any) => matchMap.set(String(m.id), m));
+    validMatches.forEach((m: any) => matchMap.set(String(m.id), m));
 
     const partsMap = new Map<string, any[]>();
     (allParts || []).forEach((p: any) => {
@@ -89,7 +100,7 @@ export async function GET(request: Request) {
     });
 
     // 試合データの集計
-    playerMatches.forEach((row: any) => {
+    officialPlayerMatches.forEach((row: any) => {
       const role = normalizeRole(row.role);
       if (!role) return;
 
@@ -163,8 +174,8 @@ export async function GET(request: Request) {
       }));
 
     // 直近の試合履歴を抽出
-    // 逆算を行うために、すべてのマッチを新しい順にソート
-    const sortedMatches = [...playerMatches]
+    // 逆算を行うために、すべてのマッチを新しい順にソート（お祭り出席ダミーは除外済み）
+    const sortedMatches = [...officialPlayerMatches]
       .sort((a: any, b: any) => {
          const dateA = new Date(matchMap.get(String(a.match_id))?.created_at || 0).getTime();
          const dateB = new Date(matchMap.get(String(b.match_id))?.created_at || 0).getTime();
@@ -239,7 +250,7 @@ export async function GET(request: Request) {
     }).slice(0, 50); // 履歴表示およびレーダー・プレイスタイル分析用に直近50件を返す
 
     // KTMカスタム戦はCS・ファーストブラッドを取得できないため、それらに依存する指標は算出しない
-    const customPlaystyle = calculatePlaystyle(playerMatches, { reliableCsAndFb: false });
+    const customPlaystyle = calculatePlaystyle(officialPlayerMatches, { reliableCsAndFb: false });
     const savedPlaystyle = (dbPlayer.metadata as any)?.playstyle_cache || {};
 
     const playstyle = {
@@ -251,9 +262,9 @@ export async function GET(request: Request) {
       }
     };
 
-    // 全対戦（全期間）の通算スタッツを集計
+    // 全対戦（全期間）の通算スタッツを集計（お祭り出席ダミーは除外）
     let totalK = 0, totalD = 0, totalA = 0, totalWins = 0;
-    playerMatches.forEach((row: any) => {
+    officialPlayerMatches.forEach((row: any) => {
       const match = matchMap.get(String(row.match_id));
       const isWin = match ? row.team === match.winning_team : false;
       if (isWin) totalWins++;
@@ -261,7 +272,7 @@ export async function GET(request: Request) {
       totalD += row.deaths || 0;
       totalA += row.assists || 0;
     });
-    const totalGames = playerMatches.length;
+    const totalGames = officialPlayerMatches.length;
     const totalLosses = totalGames - totalWins;
     const totalWinRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
     const avgK = totalGames > 0 ? (totalK / totalGames).toFixed(1) : "0.0";

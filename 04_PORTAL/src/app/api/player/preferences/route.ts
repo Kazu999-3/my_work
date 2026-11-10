@@ -74,7 +74,7 @@ export async function GET() {
           // 2. 該当試合の勝敗情報を取得
           const { data: matches } = await supabase
             .from('ktm_matches')
-            .select('id, created_at, winning_team')
+            .select('id, created_at, winning_team, riot_match_id')
             .in('id', matchIds)
             .order('created_at', { ascending: false });
 
@@ -91,6 +91,14 @@ export async function GET() {
             const mKey = String(row.match_id);
             const match = matchMap.get(mKey);
             if (!match) return;
+
+            // お祭り出席記録（EXHIBITION / DRAW）は戦績集計から除外
+            const isExhibition =
+              match.winning_team === 'DRAW' ||
+              match.riot_match_id === 'EXHIBITION' ||
+              String(match.riot_match_id || '').startsWith('FESTIVAL') ||
+              row.team === 'FESTIVAL';
+            if (isExhibition) return;
 
             const role = normalizeRole(row.role);
             const isWin = row.team === match.winning_team;

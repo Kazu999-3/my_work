@@ -39,6 +39,7 @@ export async function GET(request: Request) {
     const { data: matches, error: mErr } = await supabase
       .from('ktm_matches')
       .select('id, winning_team')
+      .neq('winning_team', 'DRAW')
       .in('id', matchIds);
 
     if (mErr) throw mErr;
