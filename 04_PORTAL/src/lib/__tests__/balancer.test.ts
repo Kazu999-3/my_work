@@ -164,6 +164,18 @@ test('forbiddenPairsとrequiredPairsが同じペアで競合した場合、forbi
   assert.notEqual(p1InBlue, p2InBlue, '競合時はforbiddenPairs優先でP1とP2は別チームになる');
 });
 
+test('dissatisfiedMatchups: 過去にイマイチ評価がついた対面はペナルティを受けて回避される', () => {
+  const players = tenPlayers();
+  // P1(TOP) vs P2(TOP) をイマイチ対面として登録
+  const ctx = {
+    ...emptyCtx(),
+    dissatisfiedMatchups: new Set<string>(['P1<=>P2:TOP', 'P1<=>P2']),
+  };
+  const result = coreBalanceTeams(players, ctx);
+  assert.equal(result.teamBlue.length, 5);
+  assert.equal(result.teamRed.length, 5);
+});
+
 // ============================================================
 // サイド公平化（BLUE/RED の偏り是正）の回帰テスト
 //

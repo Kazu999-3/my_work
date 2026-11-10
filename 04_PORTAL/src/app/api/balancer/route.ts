@@ -448,6 +448,58 @@ export async function POST(request: Request) {
           }
         }
       }
+
+      // 👎 過去の「イマイチ（満足度down）」がついた試合から、回避すべき対面カードを学習フィードバック
+      ctx.dissatisfiedMatchups = new Set<string>();
+      try {
+        const { data: badPreds } = await supabase
+          .from('balancer_predictions')
+          .select('match_id')
+          .gt('satisfaction_down', 0)
+          .not('match_id', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (badPreds && badPreds.length > 0) {
+          const badMatchIds = badPreds.map((p: any) => p.match_id).filter(Boolean);
+          // 該当マッチの参加者を取得
+          const { data: badParts } = await supabase
+            .from('ktm_match_participants')
+            .select('match_id, player_name, role, team')
+            .in('match_id', badMatchIds);
+
+          if (badParts && badParts.length > 0) {
+            const badByMatch: Record<string, any[]> = {};
+            badParts.forEach((bp: any) => {
+              if (!badByMatch[bp.match_id]) badByMatch[bp.match_id] = [];
+              badByMatch[bp.match_id].push(bp);
+            });
+
+            Object.values(badByMatch).forEach((mParts) => {
+              for (let i = 0; i < mParts.length; i++) {
+                const p1 = mParts[i];
+                if (!p1.player_name) continue;
+                for (let j = i + 1; j < mParts.length; j++) {
+                  const p2 = mParts[j];
+                  if (!p2.player_name) continue;
+                  // イマイチ試合で同じレーンで対戦していた組み合わせをペナルティ対象に登録
+                  if (p1.team !== p2.team && p1.role === p2.role) {
+                    const keyWithRole = [p1.player_name, p2.player_name].sort().join("<=>") + ":" + p1.role;
+                    const keyPairOnly = [p1.player_name, p2.player_name].sort().join("<=>");
+                    ctx.dissatisfiedMatchups!.add(keyWithRole);
+                    ctx.dissatisfiedMatchups!.add(keyPairOnly);
+                  }
+                }
+              }
+            });
+            if (ctx.dissatisfiedMatchups.size > 0) {
+              console.log(`[Balancer] イマイチ評価の対面 ${ctx.dissatisfiedMatchups.size} 組を回避リストに登録しました`);
+            }
+          }
+        }
+      } catch (feedErr) {
+        console.warn('[Balancer] 満足度フィードバック取得スキップ:', feedErr);
+      }
     } catch (e) {
       console.error("履歴取得エラー:", e);
     }

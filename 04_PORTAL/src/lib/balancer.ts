@@ -65,6 +65,9 @@ export interface BalanceContext {
   requiredPairs?: [string, string][];
   // 指定メンター名一覧（新メンバーと同一チーム配置を優先するための大会運用設定）
   designatedMentors?: string[];
+  // 👎 過去に「イマイチ」評価がついた試合の対面ペア（'A<=>B:ROLE' または 'A<=>B'）
+  // チーム分けAIのフィードバック学習用。該当する対面カードを強力に回避する。
+  dissatisfiedMatchups?: Set<string>;
   // BL-02: 精密探索する候補数（40=速い / 100=標準 / 200=精密）。未指定は100。
   searchDepth?: number;
 }
@@ -702,6 +705,16 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const matchupHistKey = [pLayerA.name, pLayerB.name].sort().join("<=>") + ":" + role;
           // ★ A-9: 直前対面ペナルティの強化（2戦連続同対面の防止）
           if (ctx.history.has(matchupHistKey)) { penalty += 50000; }
+
+          // 👎 過去に「イマイチ」評価がついた対面の回避ペナルティ（学習フィードバック）
+          if (ctx.dissatisfiedMatchups) {
+            const pairOnlyKey = [pLayerA.name, pLayerB.name].sort().join("<=>");
+            if (ctx.dissatisfiedMatchups.has(matchupHistKey)) {
+              penalty += 120000; // 同ロールでのイマイチ対面は強力に回避
+            } else if (ctx.dissatisfiedMatchups.has(pairOnlyKey)) {
+              penalty += 50000;  // ロール違いでも対面回避
+            }
+          }
 
           // 格上対面判定 (A vs B)
           const diffB = mmrB - mmrA;

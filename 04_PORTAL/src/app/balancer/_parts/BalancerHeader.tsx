@@ -16,13 +16,15 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ヘッダー（タイトル・操作ボタン群）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalancerHeader({ players, setPlayers, saving, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance, selectionMode, setSelectionMode }: {
+export default function BalancerHeader({ players, setPlayers, saving, isAdmin, predStats, satStats, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance, selectionMode, setSelectionMode }: {
   players: any[];
   setPlayers: React.Dispatch<React.SetStateAction<any[]>>;
   saving: boolean;
   announcingStats?: boolean;
   isAdmin: boolean;
-  setShowAdminPanel: React.Dispatch<React.SetStateAction<boolean>>;
+  predStats?: { total: number; correct: number; accuracy: number; avgConfidence: number; avgCloseness: number } | null;
+  satStats?: { tallied: number; totalUp: number; totalDown: number; satisfactionRate: number | null } | null;
+  setShowAdminPanel?: React.Dispatch<React.SetStateAction<boolean>>;
   integrityData: any;
   balancing: boolean;
   balanceResult: any;
@@ -54,22 +56,25 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, s
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {saving && <span className="flex items-center gap-1 text-primary-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
-              {isAdmin && (
-                <button
-                  onClick={() => setShowAdminPanel(v => !v)}
-                  title="管理者専用操作パネルの開閉"
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold transition text-xs border whitespace-nowrap shrink-0 ${
-                    integrityData?.hasDiscrepancy
-                      ? 'bg-danger-100 hover:bg-danger-200 border-danger-edge-soft text-danger-700'
-                      : 'bg-surface-subtle hover:bg-surface-hover border-border text-foreground-soft'
-                  }`}
-                >
-                  <Shield className="h-3.5 w-3.5 text-primary-600" />
-                  <span>管理設定</span>
-                  {integrityData?.hasDiscrepancy && (
-                    <span className="bg-danger-500 text-white rounded-full px-1.5 text-[10px] font-black">{integrityData.discrepancyCount}</span>
+              {/* 🎯 品質ヘルスバッジ（接戦度 ＆ 満足度） */}
+              {(predStats || satStats) && (
+                <div className="flex items-center gap-2.5 bg-surface-subtle border border-border px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs">
+                  {predStats && predStats.total > 0 && (
+                    <span className="flex items-center gap-1 text-primary-700" title={`直近${predStats.total}戦の平均接戦度（100点満点）`}>
+                      <span>🎯 接戦度:</span>
+                      <span className="font-mono font-black text-foreground">{predStats.avgCloseness}点</span>
+                    </span>
                   )}
-                </button>
+                  {predStats && satStats && predStats.total > 0 && satStats.tallied > 0 && (
+                    <span className="text-border">|</span>
+                  )}
+                  {satStats && satStats.tallied > 0 && satStats.satisfactionRate !== null && (
+                    <span className="flex items-center gap-1 text-success-700" title={`試合後の満足度（${satStats.totalUp}👍 / ${satStats.totalDown}👎）`}>
+                      <span>👍 満足度:</span>
+                      <span className="font-mono font-black text-foreground">{satStats.satisfactionRate}%</span>
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -235,31 +240,6 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, s
             </div>
           </div>
 
-          {/* 🛒 発動中の特権・ハンデ確認メモ */}
-          <details className="mt-3 bg-primary-500/10 border border-primary-edge-strong/20 rounded-2xl p-3 text-xs">
-            <summary className="font-bold text-primary-900 cursor-pointer select-none flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <span>🛒 発動中のブースター・特権を確認する</span>
-                <span className="text-[10px] bg-primary-200 text-primary-900 px-2 py-0.5 rounded-full font-bold">KTMショップ連動</span>
-              </span>
-              <span className="text-[10px] text-primary-700">▼</span>
-            </summary>
-            <div className="mt-2.5 pt-2.5 border-t border-primary-edge-strong/20 space-y-2 text-foreground-subtle">
-              <p className="text-[11px] text-muted">
-                参加者がKTMショップで購入したブースターや特権（激闘チケット等）がある場合は、ここで確認しながらドラフトや試合記録を行えます。
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                <div className="p-2 rounded-xl bg-surface border border-primary-edge-soft">
-                  <span className="font-bold text-primary-900">⚔️ 勝利ボーナス激闘チケット:</span>
-                  <span className="ml-1 text-muted">所持者が勝利時、自動でボーナスが+600ptに爆増（試合記録時に自動精算）</span>
-                </div>
-                <div className="p-2 rounded-xl bg-surface border border-primary-edge-soft">
-                  <span className="font-bold text-primary-900">🎪 お祭りカスタム:</span>
-                  <span className="ml-1 text-muted">結果記録時に「戦績ノーカウント保護」をONにする（公式戦績・MMR保護）</span>
-                </div>
-              </div>
-            </div>
-          </details>
           {/* 前回結果の再表示ボタン */}
           {balanceResult && !showResultModal && (
             <button onClick={() => setShowResultModal(true)}

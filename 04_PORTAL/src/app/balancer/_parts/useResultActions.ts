@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "../../../components/Toaster";
 import { buildResultCopyText } from "../../../lib/balancer/teams";
+import { updateVcStatus } from "../components/BalancerVcManager";
 
 type SetMessage = (m: { type: string; text: string }) => void;
 
@@ -10,12 +11,13 @@ type SetMessage = (m: { type: string; text: string }) => void;
  * 募集状況のDiscord通知。
  * 2026-10-07: app/balancer/page.tsx から分離（処理は分離前と同じ）。
  */
-export function useResultActions({ balanceResult, proposals, players, handicapNames, setMessage }: {
+export function useResultActions({ balanceResult, proposals, players, handicapNames, setMessage, bo3State }: {
   balanceResult: any;
   proposals: any[];
   players: any[];
   handicapNames: Set<string>;
   setMessage: SetMessage;
+  bo3State?: any;
 }) {
   const router = useRouter();
   const [savingPending, setSavingPending] = useState(false);
@@ -121,6 +123,12 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Discord通知に失敗しました');
       setMessage({ type: "success", text: "✅ Discordに結果を送信しました！" });
+
+      // 🔊 Discord VCステータスを自動更新（手動操作不要）
+      try {
+        const statusKey = balanceResult.isFestivalMode ? 'mayhem' : (bo3State?.gameNumber ? `game${bo3State.gameNumber}` : 'game1');
+        updateVcStatus(statusKey).catch(err => console.warn('[VC Auto-Update] failed:', err));
+      } catch {}
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {

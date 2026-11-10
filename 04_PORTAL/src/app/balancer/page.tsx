@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { X } from "lucide-react";
-import { BalancerVcManager } from "./components/BalancerVcManager";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Spinner } from "../../components/Feedback";
 import dynamic from "next/dynamic";
@@ -14,11 +13,9 @@ import { usePlayerRoster } from "./_parts/usePlayerRoster";
 import { useBo3Series } from "./_parts/useBo3Series";
 import { useResultSwap } from "./_parts/useResultSwap";
 import { useResultActions } from "./_parts/useResultActions";
-import { useInitialPrefsEditor } from "./_parts/useInitialPrefsEditor";
-import { ModeTabBar, UsageGuide, ExperienceSummary, MatchingGlossary, makeSortableHeader, getPlayerExperienceBadge } from "./_parts/PageSections";
+import { ExperienceSummary, makeSortableHeader, getPlayerExperienceBadge } from "./_parts/PageSections";
 import BalanceResultModal from "./_parts/BalanceResultModal";
 import BalancerHeader from "./_parts/BalancerHeader";
-import AdminPanel from "./_parts/AdminPanel";
 import GapDiagnosisPanel from "./_parts/GapDiagnosisPanel";
 import TableSplitPanel from "./_parts/TableSplitPanel";
 import PlayerListTable from "./_parts/PlayerListTable";
@@ -29,15 +26,10 @@ import CustomSubNav from "../../components/CustomSubNav";
 // いずれも「常に表示されるわけではない」ものを、必要になるまで読み込まない。
 //   ProfileModal        … selectedPlayer が選ばれたときだけ表示するモーダル
 //   BalancerStadiumView … balanceResult が確定したあとにだけ表示
-//   AramRotationPanel   … modeTab === 'aram_rotation' のときだけ表示される専用タブ
 // ⚠️ dynamic 化が効くのは「描画されるまでマウントされない」場合だけ。
-//    上記3つはいずれも元から条件付き描画なので、そのまま効果が出る。
+//    上記2つはいずれも元から条件付き描画なので、そのまま効果が出る。
 const ProfileModal = dynamic(() => import("../ktm-admin/ProfileModal"), { ssr: false });
 const BalancerStadiumView = dynamic(() => import("./components/BalancerStadiumView"), { ssr: false });
-const AramRotationPanel = dynamic(() => import("./AramRotationPanel"), {
-  ssr: false,
-  loading: () => <div className="py-10 text-center text-xs text-faint">読み込み中…</div>,
-});
 
 // 格差診断: 対面を組めない外れ値とみなすMMR差
 const GAP_THRESHOLD = 250;
@@ -49,13 +41,10 @@ const HANDICAP_MMR_PENALTY = 150;
 // 2026-10-07: 3,029行 → 1,140行（82168c14）→ 本ファイル。使われていなかった状態(selectedHandicaps / showRecordPanel)を削除。
 export default function BalancerPage() {
   const { user: currentUser } = useCurrentUser();
-  const [modeTab, setModeTab] = useState<'standard' | 'aram_rotation'>('standard');
   const [message, setMessage] = useState({ type: "", text: "" });
 
-  // ★ 管理者パネル (ktm-admin/balancerをページ分割せず、ログイン中の管理者だけに
-  // MMR整合性・Rebuildなど「見たいデータ」をこの画面内で見せるための状態群)
+  // ★ 管理者向け（整合性チェック・品質統計）
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [rebuildingMmr, setRebuildingMmr] = useState(false);
   const {
     integrityData, checkingIntegrity, checkIntegrity,
@@ -63,7 +52,6 @@ export default function BalancerPage() {
   } = useBalancerAdminStats(isAdmin);
 
   const { players, setPlayers, loading, saving, flashingPlayerIds, fetchPlayers, handleInputChange } = usePlayerRoster(isAdmin, setMessage);
-  const initialPrefs = useInitialPrefsEditor(players, setPlayers, setMessage);
 
   const [balancing, setBalancing] = useState(false);
   const [balanceResult, setBalanceResult] = useState<any>(null);
@@ -105,7 +93,7 @@ export default function BalancerPage() {
 
   const bo3 = useBo3Series(balanceResult, setBalanceResult, setMessage);
   const swap = useResultSwap({ balanceResult, setBalanceResult, setProposals, selectedProposalIdx, players });
-  const actions = useResultActions({ balanceResult, proposals, players, handicapNames, setMessage });
+  const actions = useResultActions({ balanceResult, proposals, players, handicapNames, setMessage, bo3State: bo3.bo3State });
 
   useEffect(() => {
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
@@ -278,27 +266,13 @@ export default function BalancerPage() {
   const inactiveCount  = players.filter(p => !p.is_active).length;
   const canBalance     = activeCount >= 10;
 
-  if (modeTab === 'aram_rotation') {
-    return (
-      <div className="min-h-screen bg-background text-foreground-soft p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-6">
-        <CustomSubNav />
-        <ModeTabBar modeTab={modeTab} setModeTab={setModeTab} />
-        <AramRotationPanel availablePlayers={players} isAdmin={isAdmin} />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground-soft p-4 pb-28 md:p-8 md:pb-28 lg:p-10 lg:pb-28 max-w-[1680px] w-full mx-auto space-y-6">
       <CustomSubNav />
-      <ModeTabBar modeTab={modeTab} setModeTab={setModeTab} />
-      <UsageGuide />
 
-      {/* 👥 参加者層サマリー ＆ 🔊 Discord VC進行状況のワンクリック更新バー */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      {/* 👥 参加者層サマリー */}
+      <div>
         <ExperienceSummary players={players} />
-        {/* 🔊 Discord VCチャンネル名・進行状況の動的更新（プリセット追加・保存対応） */}
-        <BalancerVcManager onMessage={setMessage} />
       </div>
 
       {/* ★ チーム分け結果モーダル */}
@@ -340,7 +314,7 @@ export default function BalancerPage() {
 
         <BalancerHeader
           players={players} setPlayers={setPlayers} saving={saving} announcingStats={actions.announcingStats} isAdmin={isAdmin}
-          setShowAdminPanel={setShowAdminPanel} integrityData={integrityData} balancing={balancing} balanceResult={balanceResult}
+          predStats={predStats} satStats={satStats} integrityData={integrityData} balancing={balancing} balanceResult={balanceResult}
           showResultModal={showResultModal} setShowResultModal={setShowResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth} selectionMode={selectionMode} setSelectionMode={setSelectionMode}
           selectedTable={selectedTable} setSelectedTable={setSelectedTable} bo3State={bo3.bo3State} handleResetBo3={bo3.handleResetBo3}
           handleAnnounceStats={actions.handleAnnounceStats} handleBalance={handleBalance}
@@ -348,16 +322,21 @@ export default function BalancerPage() {
           inactiveCount={inactiveCount} canBalance={canBalance}
         />
 
-        {/* ★ 管理者パネル (isAdmin時のみ・/ktm-adminへ移動せずこの画面内でMMR整合性とRebuildを確認できる) */}
-        {isAdmin && showAdminPanel && (
-          <AdminPanel
-            players={players} integrityData={integrityData} checkingIntegrity={checkingIntegrity} rebuildingMmr={rebuildingMmr}
-            predStats={predStats} showInitialPrefs={initialPrefs.showInitialPrefs} setShowInitialPrefs={initialPrefs.setShowInitialPrefs}
-            initialDraft={initialPrefs.initialDraft} setInitialDraft={initialPrefs.setInitialDraft} savingInitial={initialPrefs.savingInitial}
-            sideStats={sideStats} satStats={satStats} tallyingSat={tallyingSat} checkIntegrity={checkIntegrity} fetchPredStats={fetchPredStats}
-            openInitialPrefs={initialPrefs.openInitialPrefs} saveInitialPrefs={initialPrefs.saveInitialPrefs} fetchSatStats={fetchSatStats}
-            handleRebuildMmr={handleRebuildMmr}
-          />
+        {/* ⚠️ MMR整合性ズレ警告バナー（ズレ検知時のみ自動出現） */}
+        {integrityData?.hasDiscrepancy && (
+          <div className="p-3 bg-danger-100 border border-danger-edge-strong rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-danger-900 font-bold shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-base">⚠️</span>
+              <span>MMRの整合性にズレが検知されました（{integrityData.discrepancyCount}名）。</span>
+            </div>
+            <button
+              onClick={handleRebuildMmr}
+              disabled={rebuildingMmr}
+              className="px-3 py-1.5 bg-danger-600 hover:bg-danger-500 text-white rounded-lg font-black transition disabled:opacity-50 cursor-pointer"
+            >
+              {rebuildingMmr ? '再計算中...' : '🔄 MMRを自動修復（再計算）'}
+            </button>
+          </div>
         )}
 
         {/* 格差診断: 対面が組めない外れ値を警告し、観戦orハンデ参加を選ばせる。
@@ -386,8 +365,6 @@ export default function BalancerPage() {
           getPlayerExperienceBadge={getPlayerExperienceBadge} handleInputChange={handleInputChange} SortableHeader={SortableHeader}
           filteredPlayers={filteredPlayers}
         />
-
-        <MatchingGlossary />
 
         {/* ★ スティッキー下部クイックアクションバー */}
         <QuickActionBar balancing={balancing} balanceResult={balanceResult} setShowResultModal={setShowResultModal} handleBalance={handleBalance} handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount} canBalance={canBalance} />
