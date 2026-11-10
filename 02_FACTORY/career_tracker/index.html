@@ -1500,10 +1500,119 @@
           return true;
         }
       } catch (e) {
-        // JSON でない場合はテキスト自然言語パーサーへ
+        // JSON でない場合はテキスト解析へ
       }
 
-      // 2. 生テキスト（リクナビ・doda等のコピー）からの自動パース（行ベース解析）
+      // 1.5. 複数求人テキスト（リクナビNEXT等の画面全選択コピペ）の一括解析
+      if (text.includes('正社員') && (text.includes('面接で話せるあなたの強み') || text.includes('オファーが届いています') || text.includes('希望条件に合った求人') || text.split(/正社員/).length > 3)) {
+        const blocks = text.split(/\n(?=正社員\n)/);
+        const multiItems = [];
+
+        for (const b of blocks) {
+          const lines = b.split('\n').map(l => l.trim()).filter(Boolean);
+          if (lines.length < 4 || lines[0] !== '正社員') continue;
+          if (lines[1].includes('保守/運用/サポートエンジニア') || lines[1].includes('あなたの希望条件')) continue;
+
+          const title = lines[1];
+          const comp = lines[2];
+          const loc = lines[3];
+          const salLine = lines[4] || '';
+
+          // 給与解析
+          let salary = 0;
+          const salMatch = salLine.match(/月給\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
+          if (salMatch) {
+            salary = Math.round(parseFloat(salMatch[1]));
+          } else {
+            const nenMatch = salLine.match(/年俸\s*([0-9０-９]+)\s*万/);
+            if (nenMatch) {
+              salary = Math.round(parseInt(nenMatch[1]) / 12);
+            } else {
+              const enMatch = salLine.match(/月給\s*([0-9,]+)\s*円/);
+              if (enMatch) {
+                salary = Math.round(parseInt(enMatch[1].replace(/,/g, '')) / 10000);
+              }
+            }
+          }
+
+          // 勤務形態
+          let workStyle = '出社';
+          if (b.includes('フルリモート') || b.includes('完全在宅')) {
+            workStyle = 'フルリモート';
+          } else if (b.includes('リモート') || b.includes('在宅')) {
+            workStyle = 'ハイブリッド';
+          }
+
+          // 面接強みメモ
+          let notes = '';
+          if (b.includes('面接で話せるあなたの強み')) {
+            const parts = b.split('面接で話せるあなたの強み')[1].split('\n').map(l => l.trim()).filter(Boolean);
+            const valid = parts.filter(p => !p.startsWith('オファー') && !p.startsWith('正社員') && !p.includes('マッチ分析'));
+            notes = valid.slice(0, 3).join('\n');
+          }
+
+          multiItems.push({
+            company_name: comp,
+            job_headline: title,
+            job_title: title.slice(0, 30),
+            salary: salary,
+            work_style: workStyle,
+            source: 'リクナビNEXT',
+            status: '書類準備',
+            priority: 3,
+            attraction: `${loc} / ${salLine}`,
+            job_notes: notes
+          });
+        }
+
+        if (multiItems.length > 0) {
+          let addedCount = 0;
+          let skippedCount = 0;
+          const existingUrls = new Set(applications.map(a => (a.job_url || '').split('?')[0].trim()).filter(Boolean));
+          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
+
+          multiItems.forEach(item => {
+            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
+            if (existingKeys.has(cleanKey)) {
+              skippedCount++;
+              return;
+            }
+            existingKeys.add(cleanKey);
+
+            applications.unshift({
+              id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+              company_name: item.company_name,
+              job_headline: item.job_headline,
+              job_title: item.job_title,
+              status: item.status,
+              source: item.source,
+              salary: item.salary,
+              work_style: item.work_style,
+              priority: item.priority,
+              next_action_date: '',
+              attraction: item.attraction,
+              job_url: '',
+              job_notes: item.job_notes,
+              created_at: now,
+              updated_at: now,
+              isNew: true
+            });
+            addedCount++;
+          });
+
+          saveData();
+          render();
+
+          if (skippedCount > 0) {
+            alert(`🎉 ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は安全にスキップしました）`);
+          } else {
+            alert(`🎉 ${addedCount} 件の求人を一括追加しました！`);
+          }
+          return true;
+        }
+      }
+
+      // 2. 単一求人テキスト（リクナビ・doda等のコピー）からの自動パース
       let comp = '';
       let headline = '';
       let title = '';
