@@ -69,6 +69,19 @@ export default function OverlayPage() {
     poll();
     const timer = setInterval(poll, 1000);
 
+    // 💓 HUD起動中の生存シグナル送信（初回 + 10秒おき）
+    const sendHeartbeat = async () => {
+      try {
+        await fetch('/api/overlay/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inGame: !!data?.inGame }),
+        });
+      } catch {}
+    };
+    sendHeartbeat();
+    const hbTimer = setInterval(sendHeartbeat, 10000);
+
     const onVisibilityChange = () => {
       if (typeof document !== 'undefined' && !document.hidden) {
         poll();
@@ -81,6 +94,7 @@ export default function OverlayPage() {
     return () => {
       mounted = false;
       clearInterval(timer);
+      clearInterval(hbTimer);
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', onVisibilityChange);
       }
