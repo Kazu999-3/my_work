@@ -1,5 +1,27 @@
 ## 📅 2026-11-10（火）
 
+### 🔧 お祭りカスタム出席記録のMMR整合性完全除外対応（`EXHIBITION`仕様統一）
+
+**概要**:
+1. **背景と課題**:
+   - 先ほど実装した「🎪 Activeに参加+1」実行後、管理画面で「MMRの整合性確認（ズレ警告・Rebuild推奨）」のバナーが表示された。
+   - 調査の結果、KTMのMMR計算・整合性チェックエンジン（`replayMmrHistory`）は、お祭り試合を `riot_match_id === 'EXHIBITION'` という識別子で完全スキップする設計になっていた。
+   - 新規APIが `FESTIVAL_xxxx` という独自IDを振っていたため、整合性チェック側で「未知の通常試合」として処理され、期待値計算にズレが生じて警告が発報されていたと判明（※DBの実MMR自体は1ポイントも破損・変動していなかったことを実測確認）。
+2. **実施内容**:
+   - **【お祭り識別子のSSoT統一】(`04_PORTAL/src/app/api/admin/festival/attendance/route.ts`)**:
+     - `riot_match_id` をKTM標準の `'EXHIBITION'` に統一。
+   - **【整合性チェック＆勝率計算の二重防波堤ガード】(`04_PORTAL/src/lib/mmr.ts`, `04_PORTAL/src/app/api/player/stats/route.ts`)**:
+     - `match.riot_match_id === 'EXHIBITION' || String(match.riot_match_id).startsWith('FESTIVAL')` の双方を完全スキップする安全ガードを配備。
+     - 将来的にどのようなお祭りIDが来ても、MMR計算・勝率計算・整合性チェックから100%除外される堅牢な設計へ改修。
+   - **【テストデータのクリーンアップ】**:
+     - 先ほどテストで作成された `FESTIVAL_` 試合レコード（3件）をDBから完全消去し、クリーンな初期状態へ復元。
+3. **機械的実値検証 ＆ デプロイ**:
+   - TypeScript型チェック（エラー0件）PASS。
+   - 全168ユニットテスト（168 pass / 0 fail）PASS。
+   - Git commit & push（コミット `bd386af7`）を実行し、本番Vercelへ自動デプロイ完了。
+
+---
+
 ### 🎪 日曜お祭りカスタムの「参加回数（+1）ワンクリック一括付与」機能の実装 ＆ 初参加消化導線の最適化
 
 **概要**:
