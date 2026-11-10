@@ -462,22 +462,6 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             )}
           </div>
 
-          {/* 名簿から選択セレクトボックス */}
-          {playersPool.length > 0 && (
-            <select
-              value={playerFilter}
-              onChange={(e) => setPlayerFilter(e.target.value)}
-              className="bg-background border border-border rounded-xl px-3 py-2 text-xs font-bold text-foreground focus:outline-none focus:border-primary-edge-strong transition cursor-pointer"
-            >
-              <option value="">👤 名簿から選択...</option>
-              {playersPool.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
-
           {/* 勝敗フィルター */}
           {playerFilter && (
             <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 text-xs">
