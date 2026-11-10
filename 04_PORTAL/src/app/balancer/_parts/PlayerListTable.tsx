@@ -5,14 +5,14 @@ import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Copy, Check, Shuffle } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../../lib/mmr";
 import { getPlayerTier } from "../../../lib/playerTier";
 import { BalancerVcManager, updateVcStatus } from "../components/BalancerVcManager";
 import { BalancerBo3Manager } from "../components/BalancerBo3Manager";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { Spinner } from "../../../components/Feedback";
-import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getGroup } from "./helpers";
+import { RoleIcon, getGroup } from "./helpers";
 
 // 参加者リスト（フィルター・表・行ごとの設定）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
@@ -139,8 +139,6 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
                   <SortableHeader label="希望の強さ" sortKey="weight" className="px-1.5 text-center" />
                   <SortableHeader label="⚔️挑戦" sortKey="allow_higher" className="px-1.5 text-center" />
-                  <SortableHeader label="優先度 (希望/譲り/出場)" sortKey="pity" className="px-2 text-center" />
-                  <th className="px-2 py-3 font-medium">備考</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
@@ -155,7 +153,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                     <Fragment key={`balancer-row-${p.id}`}>
                       {isBoundary && groupLabelMap[curGroup] && (
                         <tr key={`div-${idx}`}>
-                          <td colSpan={13} className={`px-4 py-1.5 text-[11px] font-bold border-t border-black/5 ${groupColorMap[curGroup]}`}>
+                          <td colSpan={11} className={`px-4 py-1.5 text-[11px] font-bold border-t border-black/5 ${groupColorMap[curGroup]}`}>
                             {groupLabelMap[curGroup]}
                           </td>
                         </tr>
@@ -201,31 +199,6 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                 >
                                   {exp.label}
                                 </span>
-                              );
-                            })()}
-
-
-                            {/* 🪙 所持コイン */}
-                            {(p.coins > 0 || (p.metadata?.coins && p.metadata.coins > 0)) && (
-                              <span className="text-[10px] font-mono font-black bg-primary-100 text-primary-900 border border-primary-edge px-1.5 py-0.2 rounded-full flex items-center gap-0.5 shadow-2xs" title={`所持コイン: ${p.coins || p.metadata?.coins}枚`}>
-                                <Coins className="w-2.5 h-2.5 text-primary-600" />
-                                {p.coins || p.metadata?.coins}
-                              </span>
-                            )}
-
-                            {/* 👑 カジノ保有アイテムバッジ（幅を圧迫しないようコンパクトにまとめ表示） */}
-                            {(() => {
-                              const casinoBadges = getPlayerCasinoBadges(p);
-                              if (casinoBadges.length === 0) return null;
-                              return (
-                                <div className="flex items-center gap-1">
-                                  {casinoBadges.map((badge, idx) => (
-                                    <span key={idx} className="text-[9px] font-black bg-primary-100 text-primary-900 border border-primary-edge px-1 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
-                                      <span>{badge.icon}</span>
-                                      <span className="max-w-[65px] truncate">{badge.label}</span>
-                                    </span>
-                                  ))}
-                                </div>
                               );
                             })()}
                           </div>
@@ -293,24 +266,13 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         <td className="px-1.5 py-1.5 text-center" title="格上との対面: チェックあり=⚔️挑戦したい（MMR差200以上の相手ともレーンで当たってよい）/ なし=🛡️守ってほしい">
                           <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-danger-700 focus:ring-danger-500/50 cursor-pointer transition-transform hover:scale-110" />
                         </td>
-                        <td className="px-1.5 py-1.5 text-center">
-                          <div className="flex items-center justify-center gap-1 min-w-[110px] mx-auto">
-                            <span className="px-1.5 py-0.5 rounded bg-success-100 border border-success-edge-soft text-success-700 text-[10px] font-bold inline-flex items-center gap-0.5" title="希望優先度: 希望外に回された時に溜まり、次回メイン希望に入りやすくなります">🎯{p.pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-primary-100 border border-primary-edge-soft text-primary-700 text-[10px] font-bold inline-flex items-center gap-0.5" title="譲り合い度: メイン希望が続いた時に溜まり、他人に希望を譲る指標になります">🔄{p.off_role_pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 text-[10px] font-bold inline-flex items-center gap-0.5" title="出場優先度: 10人からあふれて見学した時に溜まり、次回最優先で試合に出場できます">🎟️{p.spectator_pity || 0}</span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <input type="text" value={p.metadata?.notes || ''} onChange={e => handleInputChange(p.id,'notes',e.target.value)} placeholder="備考"
-                            className="bg-transparent border border-transparent hover:border-border focus:border-border hover:bg-black/[0.04] focus:bg-surface focus:ring-1 focus:ring-primary-500/30 rounded px-2 py-0.5 outline-none text-xs text-foreground-subtle w-20 transition-all" />
-                        </td>
                       </tr>
                     </Fragment>
                   );
                 })}
                 {filteredPlayers.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="p-8 text-center text-muted-strong">
+                    <td colSpan={11} className="p-8 text-center text-muted-strong">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <span className="text-2xl">🔍</span>
                         <span className="text-sm font-bold text-foreground-subtle">条件に一致するプレイヤーが見つかりません</span>
@@ -425,11 +387,6 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             {p.ng_lane_2 && <span className="flex items-center gap-0.5"><RoleIcon role={p.ng_lane_2} className="w-3 h-3" />{p.ng_lane_2}</span>}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 ml-auto">
-                          <span className="px-1 py-0.5 rounded bg-success-100 text-success-700 text-[9px] font-bold" title="希望優先度">🎯{p.pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-primary-100 text-primary-700 text-[9px] font-bold" title="譲り合い度">🔄{p.off_role_pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-800 text-[9px] font-bold" title="出場優先度">🎟️{p.spectator_pity || 0}</span>
-                        </div>
                       </div>
                     </div>
                   </div>
