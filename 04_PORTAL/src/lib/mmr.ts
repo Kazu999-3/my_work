@@ -504,7 +504,7 @@ export async function replayMmrHistory(supabase: SupabaseClient) {
     const participants = participantsByMatch.get(match.id) || [];
     if (!participants || participants.length === 0) continue;
     // エキシビション（お祭りカスタム）は記録時と同じく MMR も試合数も動かさない
-    if (match.riot_match_id === 'EXHIBITION') continue;
+    if (match.riot_match_id === 'EXHIBITION' || String(match.riot_match_id || '').startsWith('FESTIVAL')) continue;
     const durationSec = Number(match.game_duration) || 0;
     const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
     const redTeam = participants.filter((p: any) => p.team === 'RED');

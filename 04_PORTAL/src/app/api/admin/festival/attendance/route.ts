@@ -29,16 +29,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. ktm_matches に「お祭りカスタム出席記録」の試合レコードを作成
+    // 1. ktm_matches に「お祭りカスタム出席記録（EXHIBITION）」の試合レコードを作成
+    // KTMシステム全体で、riot_match_id === 'EXHIBITION' の試合は
+    // MMR整合性チェック・フルリビルド・個人スタッツ集計から完全除外される仕様（SSoT）。
     const nowIso = new Date().toISOString();
-    const matchIdStr = `FESTIVAL_${Date.now()}`;
 
     const { data: matchData, error: matchError } = await supabase
       .from('ktm_matches')
       .insert({
         winning_team: 'DRAW',
         game_duration: 0,
-        riot_match_id: matchIdStr,
+        riot_match_id: 'EXHIBITION',
         created_at: nowIso,
       })
       .select('id')
