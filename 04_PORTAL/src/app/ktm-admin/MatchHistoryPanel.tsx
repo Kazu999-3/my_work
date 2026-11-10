@@ -9,14 +9,15 @@ import type { MmrBreakdown } from '../../lib/mmr';
 interface Match {
   id: string;
   created_at: string;
-  winning_team: 'BLUE' | 'RED';
+  winning_team: 'BLUE' | 'RED' | 'DRAW';
   game_duration?: number | null;
+  riot_match_id?: string;
   participants: Participant[];
 }
 
 interface Participant {
   player_name: string;
-  team: 'BLUE' | 'RED';
+  team: 'BLUE' | 'RED' | 'FESTIVAL';
   role: string;
   kills: number;
   deaths: number;
@@ -521,6 +522,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           })
           .map(match => {
           const isExpanded = expandedMatchIds.has(match.id);
+          const isFestival = match.winning_team === 'DRAW' || match.riot_match_id === 'EXHIBITION' || match.participants.some(p => p.team === 'FESTIVAL');
           const blueTeam = match.participants.filter(p => p.team === 'BLUE');
           const redTeam = match.participants.filter(p => p.team === 'RED');
 
@@ -546,26 +548,39 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               <div 
                 onClick={() => toggleAccordion(match.id)}
                 className={`p-3.5 sm:p-4 flex items-center justify-between border-b cursor-pointer transition select-none ${
-                  match.winning_team === 'BLUE' 
-                    ? 'bg-secondary-950/20 hover:bg-secondary-950/30 border-secondary-edge-strong/30' 
-                    : 'bg-danger-950/20 hover:bg-danger-950/30 border-danger-edge-strong/30'
+                  isFestival
+                    ? 'bg-amber-950/20 hover:bg-amber-950/30 border-amber-500/30'
+                    : match.winning_team === 'BLUE' 
+                      ? 'bg-secondary-950/20 hover:bg-secondary-950/30 border-secondary-edge-strong/30' 
+                      : 'bg-danger-950/20 hover:bg-danger-950/30 border-danger-edge-strong/30'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 ${
-                    match.winning_team === 'BLUE' ? 'bg-secondary-500/20 text-secondary-400' : 'bg-danger-500/20 text-danger-400'
+                    isFestival
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : match.winning_team === 'BLUE' ? 'bg-secondary-500/20 text-secondary-400' : 'bg-danger-500/20 text-danger-400'
                   }`}>
-                    <Trophy className="h-4 w-4" />
+                    {isFestival ? <span className="text-base">🎉</span> : <Trophy className="h-4 w-4" />}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`font-black tracking-wider text-base sm:text-lg ${
-                      match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'
+                      isFestival
+                        ? 'text-amber-400'
+                        : match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'
                     }`}>
-                      {match.winning_team} WIN
+                      {isFestival ? 'お祭りカスタム (出席記録)' : `${match.winning_team} WIN`}
                     </span>
-                    <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
-                      Score: <span className="text-secondary-400">{blueKills}</span> - <span className="text-danger-400">{redKills}</span>
-                    </span>
+                    {!isFestival && (
+                      <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
+                        Score: <span className="text-secondary-400">{blueKills}</span> - <span className="text-danger-400">{redKills}</span>
+                      </span>
+                    )}
+                    {isFestival && (
+                      <span className="text-xs font-mono font-bold text-amber-400/80 px-2 py-0.5 rounded-md bg-black/20">
+                        参加 {match.participants.length}名 (勝敗・MMR変動なし)
+                      </span>
+                    )}
                     {match.game_duration && match.game_duration > 0 && (
                       <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
                         ⏱️ {Math.floor(match.game_duration / 60)}分{match.game_duration % 60}秒
@@ -614,6 +629,40 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
               {/* Body (アコーディオン展開時のみ描画) */}
               {isExpanded && (
+                isFestival ? (
+                  <div className="p-4 sm:p-5 bg-amber-950/10 border-t border-amber-500/20 animate-fade-in space-y-3">
+                    <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                      <span className="flex items-center gap-1.5">
+                        <span>🎉</span>
+                        <span>お祭りカスタム 出席メンバー一覧（{match.participants.length}名）</span>
+                      </span>
+                      <span className="text-[11px] font-mono text-faint">
+                        通算試合数カウント対象 / MMR変動なし
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-2.5">
+                      {match.participants.map((p) => (
+                        <Link
+                          key={p.player_name}
+                          href={`/player/${encodeURIComponent(p.player_name)}`}
+                          className="flex items-center gap-2 p-2.5 rounded-xl bg-surface/80 border border-border/80 hover:border-amber-500/50 hover:bg-surface transition cursor-pointer group"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-xs font-black text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                            👤
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-black text-foreground group-hover:text-primary-600 truncate block">
+                              {p.player_name}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-strong block">
+                              出席 +1試合
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
                 <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border animate-fade-in">
                   {/* BLUE TEAM */}
                   <div className={`flex-1 p-3 sm:p-4 ${match.winning_team === 'BLUE' ? 'bg-secondary-950/5' : 'bg-black/2'}`}>
@@ -739,6 +788,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     </div>
                   </div>
                 </div>
+                )
               )}
             </div>
           );

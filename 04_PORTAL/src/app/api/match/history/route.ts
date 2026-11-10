@@ -11,21 +11,29 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const limit = Math.min(200, Math.max(1, Number(searchParams.get('limit')) || 50));
     const withPredictions = searchParams.get('withPredictions') === 'true';
+    const includeFestival = searchParams.get('includeFestival') === 'true';
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('ktm_matches')
       .select(`
         id,
         created_at,
         winning_team,
         game_duration,
+        riot_match_id,
         ktm_match_participants (
           player_name, team, role, champion_name, kills, deaths, assists,
           player_mmr, kda_score, mmr_delta, mmr_breakdown, cs, gold, damage_dealt, vision_score
         )
       `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    // お祭りカスタム出席記録ダミー（EXHIBITION / DRAW）を通常履歴から除外
+    if (!includeFestival) {
+      query = query.neq('winning_team', 'DRAW');
+    }
+
+    const { data, error } = await query.limit(limit);
     if (error) throw error;
 
     const matchIds = (data || []).map((m: any) => m.id);
@@ -81,6 +89,7 @@ export async function GET(req: Request) {
         created_at: m.created_at,
         winning_team: m.winning_team,
         game_duration: m.game_duration || 0,
+        riot_match_id: m.riot_match_id,
         participants: mergedParticipants,
       };
     });
