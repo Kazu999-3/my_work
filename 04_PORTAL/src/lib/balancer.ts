@@ -983,7 +983,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
 }
 
 // ==========================================
-// コア3案生成アルゴリズム (新設)
+// 厳選3案生成アルゴリズム（案A: 黄金バランス / 案B: 希望最優先 / 案C: レーン対面均等）
 // ==========================================
 export function coreBalanceProposals(players: Player[], ctx: BalanceContext): ProposalResult[] {
   const candidates = runBalanceSearch(players, ctx);
@@ -994,42 +994,11 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
   // 1. 黄金バランス (総合スコア最良: チームMMR差・対面格差・希望ロールのベスト調和) -> 案A
   const listA = [...candidates].sort((a, b) => a.score - b.score);
 
-  // 2. ガチ戦力均等 (チーム間MMR差最良 -> 5レーン対面格差最良 -> 総合スコア) -> 案B
-  const listB = [...candidates].sort((a, b) => a.mmrDiffVal - b.mmrDiffVal || a.totalLaneDiff - b.totalLaneDiff || a.score - b.score);
+  // 2. 希望最優先 (第1希望合致数最多 -> 総合スコア) -> 案B
+  const listB = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
 
-  // 3. 希望最優先 (第1希望合致数最多 -> 総合スコア) -> 案C
-  const listC = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
-
-  // 4. 初参戦＆ライト保護 (初参戦・ライト層・初心者のオフロールペナルティ最少) -> 案D
-  const calcProtectPenalty = (c: RawBalanceCandidate): number => {
-    let penalty = 0;
-    const checkTeam = (indices: number[], pRole: number[]) => {
-      indices.forEach((idx, i) => {
-        const p = players[idx];
-        const role = ROLES[pRole[i]];
-        const isMain = p.isFixed || p.pref1 === 'ALL' || p.pref1 === role;
-        if (!isMain) {
-          if (p.isFirstTimer) penalty += 50000;
-          else if (p.isLightTier) penalty += 20000;
-          else if (p.isNewbie) penalty += 10000;
-          else penalty += 1000;
-        }
-      });
-    };
-    checkTeam(c.teamAIndices, c.pA);
-    checkTeam(c.teamBIndices, c.pB);
-    return penalty;
-  };
-
-  const listD = [...candidates].sort((a, b) => {
-    const penA = calcProtectPenalty(a);
-    const penB = calcProtectPenalty(b);
-    if (penA !== penB) return penA - penB;
-    return a.score - b.score;
-  });
-
-  // 5. 全5レーン対面ミラー均等 (全レーンの対面MMR格差の合計が最小 -> チームMMR差) -> 案E
-  const listE = [...candidates].sort((a, b) => {
+  // 3. 全5レーン対面ミラー均等 (全レーンの対面MMR格差の合計が最小 -> チームMMR差) -> 案C
+  const listC = [...candidates].sort((a, b) => {
     return a.totalLaneDiff - b.totalLaneDiff || a.mmrDiffVal - b.mmrDiffVal || a.score - b.score;
   });
 
@@ -1052,120 +1021,35 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
   });
   usedSignatures.add(bestA.signature);
 
-  // 案B: ガチ戦力均等
+  // 案B: 希望最優先（全員ノーストレス）
   const bestB = listB.find(c => !usedSignatures.has(c.signature)) || listB[0];
   const resB = buildBalanceResult(bestB, players, ctx);
-  resB.balanceReport.unshift("💡 **【コンセプト：ガチ戦力均等（実力勝負）】**\nチーム間MMR格差を極限までゼロに近づけ、勝率期待値50:50を目指した実力真剣勝負案です。\n**こんな時におすすめ**: 実力が拮抗した緊迫感ある試合を楽しみたい時や、本気のカスタム大会時におすすめです。");
+  resB.balanceReport.unshift("💡 **【コンセプト：全員ノーストレス（希望最優先）】**\n全員が得意なメインロールで思いきりプレイできるよう、ロール希望の合致数を最優先したエンジョイ案です。\n**こんな時におすすめ**: 練習したいチャンプ・レーンがある時や、全員がストレスフリーで遊びたい時におすすめです。");
   const mmrBlueB = resB.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedB = resB.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resB,
     id: 'B',
-    title: '案B（ガチ戦力均等）',
+    title: '案B（希望最優先）',
     teamBlueMMR: mmrBlueB,
     teamRedMMR: mmrRedB,
     mmrDiff: Math.abs(mmrBlueB - mmrRedB)
   });
   usedSignatures.add(bestB.signature);
 
-  // 案C: 希望最優先
+  // 案C: 全5レーン対面ミラー均等（対面勝負）
   const bestC = listC.find(c => !usedSignatures.has(c.signature)) || listC[0];
   const resC = buildBalanceResult(bestC, players, ctx);
-  resC.balanceReport.unshift("💡 **【コンセプト：全員ノーストレス（希望優先）】**\n全員が得意なメインロールで思いきりプレイできるよう、ロール希望の合致数を最優先したエンジョイ案です。\n**こんな時におすすめ**: 練習したいチャンプ・レーンがある時や、全員がストレスフリーで遊びたい時におすすめです。");
+  resC.balanceReport.unshift("💡 **【コンセプト：全5レーン対面ミラー均等（対面勝負）】**\nチーム合計だけでなく、TOP/JG/MID/ADC/SUPの全レーンにおいて「対面同士の実力差」を最も小さく揃えた案です。\n**こんな時におすすめ**: 「特定レーンだけ一方的に崩壊する」のを防ぎ、すべてのレーンで白熱した対面勝負を楽しみたい時におすすめです。");
   const mmrBlueC = resC.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedC = resC.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resC,
     id: 'C',
-    title: '案C（全員ノーストレス）',
+    title: '案C（レーン対面均等）',
     teamBlueMMR: mmrBlueC,
     teamRedMMR: mmrRedC,
     mmrDiff: Math.abs(mmrBlueC - mmrRedC)
-  });
-  usedSignatures.add(bestC.signature);
-
-  // 案D: 初参戦＆ライト保護
-  const bestD = listD.find(c => !usedSignatures.has(c.signature)) || listD[0];
-  const resD = buildBalanceResult(bestD, players, ctx);
-  resD.balanceReport.unshift("💡 **【コンセプト：初参戦＆ライト層VIP保護（歓迎・育成）】**\n初参戦者やライト層、初心者プレイヤーに絶対にオフロールや格上対面をさせず、高レート勢が他レーンで支える安心設計案です。\n**こんな時におすすめ**: 新しいメンバーを迎える時や、初心者・ライト層を気持ちよくエスコートしたい時におすすめです。");
-  const mmrBlueD = resD.teamBlue.reduce((s, p) => s + p.mmr, 0);
-  const mmrRedD = resD.teamRed.reduce((s, p) => s + p.mmr, 0);
-  proposals.push({
-    ...resD,
-    id: 'D',
-    title: '案D（初参戦・ライト保護）',
-    teamBlueMMR: mmrBlueD,
-    teamRedMMR: mmrRedD,
-    mmrDiff: Math.abs(mmrBlueD - mmrRedD)
-  });
-  usedSignatures.add(bestD.signature);
-
-  // 案E: 全5レーン対面ミラー均等
-  const bestE = listE.find(c => !usedSignatures.has(c.signature)) || listE[0];
-  const resE = buildBalanceResult(bestE, players, ctx);
-  resE.balanceReport.unshift("💡 **【コンセプト：全5レーン対面ミラー均等（対面勝負）】**\nチーム合計だけでなく、TOP/JG/MID/ADC/SUPの全レーンにおいて「対面同士の実力差」を最も小さく揃えた案です。\n**こんな時におすすめ**: 「特定レーンだけ一方的に崩壊する」のを防ぎ、すべてのレーンで白熱した対面勝負を楽しみたい時におすすめです。");
-  const mmrBlueE = resE.teamBlue.reduce((s, p) => s + p.mmr, 0);
-  const mmrRedE = resE.teamRed.reduce((s, p) => s + p.mmr, 0);
-  proposals.push({
-    ...resE,
-    id: 'E',
-    title: '案E（レーン対面均等）',
-    teamBlueMMR: mmrBlueE,
-    teamRedMMR: mmrRedE,
-    mmrDiff: Math.abs(mmrBlueE - mmrRedE)
-  });
-
-  // 案F: お祭りランダム (完全ランダムシャッフル / 闇鍋)
-  const shuffledPlayers = [...players];
-  for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
-  }
-
-  const teamBlueF: AssignedPlayer[] = shuffledPlayers.slice(0, 5).map((p, idx) => {
-    const role = ROLES[idx];
-    const mmr = p.effectiveRates ? p.effectiveRates[role] : (p.rates ? p.rates[role] : (p.avgMMR || 1200));
-    return {
-      ...p,
-      currentRole: role,
-      mmr,
-      mainLane: p.pref1 || 'ALL',
-      subLane: p.pref2 || '-',
-    };
-  });
-
-  const teamRedF: AssignedPlayer[] = shuffledPlayers.slice(5, 10).map((p, idx) => {
-    const role = ROLES[idx];
-    const mmr = p.effectiveRates ? p.effectiveRates[role] : (p.rates ? p.rates[role] : (p.avgMMR || 1200));
-    return {
-      ...p,
-      currentRole: role,
-      mmr,
-      mainLane: p.pref1 || 'ALL',
-      subLane: p.pref2 || '-',
-    };
-  });
-
-  const mmrBlueF = teamBlueF.reduce((s, p) => s + p.mmr, 0);
-  const mmrRedF = teamRedF.reduce((s, p) => s + p.mmr, 0);
-
-  const reportF = [
-    "💡 **【コンセプト：お祭りランダム（完全闇鍋）】**\n実力・希望ロール・レート差を一切考慮せず、完全ランダム（くじ引き）でチームとレーンを決定するお祭りエンジョイ案です。\n**こんな時におすすめ**: 日曜のお祭りカスタムや、普段と違うロール・予想外のカオスな展開を楽しみたい時におすすめです。"
-  ];
-
-  proposals.push({
-    teamBlue: teamBlueF,
-    teamRed: teamRedF,
-    spectators: [],
-    balanceReport: reportF,
-    unallowedHigherMatchups: [],
-    banProtect: null,
-    id: 'F',
-    title: '案F（お祭りランダム）',
-    teamBlueMMR: mmrBlueF,
-    teamRedMMR: mmrRedF,
-    mmrDiff: Math.abs(mmrBlueF - mmrRedF),
-    isFestivalMode: true,
   });
 
   return proposals.sort((a, b) => a.id.localeCompare(b.id));

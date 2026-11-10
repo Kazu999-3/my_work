@@ -452,108 +452,14 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                         }`}>
                           {satRate}%
                         </span>
-                        {prop.id === 'E' && <span className="text-[10px] bg-amber-400 text-amber-950 px-1 py-0.2 rounded font-black">ハンデ</span>}
-                        {prop.id === 'F' && <span className="text-[10px] bg-purple-600 text-white px-1 py-0.2 rounded font-black">🎪 お祭り</span>}
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              {/* 🎗️ 案E選択時: 実践的レーン戦ハンデ縛り ＆ 再微調整パネル */}
-              {balanceResult.id === 'E' && (
-                <div className="p-4 rounded-2xl bg-primary-50 border-2 border-primary-edge shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">🎗️</span>
-                      <div>
-                        <h3 className="text-xs font-black text-primary-950">案E：実践的レーン戦ハンデ縛り設定 ＆ 再微調整</h3>
-                        <p className="text-[11px] text-primary-800">不利対面（2ランク格差等）の格上プレイヤーに縛りルールを設定し、戦力を完全に均等化します。</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-xs">
-                    {/* Lv.1 */}
-                    <div className="p-3 rounded-xl bg-surface border border-primary-edge-soft space-y-1.5 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-primary-900 text-xs">Lv.1 軽度ハンデ</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-100 text-primary-800">実効MMR -150</span>
-                      </div>
-                      <p className="text-[11px] text-muted leading-relaxed">
-                        ▫ <strong>フラッシュ禁止</strong>（ゴースト/TP強制）<br />
-                        ▫ <strong>序盤5分間リコール禁止</strong>
-                      </p>
-                      <div className="text-[10px] text-primary-700 font-bold">消費: 300 コイン</div>
-                    </div>
-
-                    {/* Lv.2 */}
-                    <div className="p-3 rounded-xl bg-surface border-2 border-primary-edge space-y-1.5 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-primary-950 text-xs">Lv.2 中度ハンデ</span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-primary-500 text-white">実効MMR -300 (1ランク差)</span>
-                      </div>
-                      <p className="text-[11px] text-muted leading-relaxed">
-                        ▫ <strong>ポーション購入禁止</strong>（回復封じ）<br />
-                        ▫ <strong>メインチャンプBAN＆セカンド強制</strong>
-                      </p>
-                      <div className="text-[10px] text-primary-700 font-bold">消費: 600 コイン</div>
-                    </div>
-
-                    {/* Lv.3 */}
-                    <div className="p-3 rounded-xl bg-surface border border-primary-edge-soft space-y-1.5 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-primary-900 text-xs">Lv.3 重度ハンデ</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-danger-100 text-danger-800">実効MMR -500 (完全互角)</span>
-                      </div>
-                      <p className="text-[11px] text-muted leading-relaxed">
-                        ▫ <strong>初手『女神の涙』スタート縛り</strong><br />
-                        ▫ <strong>スキル1つ（Ult除く）使用禁止</strong>
-                      </p>
-                      <div className="text-[10px] text-primary-700 font-bold">消費: 1,200 コイン</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-primary-edge-soft/60">
-                    <span className="text-[11px] text-primary-900 font-bold">
-                      ※この設定で推定MMRが再計算され、対面格差がピタッと埋まります。
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // 案Eの再微調整を実行: 格上プレイヤーの実効MMRを補正して再描画
-                        const updatedBlue = balanceResult.teamBlue.map((p: any) => {
-                          const penalty = handicapNames.has(p.name) ? 300 : 0;
-                          return { ...p, mmr: Math.max(100, p.mmr - penalty) };
-                        });
-                        const updatedRed = balanceResult.teamRed.map((p: any) => {
-                          const penalty = handicapNames.has(p.name) ? 300 : 0;
-                          return { ...p, mmr: Math.max(100, p.mmr - penalty) };
-                        });
-                        const newBlueMMR = updatedBlue.reduce((s: number, p: any) => s + p.mmr, 0);
-                        const newRedMMR = updatedRed.reduce((s: number, p: any) => s + p.mmr, 0);
-                        const updatedRes = {
-                          ...balanceResult,
-                          teamBlue: updatedBlue,
-                          teamRed: updatedRed,
-                          teamBlueMMR: newBlueMMR,
-                          teamRedMMR: newRedMMR,
-                          mmrDiff: Math.abs(newBlueMMR - newRedMMR),
-                        };
-                        setBalanceResult(updatedRes);
-                        toast.success("⚡ 【案E微調整完了】 ハンデ補正（実効MMR -300）を適用し、対面格差と勝率予想を再計算しました！");
-                      }}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-black text-xs transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Sparkles size={14} />
-                      推定MMRを反映してチーム分けを微調整する
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 🎪 案F選択時: お祭りランダム ＆ 対面レート差解消縛りルーレット */}
-              {balanceResult.id === 'F' && (
+              {/* 🎪 お祭りモード時: 対面レート差解消縛りルーレット */}
+              {balanceResult.isFestivalMode && (
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-pink-500/10 border-2 border-purple-500/30 shadow-xs space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">

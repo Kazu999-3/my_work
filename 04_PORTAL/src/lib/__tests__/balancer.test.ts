@@ -92,30 +92,24 @@ test('coreBalanceTeams: 10人未満は例外を投げる', () => {
   assert.throws(() => coreBalanceTeams(players, emptyCtx()));
 });
 
-test('coreBalanceProposals: 6案(A/B/C/D/E/F)をすべて有効な編成で返す', () => {
+test('coreBalanceProposals: 厳選3案(A/B/C)をすべて有効な編成で返す', () => {
   const players = tenPlayers();
   const proposals = coreBalanceProposals(players, emptyCtx());
-  assert.equal(proposals.length, 6);
-  assert.deepEqual(proposals.map(p => p.id), ['A', 'B', 'C', 'D', 'E', 'F']);
+  assert.equal(proposals.length, 3);
+  assert.deepEqual(proposals.map(p => p.id), ['A', 'B', 'C']);
   for (const prop of proposals) {
     assertValidResult(prop, players.map(p => p.name));
     assert.ok(prop.mmrDiff >= 0, 'mmrDiffは非負');
     assert.ok(typeof prop.title === 'string' && prop.title.length > 0);
   }
 
-  // 案F（お祭りランダム）の特性検証
-  const f = proposals.find(p => p.id === 'F')!;
-  assert.equal(f.isFestivalMode, true);
-  assert.ok(f.title.includes('案F'));
-  assert.ok(f.title.includes('お祭り'));
-});
-
-test('coreBalanceProposals: 案B(戦力均等)はMMR差が過大にならない', () => {
-  const players = tenPlayers();
-  const proposals = coreBalanceProposals(players, emptyCtx());
+  // 各案のタイトル検証
+  const a = proposals.find(p => p.id === 'A')!;
   const b = proposals.find(p => p.id === 'B')!;
-  // バランス構成なので、チーム合計MMR差が極端(例: 1000超)にはならないはず
-  assert.ok(b.mmrDiff < 1000, `案BのMMR差が過大: ${b.mmrDiff}`);
+  const c = proposals.find(p => p.id === 'C')!;
+  assert.ok(a.title.includes('黄金バランス'));
+  assert.ok(b.title.includes('希望最優先'));
+  assert.ok(c.title.includes('レーン対面均等'));
 });
 
 
