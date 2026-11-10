@@ -27,6 +27,14 @@
 
 ## 🙋 ユーザー判断・ユーザー作業待ち
 
+- [ ] **Supabase DB: `ktm_matches` に `match_type` カラムを追加＆過去お祭りデータの正規化SQL実行**（2026-11-10積載）:
+  - 目的: 公式真剣勝負（`NORMAL`）とお祭り・出欠イベント（`EVENT`）をDBレベルで物理正規化する。
+  - 実行SQL（Supabase SQL Editorでコピペ実行）:
+    ```sql
+    ALTER TABLE ktm_matches ADD COLUMN IF NOT EXISTS match_type TEXT DEFAULT 'NORMAL';
+    UPDATE ktm_matches SET match_type = 'EVENT' WHERE winning_team = 'DRAW' OR riot_match_id = 'EXHIBITION';
+    ```
+  - 状況: アプリ側コード（`src/lib/matchType.ts`）は既にフォールバック対応済みのため急ぎではないが、時間のある時に実行すればDB実値が完全に統一される。
 - [x] **【完了】PC の常駐デーモンを再起動 → 再解析(article_reanalyze)を完全復旧**（2026-10-28）:
   - 10/18より古いまま稼働していたプロセスを再起動し最新コードへ同期。
   - 先ほど失敗していた記事 37740・37772 の再解析が自動実行され、それぞれ新版（#38607、#38608）の生成に成功！承認画面へ届いたことを実測確認済み。
