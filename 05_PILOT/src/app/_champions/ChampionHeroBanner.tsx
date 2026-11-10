@@ -3,12 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { getChampIcon, getChampSplash } from "@/lib/ddragonClient";
-import { Swords, ChevronDown, ChevronUp, Timer, Star, Bot, ExternalLink, Wrench } from "lucide-react";
+import { Swords, ChevronDown, ChevronUp, Timer, Star, Bot, ExternalLink } from "lucide-react";
 import type { ChampionDetail, DetailTab } from "./types";
 
 // ヒーローバナー＆基本情報＋アクションボタン群＋CD早見表
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab, showCdTable, setShowCdTable, vsMode, setVsMode, vsEnemyId, setIsToolModalOpen, setIsRevisionModalOpen, toggleFavorite, selectedDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta }: {
+export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab, showCdTable, setShowCdTable, vsMode, setVsMode, vsEnemyId, setIsRevisionModalOpen, toggleFavorite, selectedDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta }: {
   favorites: string[];
   activeTab: DetailTab;
   setActiveTab: (tab: DetailTab) => void;
@@ -17,7 +17,6 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
   vsMode: boolean;
   setVsMode: (v: boolean) => void;
   vsEnemyId: string;
-  setIsToolModalOpen: (v: boolean) => void;
   setIsRevisionModalOpen: (v: boolean) => void;
   toggleFavorite: (champId: string, e?: React.MouseEvent) => void;
   selectedDetail: ChampionDetail;
@@ -197,17 +196,6 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                       ))
                     )}
                   </div>
-
-                  {/* ⚙️ ツール・管理メニュー起動ボタン */}
-                  <button
-                    type="button"
-                    onClick={() => setIsToolModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-amber-300 border border-zinc-700 hover:border-amber-500/50 transition cursor-pointer shadow-sm"
-                    title="知見取込・レーン設定・アイテム辞書・管理メニュー"
-                  >
-                    <Wrench size={13} className="text-amber-400" />
-                    <span>ツール</span>
-                  </button>
                 </div>
               </div>
 

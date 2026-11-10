@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, ChevronDown, Shield, ClipboardCheck, FileText, Settings, Edit3, Briefcase
+  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, ChevronDown, Shield, ClipboardCheck, FileText, Settings, Briefcase
 } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
 import NotificationBell from './NotificationBell';
@@ -31,7 +31,6 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { name: '攻略ライブラリ', href: '/library', icon: Library, desc: '全知知見アーカイブ・検索' },
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video, desc: '動画解析キュー監視' },
   { name: '健全性監査', href: '/admin/dict-health', icon: Activity, desc: '教本鮮度・欠損点検' },
-  { name: '教本エディタ', href: '/admin/dict-maintenance', icon: Edit3, desc: '全175体直接編集' },
   { name: '運用ダッシュボード', href: '/admin/dashboard', icon: Shield, desc: 'システム稼働・DB監視' },
   { name: '転職トラッカー', href: '/career', icon: Briefcase, desc: '企業・面接・書類の進行管理', badge: '便利' },
 ];

@@ -3,12 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { getChampIcon } from "@/lib/ddragonClient";
-import { Search, Star, X, Target, Wrench } from "lucide-react";
+import { Search, Star, X, Target } from "lucide-react";
 import type { ChampionSummary, ChampSort } from "./types";
 
 // 👑 チャンピオン一覧（検索・フィルター・カードグリッド）
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function ChampionListView({ search, setSearch, roleFilter, setRoleFilter, showFavoritesOnly, setShowFavoritesOnly, favorites, champSort, setChampSort, showMatchupPicker, setShowMatchupPicker, setIsLaneModalOpen, setFocusedLaneChampId, opggMeta, setIsToolModalOpen, toggleFavorite, filteredChampions, selectChampion }: {
+export default function ChampionListView({ search, setSearch, roleFilter, setRoleFilter, showFavoritesOnly, setShowFavoritesOnly, favorites, champSort, setChampSort, showMatchupPicker, setShowMatchupPicker, setIsLaneModalOpen, setFocusedLaneChampId, opggMeta, toggleFavorite, filteredChampions, selectChampion }: {
   search: string;
   setSearch: (v: string) => void;
   roleFilter: string;
@@ -23,7 +23,6 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
   setIsLaneModalOpen: (v: boolean) => void;
   setFocusedLaneChampId: (v: string | undefined) => void;
   opggMeta: any;
-  setIsToolModalOpen: (v: boolean) => void;
   toggleFavorite: (champId: string, e?: React.MouseEvent) => void;
   filteredChampions: ChampionSummary[];
   selectChampion: (id: string) => void;
@@ -83,17 +82,6 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                 >
                   <Target size={14} />
                   <span>🎯 対面チェッカー</span>
-                </button>
-
-                {/* ⚙️ ツール・管理メニュー起動ボタン（一覧側） */}
-                <button
-                  type="button"
-                  onClick={() => setIsToolModalOpen(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-950 hover:bg-zinc-800 text-zinc-300 hover:text-amber-400 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer shrink-0 shadow-sm"
-                  title="知見取込・レーン設定・アイテム辞書・管理メニュー"
-                >
-                  <Wrench size={13} className="text-amber-400" />
-                  <span>ツール</span>
                 </button>
               </div>
 

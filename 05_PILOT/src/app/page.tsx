@@ -26,7 +26,6 @@ import BibleTab from "./_champions/BibleTab";
 import LibraryTab from "./_champions/LibraryTab";
 import ChampionListView from "./_champions/ChampionListView";
 import KnowledgeDetailModal from "./_champions/KnowledgeDetailModal";
-import ToolPaletteModal from "./_champions/ToolPaletteModal";
 
 
 function PilotApp() {
@@ -76,9 +75,6 @@ function PilotApp() {
   // 👑 統合戦術マスター教本（GLOBAL本文）の展開・コピー状態
   const [isGlobalGuideExpanded, setIsGlobalGuideExpanded] = useState(false);
   const [globalGuideCopied, setGlobalGuideCopied] = useState(false);
-
-  // ⚙️ ツール・管理クイックパレット モーダル開閉状態（絶対に見切れない中央モーダル）
-  const [isToolModalOpen, setIsToolModalOpen] = useState(false);
 
   // 📜 編集・統合履歴モーダル状態
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
@@ -187,7 +183,7 @@ function PilotApp() {
              ========================================================= */
           <div className="space-y-4 animate-in fade-in duration-150">
             {/* 1. ヒーローバナー＆基本情報 */}
-            <ChampionHeroBanner favorites={favorites} activeTab={activeTab} setActiveTab={setActiveTab} showCdTable={showCdTable} setShowCdTable={setShowCdTable} vsMode={vsMode} setVsMode={setVsMode} vsEnemyId={vsEnemyId} setIsToolModalOpen={setIsToolModalOpen} setIsRevisionModalOpen={setIsRevisionModalOpen} toggleFavorite={toggleFavorite} selectedDetail={selectedDetail} availableRoles={availableRoles} currentRole={currentRole} setCurrentRole={setCurrentRole} currentLaneMeta={currentLaneMeta} />
+            <ChampionHeroBanner favorites={favorites} activeTab={activeTab} setActiveTab={setActiveTab} showCdTable={showCdTable} setShowCdTable={setShowCdTable} vsMode={vsMode} setVsMode={setVsMode} vsEnemyId={vsEnemyId} setIsRevisionModalOpen={setIsRevisionModalOpen} toggleFavorite={toggleFavorite} selectedDetail={selectedDetail} availableRoles={availableRoles} currentRole={currentRole} setCurrentRole={setCurrentRole} currentLaneMeta={currentLaneMeta} />
 
             {/* ⚔️ 対面VS直接比較パネル (Split View) */}
             {vsMode && (
@@ -237,7 +233,7 @@ function PilotApp() {
           /* =========================================================
              👑 チャンピオン一覧 (エイリアス検索・お気に入り対応)
              ========================================================= */
-          <ChampionListView search={search} setSearch={setSearch} roleFilter={roleFilter} setRoleFilter={setRoleFilter} showFavoritesOnly={showFavoritesOnly} setShowFavoritesOnly={setShowFavoritesOnly} favorites={favorites} champSort={champSort} setChampSort={setChampSort} showMatchupPicker={showMatchupPicker} setShowMatchupPicker={setShowMatchupPicker} setIsLaneModalOpen={setIsLaneModalOpen} setFocusedLaneChampId={setFocusedLaneChampId} opggMeta={opggMeta} setIsToolModalOpen={setIsToolModalOpen} toggleFavorite={toggleFavorite} filteredChampions={filteredChampions} selectChampion={selectChampion} />
+          <ChampionListView search={search} setSearch={setSearch} roleFilter={roleFilter} setRoleFilter={setRoleFilter} showFavoritesOnly={showFavoritesOnly} setShowFavoritesOnly={setShowFavoritesOnly} favorites={favorites} champSort={champSort} setChampSort={setChampSort} showMatchupPicker={showMatchupPicker} setShowMatchupPicker={setShowMatchupPicker} setIsLaneModalOpen={setIsLaneModalOpen} setFocusedLaneChampId={setFocusedLaneChampId} opggMeta={opggMeta} toggleFavorite={toggleFavorite} filteredChampions={filteredChampions} selectChampion={selectChampion} />
         )}
       </main>
 
@@ -274,11 +270,6 @@ function PilotApp() {
       {/* 📒 攻略知見詳細ポップアップモーダル */}
       {selectedKnowledgeId && (
         <KnowledgeDetailModal selectedKnowledgeId={selectedKnowledgeId} setSelectedKnowledgeId={setSelectedKnowledgeId} knowledgeDetail={knowledgeDetail} knowledgeLoading={knowledgeLoading} knowledgeCopied={knowledgeCopied} setKnowledgeCopied={setKnowledgeCopied} />
-      )}
-
-      {/* ⚙️ ツール・管理クイックパレット モーダル（中央表示・完全非見切れUI） */}
-      {isToolModalOpen && (
-        <ToolPaletteModal setIsLaneModalOpen={setIsLaneModalOpen} setFocusedLaneChampId={setFocusedLaneChampId} setIsItemDictModalOpen={setIsItemDictModalOpen} setDictFocusKey={setDictFocusKey} setDictFocusValue={setDictFocusValue} setIsIngestOpen={setIsIngestOpen} setIsToolModalOpen={setIsToolModalOpen} setIsRevisionModalOpen={setIsRevisionModalOpen} selectedDetail={selectedDetail} />
       )}
 
       {/* 📜 チャンピオン各項目 編集・統合履歴モーダル */}
