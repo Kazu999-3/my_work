@@ -12,7 +12,7 @@ import KtmBaccaratGame from './components/KtmBaccaratGame';
 import KtmMinesGame from './components/KtmMinesGame';
 import KtmPlinkoGame from './components/KtmPlinkoGame';
 import { useCasinoData } from './_casino/useCasinoData';
-import type { CasinoTab } from './_casino/types';
+import type { CasinoTab, MiniGameType } from './_casino/types';
 import CasinoHero from './_casino/CasinoHero';
 import CasinoTabNav from './_casino/CasinoTabNav';
 import LuckyDayBanner from './_casino/LuckyDayBanner';
@@ -30,6 +30,7 @@ import TipModal from './_casino/TipModal';
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<CasinoTab>('bet');
+  const [activeMiniGame, setActiveMiniGame] = useState<MiniGameType>('slot');
   const {
     ranking, activeMatch, loading, inventory, lastRescueMonth, userStreak, userMaxStreak, allPlayersList, betStats,
     timeLeftSeconds, isBetLocked, myBet, fetchBetData, fetchInventory,
@@ -356,60 +357,94 @@ export default function CasinoPage() {
           />
         )}
 
-        {/* タブ2: 🎰 KTMスロット */}
-        {activeTab === 'slot' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <KtmSlotGame
-              userCoins={user?.coins ?? 0}
-              onBalanceChange={(newBalance) => {
-                fetchBetData();
-                refreshUser();
-              }}
-            />
-          </div>
-        )}
-
-        {/* タブ: 💣 ジグスPlinko */}
-        {activeTab === 'plinko' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <KtmPlinkoGame
-              userCoins={user?.coins ?? 0}
-              onBalanceChange={() => {
-                fetchBetData();
-                refreshUser();
-              }}
-            />
-          </div>
-        )}
-
-
-        {/* タブ3: 🌿 ブッシュ・スカウト */}
-        {activeTab === 'mines' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <KtmMinesGame
-              userCoins={user?.coins ?? 0}
-              onBalanceChange={() => {
-                fetchBetData();
-                refreshUser();
-              }}
-            />
-          </div>
-        )}
-
-        {/* タブ4: 🃏 バカラ */}
-        {activeTab === 'baccarat' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="bg-surface rounded-3xl p-5 md:p-7 border border-black/10 shadow-sm">
-              <KtmBaccaratGame
-                userDiscordId={user?.discordId}
-                userDisplayName={user?.displayName || user?.username}
-                userCoins={user?.coins ?? 0}
-                onBalanceChange={(newBalance) => {
-                  fetchBetData();
-                  refreshUser();
-                }}
-              />
+        {/* 🎮 ミニゲーム (4種集約) */}
+        {(activeTab === 'games' || ['slot', 'plinko', 'mines', 'baccarat'].includes(activeTab)) && (
+          <div className="space-y-5 animate-in fade-in duration-200">
+            {/* ミニゲーム切り替えサブピル */}
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-1 p-1 bg-surface-subtle dark:bg-stone-900 rounded-2xl border border-border shadow-2xs overflow-x-auto scrollbar-none">
+                {[
+                  { id: 'slot', label: '🎰 KTMスロット' },
+                  { id: 'plinko', label: '💣 ジグスPlinko' },
+                  { id: 'mines', label: '🌿 ブッシュ・スカウト' },
+                  { id: 'baccarat', label: '🃏 バカラ' },
+                ].map((g) => {
+                  const currentSub = ['slot', 'plinko', 'mines', 'baccarat'].includes(activeTab) ? activeTab : activeMiniGame;
+                  const isCurrent = currentSub === g.id;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveMiniGame(g.id as MiniGameType);
+                        setActiveTab('games');
+                      }}
+                      className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                        isCurrent
+                          ? 'bg-primary-600 text-white shadow-xs'
+                          : 'text-muted-strong hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* ゲーム本体 */}
+            {(() => {
+              const currentSub = ['slot', 'plinko', 'mines', 'baccarat'].includes(activeTab) ? activeTab : activeMiniGame;
+              if (currentSub === 'slot') {
+                return (
+                  <KtmSlotGame
+                    userCoins={user?.coins ?? 0}
+                    onBalanceChange={() => {
+                      fetchBetData();
+                      refreshUser();
+                    }}
+                  />
+                );
+              }
+              if (currentSub === 'plinko') {
+                return (
+                  <KtmPlinkoGame
+                    userCoins={user?.coins ?? 0}
+                    onBalanceChange={() => {
+                      fetchBetData();
+                      refreshUser();
+                    }}
+                  />
+                );
+              }
+              if (currentSub === 'mines') {
+                return (
+                  <KtmMinesGame
+                    userCoins={user?.coins ?? 0}
+                    onBalanceChange={() => {
+                      fetchBetData();
+                      refreshUser();
+                    }}
+                  />
+                );
+              }
+              if (currentSub === 'baccarat') {
+                return (
+                  <div className="bg-surface rounded-3xl p-5 md:p-7 border border-black/10 shadow-sm">
+                    <KtmBaccaratGame
+                      userDiscordId={user?.discordId}
+                      userDisplayName={user?.displayName || user?.username}
+                      userCoins={user?.coins ?? 0}
+                      onBalanceChange={() => {
+                        fetchBetData();
+                        refreshUser();
+                      }}
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
 
