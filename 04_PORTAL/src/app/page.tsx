@@ -8,7 +8,8 @@ import {
   Coins, 
   HeartHandshake, 
   Sparkles,
-  ShieldAlert
+  ShieldAlert,
+  History
 } from 'lucide-react';
 
 export const metadata = {
@@ -207,11 +208,11 @@ export default function HomePage() {
                 borderHover: 'hover:border-primary-edge',
               },
               {
-                title: '使い方 ＆ ルール',
-                sub: '参加ガイド・対戦仕様',
-                href: '/guide',
-                icon: <BookOpen className="w-5 h-5 text-success-600 dark:text-success-400" />,
-                borderHover: 'hover:border-success-edge',
+                title: '過去の試合履歴',
+                sub: '直近の対戦結果・詳細スタッツ',
+                href: '/history',
+                icon: <History className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />,
+                borderHover: 'hover:border-secondary-edge',
               },
             ].map((item) => (
               <Link
