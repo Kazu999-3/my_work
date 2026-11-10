@@ -7,6 +7,8 @@ import { getChampIcon } from "@/lib/ddragonClient";
 import championsDetailMap from "@/data/champions_detail_map.json";
 import type { ChampionDetail, MatchupItem, LibraryKnowledgeItem } from "./types";
 import FactClaimList from "./FactClaimList";
+import { useLolalyticsData } from "./useLolalyticsData";
+import LolalyticsMatchupCard from "./LolalyticsMatchupCard";
 
 // 相手チャンピオン名（日本語または英語ID）から英語IDと日本語名を逆引き
 const allChamps = Object.values(championsDetailMap as Record<string, any>);
@@ -101,6 +103,7 @@ export default function MatchupTab({
   openKnowledgeModal?: (id: string | number) => void;
 }) {
   const claims = selectedDetail.facts?.claims;
+  const { data: lolalyticsData, loading: lolalyticsLoading } = useLolalyticsData(selectedDetail?.id, currentRole);
 
   // レーンフィルター ('ALL' または 'TOP', 'JG', 'MID', 'ADC', 'SUP')
   const [selectedLane, setSelectedLane] = useState<string>("ALL");
@@ -172,6 +175,13 @@ export default function MatchupTab({
 
   return (
     <div className="space-y-4">
+      {/* 📊 Lolalytics 実戦マッチアップ統計カード */}
+      <LolalyticsMatchupCard
+        data={lolalyticsData}
+        loading={lolalyticsLoading}
+        currentRole={currentRole}
+        onSelectEnemy={(enemyId) => setEnemySearch(enemyId)}
+      />
       {/* 🗺️ レーン別割り振り ＆ 相手検索コントロールバー */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">

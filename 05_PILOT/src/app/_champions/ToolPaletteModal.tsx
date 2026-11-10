@@ -59,28 +59,6 @@ export default function ToolPaletteModal({ setIsLaneModalOpen, setFocusedLaneCha
 
             {/* パレットアクション一覧 */}
             <div className="p-4 sm:p-5 space-y-2.5">
-              {/* 1. 知見取込 */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsToolModalOpen(false);
-                  setIsIngestOpen(true);
-                }}
-                className="w-full p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-amber-500/50 text-left transition flex items-center gap-3.5 cursor-pointer group shadow-xs"
-              >
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:bg-amber-500/20 group-hover:scale-105 transition shrink-0">
-                  <Plus size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-black text-zinc-200 group-hover:text-amber-300 transition">
-                    {selectedDetail ? `📥 ${selectedDetail.jpName} の戦術知見を取込` : "📥 新規戦術の知見取込"}
-                  </div>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
-                    メモや動画URLからAIが戦術を自動分析・抽出
-                  </p>
-                </div>
-              </button>
-
               {/* 2. 所属レーン編集 */}
               <button
                 type="button"

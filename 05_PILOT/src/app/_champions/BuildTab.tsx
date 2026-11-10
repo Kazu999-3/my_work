@@ -5,6 +5,8 @@ import { Zap, BookOpen, Edit3 } from "lucide-react";
 import { getStageTactics } from "@/lib/tempoMetrics";
 import type { ChampionDetail, BuildPreset, MeasuredBuild } from "./types";
 import MeasuredBuildCard from "./MeasuredBuildCard";
+import { useLolalyticsData } from "./useLolalyticsData";
+import LolalyticsBuildCard from "./LolalyticsBuildCard";
 
 // タブ1: 戦略・シチュエーション別ビルド
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
@@ -23,8 +25,15 @@ export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictMod
 }) {
   // 実測ビルドがある時、「標準コア」は実測カードで表示する（対タンク・対バーストは型ごとの一般例のまま）
   const showMeasured = !!measuredBuild && buildPreset === "standard";
+  const { data: lolalyticsData, loading: lolalyticsLoading } = useLolalyticsData(selectedDetail?.id, currentRole);
   return (
               <div className="space-y-4">
+                {/* 🛡️ Lolalytics 実戦ビルド ＆ ルーン統計カード */}
+                <LolalyticsBuildCard
+                  data={lolalyticsData}
+                  loading={lolalyticsLoading}
+                  currentRole={currentRole}
+                />
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">

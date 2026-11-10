@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { getChampIcon, getChampSplash } from "@/lib/ddragonClient";
-import { Swords, BookOpen, ChevronDown, ChevronUp, Timer, Star, Bot, ExternalLink, Wrench, History } from "lucide-react";
+import { Swords, ChevronDown, ChevronUp, Timer, Star, Bot, ExternalLink, Wrench } from "lucide-react";
 import type { ChampionDetail, DetailTab } from "./types";
 
 // ヒーローバナー＆基本情報＋アクションボタン群＋CD早見表
@@ -109,14 +109,19 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                           <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-medium">
                             BAN: {currentLaneMeta.banRate}%
                           </span>
+                          {currentLaneMeta.games ? (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono hidden sm:inline">
+                              {currentLaneMeta.games.toLocaleString()}戦
+                            </span>
+                          ) : null}
                           <a
-                            href={`https://www.op.gg/champions/${selectedDetail.id.toLowerCase()}/build/${(currentRole === "BOT" ? "adc" : currentRole).toLowerCase()}`}
+                            href={`https://lolalytics.com/lol/${selectedDetail.id.toLowerCase()}/build/?lane=${(currentRole === "BOT" || currentRole === "ADC" ? "bottom" : currentRole === "JG" ? "jungle" : currentRole).toLowerCase()}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-1 transition"
-                            title={`OP.GG公式の${selectedDetail.jpName} (${currentRole}) ビルド・スタッツを開く`}
+                            title={`Lolalytics実測の${selectedDetail.jpName} (${currentRole}) ビルド・スタッツを開く`}
                           >
-                            <span>出典: OP.GG</span>
+                            <span>出典: Lolalytics</span>
                             <ExternalLink size={9} />
                           </a>
                         </>
@@ -153,33 +158,6 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                     <Bot size={14} className="text-amber-400" />
                     <span>🤖 AIコーチ設計図</span>
                   </Link>
-
-                  {/* 📒 攻略ライブラリ記事・知見タブを開く */}
-                  <button
-                    onClick={() => {
-                      setActiveTab("library");
-                      setTimeout(() => {
-                        const el = document.getElementById("champ-tabs-nav");
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        }
-                      }, 50);
-                    }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                      activeTab === "library"
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
-                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
-                    }`}
-                    title="このチャンピオンのプロ解説・ライブラリ知見を表示"
-                  >
-                    <BookOpen size={14} className="text-amber-400" />
-                    <span>📒 攻略知見</span>
-                    {selectedDetail.libraryKnowledge && selectedDetail.libraryKnowledge.length > 0 && (
-                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300 text-[10px] font-mono">
-                        {selectedDetail.libraryKnowledge.length}
-                      </span>
-                    )}
-                  </button>
 
                   {/* CD早見表トグル */}
                   <button
@@ -219,17 +197,6 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                       ))
                     )}
                   </div>
-
-                  {/* 📜 編集履歴確認ボタン */}
-                  <button
-                    type="button"
-                    onClick={() => setIsRevisionModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-amber-300 border border-zinc-700 hover:border-amber-500/50 transition cursor-pointer shadow-sm"
-                    title="各項目のAI統合・編集履歴を確認"
-                  >
-                    <History size={13} className="text-amber-400" />
-                    <span className="hidden sm:inline">履歴</span>
-                  </button>
 
                   {/* ⚙️ ツール・管理メニュー起動ボタン */}
                   <button

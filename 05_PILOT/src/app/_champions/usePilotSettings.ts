@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import opggLaneMetaDefault from "@/data/opgg_lane_meta.json";
+import lolalyticsLaneMetaDefault from "@/data/lolalytics_lane_meta.json";
 
 // チャンピオン辞典の個人設定（お気に入り・レーン所属・アイテム翻訳辞書）と OP.GG レーンメタ。
 // 端末(localStorage)とDB(/api/pilot/settings)を同期する。2026-10-07 app/page.tsx から分離（処理は分離前と同じ）。
@@ -10,7 +10,7 @@ export function usePilotSettings() {
   const [customRoles, setCustomRoles] = useState<Record<string, string[]>>({});
   const [customItemDict, setCustomItemDict] = useState<Record<string, string>>({});
   // 📊 OP.GG 公式メタデータ (全レーンの勝率・Tier・BAN率・順位)
-  const [opggMeta, setOpggMeta] = useState<any>(opggLaneMetaDefault);
+  const [opggMeta, setOpggMeta] = useState<any>(lolalyticsLaneMetaDefault);
 
   // localStorage および DB(ktm_settings / champion_lane_roles) からお気に入り・レーン設定・アイテム辞書を同期
   useEffect(() => {
