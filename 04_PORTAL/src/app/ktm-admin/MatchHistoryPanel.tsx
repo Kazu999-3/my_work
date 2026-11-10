@@ -565,7 +565,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               {/* Header (タップで開閉可能なアコーディオンヘッダー) */}
               <div 
                 onClick={() => toggleAccordion(match.id)}
-                className={`p-3.5 sm:p-4 flex items-center justify-between border-b cursor-pointer transition select-none ${
+                className={`p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 border-b cursor-pointer transition select-none ${
                   isFestival
                     ? 'bg-amber-950/20 hover:bg-amber-950/30 border-amber-500/30'
                     : match.winning_team === 'BLUE' 
@@ -573,7 +573,8 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                       : 'bg-danger-950/20 hover:bg-danger-950/30 border-danger-edge-strong/30'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                {/* 上段 (PCでは左側): 勝敗 + スコア + 試合時間 */}
+                <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 ${
                     isFestival
                       ? 'bg-amber-500/20 text-amber-400'
@@ -589,59 +590,62 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     }`}>
                       {isFestival ? 'お祭りカスタム (出席記録)' : `${match.winning_team} WIN`}
                     </span>
-                    {!isFestival && hasKillData && (
+                    {!isFestival && hasKillData ? (
                       <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
                         Score: <span className="text-secondary-400">{blueKills}</span> - <span className="text-danger-400">{redKills}</span>
                       </span>
-                    )}
-                    {isFestival && (
+                    ) : null}
+                    {isFestival ? (
                       <span className="text-xs font-mono font-bold text-amber-400/80 px-2 py-0.5 rounded-md bg-black/20">
                         参加 {match.participants.length}名 (勝敗・MMR変動なし)
                       </span>
-                    )}
-                    {match.game_duration && match.game_duration > 0 && (
+                    ) : null}
+                    {match.game_duration && match.game_duration > 0 ? (
                       <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
                         ⏱️ {Math.floor(match.game_duration / 60)}分{match.game_duration % 60}秒
                       </span>
-                    )}
-                    {match.game_duration && match.game_duration < 18 * 60 && match.game_duration > 0 && (
+                    ) : null}
+                    {match.game_duration && match.game_duration < 18 * 60 && match.game_duration > 0 ? (
                       <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
                         <span>⚡</span>
                         <span>早期投了 ({Math.round(match.game_duration / 60)}分)</span>
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4 text-faint text-xs font-bold shrink-0">
-                  <div className="flex items-center gap-1.5 font-mono">
+                {/* 下段 (PCでは右側): 日時 + 編集/削除ボタン + 開閉インジケーター */}
+                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2.5 sm:gap-4 text-faint text-xs font-bold shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-black/10 dark:border-white/5">
+                  <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
                     <Calendar className="h-3.5 w-3.5" />
                     <span>{dateStr}</span>
                   </div>
 
-                  {isAdmin && (
-                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => { setTapSwapIndex(null); setEditingMatch(JSON.parse(JSON.stringify(match))); }}
-                        className="p-1.5 bg-black/10 hover:bg-black/20 border border-border text-primary-600 rounded-lg transition cursor-pointer"
-                        title="試合履歴を編集"
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMatch(match.id)}
-                        className="p-1.5 bg-black/10 hover:bg-danger-100 border border-border text-danger-600 rounded-lg transition cursor-pointer"
-                        title="試合履歴を削除"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isAdmin && (
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => { setTapSwapIndex(null); setEditingMatch(JSON.parse(JSON.stringify(match))); }}
+                          className="p-1.5 bg-black/10 hover:bg-black/20 border border-border text-primary-600 rounded-lg transition cursor-pointer"
+                          title="試合履歴を編集"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMatch(match.id)}
+                          className="p-1.5 bg-black/10 hover:bg-danger-100 border border-border text-danger-600 rounded-lg transition cursor-pointer"
+                          title="試合履歴を削除"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
 
-                  {/* 開閉インジケーター */}
-                  <span className="text-xs text-muted-strong font-mono px-2 py-1 rounded-lg bg-black/10">
-                    {isExpanded ? '▲ 閉じる' : '▼ 詳細'}
-                  </span>
+                    {/* 開閉インジケーター */}
+                    <span className="text-[11px] sm:text-xs text-muted-strong font-mono px-2 py-1 rounded-lg bg-black/10">
+                      {isExpanded ? '▲ 閉じる' : '▼ 詳細'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
