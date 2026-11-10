@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'reac
 import Link from 'next/link';
 import { 
   BookOpen, Sparkles, RefreshCw, ChevronRight, Layers, 
-  Clock, ArrowLeft, ExternalLink, Compass, Swords, Shield, Zap, Filter
+  Clock, ExternalLink, Compass, Swords, Shield, Zap, Filter
 } from 'lucide-react';
 import LaneGuideOptimizeModal from './_parts/LaneGuideOptimizeModal';
 
@@ -91,28 +91,6 @@ function LaneGuidesApp() {
 
   return (
     <div className="min-h-screen bg-[#101012] text-zinc-100 flex flex-col font-sans">
-      {/* サブヘッダーバー */}
-      <div className="bg-[#16161a] border-b border-zinc-800/80 px-4 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition border border-zinc-700 cursor-pointer shadow-sm"
-          >
-            <ArrowLeft size={14} /> <span>← チャンピオン辞典へ戻る</span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/library?q=${encodeURIComponent(activeLane)}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950 hover:bg-amber-900 border border-amber-700 text-amber-300 text-xs font-bold transition shadow-sm"
-              title="このレーンの全ライブラリ記事を検索"
-            >
-              <BookOpen size={13} className="text-amber-400" />
-              <span>📚 {activeLane} 関連記事をライブラリ検索</span>
-            </Link>
-          </div>
-        </div>
-      </div>
 
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-4">
