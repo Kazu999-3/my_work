@@ -1,10 +1,10 @@
 "use client";
 
-import { Info, Users, RefreshCw, Filter, X, Sparkles, Zap } from "lucide-react";
+import { Info, Users, RefreshCw, Filter, X, Sparkles, Zap, PartyPopper } from "lucide-react";
 
-// 名簿タブの見出し・検索・自動保存の状態・各種操作ボタン（全員非アクティブ / Discord & Riot同期 / 全員メンテ / ロール連携 / Rebuild / MMR説明）
+// 名簿タブの見出し・検索・自動保存の状態・各種操作ボタン（全員非アクティブ / お祭り参加+1 / Discord & Riot同期 / 全員メンテ / ロール連携 / Rebuild / MMR説明）
 // 2026-10-07: app/ktm-admin/page.tsx（1,885行）から分割。表示内容・動作は分割前と同じ。
-export default function AdminToolbar({ searchQuery, setSearchQuery, saving, loading, syncingDiscord, syncingMaintenance, syncData, showMmrInfo, setShowMmrInfo, onDeactivateAll, onForceReset, onSyncCheck, onOpenRoleSync, onSyncAllMaintenance, onRebuild, onProcessIntros, processingIntros }: {
+export default function AdminToolbar({ searchQuery, setSearchQuery, saving, loading, syncingDiscord, syncingMaintenance, syncData, showMmrInfo, setShowMmrInfo, onDeactivateAll, onForceReset, onSyncCheck, onOpenRoleSync, onSyncAllMaintenance, onRebuild, onProcessIntros, processingIntros, onAddFestivalAttendance, activeCount = 0 }: {
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   saving: boolean;
@@ -22,6 +22,8 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
   onRebuild: () => void;
   onProcessIntros?: () => void;
   processingIntros?: boolean;
+  onAddFestivalAttendance?: () => void;
+  activeCount?: number;
 }) {
   return (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-6 gap-4">
@@ -73,6 +75,22 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
                   <X className="h-4 w-4" />
                   全員非アクティブ
                 </button>
+
+                {onAddFestivalAttendance && (
+                  <button
+                    onClick={onAddFestivalAttendance}
+                    disabled={loading || saving || activeCount === 0}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs shadow-sm ${
+                      activeCount > 0 && !loading && !saving
+                        ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 border-amber-500/50 hover:border-amber-500 cursor-pointer'
+                        : 'bg-black/5 text-muted-strong border-border opacity-50 cursor-not-allowed'
+                    }`}
+                    title="Activeにチェックが付いているメンバー全員にお祭りカスタム参加回数（+1）を記録します。勝敗やMMRは変動せず、初参加バッジが外れます。"
+                  >
+                    <PartyPopper className={`h-4 w-4 ${activeCount > 0 ? 'text-amber-600' : 'text-muted-strong'}`} />
+                    🎪 Activeに参加+1 {activeCount > 0 ? `(${activeCount}名)` : ''}
+                  </button>
+                )}
 
 
 

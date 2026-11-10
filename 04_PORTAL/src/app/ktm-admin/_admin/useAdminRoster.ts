@@ -181,6 +181,46 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
     handleSave();
   };
 
+  const handleAddFestivalAttendance = async () => {
+    const activePlayers = players.filter(p => p.is_active);
+    if (activePlayers.length === 0) {
+      alert("Active（チェックON）になっているプレイヤーがいません。");
+      return;
+    }
+
+    const count = activePlayers.length;
+    const names = activePlayers.map(p => p.name).join(', ');
+    const confirmed = confirm(
+      `現在Activeになっている ${count} 名にお祭りカスタム参加回数（+1）を記録しますか？\n` +
+      `（勝敗やMMRレーティングは変動しません）\n\n対象: ${names}`
+    );
+    if (!confirmed) return;
+
+    setLoading(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const res = await fetch("/api/admin/festival/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          players: activePlayers.map(p => ({
+            name: p.name,
+            discord_id: p.discord_id || null,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "お祭り参加記録の保存に失敗しました");
+      setMessage({ type: "success", text: `🎪 ${data.count}名にお祭り参加回数（+1）を記録しました！` });
+      await fetchPlayers();
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ お祭り参加記録エラー: " + err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeactivateAll = async () => {
     if (!confirm("全員を非アクティブ（Activeのチェックを全て外す）にしますか？\n（本日の参加者だけをチェックし直す際に便利です）")) return;
     setSaving(true);
@@ -217,6 +257,6 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
 
   return {
     players, loading, setLoading, saving, setSaving, flashingPlayerIds, triggerRowFlash, integrityData,
-    fetchPlayers, checkIntegrity, handleInputChange, handleInputSave, handleBlurSave, handleDeactivateAll, handleRebuildMmr,
+    fetchPlayers, checkIntegrity, handleInputChange, handleInputSave, handleBlurSave, handleDeactivateAll, handleAddFestivalAttendance, handleRebuildMmr,
   };
 }
