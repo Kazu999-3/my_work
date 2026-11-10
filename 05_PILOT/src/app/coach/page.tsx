@@ -5,21 +5,19 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Bot, ArrowLeft, Swords, BookOpen, Compass, ShieldAlert, Sparkles, RefreshCw, Zap,
-  BarChart3, TrendingUp, Radar
+  BarChart3, TrendingUp
 } from 'lucide-react';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import StatsAnalyzerTab from './StatsAnalyzerTab';
 import PostGameTab from './PostGameTab';
-import LiveTab from './LiveTab';
 import { PreGameTop, PreGameBottom } from './PreGameExtras';
 import { CoachRiotIdProvider, CoachRiotIdBar } from './riotIdContext';
 
-type TabKey = 'blueprint' | 'live' | 'postgame' | 'analyzer';
+type TabKey = 'blueprint' | 'postgame' | 'analyzer';
 
 // 試合の流れ（前 → 中 → 後 → 振り返り）の順に並べる。スタッツ分析は試合単位でないので最後
 const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'blueprint', label: '⚔️ 試合前', Icon: Swords },
-  { key: 'live', label: '🧭 試合中', Icon: Radar },
   { key: 'postgame', label: '📈 試合後', Icon: TrendingUp },
   { key: 'analyzer', label: '📊 スタッツ分析', Icon: BarChart3 },
 ];
@@ -140,11 +138,6 @@ function CoachPageContent() {
 
             <PreGameBottom />
           </div>
-        )}
-
-        {/* タブ: 試合中（ライブ偵察・5v5シミュレーター）。検出した対面は試合前タブの設計図にも反映する */}
-        {activeTab === 'live' && (
-          <LiveTab onLiveMatchDetected={(my, enemy) => { setMyChamp(my); setEnemyChamp(enemy); }} />
         )}
 
         {/* タブ 2: スタッツ深層分析 */}
