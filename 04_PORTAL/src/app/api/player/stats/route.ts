@@ -60,6 +60,8 @@ export async function POST(req: Request) {
       const isExhibition = 
         match.riot_match_id === 'EXHIBITION' ||
         String(match.riot_match_id || '').startsWith('FESTIVAL') || 
+        match.winning_team === 'DRAW' ||
+        p.team === 'FESTIVAL' ||
         p.mmr_breakdown?.isExhibition === true || 
         p.mmr_breakdown?.note?.includes('お祭り');
       if (isExhibition) return;

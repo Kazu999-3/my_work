@@ -133,7 +133,14 @@ export async function fetchPlayerRecentCustomMatches(playerName: string, limit =
     }
   }
 
-  return participations.map((p: any) => {
+  return participations
+    .filter((p: any) => {
+      const match = p.ktm_matches;
+      if (!match) return false;
+      if (match.winning_team === 'DRAW' || p.team === 'FESTIVAL') return false;
+      return true;
+    })
+    .map((p: any) => {
     const match = p.ktm_matches;
     const isWin = match?.winning_team ? p.team === match.winning_team : false;
     const detail = detailMap.get(String(p.match_id));

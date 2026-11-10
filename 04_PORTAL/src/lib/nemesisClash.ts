@@ -87,7 +87,8 @@ export async function calculateNemesisClash(
   const { data: matches, error: mErr } = await supabase
     .from('ktm_matches')
     .select('id, winning_team')
-    .in('id', matchIds);
+    .in('id', matchIds)
+    .in('winning_team', ['BLUE', 'RED']);
 
   if (mErr) throw mErr;
 

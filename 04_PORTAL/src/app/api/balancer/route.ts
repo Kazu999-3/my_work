@@ -82,12 +82,15 @@ export async function POST(request: Request) {
         
         if (matchedName) {
           const key = matchedName.toLowerCase();
-          playerStatsMap[key].games++;
           
           const winningTeam = Array.isArray(row.ktm_matches)
             ? (row.ktm_matches[0] as any)?.winning_team
             : (row.ktm_matches as any)?.winning_team;
-            
+
+          // お祭り出席ダミー（DRAW / FESTIVAL）は勝率補正計算から除外
+          if (!winningTeam || winningTeam === 'DRAW' || row.team === 'FESTIVAL') return;
+
+          playerStatsMap[key].games++;
           if (row.team === winningTeam) {
             playerStatsMap[key].wins++;
           }
@@ -362,10 +365,11 @@ export async function POST(request: Request) {
     }
 
     try {
-      // 直近15試合を取得（サイド履歴用には広く、対面履歴用には直近のみ使うため）
+      // 直近15試合を取得（お祭り出席ダミーを除外して純粋な5v5試合を抽出）
       const { data: recentMatches } = await supabase
         .from('ktm_matches')
         .select('id, winning_team, team_red_win')
+        .in('winning_team', ['BLUE', 'RED'])
         .order('created_at', { ascending: false })
         .limit(15);
 

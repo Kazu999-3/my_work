@@ -18,7 +18,8 @@ export async function GET() {
 
     const { data: matchWins, error: matchWinsError } = await supabase
       .from('ktm_matches')
-      .select('id, winning_team');
+      .select('id, winning_team')
+      .in('winning_team', ['BLUE', 'RED']);
     if (matchWinsError) throw matchWinsError;
 
     const winMap: Record<string, string> = {};
@@ -36,9 +37,11 @@ export async function GET() {
     (partData || []).forEach((r: any) => {
       const c = r.champion_name;
       if (!c) return;
+      const winningTeam = winMap[String(r.match_id)];
+      if (!winningTeam) return;
+
       if (!agg[c]) agg[c] = { games: 0, wins: 0, k: 0, d: 0, a: 0, players: {} };
       agg[c].games += 1;
-      const winningTeam = winMap[String(r.match_id)];
       const isWin = r.team === winningTeam;
       if (isWin) agg[c].wins += 1;
       agg[c].k += r.kills || 0; agg[c].d += r.deaths || 0; agg[c].a += r.assists || 0;

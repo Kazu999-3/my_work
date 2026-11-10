@@ -35,7 +35,8 @@ export async function GET(req: Request) {
 
     const { data: rawMatches, error: rawmError } = await supabase
       .from('ktm_matches')
-      .select('id, winning_team');
+      .select('id, winning_team')
+      .in('winning_team', ['BLUE', 'RED']);
     if (rawmError) throw rawmError;
 
     const matchWinMap = new Map<string, string>();
@@ -66,6 +67,7 @@ export async function GET(req: Request) {
       const key = keyOfPlayer(resolved);
       const role = normalizeRole(m.role);
       const winningTeam = matchWinMap.get(String(m.match_id));
+      if (!winningTeam || winningTeam === 'DRAW' || m.team === 'FESTIVAL') return;
       if (role && statsMap[key] && statsMap[key][role]) {
         statsMap[key][role].games += 1;
         if (m.team === winningTeam) statsMap[key][role].wins += 1;

@@ -33,7 +33,8 @@ export async function GET() {
 
     const { data: matchWins, error: matchWinsError } = await supabase
       .from('ktm_matches')
-      .select('id, winning_team');
+      .select('id, winning_team')
+      .in('winning_team', ['BLUE', 'RED']);
     if (matchWinsError) throw matchWinsError;
 
     const winMap: Record<string, 'BLUE' | 'RED'> = {};
@@ -55,7 +56,7 @@ export async function GET() {
     data.forEach((row: any) => {
       const winner = winMap[String(row.match_id)];
       const rawName = row.player_name?.trim();
-      if (!winner || !rawName) return;
+      if (!winner || winner !== 'BLUE' && winner !== 'RED' || !rawName) return;
       // アクティブな登録プレイヤー以外（トラとらお等の未登録ゲストや非アクティブ選手）は除外
       if (!registeredPlayerNames.has(rawName)) return;
 

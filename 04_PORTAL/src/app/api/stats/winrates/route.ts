@@ -35,7 +35,8 @@ export async function GET() {
     // 3. 試合の勝敗情報を取得
     const { data: matches, error: mError } = await supabase
       .from('ktm_matches')
-      .select('id, winning_team');
+      .select('id, winning_team')
+      .in('winning_team', ['BLUE', 'RED']);
 
     if (mError || !matches) {
       console.error("Failed to fetch matches:", mError);
@@ -85,7 +86,7 @@ export async function GET() {
       if (!statsMap[pName]) return;
 
       const winningTeam = matchWinMap.get(String(row.match_id));
-      if (!winningTeam) return;
+      if (!winningTeam || winningTeam === 'DRAW' || row.team === 'FESTIVAL') return;
 
       const role = normalizeRole(row.role);
       const isWin = row.team === winningTeam;
