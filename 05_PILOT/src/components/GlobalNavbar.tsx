@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
 import NotificationBell from './NotificationBell';
+import SystemStatusBadge from './SystemStatusBadge';
 
 interface NavItem {
   name: string;
@@ -31,7 +32,6 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { name: '攻略ライブラリ', href: '/library', icon: Library, desc: '全知知見アーカイブ・検索' },
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video, desc: '動画解析キュー監視' },
   { name: '健全性監査', href: '/admin/dict-health', icon: Activity, desc: '教本鮮度・欠損点検' },
-  { name: '運用ダッシュボード', href: '/admin/dashboard', icon: Shield, desc: 'システム稼働・DB監視' },
   { name: '転職トラッカー', href: '/career', icon: Briefcase, desc: '企業・面接・書類の進行管理', badge: '便利' },
 ];
 
@@ -163,8 +163,9 @@ export default function GlobalNavbar() {
             </div>
           </nav>
 
-          {/* 右端アクション（通知ベル ＋ 戦術取込 ＋ スマホハンバーガー） */}
+          {/* 右端アクション（システム稼働バッジ ＋ 通知ベル ＋ 戦術取込 ＋ スマホハンバーガー） */}
           <div className="flex items-center gap-2 shrink-0">
+            <SystemStatusBadge />
             <NotificationBell />
 
             <button
