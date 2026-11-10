@@ -301,11 +301,83 @@ export default function NoteDraftsPage() {
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 pb-20">
-      {/* 📱 トップ固定コントロールヘッダー */}
-      <div className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-3 py-2 space-y-2">
-        {/* 上段：カテゴリ切り替えフィルター ＆ 全文コピー */}
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+      {/* 📱 スマホ用コントロールバー (lg未満で表示: 横スクロール廃止しドロップダウンに集約) */}
+      <div className="lg:hidden sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 px-3 py-2.5 space-y-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+          {[
+            { id: 'all', label: 'すべて', icon: Layers },
+            { id: 'profile', label: '自己紹介', icon: Sparkles },
+            { id: 'free_guide', label: '無料攻略', icon: BookOpen },
+            { id: 'paid_master', label: '有料マクロ', icon: DollarSign },
+          ].map((cat) => {
+            const Icon = cat.icon;
+            const count = drafts.filter(d => {
+              if (cat.id === 'all') return true;
+              const c = d.meta?.category || (d.id === 'profile_intro' ? 'profile' : 'free_guide');
+              return c === cat.id;
+            }).length;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1 border ${
+                  selectedCategory === cat.id
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
+                    : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border-zinc-800'
+                }`}
+              >
+                <Icon className="w-3 h-3 text-amber-400" />
+                <span>{cat.label}</span>
+                <span className="text-[10px] opacity-70">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* ドロップダウン式記事セレクター */}
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className="flex-1 bg-zinc-900 border border-zinc-700 text-xs font-bold text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 cursor-pointer truncate"
+          >
+            {filteredDrafts.map((d) => (
+              <option key={d.id} value={d.id}>
+                {publishMap[d.id]?.isPublished ? '✓ ' : ''}{d.title} ({d.charCount.toLocaleString()}字)
+              </option>
+            ))}
+          </select>
+
+          {/* 全文コピーボタン */}
+          <button
+            onClick={handleCopy}
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-md ${
+              copied
+                ? 'bg-emerald-600 text-white'
+                : 'bg-amber-500 hover:bg-amber-400 text-black font-black shadow-amber-500/20'
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>コピー済</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>コピー</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* 🖥️ 2カラムメインコンテナ (PC: 左に記事一覧 / 右に本文プレビュー) */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex gap-6 items-start">
+        {/* 📚 左サイドバー: 記事一覧リスト (PCのみ常時表示) */}
+        <aside className="hidden lg:flex flex-col w-80 shrink-0 bg-zinc-950/80 border border-zinc-800 rounded-2xl p-3.5 shadow-xl sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-3">
+          {/* カテゴリ切り替えボタン群 */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-900 rounded-xl border border-zinc-850">
             {[
               { id: 'all', label: 'すべて', icon: Layers },
               { id: 'profile', label: '自己紹介', icon: Sparkles },
@@ -322,92 +394,105 @@ export default function NoteDraftsPage() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1 border ${
+                  className={`px-2 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-between cursor-pointer border ${
                     selectedCategory === cat.id
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
-                      : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border-zinc-800'
+                      : 'bg-transparent text-zinc-400 hover:text-zinc-200 border-transparent hover:bg-zinc-850'
                   }`}
                 >
-                  <Icon className="w-3 h-3 text-amber-400" />
-                  <span>{cat.label}</span>
-                  <span className="text-[10px] opacity-70">({count})</span>
+                  <span className="flex items-center gap-1.5">
+                    <Icon className="w-3 h-3 text-amber-400" />
+                    <span>{cat.label}</span>
+                  </span>
+                  <span className="text-[10px] opacity-75 font-mono">({count})</span>
                 </button>
               );
             })}
           </div>
 
-          {/* コピーボタン（目立つ主役） */}
-          <button
-            onClick={handleCopy}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-md ${
-              copied
-                ? 'bg-emerald-600 text-white'
-                : 'bg-amber-500 hover:bg-amber-400 text-black font-black shadow-amber-500/20'
-            }`}
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>コピー完了！</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>全文コピー</span>
-              </>
-            )}
-          </button>
-        </div>
+          <div className="border-t border-zinc-800/80 pt-2 pb-1 flex items-center justify-between text-[11px] text-zinc-400 font-bold px-1">
+            <span>下書き記事 ({filteredDrafts.length}件)</span>
+            <span>クリックで切替</span>
+          </div>
 
-        {/* 下段：記事選択セレクター */}
-        <div className="max-w-3xl mx-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {filteredDrafts.map((d) => {
-            let label = d.title.length > 13 ? d.title.slice(0, 13) + '…' : d.title;
-            if (d.id === 'profile_intro') label = '✨ 自己紹介';
-            if (d.id === 'zyra_jg_guide') label = '🌿 ザイラJG';
-            if (d.id === 'wukong_jg_guide') label = '🐒 ウーコンJG';
-            if (d.id === 'shyvana_jg_guide') label = '🐉 シヴァーナJG';
-            if (d.id === 'qiyana_jg_guide') label = '👑 キヤナJG';
-            if (d.id === 'belveth_jg_guide') label = '👾 ベル＝ヴェスJG';
-            if (d.id === 'macro_master_guide') label = '💎 ソロQ脱出マクロ';
+          {/* 縦スクロール記事カードリスト */}
+          <div className="space-y-1.5 overflow-y-auto pr-0.5">
+            {filteredDrafts.map((d) => {
+              const isSelected = d.id === selectedId;
+              const isPub = publishMap[d.id]?.isPublished;
+              const isPaid = d.meta?.category === 'paid_master' || d.meta?.pricing === '500';
 
-            const isPub = publishMap[d.id]?.isPublished;
-            const isPaid = d.meta?.category === 'paid_master' || d.meta?.pricing === '500';
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => setSelectedId(d.id)}
+                  className={`w-full text-left p-3 rounded-xl transition cursor-pointer border flex flex-col gap-1.5 ${
+                    isSelected
+                      ? 'bg-amber-500/15 border-amber-500/60 text-white shadow-md'
+                      : 'bg-zinc-900/50 border-zinc-850 text-zinc-300 hover:text-white hover:bg-zinc-900 hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-1.5">
+                    <span className="font-bold text-xs leading-snug line-clamp-2">
+                      {d.title}
+                    </span>
+                  </div>
 
-            return (
+                  <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+                    <span className="text-zinc-400 font-mono">
+                      {d.charCount.toLocaleString()}字
+                    </span>
+                    {isPaid && (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                        有料
+                      </span>
+                    )}
+                    {isPub && (
+                      <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold">
+                        公開済
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* 📖 右メインエリア: 選択中記事プレビュー＆アクション */}
+        {currentDraft ? (
+          <main className="flex-1 min-w-0 space-y-4">
+            {/* PC向け上部固定アクションバー */}
+            <div className="hidden lg:flex items-center justify-between gap-4 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 shadow-md sticky top-20 z-30 backdrop-blur-md">
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">
+                  選択中ドラフト
+                </div>
+                <h2 className="text-sm font-black text-white truncate mt-0.5">
+                  {currentDraft.title}
+                </h2>
+              </div>
               <button
-                key={d.id}
-                onClick={() => setSelectedId(d.id)}
-                className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1.5 border ${
-                  d.id === selectedId
-                    ? 'bg-zinc-100 text-black font-black border-white shadow-md'
-                    : 'bg-zinc-900 text-zinc-300 hover:text-white border-zinc-800'
+                onClick={handleCopy}
+                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shrink-0 cursor-pointer shadow-lg ${
+                  copied
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-black font-black shadow-amber-500/20'
                 }`}
               >
-                <span>{label}</span>
-                {isPaid && (
-                  <span className={`px-1 py-0.2 rounded text-[9px] font-black ${
-                    d.id === selectedId ? 'bg-amber-400 text-black' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  }`}>
-                    有料
-                  </span>
-                )}
-                {isPub && (
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
-                    d.id === selectedId ? 'bg-emerald-950 text-emerald-300' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                  }`}>
-                    公開済
-                  </span>
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>コピー完了！</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>note 用に全文コピー</span>
+                  </>
                 )}
               </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* メインコンテンツ */}
-      {currentDraft ? (
-        <main className="max-w-3xl mx-auto px-4 py-6">
+            </div>
           
           {/* 記事メタ情報カード */}
           <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 sm:p-5 mb-4 shadow-xl">
@@ -883,6 +968,7 @@ export default function NoteDraftsPage() {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }
