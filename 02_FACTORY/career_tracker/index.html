@@ -280,7 +280,7 @@
       border-collapse: collapse;
       text-align: left;
       font-size: 13px;
-      min-width: 1600px;
+      min-width: 1750px;
       table-layout: fixed;
     }
 
@@ -314,7 +314,7 @@
     }
 
     td {
-      padding: 6px 8px;
+      padding: 9px 10px;
       vertical-align: middle;
     }
 
@@ -360,7 +360,7 @@
 
     .cell-select {
       width: 100%;
-      padding: 6px 18px 6px 6px;
+      padding: 6px 14px 6px 6px;
       border: 1px solid transparent;
       border-radius: 4px;
       font-size: 12px;
@@ -369,7 +369,6 @@
       cursor: pointer;
       font-family: inherit;
       transition: all 0.15s ease;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
@@ -388,7 +387,7 @@
     .status-badge-select {
       appearance: none;
       -webkit-appearance: none;
-      padding: 4px 18px 4px 8px;
+      padding: 5px 16px 5px 8px;
       border-radius: 9999px;
       font-size: 11px;
       font-weight: 700;
@@ -419,7 +418,8 @@
     .star-select {
       color: #f59e0b;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 12px;
+      padding: 6px 14px 6px 4px;
     }
 
     /* URL link combo */
@@ -828,18 +828,18 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 80px;">志望度</th>
-            <th style="width: 190px;">企業名 <span style="color:var(--danger)">*</span></th>
-            <th style="width: 210px;">求人タイトル (見出し)</th>
-            <th style="width: 140px;">応募職種</th>
-            <th style="width: 110px;">選考状況</th>
-            <th style="width: 115px;">応募媒体</th>
-            <th style="width: 95px;">想定月収(万)</th>
-            <th style="width: 105px;">勤務形態</th>
-            <th style="width: 125px;">次回選考日</th>
-            <th style="width: 190px;">魅力・志望理由</th>
-            <th style="width: 135px;">求人URL</th>
-            <th style="width: 115px; text-align: center;">操作</th>
+            <th style="width: 105px;">志望度</th>
+            <th style="width: 200px;">企業名 <span style="color:var(--danger)">*</span></th>
+            <th style="width: 240px;">求人タイトル (見出し)</th>
+            <th style="width: 150px;">応募職種</th>
+            <th style="width: 115px;">選考状況</th>
+            <th style="width: 125px;">応募媒体</th>
+            <th style="width: 100px;">想定月収(万)</th>
+            <th style="width: 120px;">勤務形態</th>
+            <th style="width: 135px;">次回選考日</th>
+            <th style="width: 220px;">魅力・志望理由</th>
+            <th style="width: 140px;">求人URL</th>
+            <th style="width: 120px; text-align: center;">操作</th>
           </tr>
         </thead>
         <tbody id="applicationTableBody">
@@ -865,11 +865,11 @@
     const STATUS_OPTIONS = ['書類準備', '応募済', '書類通過', '1次面接', '2次面接', '最終面接', '内定', '見送り', '辞退'];
     const WORK_OPTIONS = ['ハイブリッド', 'フルリモート', '出社'];
     const PRIORITY_OPTIONS = [
-      { val: 5, label: '★★★★★' },
-      { val: 4, label: '★★★★☆' },
-      { val: 3, label: '★★★☆☆' },
-      { val: 2, label: '★★☆☆☆' },
-      { val: 1, label: '★☆☆☆☆' }
+      { val: 5, label: '★ 5' },
+      { val: 4, label: '★ 4' },
+      { val: 3, label: '★ 3' },
+      { val: 2, label: '★ 2' },
+      { val: 1, label: '★ 1' }
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
