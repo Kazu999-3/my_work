@@ -23,7 +23,16 @@ export default function PlayerCardsMobile({ sortedPlayers, handleInputChange, ha
                     p.is_active ? 'border-primary-edge bg-primary-50/30' : 'border-border'
                   }`}>
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                        {/* Active チェックボックス（スマホで押しやすいサイズ） */}
+                        <label className="flex items-center cursor-pointer p-0.5 -m-0.5" title="Active（参加）の切り替え">
+                          <input
+                            type="checkbox"
+                            checked={!!p.is_active}
+                            onChange={(e) => handleInputSave(uid, "is_active", e.target.checked)}
+                            className="h-5 w-5 rounded border-border text-primary-600 focus:ring-primary-500 bg-black/5 cursor-pointer accent-primary-600"
+                          />
+                        </label>
                         <input
                           type="text"
                           value={p.name}
