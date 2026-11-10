@@ -296,23 +296,20 @@ export default function KtmAdminPage() {
         {activeTab === 'players' && (
           <div className="space-y-6">
             <AdminToolbar
-              searchQuery={searchQuery} setSearchQuery={setSearchQuery} saving={saving} loading={loading}
-              syncingDiscord={sync.syncingDiscord} syncingMaintenance={sync.syncingMaintenance} syncData={sync.syncData} showMmrInfo={showMmrInfo} setShowMmrInfo={setShowMmrInfo}
-              onDeactivateAll={roster.handleDeactivateAll}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              saving={saving}
+              loading={loading}
+              syncingMaintenance={sync.syncingMaintenance}
               onAddFestivalAttendance={roster.handleAddFestivalAttendance}
               activeCount={roster.players.filter((p: any) => p.is_active).length}
+              onSyncAllMaintenance={sync.handleSyncAllMaintenance}
               onForceReset={() => {
                 sync.resetSyncFlags();
                 roster.setSaving(false);
                 roster.setLoading(false);
                 setMessage({ type: "info", text: "⚠️ 処理のローディング状態を強制解除しました。" });
               }}
-              onSyncCheck={sync.handleSyncCheck}
-              onOpenRoleSync={() => setShowRoleSyncModal(true)}
-              onSyncAllMaintenance={sync.handleSyncAllMaintenance}
-              onRebuild={roster.handleRebuildMmr}
-              onProcessIntros={handleProcessIntros}
-              processingIntros={processingIntros}
             />
 
             {showRoleSyncModal && <DiscordRoleSyncModal onClose={() => setShowRoleSyncModal(false)} />}
