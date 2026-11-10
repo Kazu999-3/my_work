@@ -7,10 +7,9 @@ import Link from 'next/link';
 import { Spinner } from '../../components/Feedback';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
-import CoinsRankingPanel from './CoinsRankingPanel';
 import RosterPanel from './RosterPanel';
 import SynergyPanel from './SynergyPanel';
-import { Trophy, Activity, Info, Coins, Users, HeartHandshake, Sparkles, Sliders, Grid3x3 } from 'lucide-react';
+import { Trophy, Activity, Info, Users, HeartHandshake, Sparkles, Sliders, Grid3x3 } from 'lucide-react';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -32,27 +31,30 @@ interface LeaderboardData {
   SUP: PlayerStats[];
 }
 
+export type LeaderboardTab = 'ranking' | 'roster' | 'synergy' | 'meta' | 'winrate';
+
 function LeaderboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as any) || 'ranking';
+  const rawTab = searchParams.get('tab');
+  const initialTab: LeaderboardTab = ['ranking', 'roster', 'synergy', 'meta', 'winrate'].includes(rawTab as any)
+    ? (rawTab as LeaderboardTab)
+    : 'ranking';
 
   const [data, setData] = useState<LeaderboardData>({
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'coins' | 'roster' | 'synergy' | 'meta' | 'winrate'>(
-    ['ranking', 'coins', 'roster', 'synergy', 'meta'].includes(initialTab) ? initialTab : 'ranking'
-  );
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>(initialTab);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['ranking', 'coins', 'roster', 'synergy', 'meta'].includes(tabParam)) {
-      setActiveTab(tabParam as any);
+    if (tabParam && ['ranking', 'roster', 'synergy', 'meta', 'winrate'].includes(tabParam as any)) {
+      setActiveTab(tabParam as LeaderboardTab);
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: 'ranking' | 'coins' | 'roster' | 'synergy' | 'meta' | 'winrate') => {
+  const handleTabChange = (tab: LeaderboardTab) => {
     setActiveTab(tab);
     router.replace(`/leaderboard?tab=${tab}`, { scroll: false });
   };
@@ -163,133 +165,41 @@ function LeaderboardContent() {
                 </span>
               </div>
               <p className="text-[11px] text-muted-strong font-medium mt-0.5">
-                ロール別実力ランキング・🪙 コイン番付・全選手名簿・詳細データ分析
+                ロール別実力ランキング・全選手名簿・デュオ相性・メタ統計・レーン別勝率
               </p>
             </div>
           </div>
         </div>
 
-        {/* メインタブナビゲーション（3大グループ） */}
-        <div className="space-y-3">
-          <div className="flex justify-center px-1">
-            <div className="inline-flex items-center gap-1.5 p-1 bg-surface-subtle dark:bg-stone-900 rounded-2xl border border-border dark:border-stone-800 shadow-2xs max-w-full overflow-x-auto">
-              {/* グループ1: ランキング */}
-              <button
-                type="button"
-                onClick={() => handleTabChange(['ranking', 'coins'].includes(activeTab) ? activeTab : 'ranking')}
-                className={`flex items-center gap-1.5 px-3 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  ['ranking', 'coins'].includes(activeTab)
-                    ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
-                    : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
-                }`}
-              >
-                <Trophy className="w-4 h-4 text-primary-500" />
-                <span>ランキング</span>
-              </button>
-
-              {/* グループ2: 名簿一覧 */}
-              <button
-                type="button"
-                onClick={() => handleTabChange('roster')}
-                className={`flex items-center gap-1.5 px-3 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  activeTab === 'roster'
-                    ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
-                    : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
-                }`}
-              >
-                <Users className="w-4 h-4 text-primary-500" />
-                <span><span className="hidden sm:inline">メンバー</span>名簿</span>
-              </button>
-
-              {/* グループ3: データ分析 */}
-              <button
-                type="button"
-                onClick={() => handleTabChange(['synergy', 'meta', 'winrate'].includes(activeTab) ? activeTab : 'synergy')}
-                className={`flex items-center gap-1.5 px-3 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  ['synergy', 'meta', 'winrate'].includes(activeTab)
-                    ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
-                    : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
-                }`}
-              >
-                <Activity className="w-4 h-4 text-secondary-500" />
-                <span><span className="hidden sm:inline">詳細</span>データ分析</span>
-              </button>
-            </div>
+        {/* 1段フラット タブナビゲーション */}
+        <div className="flex justify-center px-1">
+          <div className="inline-flex items-center gap-1.5 p-1 bg-surface-subtle dark:bg-stone-900 rounded-2xl border border-border dark:border-stone-800 shadow-2xs max-w-full overflow-x-auto scrollbar-none">
+            {[
+              { id: 'ranking', label: 'ロール別順位', icon: <Trophy className="w-4 h-4 text-primary-500" /> },
+              { id: 'roster', label: 'メンバー名簿', icon: <Users className="w-4 h-4 text-primary-500" /> },
+              { id: 'synergy', label: 'デュオ相性', icon: <HeartHandshake className="w-4 h-4 text-success-500" /> },
+              { id: 'meta', label: 'メタ統計', icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
+              { id: 'winrate', label: 'レーン別勝率', icon: <Activity className="w-4 h-4 text-secondary-500" /> },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleTabChange(tab.id as LeaderboardTab)}
+                  className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
+                      : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
-
-          {/* サブタブ切り替え（親がランキングまたはデータ分析の時のみコンパクトに表示） */}
-          {['ranking', 'coins'].includes(activeTab) && (
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-1 p-0.5 bg-surface-hover/70 dark:bg-stone-800/80 rounded-xl border border-border dark:border-stone-700 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('ranking')}
-                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    activeTab === 'ranking'
-                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
-                      : 'text-muted dark:text-stone-400 hover:text-foreground'
-                  }`}
-                >
-                  ⚔️ ロール別順位
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('coins')}
-                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
-                    activeTab === 'coins'
-                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
-                      : 'text-muted dark:text-stone-400 hover:text-foreground'
-                  }`}
-                >
-                  <span>🪙 コイン番付</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {['synergy', 'meta', 'winrate'].includes(activeTab) && (
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-1 p-0.5 bg-surface-hover/70 dark:bg-stone-800/80 rounded-xl border border-border dark:border-stone-700 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('synergy')}
-                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    activeTab === 'synergy'
-                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
-                      : 'text-muted dark:text-stone-400 hover:text-foreground'
-                  }`}
-                >
-                  🤝 デュオ相性
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('meta')}
-                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    activeTab === 'meta'
-                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
-                      : 'text-muted dark:text-stone-400 hover:text-foreground'
-                  }`}
-                >
-                  📊 メタ統計
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('winrate')}
-                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    activeTab === 'winrate'
-                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
-                      : 'text-muted dark:text-stone-400 hover:text-foreground'
-                  }`}
-                >
-                  🎯 レーン別勝率
-                </button>
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* コイン長者番付タブ */}
-        {activeTab === 'coins' && <CoinsRankingPanel />}
 
         {/* プレイヤー名簿タブ */}
         {activeTab === 'roster' && <RosterPanel />}

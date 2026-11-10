@@ -100,7 +100,7 @@ export async function GET() {
 
     const allyStats: AllyStat[] = Object.entries(allyMap).map(([key, stat]) => {
       const [p1, p2] = key.split('::');
-      return { p1, p2, games: stat.games, wins: stat.wins, winRate: stat.wins / stat.games };
+      return { p1, p2, games: stat.games, wins: stat.wins, winRate: Math.round((stat.wins / stat.games) * 100) };
     });
 
     const groupStats: Record<number, GroupStat[]> = { 3: [], 4: [], 5: [] };
@@ -109,7 +109,7 @@ export async function GET() {
         members: key.split('::'),
         games: stat.games,
         wins: stat.wins,
-        winRate: stat.wins / stat.games,
+        winRate: Math.round((stat.wins / stat.games) * 100),
       }));
     });
 
