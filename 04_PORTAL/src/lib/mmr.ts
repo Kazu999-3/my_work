@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import rawKtmTiers from '../shared/ktm_tiers.json';
 import { fetchAllRows } from './fetchAll';
 import { calculateSmoothedWinRate, calculateSurrenderMmrMitigation } from './balancer/mmrImprovement';
+import { isEventMatch } from './matchType';
 
 
 // BRONZEが以前UNRANKEDと同値(1200)になっていた(2026-08-08発覚)。自己申告でBRONZEを
@@ -503,8 +504,8 @@ export async function replayMmrHistory(supabase: SupabaseClient) {
   for (const match of allMatches) {
     const participants = participantsByMatch.get(match.id) || [];
     if (!participants || participants.length === 0) continue;
-    // エキシビション（お祭りカスタム）は記録時と同じく MMR も試合数も動かさない
-    if (match.riot_match_id === 'EXHIBITION' || String(match.riot_match_id || '').startsWith('FESTIVAL') || match.winning_team === 'DRAW') continue;
+    // エキシビション（お祭り・イベントマッチ）は記録時と同じく MMR も試合数も動かさない
+    if (isEventMatch(match)) continue;
     const durationSec = Number(match.game_duration) || 0;
     const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
     const redTeam = participants.filter((p: any) => p.team === 'RED');
