@@ -17,7 +17,7 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ★ チーム分け結果モーダル
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalanceResultModal({ players, savingPending, copiedResult, setMessage, balanceResult, setBalanceResult, proposals, selectedProposalIdx, setSelectedProposalIdx, analysis, swapSource, sendingDiscord, setShowResultModal, selectedTable, sendingProposals, dragOverSlot, bo3State, handleStartBo3, handleRecordBo3Win, handleNextBo3Game, handleResetBo3, handleRecordNavigate, handleSendProposals, handleSendDiscord, handleCopyResultText, handleDragStart, handleDragOver, handleDragLeave, handleDropPlayer, handleSelectSwapPlayer, renderSwapSelect, handicapNames, handleSwapWholeTeams }: {
+export default function BalanceResultModal({ players, savingPending, copiedResult, setMessage, balanceResult, setBalanceResult, proposals, selectedProposalIdx, setSelectedProposalIdx, analysis, swapSource, sendingDiscord, setShowResultModal, selectedTable, dragOverSlot, bo3State, handleStartBo3, handleRecordBo3Win, handleNextBo3Game, handleResetBo3, handleRecordNavigate, handleSendDiscord, handleCopyResultText, handleDragStart, handleDragOver, handleDragLeave, handleDropPlayer, handleSelectSwapPlayer, renderSwapSelect, handicapNames, handleSwapWholeTeams }: {
   players: any[];
   savingPending: boolean;
   copiedResult: boolean;
@@ -32,7 +32,6 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
   sendingDiscord: boolean;
   setShowResultModal: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTable: { label: string; ids: any[] } | null;
-  sendingProposals: boolean;
   dragOverSlot: string | null;
   bo3State: any;
   handleStartBo3: () => any;
@@ -40,7 +39,6 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
   handleNextBo3Game: () => any;
   handleResetBo3: () => any;
   handleRecordNavigate: () => any;
-  handleSendProposals: () => any;
   handleSendDiscord: () => any;
   handleCopyResultText: () => any;
   handleDragStart: (e: React.DragEvent, team: string, role: string, name: string) => any;
@@ -158,14 +156,6 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     <span className="hidden sm:inline">陣営入替 (Blue ⇄ Red)</span>
                   </button>
                 )}
-                {proposals.length > 1 && (
-                  <button onClick={handleSendProposals} disabled={sendingProposals}
-                    className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"
-                    title="全候補をDiscordに投稿してリアクション投票してもらう">
-                    {sendingProposals ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <>🗳️</>}
-                    <span className="hidden sm:inline">{proposals.length}案をDiscord投票</span>
-                  </button>
-                )}
                 <button onClick={() => setShowResultModal(false)}
                   className="p-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-faint hover:text-foreground transition cursor-pointer" title="閉じる (ESC)">
                   <X className="h-5 w-5" />
@@ -173,7 +163,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
               </div>
             </div>
 
-            {/* 🏁 進行ナビゲーションバー（1➔2➔3で迷わないガイド） */}
+            {/* 🏁 進行ナビゲーションバー（1➔2で迷わないガイド） */}
             <div className="bg-surface-subtle/80 border-b border-border px-4 md:px-6 py-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2">
@@ -182,7 +172,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     🏁 カスタム進行の流れ:
                   </span>
                   <span className="text-[11px] text-muted hidden md:inline">
-                    ①結果共有 ➔ ②VC設定 ➔ ③試合後に勝敗記録
+                    ①結果送信（VC自動更新） ➔ ②試合後に勝敗記録
                   </span>
                 </div>
 
@@ -192,31 +182,13 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     onClick={handleSendDiscord}
                     disabled={sendingDiscord}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"
-                    title="チーム分け結果をDiscordの#定期カスタムへ送信してメンバーに周知します"
+                    title="チーム分け結果をDiscordの#定期カスタムへ送信してメンバーに周知します（VCも自動更新）"
                   >
                     {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
                     <span>① Discordに結果送信</span>
                   </button>
 
-                  {/* Step 2: VC更新 */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const res = await updateVcStatus('game1');
-                      if (res.success) {
-                        setMessage({ type: 'success', text: `🔊 ${res.message}` });
-                        toast.info(`🔊 ${res.message}`);
-                      } else {
-                        toast.error(`VC更新エラー: ${res.error}`);
-                      }
-                    }}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"
-                    title="DiscordのVCチャンネル名を「1戦目進行中」に更新します"
-                  >
-                    <span>🔊 ② VC更新 (1戦目)</span>
-                  </button>
-
-                  {/* Step 3: 結果記録への誘導 */}
+                  {/* Step 2: 結果記録への誘導 */}
                   <button
                     onClick={handleRecordNavigate}
                     disabled={savingPending}
@@ -225,7 +197,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     title="試合終了後、勝敗やスコアを記録してMMRを更新する画面へ進みます"
                   >
                     <Trophy className="h-3.5 w-3.5" />
-                    <span>③ 試合後に結果記録</span>
+                    <span>② 試合後に結果記録</span>
                   </button>
 
                   {/* コピーボタン */}

@@ -54,7 +54,8 @@ export default function BalancerPage() {
   const { players, setPlayers, loading, saving, flashingPlayerIds, fetchPlayers, handleInputChange } = usePlayerRoster(isAdmin, setMessage);
 
   const [balancing, setBalancing] = useState(false);
-  const [balanceResult, setBalanceResult] = useState<any>(null);
+  const [balanceResult, setBalanceResult] = useState<any>(null); // モーダルプレビュー用
+  const [confirmedResult, setConfirmedResult] = useState<any>(null); // 正式に確定されたチーム分け
   const [proposals, setProposals] = useState<any[]>([]);
   const [selectedProposalIdx, setSelectedProposalIdx] = useState<number>(0);
   const [analysis, setAnalysis] = useState<any>(null);
@@ -93,19 +94,27 @@ export default function BalancerPage() {
 
   const bo3 = useBo3Series(balanceResult, setBalanceResult, setMessage);
   const swap = useResultSwap({ balanceResult, setBalanceResult, setProposals, selectedProposalIdx, players });
-  const actions = useResultActions({ balanceResult, proposals, players, handicapNames, setMessage, bo3State: bo3.bo3State });
+  const actions = useResultActions({
+    balanceResult,
+    proposals,
+    players,
+    handicapNames,
+    setMessage,
+    bo3State: bo3.bo3State,
+    onConfirm: (res) => setConfirmedResult(res),
+  });
 
   useEffect(() => {
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
       .then((res) => setIsAdmin(res.ok))
       .catch(() => setIsAdmin(false));
 
-    // 一般ユーザー向けに最新の進行中チーム分けを自動ロード
+    // 正式に確定された進行中チーム分けのみをロード
     fetch("/api/balancer/pending")
       .then((res) => res.json())
       .then((data) => {
         if (data && data.balanceResult) {
-          setBalanceResult((prev: any) => prev || data.balanceResult);
+          setConfirmedResult((prev: any) => prev || data.balanceResult);
         }
       })
       .catch(() => {});
@@ -199,25 +208,7 @@ export default function BalancerPage() {
       setBalanceResult(activeResult);
       setSelectedProposalIdx(0);
       setAnalysis(hasProposals ? (data.analysis || null) : null);
-      try {
-        if (activeResult) {
-          localStorage.setItem('balancer_last_result', JSON.stringify(activeResult));
-          // 🎲 勝敗予想（/casino）へ即時連動するため、自動で pending マッチを保存・更新
-          fetch('/api/balancer/pending', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ balanceResult: activeResult }),
-          }).then((r) => {
-            // 2026-10-07: 保存はログイン中のメンバー限定になった。未ログインでもチーム分けは使えるが、カジノには連携されない
-            if (r.status === 401) {
-              setMessage({ type: "error", text: "ℹ️ ログインしていないため、このチーム分けは保存されず、カジノの勝敗予想にも連携されません（サイドバーの「Discordでログイン」からログインできます）。" });
-            }
-          }).catch(pErr => console.warn('[balancer] Auto-save pending match failed:', pErr));
-        }
-      } catch (e) {
-        console.error('Failed to cache balancer_last_result:', e);
-      }
-      // ★ 完了後に自動でモーダルを開く
+      // ★ 完了後にモーダルを開く（※この時点ではまだ下書きプレビューであり、確定保存はしない）
       setShowResultModal(true);
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
@@ -282,10 +273,10 @@ export default function BalancerPage() {
           balanceResult={balanceResult} setBalanceResult={setBalanceResult} proposals={proposals}
           selectedProposalIdx={selectedProposalIdx} setSelectedProposalIdx={setSelectedProposalIdx} analysis={analysis}
           swapSource={swap.swapSource} sendingDiscord={actions.sendingDiscord} setShowResultModal={setShowResultModal}
-          selectedTable={selectedTable} sendingProposals={actions.sendingProposals} dragOverSlot={swap.dragOverSlot}
+          selectedTable={selectedTable} dragOverSlot={swap.dragOverSlot}
           bo3State={bo3.bo3State} handleStartBo3={bo3.handleStartBo3} handleRecordBo3Win={bo3.handleRecordBo3Win}
           handleNextBo3Game={bo3.handleNextBo3Game} handleResetBo3={bo3.handleResetBo3}
-          handleRecordNavigate={actions.handleRecordNavigate} handleSendProposals={actions.handleSendProposals}
+          handleRecordNavigate={actions.handleRecordNavigate}
           handleSendDiscord={actions.handleSendDiscord} handleCopyResultText={actions.handleCopyResultText}
           handleDragStart={swap.handleDragStart} handleDragOver={swap.handleDragOver} handleDragLeave={swap.handleDragLeave}
           handleDropPlayer={swap.handleDropPlayer} handleSelectSwapPlayer={swap.handleSelectSwapPlayer}
@@ -300,21 +291,24 @@ export default function BalancerPage() {
           が発生していた。ワイドモニタでは表がしっかり収まるよう広げる(2026-08-15)。 */}
       <div className="max-w-[1900px] mx-auto p-3 md:p-6 space-y-4">
 
-        {/* 🏟️ 観戦スタジアムビュー (確定した最新マッチがある場合) */}
-        {balanceResult && (
+        {/* 🏟️ 観戦スタジアムビュー (正式に確定した最新マッチがある場合のみ表示) */}
+        {confirmedResult && (
           <div className="mb-2">
             <BalancerStadiumView
-              result={balanceResult}
+              result={confirmedResult}
               currentUserName={currentUser?.playerName || currentUser?.displayName}
               isAdmin={isAdmin}
-              onOpenAdminModal={() => setShowResultModal(true)}
+              onOpenAdminModal={() => {
+                setBalanceResult(confirmedResult);
+                setShowResultModal(true);
+              }}
             />
           </div>
         )}
 
         <BalancerHeader
           players={players} setPlayers={setPlayers} saving={saving} announcingStats={actions.announcingStats} isAdmin={isAdmin}
-          predStats={predStats} satStats={satStats} integrityData={integrityData} balancing={balancing} balanceResult={balanceResult}
+          predStats={predStats} satStats={satStats} integrityData={integrityData} balancing={balancing} balanceResult={confirmedResult}
           showResultModal={showResultModal} setShowResultModal={setShowResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth} selectionMode={selectionMode} setSelectionMode={setSelectionMode}
           selectedTable={selectedTable} setSelectedTable={setSelectedTable} bo3State={bo3.bo3State} handleResetBo3={bo3.handleResetBo3}
           handleAnnounceStats={actions.handleAnnounceStats} handleBalance={handleBalance}
@@ -367,7 +361,7 @@ export default function BalancerPage() {
         />
 
         {/* ★ スティッキー下部クイックアクションバー */}
-        <QuickActionBar balancing={balancing} balanceResult={balanceResult} setShowResultModal={setShowResultModal} handleBalance={handleBalance} handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount} canBalance={canBalance} />
+        <QuickActionBar balancing={balancing} balanceResult={confirmedResult} setShowResultModal={setShowResultModal} handleBalance={handleBalance} handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount} canBalance={canBalance} />
 
         {selectedPlayer && (
           <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />

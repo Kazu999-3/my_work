@@ -11,17 +11,17 @@ type SetMessage = (m: { type: string; text: string }) => void;
  * 募集状況のDiscord通知。
  * 2026-10-07: app/balancer/page.tsx から分離（処理は分離前と同じ）。
  */
-export function useResultActions({ balanceResult, proposals, players, handicapNames, setMessage, bo3State }: {
+export function useResultActions({ balanceResult, proposals, players, handicapNames, setMessage, bo3State, onConfirm }: {
   balanceResult: any;
   proposals: any[];
   players: any[];
   handicapNames: Set<string>;
   setMessage: SetMessage;
   bo3State?: any;
+  onConfirm?: (result: any) => void;
 }) {
   const router = useRouter();
   const [savingPending, setSavingPending] = useState(false);
-  const [sendingProposals, setSendingProposals] = useState(false);
   const [sendingDiscord, setSendingDiscord] = useState(false);
   const [copiedResult, setCopiedResult] = useState(false);
   const [announcingStats, setAnnouncingStats] = useState(false);
@@ -82,27 +82,6 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
     }
   };
 
-  // 4案すべてをDiscordへ投稿(#77)。メンバーはリアクションで希望表明。
-  const handleSendProposals = async () => {
-    if (!proposals || proposals.length === 0) return;
-    if (!confirm(`チーム分け候補 ${proposals.length}案 をすべてDiscordへ投稿しますか？（メンバーがリアクションで投票できます）`)) return;
-    setSendingProposals(true);
-    try {
-      const res = await fetch('/api/discord/proposals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ proposals }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '投稿に失敗しました');
-      setMessage({ type: 'success', text: `✅ ${proposals.length}案をDiscordに投稿しました！` });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '❌ ' + err.message });
-    } finally {
-      setSendingProposals(false);
-    }
-  };
-
   const handleSendDiscord = async () => {
     if (!balanceResult) return;
     if (!confirm("チーム分けの結果をDiscordのKTMチャンネルへ通知しますか？")) return;
@@ -123,6 +102,19 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Discord通知に失敗しました');
       setMessage({ type: "success", text: "✅ Discordに結果を送信しました！" });
+
+      // ★ Discord通知成功ではじめて正式な pending チーム分けとして保存・確定
+      try {
+        localStorage.setItem('balancer_last_result', JSON.stringify(balanceResult));
+        fetch('/api/balancer/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ balanceResult }),
+        }).catch(err => console.warn('[pending save error]', err));
+      } catch (e) {
+        console.error('Failed to cache balancer_last_result:', e);
+      }
+      if (onConfirm) onConfirm(balanceResult);
 
       // 🔊 Discord VCステータスを自動更新（手動操作不要）
       try {
@@ -149,7 +141,7 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
   };
 
   return {
-    savingPending, sendingProposals, sendingDiscord, copiedResult, announcingStats,
-    handleRecordNavigate, handleAnnounceStats, handleSendProposals, handleSendDiscord, handleCopyResultText,
+    savingPending, sendingDiscord, copiedResult, announcingStats,
+    handleRecordNavigate, handleAnnounceStats, handleSendDiscord, handleCopyResultText,
   };
 }
