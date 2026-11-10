@@ -1448,7 +1448,26 @@
         }
 
         if (items.length > 0 && (items[0].company_name || items[0].job_title || items[0].job_headline)) {
+          let addedCount = 0;
+          let skippedCount = 0;
+
+          // 既存データの重複判定マップ (URL および 社名+職種)
+          const existingUrls = new Set(applications.map(a => (a.job_url || '').split('?')[0].trim()).filter(Boolean));
+          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
+
           items.forEach(item => {
+            const cleanUrl = (item.job_url || '').split('?')[0].trim();
+            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
+
+            // 重複チェック: URLまたは社名+タイトルが一致していればスキップ
+            if ((cleanUrl && existingUrls.has(cleanUrl)) || existingKeys.has(cleanKey)) {
+              skippedCount++;
+              return;
+            }
+
+            if (cleanUrl) existingUrls.add(cleanUrl);
+            existingKeys.add(cleanKey);
+
             applications.unshift({
               id: item.id || ('job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
               company_name: item.company_name || '新規企業',
@@ -1467,10 +1486,17 @@
               updated_at: now,
               isNew: true
             });
+            addedCount++;
           });
+
           saveData();
           render();
-          alert(`🎉 ${items.length} 件の求人データを取り込みました！`);
+
+          if (skippedCount > 0) {
+            alert(`🎉 ${addedCount} 件の求人を新しく追加しました！\n（※ すでに登録済みの ${skippedCount} 件は重複のため安全にスキップしました）`);
+          } else {
+            alert(`🎉 ${addedCount} 件の求人データを取り込みました！`);
+          }
           return true;
         }
       } catch (e) {
@@ -1569,6 +1595,21 @@
 
       if (!comp && !title) {
         return false;
+      }
+
+      // 重複チェック
+      const cleanUrl = (url || '').split('?')[0].trim();
+      const isDup = applications.some(a => {
+        if (cleanUrl && a.job_url && a.job_url.split('?')[0].trim() === cleanUrl) return true;
+        if (a.company_name && a.company_name.trim() === comp.trim()) {
+          if (!title || (a.job_title && a.job_title.includes(title)) || (a.job_headline && a.job_headline.includes(title))) return true;
+        }
+        return false;
+      });
+
+      if (isDup) {
+        alert(`⚠️「${comp}」はすでにトラッカーに登録されています（重複のためスキップしました）。`);
+        return true;
       }
 
       const newEntry = {
