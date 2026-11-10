@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { RefreshCw, Trophy, Target, Search, ArrowLeftRight } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from '../../../components/Toaster';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
@@ -101,17 +102,16 @@ function CustomRecordPageContent() {
   // 試合時間（"28:14" 形式で入力・表示）。スクショ解析で自動入力され、手で直せる。
   // 18分未満の敗北の MMR 減少緩和に使う（2026-10-16 追加。それまで未送信で緩和が一度も効いていなかった）。
   const [durationText, setDurationText] = useState('');
-  const [isExhibition, setIsExhibition] = useState<boolean>(false); // 🎪 お祭りカスタム（MMRノーカウント保護）
   const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const championsListRef = useRef(championsList);
   // 画像解析の非同期処理から最新の一覧を読むための参照。描画中に ref を書き換えない（react-hooks/refs）
   useEffect(() => { championsListRef.current = championsList; }, [championsList]);
-  const [activeChampSelector, setActiveChampSelector] = useState<{ team: 'BLUE' | 'RED', role: Role, slotIndex: number } | null>(null);
+  const activeChampSelectorState = useState<{ team: 'BLUE' | 'RED', role: Role, slotIndex: number } | null>(null);
+  const [activeChampSelector, setActiveChampSelector] = activeChampSelectorState;
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [savedMatchSummary, setSavedMatchSummary] = useState<{ matchId?: any; winningTeam: 'BLUE' | 'RED'; isExhibition: boolean; playersCount: number } | null>(null);
   
   // 10人分のステートを初期化
   const [stats, setStats] = useState<PlayerStat[]>(() => {
@@ -309,11 +309,27 @@ function CustomRecordPageContent() {
                   const isBlue = currentStat.team === 'BLUE';
                   const teamPlayers = isBlue ? bluePlayers : redPlayers;
                   const playerIdx = isBlue ? idx : idx - 5;
-                  const targetRole = ROLES[playerIdx];
+                  const targetRole = currentStat.currentRole || ROLES[playerIdx];
 
-                  // ロール一致するプレイヤーを優先検索（見つからなければ index 順）
-                  const found = teamPlayers.find((p: any) => p.role && p.role.toUpperCase() === targetRole)
-                    || teamPlayers[playerIdx];
+                  // ★ チーム分け時の情報を真として検索:
+                  // 1. まず名前が一致するOCRプレイヤーを優先検索（チーム内 ➔ 全体）
+                  let found: any = null;
+                  if (currentStat.name) {
+                    found = teamPlayers.find((p: any) => matchPlayer(p.name, playersPool) === currentStat.name);
+                    if (!found && Array.isArray(data.players)) {
+                      found = data.players.find((p: any) => matchPlayer(p.name, playersPool) === currentStat.name);
+                    }
+                  }
+
+                  // 2. 名前で未特定の枠は、ロール一致で検索
+                  if (!found) {
+                    found = teamPlayers.find((p: any) => p.role && p.role.toUpperCase() === targetRole);
+                  }
+
+                  // 3. それでも見つからなければスロット index 順
+                  if (!found) {
+                    found = teamPlayers[playerIdx];
+                  }
                   
                   if (found) {
                     const rawOcr = (found.name || '').trim();
@@ -322,8 +338,13 @@ function CustomRecordPageContent() {
                     const matchedName = matchPlayer(found.name, playersPool);
                     const matchedChamp = matchChampion(found.champion_name, championsList);
                     
-                    // ★ ユーザー指示: チーム分け時の名前を最優先でそのまま参照（OCR読み込みで上書きしない）
+                    // ★ チーム分け時の情報（名前・ロール）を真として絶対に上書きしない
                     const finalName = currentStat.name || matchedName;
+                    const finalRole: Role = currentStat.currentRole || (
+                      (found.role && ROLES.includes(found.role.toUpperCase() as Role))
+                        ? (found.role.toUpperCase() as Role)
+                        : ROLES[playerIdx]
+                    );
                     
                     if (currentStat.name) {
                       preservedBalancerCount++;
@@ -334,17 +355,12 @@ function CustomRecordPageContent() {
                     } else {
                       unresolvedCount++;
                     }
-
-                    let assignedRole: Role = ROLES[playerIdx];
-                    if (found.role && ROLES.includes(found.role.toUpperCase() as Role)) {
-                      assignedRole = found.role.toUpperCase() as Role;
-                    }
                     
                     return {
                       ...currentStat,
                       raw_ocr_name: rawOcr,
-                      currentRole: assignedRole,
-                      name: finalName,
+                      currentRole: finalRole, // チーム分け時のロールを維持
+                      name: finalName,        // チーム分け時の名前を維持
                       champion_name: matchedChamp,
                       kills: Number(found.kills) || 0,
                       deaths: Number(found.deaths) || 0,
@@ -673,7 +689,7 @@ function CustomRecordPageContent() {
         body: JSON.stringify({
           winningTeam,
           gameDuration: parseDurationText(durationText), // 秒。未入力・不正なら送らない（緩和なし）
-          isExhibition, // 🎪 お祭りカスタム（MMRノーカウント保護）
+          isExhibition: false, // 通常カスタムとして記録
           balanceSatisfaction, // チーム分けの満足度（管理者が入力時に記録）
           riotMatchId: null, // 手動入力のため常にnull
           adminPassword: 'ktm', // API側で検証を無効化したため、デフォルト値を設定
@@ -702,14 +718,14 @@ function CustomRecordPageContent() {
         await fetch(`/api/balancer/pending?id=${pendingId}`, { method: 'DELETE' }).catch(() => {});
       }
 
-      setSavedMatchSummary({
-        matchId: data.match?.id || data.id,
-        winningTeam,
-        isExhibition,
-        playersCount: stats.filter(s => s.name).length
-      });
-      setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！（OCR誤認識学習も更新されました）' });
+      toast.success('✅ 試合結果を記録し、MMRを更新しました！');
+      setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！（チーム分け画面へ戻ります）' });
       setDurationText(''); // 次の試合に前の試合時間を持ち越さない
+
+      // ポップアップを挟まず、即座にバランサー画面へ戻る
+      setTimeout(() => {
+        router.push('/balancer');
+      }, 500);
     } catch (err: any) {
       setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
     } finally {
@@ -807,31 +823,6 @@ function CustomRecordPageContent() {
                 </p>
               </div>
             )}
-          </div>
-
-
-          {/* 🎪 お祭りカスタム（戦績ノーカウント）トグル */}
-          <div className="mb-6 p-4 rounded-xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="font-extrabold text-primary-900 text-sm flex items-center gap-2">
-                <span>🎪 お祭りカスタム（エキシビション）として記録</span>
-                {isExhibition && <span className="text-[10px] bg-primary-500 text-white font-black px-2 py-0.5 rounded-full animate-pulse">完全戦績保護 ON</span>}
-              </div>
-              <p className="text-xs text-primary-800/80">
-                {isExhibition 
-                  ? '🛡️ この試合の結果は公式勝率・ロール別MMR変動に一切影響しません（ノーカウント）。コインと勝敗予想配当のみ全員に付与されます。'
-                  : '通常の真剣勝負カスタムです（勝敗・スタッツに応じて公式MMRと勝率が変動します）。'}
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
-              <input
-                type="checkbox"
-                checked={isExhibition}
-                onChange={(e) => setIsExhibition(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-            </label>
           </div>
 
           <div className="flex justify-end mb-2">
@@ -1143,66 +1134,6 @@ function CustomRecordPageContent() {
                   該当するチャンピオンが見つかりません。
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🎉 試合結果記録 完了モーダル (3大ネクストアクション) */}
-      {savedMatchSummary && (
-        <div
-          className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in"
-          onClick={e => { if (e.target === e.currentTarget) setSavedMatchSummary(null); }}
-        >
-          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
-            <div className="w-16 h-16 rounded-3xl bg-success-100 border-2 border-success-edge flex items-center justify-center text-3xl mx-auto shadow-xs">
-              🏆
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-                試合結果の記録が完了しました！
-              </h2>
-              <div className="flex items-center justify-center gap-2 text-xs font-bold text-muted">
-                <span className={`px-2.5 py-0.5 rounded-full font-black text-white ${savedMatchSummary.winningTeam === 'BLUE' ? 'bg-secondary-600' : 'bg-danger-600'}`}>
-                  {savedMatchSummary.winningTeam === 'BLUE' ? '🟦 BLUE 勝利' : '🟥 RED 勝利'}
-                </span>
-                <span>参加者: {savedMatchSummary.playersCount} 名</span>
-                {savedMatchSummary.isExhibition && (
-                  <span className="bg-primary-500 text-white px-2 py-0.5 rounded-full font-black text-[10px]">
-                    🎪 お祭り保護
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-strong font-medium pt-1">
-                戦績ログが保存され、参加メンバーの公式MMRと勝率が最新化されました。
-              </p>
-            </div>
-
-            {/* 3大ネクストアクション分岐 */}
-            <div className="space-y-2.5 pt-2">
-              <Link
-                href="/ktm-admin?tab=history"
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-black text-xs sm:text-sm shadow-md transition group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">📜</span>
-                  <span>確定した対戦履歴を見る</span>
-                </div>
-                <span className="text-primary-200 group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
-
-
-              <Link
-                href="/balancer"
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs sm:text-sm border border-border transition group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">⚔️</span>
-                  <span>次の試合のチーム分けを行う</span>
-                </div>
-                <span className="text-muted-strong group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
             </div>
           </div>
         </div>
