@@ -1612,6 +1612,111 @@
         }
       }
 
+      // 1.6. Indeed 保存求人・一覧テキストの一括解析
+      if (text.includes('jp.indeed.com/viewjob') || (text.includes('保存・応募した求人を管理') && text.includes('viewjob'))) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const indeedItems = [];
+
+        function splitCompAndLoc(str) {
+          const postMatch = str.match(/^(.*?(?:株式会社|合同会社|有限会社|\(株\)|社|店))([^\s]+.*)?$/);
+          if (postMatch && postMatch[1].length > 3 && !['株式会社', '合同会社', '有限会社', '(株)'].includes(postMatch[1])) {
+            return { comp: postMatch[1].trim(), loc: (postMatch[2] || '').trim() };
+          }
+          const locKeywords = ['渋谷区', '新宿区', '中央区', '港区', '品川区', '目黒区', '福岡市', '盛岡市', '横浜市', '流山市', '新宮町', '千代田区', '文京区', '日本'];
+          for (const kw of locKeywords) {
+            const idx = str.indexOf(kw);
+            if (idx > 2) {
+              return { comp: str.substring(0, idx).trim(), loc: str.substring(idx).trim() };
+            }
+          }
+          return { comp: str.trim(), loc: '' };
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const m = line.match(/\[([^\]]+)\]\((https?:\/\/jp\.indeed\.com\/viewjob[^\)]+)\)/);
+          if (m) {
+            let rawTitle = m[1].replace(/\\/g, '').replace(/仕事内容が新しいウィンドウで開きます/g, '').trim();
+            let url = m[2];
+
+            let nextLine = lines[i + 1] || '';
+            if (nextLine.includes('保存') || nextLine.startsWith('[')) nextLine = '';
+
+            const { comp, loc } = splitCompAndLoc(nextLine);
+
+            let workStyle = '出社';
+            if (rawTitle.includes('フルリモート') || rawTitle.includes('完全在宅')) {
+              workStyle = 'フルリモート';
+            } else if (rawTitle.includes('リモート') || rawTitle.includes('在宅')) {
+              workStyle = 'ハイブリッド';
+            }
+
+            indeedItems.push({
+              company_name: comp || 'Indeed掲載企業',
+              job_headline: rawTitle,
+              job_title: rawTitle.slice(0, 30),
+              salary: 0,
+              work_style: workStyle,
+              source: 'indeed',
+              status: '書類準備',
+              priority: 3,
+              attraction: loc,
+              job_url: url,
+              job_notes: 'Indeed保存済み求人より取込'
+            });
+          }
+        }
+
+        if (indeedItems.length > 0) {
+          let addedCount = 0;
+          let skippedCount = 0;
+          const existingUrls = new Set(applications.map(a => (a.job_url || '').split('?')[0].trim()).filter(Boolean));
+          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
+
+          indeedItems.forEach(item => {
+            const cleanUrl = (item.job_url || '').split('?')[0].trim();
+            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
+
+            if ((cleanUrl && existingUrls.has(cleanUrl)) || existingKeys.has(cleanKey)) {
+              skippedCount++;
+              return;
+            }
+            if (cleanUrl) existingUrls.add(cleanUrl);
+            existingKeys.add(cleanKey);
+
+            applications.unshift({
+              id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+              company_name: item.company_name,
+              job_headline: item.job_headline,
+              job_title: item.job_title,
+              status: item.status,
+              source: item.source,
+              salary: item.salary,
+              work_style: item.work_style,
+              priority: item.priority,
+              next_action_date: '',
+              attraction: item.attraction,
+              job_url: item.job_url,
+              job_notes: item.job_notes,
+              created_at: now,
+              updated_at: now,
+              isNew: true
+            });
+            addedCount++;
+          });
+
+          saveData();
+          render();
+
+          if (skippedCount > 0) {
+            alert(`🎉 Indeedから ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は安全にスキップしました）`);
+          } else {
+            alert(`🎉 Indeedから ${addedCount} 件の求人を一括追加しました！`);
+          }
+          return true;
+        }
+      }
+
       // 2. 単一求人テキスト（リクナビ・doda等のコピー）からの自動パース
       let comp = '';
       let headline = '';
