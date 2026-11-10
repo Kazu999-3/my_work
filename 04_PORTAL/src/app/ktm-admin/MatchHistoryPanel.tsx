@@ -176,7 +176,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   const [saving, setSaving] = useState(false);
   const [playerFilter, setPlayerFilter] = useState('');
   const [winFilter, setWinFilter] = useState<'ALL' | 'WIN' | 'LOSS'>('ALL');
-  const [limit, setLimit] = useState(30);
+  const [limit, setLimit] = useState(50);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   // アコーディオン開閉状態（デフォルトで直近3試合を展開）
@@ -184,7 +184,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
   const fetchMatches = async () => {
     try {
-      const res = await fetch('/api/match/history?limit=30');
+      const res = await fetch('/api/match/history?limit=50');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
 
@@ -203,7 +203,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
-    const nextLimit = limit + 30;
+    const nextLimit = limit + 50;
     try {
       const res = await fetch(`/api/match/history?limit=${nextLimit}`);
       const data = await res.json();
@@ -526,8 +526,25 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           const blueTeam = match.participants.filter(p => p.team === 'BLUE');
           const redTeam = match.participants.filter(p => p.team === 'RED');
 
-          // ロール順にソート
-          const sortByRole = (arr: Participant[]) => ROLES.map(role => arr.find(p => p.role === role)).filter(Boolean) as Participant[];
+          // 安全なロール順ソート（ロール重複・欠損・特殊ロールがあっても全員漏れなく表示）
+          const sortByRole = (arr: Participant[]) => {
+            const result: Participant[] = [];
+            const used = new Set<Participant>();
+            for (const role of ROLES) {
+              const found = arr.find(p => p.role === role && !used.has(p));
+              if (found) {
+                result.push(found);
+                used.add(found);
+              }
+            }
+            for (const p of arr) {
+              if (!used.has(p)) {
+                result.push(p);
+                used.add(p);
+              }
+            }
+            return result;
+          };
           const blueSorted = sortByRole(blueTeam);
           const redSorted = sortByRole(redTeam);
 
@@ -538,6 +555,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           // チーム合計キル
           const blueKills = blueTeam.reduce((sum, p) => sum + (p.kills || 0), 0);
           const redKills = redTeam.reduce((sum, p) => sum + (p.kills || 0), 0);
+          const hasKillData = blueKills > 0 || redKills > 0;
 
           const dateObj = new Date(match.created_at);
           const dateStr = `${dateObj.getFullYear()}/${String(dateObj.getMonth()+1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
@@ -571,7 +589,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     }`}>
                       {isFestival ? 'お祭りカスタム (出席記録)' : `${match.winning_team} WIN`}
                     </span>
-                    {!isFestival && (
+                    {!isFestival && hasKillData && (
                       <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
                         Score: <span className="text-secondary-400">{blueKills}</span> - <span className="text-danger-400">{redKills}</span>
                       </span>
@@ -697,7 +715,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                               {p.player_name}
                             </Link>
                             <div className="text-[10px] font-bold text-muted-strong flex items-center gap-1.5 flex-wrap">
-                              <span>{p.champion_name || 'Champion'}</span>
+                              <span>{p.champion_name || 'チャンピオン未記録'}</span>
                               {Number(p.cs) > 0 && <span className="text-faint font-mono font-normal">({p.cs} CS)</span>}
                               {p.gold && p.gold > 0 ? <span className="text-amber-500/90 font-mono font-normal">🪙{p.gold.toLocaleString()}</span> : null}
                             </div>
@@ -759,7 +777,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                               {p.player_name}
                             </Link>
                             <div className="text-[10px] font-bold text-muted-strong flex items-center gap-1.5 flex-wrap">
-                              <span>{p.champion_name || 'Champion'}</span>
+                              <span>{p.champion_name || 'チャンピオン未記録'}</span>
                               {Number(p.cs) > 0 && <span className="text-faint font-mono font-normal">({p.cs} CS)</span>}
                               {p.gold && p.gold > 0 ? <span className="text-amber-500/90 font-mono font-normal">🪙{p.gold.toLocaleString()}</span> : null}
                             </div>
@@ -840,77 +858,87 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               <div>
                 <h4 className="font-bold text-secondary-400 mb-3 text-lg tracking-wider">🟦 BLUE TEAM</h4>
                 <div className="space-y-3">
-                  {ROLES.map(role => {
-                    const idx = editingMatch.participants.findIndex(p => p.team === 'BLUE' && p.role === role);
-                    if (idx === -1) return null;
-                    const p = editingMatch.participants[idx];
-                    const isDragging = draggedParticipantIndex === idx;
-                    const isTapSelected = tapSwapIndex === idx;
-                    return (
-                      <div 
-                        key={`edit-BLUE-${role}`} 
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, idx)}
-                        onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-primary-edge-strong bg-surface' : isTapSelected ? 'ring-2 ring-primary-500 border-primary-edge-strong' : ''
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, idx)}
+                  {(() => {
+                    const blueIndices: number[] = [];
+                    const used = new Set<number>();
+                    ROLES.forEach(r => {
+                      const found = editingMatch.participants.findIndex((p, i) => p.team === 'BLUE' && p.role === r && !used.has(i));
+                      if (found !== -1) { blueIndices.push(found); used.add(found); }
+                    });
+                    editingMatch.participants.forEach((p, i) => {
+                      if (p.team === 'BLUE' && !used.has(i)) { blueIndices.push(i); used.add(i); }
+                    });
+                    return blueIndices.map(idx => {
+                      const p = editingMatch.participants[idx];
+                      const role = p.role;
+                      const isDragging = draggedParticipantIndex === idx;
+                      const isTapSelected = tapSwapIndex === idx;
+                      return (
+                        <div 
+                          key={`edit-BLUE-${idx}`} 
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, idx)}
                           onDragEnd={() => setDraggedParticipantIndex(null)}
-                          onClick={() => handleTapSwap(idx)}
-                          title="押してから、入れ替えたい相手の ⠿ を押すと入れ替わります（同じチーム内）"
-                          className={`p-1 -m-1 rounded transition shrink-0 cursor-grab active:cursor-grabbing ${isTapSelected ? 'bg-primary-500 text-white' : 'text-muted-strong hover:text-foreground-subtle hover:bg-black/10'}`}
+                          className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border hover:bg-black/8 hover:border-border transition-all ${
+                            isDragging ? 'opacity-40 border-dashed border-primary-edge-strong bg-surface' : isTapSelected ? 'ring-2 ring-primary-500 border-primary-edge-strong' : ''
+                          }`}
                         >
-                          <GripVertical className="h-5 w-5" />
-                        </button>
-                        <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
-                        <select
-                          value={p.player_name}
-                          onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
-                          onDragStart={e => e.stopPropagation()}
-                          className="flex-1 min-w-0 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs"
-                        >
-                          <option value="">選択...</option>
-                          {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
-                            <option value={p.player_name}>{p.player_name} (未登録)</option>
-                          )}
-                          {playersPool.map(pl => <option key={pl.name} value={pl.name}>{pl.name}</option>)}
-                        </select>
-                        <button
-                          onClick={() => setActiveChampSelectorPlayer(idx.toString())}
-                          onDragStart={e => e.stopPropagation()}
-                          type="button"
-                          className="w-28 bg-surface border border-border hover:border-secondary-edge-strong rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
-                        >
-                          <span className="truncate">
-                            {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
-                          </span>
-                          {p.champion_name && (
-                            <Image
-                              src={getChampIcon(p.champion_name)}
-                              width={16}
-                              height={16}
-                              className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
-                              alt={p.champion_name}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            />
-                          )}
-                        </button>
-                        {/* 2段目: K/D/A（1行に詰めると枠からはみ出していた。2026-10-18） */}
-                        <div className="basis-full flex flex-wrap gap-1 justify-end items-center" onDragStart={e => e.stopPropagation()}>
-                          <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
-                          <span className="text-muted-strong text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
-                          <span className="text-muted-strong text-xs self-center">/</span>
-                          <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
+                          <button
+                            type="button"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, idx)}
+                            onDragEnd={() => setDraggedParticipantIndex(null)}
+                            onClick={() => handleTapSwap(idx)}
+                            title="押してから、入れ替えたい相手の ⠿ を押すと入れ替わります（同じチーム内）"
+                            className={`p-1 -m-1 rounded transition shrink-0 cursor-grab active:cursor-grabbing ${isTapSelected ? 'bg-primary-500 text-white' : 'text-muted-strong hover:text-foreground-subtle hover:bg-black/10'}`}
+                          >
+                            <GripVertical className="h-5 w-5" />
+                          </button>
+                          <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
+                          <select
+                            value={p.player_name}
+                            onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
+                            onDragStart={e => e.stopPropagation()}
+                            className="flex-1 min-w-0 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs"
+                          >
+                            <option value="">選択...</option>
+                            {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
+                              <option value={p.player_name}>{p.player_name} (未登録)</option>
+                            )}
+                            {playersPool.map(pl => <option key={pl.name} value={pl.name}>{pl.name}</option>)}
+                          </select>
+                          <button
+                            onClick={() => setActiveChampSelectorPlayer(idx.toString())}
+                            onDragStart={e => e.stopPropagation()}
+                            type="button"
+                            className="w-28 bg-surface border border-border hover:border-secondary-edge-strong rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          >
+                            <span className="truncate">
+                              {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
+                            </span>
+                            {p.champion_name && (
+                              <Image
+                                src={getChampIcon(p.champion_name)}
+                                width={16}
+                                height={16}
+                                className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
+                                alt={p.champion_name}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                            )}
+                          </button>
+                          {/* 2段目: K/D/A（1行に詰めると枠からはみ出していた。2026-10-18） */}
+                          <div className="basis-full flex flex-wrap gap-1 justify-end items-center" onDragStart={e => e.stopPropagation()}>
+                            <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
+                            <span className="text-muted-strong text-xs self-center">/</span>
+                            <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
+                            <span className="text-muted-strong text-xs self-center">/</span>
+                            <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -918,38 +946,47 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               <div>
                 <h4 className="font-bold text-danger-400 mb-3 text-lg tracking-wider">🟥 RED TEAM</h4>
                 <div className="space-y-3">
-                  {ROLES.map(role => {
-                    const idx = editingMatch.participants.findIndex(p => p.team === 'RED' && p.role === role);
-                    if (idx === -1) return null;
-                    const p = editingMatch.participants[idx];
-                    const isDragging = draggedParticipantIndex === idx;
-                    const isTapSelected = tapSwapIndex === idx;
-                    return (
-                      <div 
-                        key={`edit-RED-${role}`} 
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, idx)}
-                        onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-danger-edge-strong bg-surface' : isTapSelected ? 'ring-2 ring-primary-500 border-primary-edge-strong' : ''
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, idx)}
+                  {(() => {
+                    const redIndices: number[] = [];
+                    const used = new Set<number>();
+                    ROLES.forEach(r => {
+                      const found = editingMatch.participants.findIndex((p, i) => p.team === 'RED' && p.role === r && !used.has(i));
+                      if (found !== -1) { redIndices.push(found); used.add(found); }
+                    });
+                    editingMatch.participants.forEach((p, i) => {
+                      if (p.team === 'RED' && !used.has(i)) { redIndices.push(i); used.add(i); }
+                    });
+                    return redIndices.map(idx => {
+                      const p = editingMatch.participants[idx];
+                      const role = p.role;
+                      const isDragging = draggedParticipantIndex === idx;
+                      const isTapSelected = tapSwapIndex === idx;
+                      return (
+                        <div 
+                          key={`edit-RED-${idx}`} 
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, idx)}
                           onDragEnd={() => setDraggedParticipantIndex(null)}
-                          onClick={() => handleTapSwap(idx)}
-                          title="押してから、入れ替えたい相手の ⠿ を押すと入れ替わります（同じチーム内）"
-                          className={`p-1 -m-1 rounded transition shrink-0 cursor-grab active:cursor-grabbing ${isTapSelected ? 'bg-primary-500 text-white' : 'text-muted-strong hover:text-foreground-subtle hover:bg-black/10'}`}
+                          className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border hover:bg-black/8 hover:border-border transition-all ${
+                            isDragging ? 'opacity-40 border-dashed border-danger-edge-strong bg-surface' : isTapSelected ? 'ring-2 ring-primary-500 border-primary-edge-strong' : ''
+                          }`}
                         >
-                          <GripVertical className="h-5 w-5" />
-                        </button>
-                        <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
-                        <select
-                          value={p.player_name}
-                          onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
-                          onDragStart={e => e.stopPropagation()}
+                          <button
+                            type="button"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, idx)}
+                            onDragEnd={() => setDraggedParticipantIndex(null)}
+                            onClick={() => handleTapSwap(idx)}
+                            title="押してから、入れ替えたい相手の ⠿ を押すと入れ替わります（同じチーム内）"
+                            className={`p-1 -m-1 rounded transition shrink-0 cursor-grab active:cursor-grabbing ${isTapSelected ? 'bg-primary-500 text-white' : 'text-muted-strong hover:text-foreground-subtle hover:bg-black/10'}`}
+                          >
+                            <GripVertical className="h-5 w-5" />
+                          </button>
+                          <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
+                          <select
+                            value={p.player_name}
+                            onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
+                            onDragStart={e => e.stopPropagation()}
                           className="flex-1 min-w-0 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-danger-edge-strong text-xs"
                         >
                           <option value="">選択...</option>
@@ -988,8 +1025,9 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         </div>
                       </div>
                     );
-                  })}
-                </div>
+                  });
+                })()}
+              </div>
               </div>
             </div>
 
