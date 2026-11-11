@@ -131,13 +131,13 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
                lower.includes('/entry');
       };
 
-      const jobChunk = result.searchChunks.find(c => isJobPage(c.uri) && !c.uri.includes('google.com'));
+      const jobChunk = result.searchChunks.find((c: any) => isJobPage(c.uri) && !c.uri.includes('google.com'));
       if (jobChunk?.uri) {
         // AIがトップページ（パスなし）を返していた場合でも、実在求人ページが見つかればそちらを優先
         finalUrl = jobChunk.uri;
       } else if (!finalUrl) {
         // 求人詳細が見つからない場合の次善策（採用・コーポレート）
-        const corpChunk = result.searchChunks.find(c => 
+        const corpChunk = result.searchChunks.find((c: any) => 
           !c.uri.includes('google.com') && 
           !c.uri.includes('wikipedia.org') &&
           (c.uri.includes('co.jp') || c.uri.includes('.com') || c.uri.includes('.jp'))
