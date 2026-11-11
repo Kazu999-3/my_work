@@ -1133,6 +1133,10 @@
           🧹 重複行を一括整理
         </button>
         <span style="color: var(--border);">|</span>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="restoreUserBackupData(true)" style="padding: 2px 10px; font-size: 11px; height: 26px; border-color: #93c5fd; background: #eff6ff; color: #1d4ed8; font-weight: 600;" title="直前に登録されていた全求人データ（16社）を復元します">
+          🔄 直前データ復元
+        </button>
+        <span style="color: var(--border);">|</span>
         <span style="font-size: 11px; background: #ecfdf5; color: #047857; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
           ✨ 画面全幅フィット（スクロール不要）
         </span>
@@ -1193,10 +1197,17 @@
       <div id="emptyState" class="empty-state" style="display: none;">
         <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
         <div style="font-weight: 700; margin-bottom: 4px;">表示する応募データがありません</div>
-        <div style="font-size: 13px; margin-bottom: 12px;">右上の「＋ 新規行を追加」から直接入力を開始できます。</div>
-        <button class="btn btn-secondary btn-sm" onclick="loadSampleData()">
-          ✨ サンプルデータを復元して試す
-        </button>
+        <div style="font-size: 13px; margin-bottom: 12px; color: var(--text-muted);">
+          データが消去された場合は、以下のボタンから直前の登録求人データ（16社分）を一発で復元できます。
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="restoreUserBackupData(true)" style="padding: 8px 16px; font-weight: 700;">
+            🔄 直前データを復元する（16社分）
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="loadSampleData()">
+            ✨ サンプルデータを読み込む
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1249,6 +1260,10 @@
     function normalizeJobUrl(url) {
       if (!url || typeof url !== 'string') return '';
       url = url.trim();
+      // 共通・汎用URL（フォルダ、ブックマーク、検索トップ等）は求人固有IDではないため重複判定に使わない
+      if (url.includes('/folder') || url.includes('/bookmark') || url.includes('/search') || url.includes('/mypage') || url.includes('/setting') || url.includes('help-')) {
+        return '';
+      }
       try {
         const u = new URL(url);
         // Indeed: jk パラメータ
@@ -1272,10 +1287,15 @@
         const dodaMatch = u.pathname.match(/([0-9]{8,})/);
         if (dodaMatch) return `doda_${dodaMatch[1]}`;
 
+        // パスが '/' または空なら汎用トップなので重複判定対象外
+        if (!u.pathname || u.pathname === '/' || u.pathname.length < 5) {
+          return '';
+        }
+
         // 一般URL: クエリ・ハッシュを除去し小文字化
         return `${u.origin}${u.pathname}`.replace(/\/$/, '').toLowerCase();
       } catch (e) {
-        return url.split('?')[0].replace(/\/$/, '').toLowerCase();
+        return '';
       }
     }
 
@@ -1466,10 +1486,6 @@
         }
       });
 
-      // 重複行の自動マージ統合を実行
-      const dupCount = deduplicateApplications(false);
-      if (dupCount > 0) hasChanges = true;
-
       if (hasChanges) {
         saveData();
       }
@@ -1479,16 +1495,310 @@
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          applications = JSON.parse(stored);
-          sanitizeApplications();
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            applications = parsed;
+            sanitizeApplications();
+          } else {
+            // 空データの場合はユーザーの直前データを自動復元
+            applications = getRestorableUserData();
+            saveData();
+          }
         } else {
-          applications = getInitialSampleData();
+          applications = getRestorableUserData();
           saveData();
         }
       } catch (e) {
         console.error('Failed to load data:', e);
-        applications = [];
+        applications = getRestorableUserData();
       }
+    }
+
+    function restoreUserBackupData(showNotice = true) {
+      applications = getRestorableUserData();
+      saveData();
+      render();
+      if (showNotice) {
+        alert('🎉 直前に登録されていた全求人データ（16社分）を完全に復元しました！');
+      }
+    }
+
+    function getRestorableUserData() {
+      const now = new Date().toISOString();
+      return [
+        {
+          id: 'job_rec_1',
+          company_name: 'ウェルビー株式会社',
+          job_headline: '東証上場企業の安定基盤で、障がい者の「働く」を支える社会貢献',
+          job_title: '就労移行支援スタッフ',
+          status: '書類準備',
+          source: 'その他',
+          salary: 23,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '',
+          attraction: '東証上場企業の安定基盤。残業少なめでワークライフバランスが整いやすく、未経験からでも充実した研修で専門性を磨き、社会貢献を実感できる環境です。',
+          job_url: 'https://welbe-recruit.jp/jobfind-pc/job/All/1487',
+          job_notes: '障がいのある方の就職を支援。個別支援計画の作成、スキルアップ訓練の運営、企業開拓や面接同行等を行います。',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_2',
+          company_name: '(株)NR2',
+          job_headline: '見出し・キャッチコピー',
+          job_title: 'LINEでのお客様対応・受注受付',
+          status: '応募済',
+          source: 'indeed',
+          salary: 30,
+          work_style: 'ハイブリッド',
+          priority: 3,
+          next_action_date: '',
+          attraction: '柔軟な働き方が可能な環境で、コミュニケーション力を活かせる',
+          job_url: 'https://jp.indeed.com/',
+          job_notes: 'Indeed保存求人より取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_3',
+          company_name: '(株)SOTコンサルティング',
+          job_headline: '士業グループの社内SE(システムエンジニア)',
+          job_title: '士業グループの社内SE',
+          status: '書類準備',
+          source: 'indeed',
+          salary: 35,
+          work_style: 'ハイブリッド',
+          priority: 3,
+          next_action_date: '',
+          attraction: '福岡市 博多駅東',
+          job_url: 'https://jp.indeed.com/',
+          job_notes: 'Indeed保存求人より取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_4',
+          company_name: '株式会社キャメル珈琲',
+          job_headline: '『カルディコーヒーファーム』の店舗運営スタッフ◆未経験歓迎',
+          job_title: '店舗運営スタッフ',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 26,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-11-29',
+          attraction: '株式会社キャメル珈琲 あなたのアイデアが活かせる店舗運営',
+          job_url: '',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_5',
+          company_name: '株式会社テクノス',
+          job_headline: '【福岡】インフラエンジニア|未経験歓迎/充実の研修',
+          job_title: 'インフラエンジニア',
+          status: '書類準備',
+          source: 'リクナビNEXT',
+          salary: 25,
+          work_style: 'ハイブリッド',
+          priority: 3,
+          next_action_date: '',
+          attraction: '福岡県福岡市中央区長浜 / 未経験からじっくり学べる充実した研修',
+          job_url: '',
+          job_notes: 'リクナビNEXTより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_6',
+          company_name: 'ALSOK株式会社',
+          job_headline: 'ALSOKの警備スタッフ◆業界大手のALSOKグループ',
+          job_title: 'ALSOKの警備スタッフ',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 25,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-12-02',
+          attraction: 'ALSOK株式会社(東証プライム上場) 安定基盤で福利厚生充実',
+          job_url: '',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_7',
+          company_name: '株式会社ロココ',
+          job_headline: '大手企業の情シスのような働き方【ヘルプデスク】賞与4.1ヵ月分',
+          job_title: 'ヘルプデスク',
+          status: '書類準備',
+          source: 'マイナビ転職',
+          salary: 25,
+          work_style: 'ハイブリッド',
+          priority: 3,
+          next_action_date: '2027-02-01',
+          attraction: '大手企業直請／残業月平均11.6ｈ／在宅もあり / スタンダード市場上場',
+          job_url: 'https://tenshoku.mynavi.jp/jobinfo-266726-1-8-1/?ty=bm',
+          job_notes: 'マイナビ転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_8',
+          company_name: '株式会社オープンアップコンストラクション',
+          job_headline: '未経験から月収37万可【運営サポート(人員調整/事務作業等)】/o',
+          job_title: '運営サポート',
+          status: '書類準備',
+          source: 'マイナビ転職',
+          salary: 28,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-12-03',
+          attraction: '上場GROUP&ホワイト企業認定/土日祝休&最大11連休/土曜日面接OK',
+          job_url: 'https://tenshoku.mynavi.jp/jobinfo-450285-2-76-1/?ty=ebm',
+          job_notes: 'マイナビ転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_9',
+          company_name: '株式会社オープンアップコンストラクション',
+          job_headline: '地元に貢献する未来へ！【資材手配・進捗確認】月収37万円可/o',
+          job_title: '資材手配・進捗確認',
+          status: '書類準備',
+          source: 'マイナビ転職',
+          salary: 28,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-12-03',
+          attraction: '全国好きな場所＆地元で働ける！資材管理のほか各種事務業務',
+          job_url: 'https://tenshoku.mynavi.jp/jobinfo-450285-1-184-1/?ty=ebm',
+          job_notes: 'マイナビ転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_10',
+          company_name: '株式会社オー・エイチ・アイ',
+          job_headline: '商業施設・オフィスビルの運営管理担当◆収益向上と物件価値向上を担う業務／職種未経験歓迎',
+          job_title: '商業施設・オフィスビルの運営管理担当',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 25,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-12-29',
+          attraction: '収益向上と物件価値向上を担う業務／職種未経験歓迎',
+          job_url: 'https://employment.en-japan.com/desc_1440720/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_11',
+          company_name: '株式会社GNNテクノロジー',
+          job_headline: '施工管理アシスタント◆社宅や住宅手当あり／入社祝い金20万円／年間休日120日／賞与3.5ヵ月分',
+          job_title: '施工管理アシスタント',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 29,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-12-30',
+          attraction: 'スキルはイチから、給与は29万円から。高待遇な環境で長く活躍できる。',
+          job_url: 'https://employment.en-japan.com/desc_1445341/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_12',
+          company_name: 'GMOコネクトHR株式会社',
+          job_headline: '動画クリエイター◆未経験大歓迎／SNS・動画好き活躍中×研修充実でゼロからスキルが身につく／全国募集',
+          job_title: '動画クリエイター',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 24,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2026-12-30',
+          attraction: 'IT大手上場グループ企業が、動画クリエイターを大募集！',
+          job_url: 'https://employment.en-japan.com/desc_1448644/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_13',
+          company_name: '株式会社アシスト',
+          job_headline: 'Webデザイナー◆未経験歓迎／土日祝休／年休125日／完全リモート研修あり／1年目で月収32万円も可',
+          job_title: 'Webデザイナー',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 32,
+          work_style: 'フルリモート',
+          priority: 3,
+          next_action_date: '2027-01-13',
+          attraction: '土日祝休／年休125日／完全リモート研修あり／1年目で月収32万円も可',
+          job_url: 'https://employment.en-japan.com/desc_1446129/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_14',
+          company_name: '株式会社ジェイマックシステム',
+          job_headline: 'フィールドサポート（医療画像・放射線情報システム）【福岡／転勤無】週2日在宅可／経験・知識ゼロから',
+          job_title: 'フィールドサポート',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 25,
+          work_style: 'ハイブリッド',
+          priority: 3,
+          next_action_date: '2027-01-18',
+          attraction: '福岡／転勤無／週2日在宅可／経験・知識ゼロから',
+          job_url: 'https://employment.en-japan.com/desc_1442499/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_15',
+          company_name: '東京海上アシスタンス株式会社',
+          job_headline: 'カスタマーサポート【福岡】1月 入社可能！＜未経験者歓迎＞残業ほぼなし／東京海上グループ企業',
+          job_title: 'カスタマーサポート',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 24,
+          work_style: '出社',
+          priority: 3,
+          next_action_date: '2027-01-19',
+          attraction: '残業ほぼなし／東京海上グループ企業',
+          job_url: 'https://employment.en-japan.com/desc_1447183/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        },
+        {
+          id: 'job_rec_16',
+          company_name: '株式会社ネオアクト',
+          job_headline: 'Webデザイナー（未経験歓迎）◆年休128日／土日祝休／リモート案件有／残業ほぼなし／充実の研修制度',
+          job_title: 'Webデザイナー',
+          status: '書類準備',
+          source: 'エン転職',
+          salary: 26,
+          work_style: 'ハイブリッド',
+          priority: 3,
+          next_action_date: '2027-01-24',
+          attraction: '年休128日／土日祝休／リモート案件有／残業ほぼなし',
+          job_url: 'https://employment.en-japan.com/desc_1448084/?aroute=501&PK=D11AC1',
+          job_notes: 'エン転職気になる求人リストより取込',
+          created_at: now,
+          updated_at: now
+        }
+      ];
     }
 
     function saveData() {
