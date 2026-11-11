@@ -303,6 +303,32 @@
       font-size: 12px;
     }
 
+    .sortable-th {
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .sortable-th:hover {
+      background-color: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .sortable-th.active-sort {
+      background-color: #e0f2fe;
+      color: #0369a1;
+      font-weight: 800;
+    }
+
+    .sort-icon {
+      display: inline-block;
+      margin-left: 3px;
+      font-size: 10px;
+      vertical-align: middle;
+      opacity: 0.35;
+      transition: opacity 0.15s ease, color 0.15s ease;
+    }
+
     tbody tr {
       border-bottom: 1px solid var(--border);
       transition: background 0.15s;
@@ -809,13 +835,14 @@
 
         <!-- Sort Select -->
         <div>
-          <select id="sortSelect" class="filter-select" onchange="applyFilters()">
+          <select id="sortSelect" class="filter-select" onchange="handleSelectSort()">
             <option value="priority_desc">志望度が高い順 (★5→1)</option>
+            <option value="priority_asc">志望度が低い順 (★1→5)</option>
             <option value="salary_desc">月収が高い順</option>
             <option value="salary_asc">月収が低い順</option>
-            <option value="next_action_asc">次回選考が近い順</option>
-            <option value="updated_desc">最近更新した順</option>
-            <option value="company_asc">社名順 (五十音)</option>
+            <option value="next_action_date_asc">次回選考が近い順</option>
+            <option value="company_name_asc">社名順 (五十音)</option>
+            <option value="status_asc">選考フェーズ順</option>
           </select>
         </div>
 
@@ -832,16 +859,36 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 110px;">志望度</th>
-            <th style="width: 220px;">企業名 <span style="color:var(--danger)">*</span></th>
-            <th style="width: 260px;">求人タイトル (見出し)</th>
-            <th style="width: 200px;">応募職種</th>
-            <th style="width: 115px;">選考状況</th>
-            <th style="width: 140px;">応募媒体</th>
-            <th style="width: 105px;">想定月収(万)</th>
-            <th style="width: 125px;">勤務形態</th>
-            <th style="width: 140px;">次回選考日</th>
-            <th style="width: 260px;">魅力・志望理由</th>
+            <th id="th-priority" style="width: 110px;" class="sortable-th" onclick="handleColumnSort('priority')" title="クリックで志望度順にソート">
+              志望度 <span class="sort-icon" id="sort-icon-priority">⇅</span>
+            </th>
+            <th id="th-company_name" style="width: 220px;" class="sortable-th" onclick="handleColumnSort('company_name')" title="クリックで企業名50音順にソート">
+              企業名 <span style="color:var(--danger)">*</span> <span class="sort-icon" id="sort-icon-company_name">⇅</span>
+            </th>
+            <th id="th-job_headline" style="width: 260px;" class="sortable-th" onclick="handleColumnSort('job_headline')" title="クリックで見出し順にソート">
+              求人タイトル (見出し) <span class="sort-icon" id="sort-icon-job_headline">⇅</span>
+            </th>
+            <th id="th-job_title" style="width: 200px;" class="sortable-th" onclick="handleColumnSort('job_title')" title="クリックで職種名順にソート">
+              応募職種 <span class="sort-icon" id="sort-icon-job_title">⇅</span>
+            </th>
+            <th id="th-status" style="width: 115px;" class="sortable-th" onclick="handleColumnSort('status')" title="クリックで選考フェーズ順にソート">
+              選考状況 <span class="sort-icon" id="sort-icon-status">⇅</span>
+            </th>
+            <th id="th-source" style="width: 140px;" class="sortable-th" onclick="handleColumnSort('source')" title="クリックで応募媒体順にソート">
+              応募媒体 <span class="sort-icon" id="sort-icon-source">⇅</span>
+            </th>
+            <th id="th-salary" style="width: 105px;" class="sortable-th" onclick="handleColumnSort('salary')" title="クリックで月収順にソート">
+              想定月収(万) <span class="sort-icon" id="sort-icon-salary">⇅</span>
+            </th>
+            <th id="th-work_style" style="width: 125px;" class="sortable-th" onclick="handleColumnSort('work_style')" title="クリックで勤務形態順にソート">
+              勤務形態 <span class="sort-icon" id="sort-icon-work_style">⇅</span>
+            </th>
+            <th id="th-next_action_date" style="width: 140px;" class="sortable-th" onclick="handleColumnSort('next_action_date')" title="クリックで選考日・締切日順にソート">
+              次回選考日 <span class="sort-icon" id="sort-icon-next_action_date">⇅</span>
+            </th>
+            <th id="th-attraction" style="width: 260px;" class="sortable-th" onclick="handleColumnSort('attraction')" title="クリックで魅力・理由順にソート">
+              魅力・志望理由 <span class="sort-icon" id="sort-icon-attraction">⇅</span>
+            </th>
             <th style="width: 140px;">求人URL</th>
             <th style="width: 125px; text-align: center;">操作</th>
           </tr>
@@ -876,8 +923,12 @@
       { val: 1, label: '★ 1' }
     ];
 
+    let currentSortColumn = 'priority';
+    let currentSortDirection = 'desc'; // 'asc' | 'desc'
+
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
+      updateSortHeadersUI();
       render();
     });
 
@@ -1242,13 +1293,72 @@
       }
     }
 
+    // カラムクリックによるソート
+    function handleColumnSort(column) {
+      if (currentSortColumn === column) {
+        currentSortDirection = (currentSortDirection === 'asc') ? 'desc' : 'asc';
+      } else {
+        currentSortColumn = column;
+        // 志望度・月収は初回クリック時は降順(大きい順)、それ以外は昇順(50音・日付順)
+        currentSortDirection = (column === 'priority' || column === 'salary') ? 'desc' : 'asc';
+      }
+
+      // 上部ドロップダウンの表示を同期
+      const sortSelect = document.getElementById('sortSelect');
+      if (sortSelect) {
+        const matchingKey = `${column}_${currentSortDirection}`;
+        if (Array.from(sortSelect.options).some(o => o.value === matchingKey)) {
+          sortSelect.value = matchingKey;
+        } else {
+          sortSelect.value = '';
+        }
+      }
+
+      updateSortHeadersUI();
+      render();
+    }
+
+    // 上部ドロップダウン選択によるソート
+    function handleSelectSort() {
+      const val = document.getElementById('sortSelect').value;
+      if (!val) return;
+      const parts = val.split('_');
+      const dir = parts.pop();
+      const col = parts.join('_');
+      currentSortColumn = col;
+      currentSortDirection = dir;
+      updateSortHeadersUI();
+      render();
+    }
+
+    // テーブルヘッダーのソート状態・矢印アイコンの更新
+    function updateSortHeadersUI() {
+      const columns = ['priority', 'company_name', 'job_headline', 'job_title', 'status', 'source', 'salary', 'work_style', 'next_action_date', 'attraction'];
+      columns.forEach(col => {
+        const th = document.getElementById(`th-${col}`);
+        const icon = document.getElementById(`sort-icon-${col}`);
+        if (th && icon) {
+          if (currentSortColumn === col) {
+            th.classList.add('active-sort');
+            icon.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+            icon.style.opacity = '1';
+            icon.style.color = '#0369a1';
+          } else {
+            th.classList.remove('active-sort');
+            icon.textContent = '⇅';
+            icon.style.opacity = '0.35';
+            icon.style.color = 'inherit';
+          }
+        }
+      });
+    }
+
     // Filter & Sort calculation
     function getFilteredAndSortedData() {
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       const status = document.getElementById('statusFilter').value;
       const source = document.getElementById('sourceFilter').value;
       const workStyle = document.getElementById('workStyleFilter').value;
-      const sort = document.getElementById('sortSelect').value;
 
       return applications.filter(app => {
         if (search) {
@@ -1270,24 +1380,40 @@
 
         return true;
       }).sort((a, b) => {
-        switch (sort) {
-          case 'priority_desc':
-            return (b.priority || 0) - (a.priority || 0);
-          case 'salary_desc':
-            return (b.salary || 0) - (a.salary || 0);
-          case 'salary_asc':
-            return (a.salary || 0) - (b.salary || 0);
-          case 'next_action_asc':
-            if (!a.next_action_date) return 1;
-            if (!b.next_action_date) return -1;
-            return a.next_action_date.localeCompare(b.next_action_date);
-          case 'updated_desc':
-            return (b.updated_at || '').localeCompare(a.updated_at || '');
-          case 'company_asc':
-            return (a.company_name || '').localeCompare(b.company_name || '', 'ja');
-          default:
-            return 0;
+        let valA = a[currentSortColumn];
+        let valB = b[currentSortColumn];
+
+        // 1. 数値比較 (志望度, 想定月収)
+        if (currentSortColumn === 'priority' || currentSortColumn === 'salary') {
+          const numA = Number(valA) || 0;
+          const numB = Number(valB) || 0;
+          return currentSortDirection === 'asc' ? numA - numB : numB - numA;
         }
+
+        // 2. 日付比較 (次回選考日)
+        if (currentSortColumn === 'next_action_date') {
+          if (!valA) return 1;
+          if (!valB) return -1;
+          return currentSortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        }
+
+        // 3. 選考状況比較 (選考フェーズ順)
+        if (currentSortColumn === 'status') {
+          const statusOrder = {
+            '書類準備': 1, '応募済': 2, '書類通過': 3, '1次面接': 4,
+            '2次面接': 5, '最終面接': 6, '内定': 7, '辞退': 8, '見送り': 9
+          };
+          const orderA = statusOrder[valA] || 99;
+          const orderB = statusOrder[valB] || 99;
+          return currentSortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+        }
+
+        // 4. 文字列比較 (日本語50音対応)
+        valA = (valA || '').toString();
+        valB = (valB || '').toString();
+        return currentSortDirection === 'asc'
+          ? valA.localeCompare(valB, 'ja')
+          : valB.localeCompare(valA, 'ja');
       });
     }
 
