@@ -1829,154 +1829,107 @@
         }
       }
 
-      // 1.7. エン転職（employment.en-japan.com）気になる求人リストの一括解析
-      if (text.includes('employment.en-japan.com') || text.includes('エンの転職サイト') || text.includes('エン転職') || (text.includes('カンタン応募') && text.includes('掲載期間'))) {
+      // 1.7. エン転職（employment.en-japan.com）気になる求人リストの一括解析（Markdown & プレーン完全両対応）
+      if (text.includes('employment.en-japan.com') || text.includes('エンの転職サイト') || text.includes('エン転職') || (text.includes('掲載期間') && (text.includes('カンタン応募') || text.includes('応募依頼する') || text.includes('気になる求人リスト')))) {
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
         const enItems = [];
 
-        // パターンA: [求人見出し](URL) Markdownリンク形式
         for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          const linkMatch = line.match(/\[(.*?)\]\((https?:\/\/employment\.en-japan\.com\/desc_[^\)]+)\)/);
-          if (linkMatch) {
-            const rawTitle = linkMatch[1].replace(/\\/g, '').trim();
-            const url = linkMatch[2].trim();
+          const l = lines[i];
+          if (l.includes('掲載期間')) {
+            let deadline = '';
+            const dateM = l.match(/～\s*([0-9]{2})\/([0-9]{2})\/([0-9]{2})/);
+            if (dateM) {
+              deadline = `20${dateM[1]}-${dateM[2]}-${dateM[3]}`;
+            }
 
             let comp = '';
+            let rawTitle = '';
             let catchCopy = '';
-            let deadline = '';
+            let url = '';
+            let isApplied = false;
 
-            let offset = 1;
-            while (i + offset < lines.length) {
-              const nextL = lines[i + offset];
-              if (nextL.startsWith('[') || nextL.includes('企業からアプローチ') || nextL.includes('応募歓迎')) break;
-
-              if (!comp && !nextL.includes('カンタン応募') && !nextL.includes('掲載期間') && !nextL.includes('削除')) {
-                comp = nextL;
-              } else if (!catchCopy && !nextL.includes('カンタン応募') && !nextL.includes('掲載期間') && !nextL.includes('削除')) {
-                catchCopy = nextL;
-              } else if (nextL.includes('掲載期間')) {
-                const dateM = nextL.match(/～\s*([0-9]{2})\/([0-9]{2})\/([0-9]{2})/);
-                if (dateM) {
-                  deadline = `20${dateM[1]}-${dateM[2]}-${dateM[3]}`;
-                }
+            // 「掲載期間」より上を遡って求人ブロックを収集
+            const prevLines = [];
+            for (let j = i - 1; j >= 0; j--) {
+              const pl = lines[j];
+              if (pl.includes('掲載期間') || pl === '削除' || pl.includes('全50件') || pl.includes('表示中') || pl.startsWith('#')) {
+                break;
               }
-              offset++;
+              prevLines.unshift(pl);
             }
 
-            let jobTitle = rawTitle.split(/[（(◆／\/\s]/)[0].trim();
-            if (!jobTitle || jobTitle.length < 2) jobTitle = rawTitle.slice(0, 25);
-
-            let workStyle = '出社';
-            if (rawTitle.includes('フルリモート') || catchCopy.includes('フルリモート') || rawTitle.includes('完全在宅')) {
-              workStyle = 'フルリモート';
-            } else if (rawTitle.includes('リモート') || catchCopy.includes('リモート') || rawTitle.includes('在宅')) {
-              workStyle = 'ハイブリッド';
-            }
-
-            let salary = 0;
-            const salMatch = (rawTitle + ' ' + catchCopy).match(/月給\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
-            if (salMatch) {
-              salary = Math.round(parseFloat(salMatch[1]));
-            } else {
-              const monMatch = (rawTitle + ' ' + catchCopy).match(/月収\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
-              if (monMatch) {
-                salary = Math.round(parseFloat(monMatch[1]));
+            // 不要なアクション行・ステータス行をトリミングしつつ情報を抽出
+            const cleanLines = prevLines.filter(line => {
+              if (line === 'カンタン応募' || line.includes('応募依頼する') || line === '応募する') return false;
+              if (line === '既に' || line === '応募済みです' || line.includes('応募済み')) {
+                isApplied = true;
+                return false;
               }
-            }
-
-            const attractionParts = [];
-            if (catchCopy) attractionParts.push(catchCopy);
-            if (rawTitle.includes('年休')) {
-              const holM = rawTitle.match(/年休[^\/／◆]+/);
-              if (holM) attractionParts.push(holM[0]);
-            }
-
-            enItems.push({
-              company_name: comp || 'エン転職掲載企業',
-              job_headline: rawTitle,
-              job_title: jobTitle,
-              salary: salary,
-              work_style: workStyle,
-              source: 'エン転職',
-              status: '書類準備',
-              priority: 3,
-              next_action_date: deadline,
-              attraction: attractionParts.join(' / ') || catchCopy,
-              job_url: url,
-              job_notes: 'エン転職気になる求人リストより取込'
+              if (line === '企業からアプローチが届いています' || line === '応募歓迎') return false;
+              if (line.startsWith('[削除]')) return false;
+              return true;
             });
-          }
-        }
 
-        // パターンB: プレーンテキスト形式（ブラウザ画面を直接コピーした場合）
-        if (enItems.length === 0) {
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i] === 'カンタン応募') {
-              let catchCopy = '';
-              let comp = '';
-              let rawTitle = '';
-              let deadline = '';
-
-              if (i >= 1 && !lines[i - 1].includes('応募歓迎') && !lines[i - 1].includes('企業からアプローチ')) {
-                catchCopy = lines[i - 1];
+            if (cleanLines.length >= 2) {
+              rawTitle = cleanLines[0];
+              comp = cleanLines[1];
+              if (cleanLines.length >= 3) {
+                catchCopy = cleanLines.slice(2).join(' ');
               }
-              if (i >= 2 && !lines[i - 2].includes('応募歓迎') && !lines[i - 2].includes('企業からアプローチ')) {
-                comp = lines[i - 2];
+            } else if (cleanLines.length === 1) {
+              rawTitle = cleanLines[0];
+              comp = 'エン転職掲載企業';
+            }
+
+            // Markdownリンク形式 [タイトル](URL) からURLと純粋タイトルを抽出
+            const linkMatch = rawTitle.match(/\[(.*?)\]\((https?:\/\/employment\.en-japan\.com\/desc_[^\)]+)\)/);
+            if (linkMatch) {
+              rawTitle = linkMatch[1].replace(/\\/g, '').trim();
+              url = linkMatch[2].trim();
+            }
+
+            if (rawTitle && comp) {
+              let jobTitle = rawTitle.split(/[（(◆／\/\s]/)[0].trim();
+              if (!jobTitle || jobTitle.length < 2) jobTitle = rawTitle.slice(0, 25);
+
+              let workStyle = '出社';
+              if (rawTitle.includes('フルリモート') || catchCopy.includes('フルリモート') || rawTitle.includes('完全在宅')) {
+                workStyle = 'フルリモート';
+              } else if (rawTitle.includes('リモート') || catchCopy.includes('リモート') || rawTitle.includes('在宅')) {
+                workStyle = 'ハイブリッド';
               }
-              if (i >= 3 && !lines[i - 3].includes('応募歓迎') && !lines[i - 3].includes('企業からアプローチ')) {
-                rawTitle = lines[i - 3];
+
+              let salary = 0;
+              const salMatch = (rawTitle + ' ' + catchCopy).match(/月給\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
+              if (salMatch) {
+                salary = Math.round(parseFloat(salMatch[1]));
+              } else {
+                const monMatch = (rawTitle + ' ' + catchCopy).match(/月収\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
+                if (monMatch) salary = Math.round(parseFloat(monMatch[1]));
               }
 
-              if (lines[i + 1] && lines[i + 1].includes('掲載期間')) {
-                const dateM = lines[i + 1].match(/～\s*([0-9]{2})\/([0-9]{2})\/([0-9]{2})/);
-                if (dateM) {
-                  deadline = `20${dateM[1]}-${dateM[2]}-${dateM[3]}`;
-                }
+              const attractionParts = [];
+              if (catchCopy) attractionParts.push(catchCopy);
+              if (rawTitle.includes('年休')) {
+                const holM = rawTitle.match(/年休[^\/／◆]+/);
+                if (holM) attractionParts.push(holM[0]);
               }
 
-              if (rawTitle && comp) {
-                let jobTitle = rawTitle.split(/[（(◆／\/\s]/)[0].trim();
-                if (!jobTitle || jobTitle.length < 2) jobTitle = rawTitle.slice(0, 25);
-
-                let workStyle = '出社';
-                if (rawTitle.includes('フルリモート') || catchCopy.includes('フルリモート') || rawTitle.includes('完全在宅')) {
-                  workStyle = 'フルリモート';
-                } else if (rawTitle.includes('リモート') || catchCopy.includes('リモート') || rawTitle.includes('在宅')) {
-                  workStyle = 'ハイブリッド';
-                }
-
-                let salary = 0;
-                const salMatch = (rawTitle + ' ' + catchCopy).match(/月給\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
-                if (salMatch) {
-                  salary = Math.round(parseFloat(salMatch[1]));
-                } else {
-                  const monMatch = (rawTitle + ' ' + catchCopy).match(/月収\s*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
-                  if (monMatch) salary = Math.round(parseFloat(monMatch[1]));
-                }
-
-                const attractionParts = [];
-                if (catchCopy) attractionParts.push(catchCopy);
-                if (rawTitle.includes('年休')) {
-                  const holM = rawTitle.match(/年休[^\/／◆]+/);
-                  if (holM) attractionParts.push(holM[0]);
-                }
-
-                enItems.push({
-                  company_name: comp,
-                  job_headline: rawTitle,
-                  job_title: jobTitle,
-                  salary: salary,
-                  work_style: workStyle,
-                  source: 'エン転職',
-                  status: '書類準備',
-                  priority: 3,
-                  next_action_date: deadline,
-                  attraction: attractionParts.join(' / ') || catchCopy,
-                  job_url: '',
-                  job_notes: 'エン転職気になる求人リストより取込'
-                });
-              }
+              enItems.push({
+                company_name: comp,
+                job_headline: rawTitle,
+                job_title: jobTitle,
+                salary: salary,
+                work_style: workStyle,
+                source: 'エン転職',
+                status: isApplied ? '応募済' : '書類準備',
+                priority: 3,
+                next_action_date: deadline,
+                attraction: attractionParts.join(' / ') || catchCopy,
+                job_url: url,
+                job_notes: isApplied ? 'エン転職（応募済み求人）' : 'エン転職気になる求人リストより取込'
+              });
             }
           }
         }
