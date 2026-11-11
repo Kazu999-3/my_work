@@ -26,6 +26,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // キャリア管理トラッカー（/career）とそのAPI（/api/career/）、静的ツールは認証不要で即座に利用可能
+  if (nextUrl.pathname.startsWith('/api/career') || nextUrl.pathname === '/career' || nextUrl.pathname.startsWith('/tools/')) {
+    return NextResponse.next();
+  }
+
   // GitHub Actions の定期実行（辞典への統合）だけは Cookie を持てないため Bearer で受け付ける
   if (nextUrl.pathname === '/api/knowledge/integrate') {
     const auth = request.headers.get('authorization') || '';
@@ -44,8 +49,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // ログイン画面とその API、静的ファイル・PWA のアイコン/マニフェストは除外する
+  // ログイン画面とその API、キャリア管理ツール、静的ファイル・PWA のアイコン/マニフェストは除外する
   matcher: [
-    '/((?!login|api/auth/|_next/static|_next/image|favicon\\.ico|icon\\.png|icons/|manifest\\.webmanifest|robots\\.txt).*)',
+    '/((?!login|career|tools/|api/career/|api/auth/|_next/static|_next/image|favicon\\.ico|icon\\.png|icons/|manifest\\.webmanifest|robots\\.txt).*)',
   ],
 };

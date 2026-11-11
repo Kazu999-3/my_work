@@ -1876,6 +1876,8 @@
       const btn = document.getElementById('batchResearchBtn');
       let successCount = 0;
 
+      let lastErrorMsg = '';
+
       for (let i = 0; i < targets.length; i++) {
         if (!isBatchResearching) break;
         const item = targets[i];
@@ -1891,11 +1893,18 @@
               job_title: item.job_title || '',
               source: item.source || '',
               job_url: item.job_url || '',
-              job_notes: item.job_notes || ''
+              job_notes: item.job_notes || '',
+              attraction: item.attraction || ''
             })
           });
 
           const data = await res.json();
+          if (!res.ok || !data.success) {
+            lastErrorMsg = data.error || `HTTP ${res.status}`;
+            console.warn(`リサーチエラー (${item.company_name}):`, lastErrorMsg);
+            continue;
+          }
+
           if (data.success && data.data) {
             const d = data.data;
 
@@ -1942,6 +1951,7 @@
             render();
           }
         } catch (err) {
+          lastErrorMsg = err.message;
           console.warn('Batch research error on:', item.company_name, err);
         }
 
@@ -1951,7 +1961,14 @@
 
       isBatchResearching = false;
       if (btn) btn.innerHTML = '✨ AI高精度リサーチ';
-      alert(`🎉 高精度Webリサーチが完了しました！（${successCount} 件の求人情報を更新しました）`);
+
+      if (successCount > 0) {
+        alert(`🎉 高精度Webリサーチが完了しました！（${successCount} 件の求人情報を更新しました）`);
+      } else if (lastErrorMsg) {
+        alert(`⚠️ リサーチ中にエラーが発生しました: ${lastErrorMsg}\n時間をおいて再試行してください。`);
+      } else {
+        alert('リサーチ対象のデータが更新されませんでした。');
+      }
     }
 
     function resetResearchFields() {

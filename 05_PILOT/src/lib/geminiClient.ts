@@ -6,10 +6,11 @@
 // - gemini-3.1-flash-lite は Google 側で 503 UNAVAILABLE。
 // - gemini-2.5-flash は無料枠の1日20回制限(429)で即死するため候補から除外。
 const FALLBACK_MODELS = [
-  'gemini-3.5-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-3.6-flash',
+  'gemini-2.5-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-flash-lite',
   'gemini-3-flash-preview',
+  'gemini-pro-latest',
 ];
 
 export interface GeminiOptions {

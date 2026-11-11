@@ -72,13 +72,30 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
 \`\`\`
 `;
 
-    // Google Search Grounding を有効化してリアルタイム調査
-    const result = await callGeminiDetailed(prompt, {
-      temperature: 0.1,
-      maxOutputTokens: 1200,
-      enableSearch: true,
-      timeoutMs: 40000,
-    });
+    // 見出しやメモからの即時正規表現フォールバック（取り込み時の元データがあれば最優先抽出）
+    const rawAll = `${job_headline} ${existing_notes} ${String(body?.attraction || '')}`;
+    let preSalary = 0;
+    const manM = rawAll.match(/(?:月給|給与|月額|固定給)\s*[:：\s]*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
+    if (manM) preSalary = Math.round(parseFloat(manM[1]));
+
+    // Google Search Grounding を優先実行（失敗時は通常推論へ自動フォールバック）
+    let result: any = null;
+    try {
+      result = await callGeminiDetailed(prompt, {
+        temperature: 0.1,
+        maxOutputTokens: 1200,
+        enableSearch: true,
+        timeoutMs: 30000,
+      });
+    } catch (searchErr: any) {
+      console.warn('Google Search Grounding fallback:', searchErr.message);
+      result = await callGeminiDetailed(prompt, {
+        temperature: 0.2,
+        maxOutputTokens: 1000,
+        enableSearch: false,
+        timeoutMs: 20000,
+      });
+    }
 
     const text = (result?.text || '').trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -135,7 +152,7 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
         company_name: String(parsed.company_name || company_name),
         job_headline: String(parsed.job_headline || job_headline || ''),
         job_title: String(parsed.job_title || job_title || ''),
-        salary: Number(parsed.salary) || 0,
+        salary: Number(parsed.salary) || preSalary || 0,
         work_style: ['フルリモート', 'ハイブリッド', '出社'].includes(parsed.work_style) ? parsed.work_style : '出社',
         attraction: String(parsed.attraction || ''),
         job_notes: String(parsed.job_notes || ''),
