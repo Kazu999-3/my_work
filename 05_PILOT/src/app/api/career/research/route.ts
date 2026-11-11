@@ -41,10 +41,13 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
    - 該当企業の現在の出社方針・リモートワーク制度を調査してください。
    - "フルリモート" または "ハイブリッド" または "出社" のいずれか1つを選択してください。
 
-3. **求人URL・公式URL（job_url）**:
-   - ⚠️【架空のURLやGoogle検索URL（google.com/search...）を出力することは絶対禁止】です。
-   - 既存URL（${existing_url}）が既に有効な求人URL（マイナビ・エン・Indeed等）であれば、それを最優先で維持してください。
-   - 既存URLが無い場合は、検索で見つかった「企業の公式採用ページ」または「公式サイト」または「公式求人票」の実在するURLを返してください。どうしても確実なURLが見当たらない場合は空文字 ("") にしてください。
+3. **応募形態の求人ページURL（job_url）**:
+   - ⚠️【企業の会社概要トップページ（例: https://xxx.co.jp/ のみ）やGoogle検索URL（google.com/search...）は絶対禁止】です。
+   - 必ず、ユーザーがクリックして【該当職種に応募できる求人ページURL】を特定してください。
+     - 優先1: 大手求人サイトの実際の求人詳細URL（例: employment.en-japan.com/desc_..., tenshoku.mynavi.jp/jobinfo/..., jp.indeed.com/viewjob..., doda.jp/... 等）
+     - 優先2: 該当企業の公式採用サイトの募集要項・エントリーページURL（例: https://xxx.co.jp/recruit/..., /career/..., /jobs/... 等）
+   - 既存URL（${existing_url}）が既に有効な求人詳細ページであれば、それを最優先で維持してください。
+   - どうしても応募可能な求人ページが見当たらない場合のみ空文字 ("") にしてください。
 
 4. **魅力・志望理由（attraction）**:
    - 企業の強み、働きやすさ、事業の将来性、福利厚生など、面接や志望動機で使える具体的なアピールポイント（60〜100文字程度）。
@@ -85,25 +88,44 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // URLの精査: AIが架空URLを返した場合や空の場合、Google検索で実際にヒットしたURLからフォールバック
+    // URLの精査: AIが架空URLを返した場合やトップページの場合、Google検索で実際にヒットした求人URLからフォールバック
     let finalUrl = String(parsed.job_url || '').trim();
-    if (finalUrl.includes('google.com/search') || finalUrl.includes('example.com') || finalUrl.includes('localhost')) {
+    if (finalUrl.includes('google.com') || finalUrl.includes('example.com') || finalUrl.includes('localhost')) {
       finalUrl = '';
     }
 
-    // 既存の有効なURLがあればそれを最優先
-    if (existing_url && !existing_url.includes('google.com/search') && !existing_url.includes('example.com')) {
+    // 既存の有効な求人URLがあればそれを最優先
+    if (existing_url && !existing_url.includes('google.com') && !existing_url.includes('example.com')) {
       finalUrl = existing_url;
-    } else if (!finalUrl && result.searchChunks && result.searchChunks.length > 0) {
-      // 検索で見つかった実在URLから、企業の公式ページや採用ページ候補を抽出
-      const bestChunk = result.searchChunks.find(c => 
-        !c.uri.includes('google.com') && 
-        !c.uri.includes('wikipedia.org') &&
-        (c.uri.includes('recruit') || c.uri.includes('career') || c.uri.includes('job') || c.uri.includes('corp') || c.uri.includes('co.jp'))
-      ) || result.searchChunks.find(c => !c.uri.includes('google.com'));
+    } else if (result.searchChunks && result.searchChunks.length > 0) {
+      // 検索で見つかった実在URLから、応募形態の求人詳細ページを最優先で特定
+      const isJobPage = (u: string) => {
+        const lower = u.toLowerCase();
+        return lower.includes('employment.en-japan.com/desc_') ||
+               lower.includes('tenshoku.mynavi.jp/jobinfo') ||
+               lower.includes('jp.indeed.com/viewjob') ||
+               lower.includes('doda.jp/dodafront') ||
+               lower.includes('en-gage.net') ||
+               lower.includes('next.rikunabi.com/company') ||
+               lower.includes('/recruit') ||
+               lower.includes('/career') ||
+               lower.includes('/jobs') ||
+               lower.includes('/job') ||
+               lower.includes('/entry');
+      };
 
-      if (bestChunk?.uri) {
-        finalUrl = bestChunk.uri;
+      const jobChunk = result.searchChunks.find(c => isJobPage(c.uri) && !c.uri.includes('google.com'));
+      if (jobChunk?.uri) {
+        // AIがトップページ（パスなし）を返していた場合でも、実在求人ページが見つかればそちらを優先
+        finalUrl = jobChunk.uri;
+      } else if (!finalUrl) {
+        // 求人詳細が見つからない場合の次善策（採用・コーポレート）
+        const corpChunk = result.searchChunks.find(c => 
+          !c.uri.includes('google.com') && 
+          !c.uri.includes('wikipedia.org') &&
+          (c.uri.includes('co.jp') || c.uri.includes('.com') || c.uri.includes('.jp'))
+        );
+        if (corpChunk?.uri) finalUrl = corpChunk.uri;
       }
     }
 

@@ -300,8 +300,8 @@
       border-collapse: separate;
       border-spacing: 0;
       text-align: left;
-      font-size: 13px;
-      min-width: 1980px;
+      font-size: 12px;
+      min-width: 100%;
       table-layout: fixed;
     }
 
@@ -313,14 +313,15 @@
     }
 
     th {
-      padding: 10px 8px;
+      padding: 9px 6px;
       font-weight: 700;
       color: var(--text-muted);
       white-space: nowrap;
-      font-size: 12px;
+      font-size: 11px;
       border-bottom: 2px solid var(--border);
       border-right: 1px solid #eef2f6;
       background: #f1f5f9;
+      box-sizing: border-box;
     }
 
     /* Sticky Left Columns (志望度 & 企業名) */
@@ -330,15 +331,17 @@
       left: 0 !important;
       z-index: 10;
       background: #ffffff;
+      width: 65px;
     }
 
     th.col-sticky-company,
     td.col-sticky-company {
       position: sticky !important;
-      left: 80px !important;
+      left: 65px !important;
       z-index: 10;
       background: #ffffff;
-      box-shadow: 4px 0 8px -3px rgba(0, 0, 0, 0.12);
+      box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.1);
+      width: 140px;
     }
 
     thead th.col-sticky-priority,
@@ -376,8 +379,8 @@
 
     .sort-icon {
       display: inline-block;
-      margin-left: 3px;
-      font-size: 10px;
+      margin-left: 2px;
+      font-size: 9px;
       vertical-align: middle;
       opacity: 0.35;
       transition: opacity 0.15s ease, color 0.15s ease;
@@ -397,30 +400,31 @@
     }
 
     td {
-      padding: 8px 8px;
+      padding: 6px 6px;
       border-bottom: 1px solid var(--border);
       border-right: 1px solid #f1f5f9;
       background: #ffffff;
+      box-sizing: border-box;
     }
 
     /* Wrap Mode vs Compact Mode */
     table.mode-wrap td {
       vertical-align: top;
-      padding: 10px 8px;
+      padding: 8px 6px;
     }
 
     table.mode-compact td {
       vertical-align: middle;
-      padding: 6px 8px;
+      padding: 4px 6px;
     }
 
     /* Spreadsheet-like Inline Inputs */
     .cell-input {
       width: 100%;
-      padding: 6px 8px;
+      padding: 4px 6px;
       border: 1px solid transparent;
       border-radius: 4px;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-main);
       background: transparent;
       font-family: inherit;
@@ -433,14 +437,14 @@
 
     .cell-textarea {
       width: 100%;
-      padding: 6px 8px;
+      padding: 4px 6px;
       border: 1px solid transparent;
       border-radius: 4px;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-main);
       background: transparent;
       font-family: inherit;
-      line-height: 1.45;
+      line-height: 1.4;
       resize: vertical;
       box-sizing: border-box;
       transition: all 0.15s ease;
@@ -450,13 +454,13 @@
     }
 
     table.mode-wrap .cell-textarea {
-      min-height: 48px;
+      min-height: 40px;
       height: auto;
     }
 
     table.mode-compact .cell-textarea {
-      min-height: 32px;
-      height: 32px;
+      min-height: 28px;
+      height: 28px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -487,15 +491,16 @@
     .cell-input-salary {
       font-weight: 700;
       text-align: right;
-      padding-right: 4px;
+      padding-right: 2px;
+      font-size: 13px;
     }
 
     .cell-select {
       width: 100%;
-      padding: 6px 20px 6px 6px;
+      padding: 5px 16px 5px 4px;
       border: 1px solid transparent;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-main);
       background: transparent;
       cursor: pointer;
@@ -505,9 +510,9 @@
       box-sizing: border-box;
       appearance: none;
       -webkit-appearance: none;
-      background-position: right 6px center;
+      background-position: right 4px center;
       background-repeat: no-repeat;
-      background-size: 9px;
+      background-size: 8px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     }
 
@@ -526,8 +531,8 @@
     .star-select {
       color: #f59e0b;
       font-weight: 800;
-      font-size: 13px;
-      padding: 6px 4px;
+      font-size: 12px;
+      padding: 5px 2px;
       text-align: center;
       letter-spacing: 0.5px;
       background-image: none !important;
@@ -540,19 +545,81 @@
       appearance: none;
       -webkit-appearance: none;
       width: 100%;
-      padding: 5px 16px 5px 8px;
+      padding: 4px 14px 4px 6px;
       border-radius: 9999px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       cursor: pointer;
       outline: none;
       border: 1px solid transparent;
       text-align: center;
       box-sizing: border-box;
-      background-position: right 6px center;
+      background-position: right 4px center;
       background-repeat: no-repeat;
-      background-size: 8px;
+      background-size: 7px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    }
+
+    /* Compact URL Button */
+    .link-btn-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid #bfdbfe;
+      transition: all 0.15s ease;
+    }
+    .link-btn-badge:hover {
+      background: #2563eb;
+      color: white;
+    }
+    .link-btn-empty {
+      background: #f8fafc;
+      color: #cbd5e1;
+      border-color: #e2e8f0;
+      cursor: pointer;
+    }
+    .link-btn-empty:hover {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* Compact AI & Del Button */
+    .action-btn-mini {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+    .action-btn-mini:hover {
+      background: #f1f5f9;
+    }
+    .action-btn-ai {
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+      background: #eff6ff;
+    }
+    .action-btn-ai:hover {
+      background: #2563eb;
+      color: white;
+    }
+    .action-btn-del:hover {
+      color: var(--danger);
+      background: var(--danger-light);
+      border-color: #fecaca;
     }
 
     .status-badge-select:focus {
@@ -1062,8 +1129,8 @@
       <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
         <span>表示中: <strong id="visibleCount" style="color: var(--primary); font-size: 13px;">0</strong> 件</span>
         <span style="color: var(--border);">|</span>
-        <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
-          📌 志望度・企業名は横スクロール固定
+        <span style="font-size: 11px; background: #ecfdf5; color: #047857; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+          ✨ 画面全幅フィット（スクロール不要）
         </span>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -1084,38 +1151,35 @@
       <table id="mainDataTable" class="mode-wrap">
         <thead>
           <tr>
-            <th id="th-priority" style="width: 80px;" class="sortable-th col-sticky-priority" onclick="handleColumnSort('priority')" title="クリックで志望度順にソート">
+            <th id="th-priority" style="width: 65px;" class="sortable-th col-sticky-priority" onclick="handleColumnSort('priority')" title="クリックで志望度順にソート">
               志望度 <span class="sort-icon" id="sort-icon-priority">⇅</span>
             </th>
-            <th id="th-company_name" style="width: 200px;" class="sortable-th col-sticky-company" onclick="handleColumnSort('company_name')" title="クリックで企業名50音順にソート">
+            <th id="th-company_name" style="width: 140px;" class="sortable-th col-sticky-company" onclick="handleColumnSort('company_name')" title="クリックで企業名50音順にソート">
               企業名 <span style="color:var(--danger)">*</span> <span class="sort-icon" id="sort-icon-company_name">⇅</span>
             </th>
-            <th id="th-job_headline" style="width: 280px;" class="sortable-th" onclick="handleColumnSort('job_headline')" title="クリックで見出し順にソート">
-              求人タイトル (見出し) <span class="sort-icon" id="sort-icon-job_headline">⇅</span>
+            <th id="th-job_title" style="width: 220px;" class="sortable-th" onclick="handleColumnSort('job_title')" title="クリックで職種順にソート">
+              募集職種 / 求人見出し <span class="sort-icon" id="sort-icon-job_title">⇅</span>
             </th>
-            <th id="th-job_title" style="width: 220px;" class="sortable-th" onclick="handleColumnSort('job_title')" title="クリックで職種名順にソート">
-              応募職種 <span class="sort-icon" id="sort-icon-job_title">⇅</span>
-            </th>
-            <th id="th-status" style="width: 115px;" class="sortable-th" onclick="handleColumnSort('status')" title="クリックで選考フェーズ順にソート">
+            <th id="th-status" style="width: 95px;" class="sortable-th" onclick="handleColumnSort('status')" title="クリックで選考フェーズ順にソート">
               選考状況 <span class="sort-icon" id="sort-icon-status">⇅</span>
             </th>
-            <th id="th-source" style="width: 130px;" class="sortable-th" onclick="handleColumnSort('source')" title="クリックで応募媒体順にソート">
-              応募媒体 <span class="sort-icon" id="sort-icon-source">⇅</span>
+            <th id="th-source" style="width: 90px;" class="sortable-th" onclick="handleColumnSort('source')" title="クリックで応募媒体順にソート">
+              媒体 <span class="sort-icon" id="sort-icon-source">⇅</span>
             </th>
-            <th id="th-salary" style="width: 100px;" class="sortable-th" onclick="handleColumnSort('salary')" title="クリックで月収順にソート">
-              想定月収(万) <span class="sort-icon" id="sort-icon-salary">⇅</span>
+            <th id="th-salary" style="width: 75px;" class="sortable-th" onclick="handleColumnSort('salary')" title="クリックで月収順にソート">
+              月収(万) <span class="sort-icon" id="sort-icon-salary">⇅</span>
             </th>
-            <th id="th-work_style" style="width: 135px;" class="sortable-th" onclick="handleColumnSort('work_style')" title="クリックで勤務形態順にソート">
+            <th id="th-work_style" style="width: 88px;" class="sortable-th" onclick="handleColumnSort('work_style')" title="クリックで勤務形態順にソート">
               勤務形態 <span class="sort-icon" id="sort-icon-work_style">⇅</span>
             </th>
-            <th id="th-next_action_date" style="width: 135px;" class="sortable-th" onclick="handleColumnSort('next_action_date')" title="クリックで選考日・締切日順にソート">
+            <th id="th-next_action_date" style="width: 100px;" class="sortable-th" onclick="handleColumnSort('next_action_date')" title="クリックで選考日順にソート">
               次回選考日 <span class="sort-icon" id="sort-icon-next_action_date">⇅</span>
             </th>
-            <th id="th-attraction" style="width: 320px;" class="sortable-th" onclick="handleColumnSort('attraction')" title="クリックで魅力・理由順にソート">
-              魅力・志望理由 <span class="sort-icon" id="sort-icon-attraction">⇅</span>
+            <th id="th-attraction" style="min-width: 160px;" class="sortable-th" onclick="handleColumnSort('attraction')" title="クリックで魅力順にソート">
+              魅力・志望動機ポイント <span class="sort-icon" id="sort-icon-attraction">⇅</span>
             </th>
-            <th style="width: 130px;">求人URL</th>
-            <th style="width: 125px; text-align: center;">操作</th>
+            <th style="width: 44px; text-align: center;" title="求人・応募ページを開く">求人</th>
+            <th style="width: 62px; text-align: center;">操作</th>
           </tr>
         </thead>
         <tbody id="applicationTableBody">
@@ -1425,16 +1489,14 @@
               title="${escapeHtml(app.company_name)}" placeholder="社名を入力..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.company_name)}</textarea>
           </td>
 
-          <!-- 求人タイトル (見出し) -->
+          <!-- 募集職種 / 求人見出し -->
           <td>
-            <textarea class="cell-textarea" data-id="${app.id}" data-field="job_headline" 
-              title="${escapeHtml(app.job_headline || '')}" placeholder="見出し・キャッチコピー..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.job_headline || '')}</textarea>
-          </td>
-
-          <!-- 応募職種 -->
-          <td>
-            <textarea class="cell-textarea" data-id="${app.id}" data-field="job_title" 
-              title="${escapeHtml(app.job_title || '')}" placeholder="職種 (人事, SE等)..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.job_title || '')}</textarea>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <input type="text" class="cell-input" style="font-weight: 700; color: #1e293b; font-size: 11.5px; padding: 2px 4px;" data-id="${app.id}" data-field="job_title" 
+                value="${escapeHtml(app.job_title || '')}" title="職種: ${escapeHtml(app.job_title || '')}" placeholder="職種名 (SE, 営業等)..." onchange="handleCellChange(this)">
+              <textarea class="cell-textarea" style="font-size: 10.5px; color: #64748b; line-height: 1.35; min-height: 26px; padding: 2px 4px;" data-id="${app.id}" data-field="job_headline" 
+                title="見出し: ${escapeHtml(app.job_headline || '')}" placeholder="見出し・キャッチコピー..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.job_headline || '')}</textarea>
+            </div>
           </td>
 
           <!-- 選考状況 -->
@@ -1453,10 +1515,10 @@
 
           <!-- 想定月収 -->
           <td>
-            <div style="display:flex; align-items:center; gap:3px;">
+            <div style="display:flex; align-items:center; gap:2px;">
               <input type="number" class="cell-input cell-input-salary" data-id="${app.id}" data-field="salary" 
                 value="${app.salary != null ? app.salary : ''}" placeholder="0" min="0" step="1" onchange="handleCellChange(this)" title="想定月収: ${app.salary || 0}万円">
-              <span style="font-size:12px; color:var(--text-muted); font-weight:600;">万</span>
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">万</span>
             </div>
           </td>
 
@@ -1470,7 +1532,7 @@
           <!-- 次回選考日 -->
           <td>
             <div style="display:flex; align-items:center; gap:2px;">
-              <input type="date" class="cell-input" style="font-size:12px; padding:4px 6px;" data-id="${app.id}" data-field="next_action_date" 
+              <input type="date" class="cell-input" style="font-size:11px; padding:3px 2px;" data-id="${app.id}" data-field="next_action_date" 
                 value="${app.next_action_date || ''}" onchange="handleCellChange(this)" title="次回選考日 / 提出期日">
               ${dateBadge}
             </div>
@@ -1478,24 +1540,30 @@
 
           <!-- 魅力・志望理由 -->
           <td>
-            <textarea class="cell-textarea" data-id="${app.id}" data-field="attraction" 
+            <textarea class="cell-textarea" style="font-size: 11px;" data-id="${app.id}" data-field="attraction" 
               title="${escapeHtml(app.attraction || '')}" placeholder="惹かれた点・メモ..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.attraction || '')}</textarea>
           </td>
 
-          <!-- 求人URL -->
-          <td>
-            <div class="url-cell-wrap">
-              <input type="url" class="cell-input" style="font-size:11px;" data-id="${app.id}" data-field="job_url" 
-                value="${escapeHtml(app.job_url || '')}" title="${escapeHtml(app.job_url || '')}" placeholder="https://..." onchange="handleUrlChange(this)">
-              ${app.job_url ? `<a href="${escapeHtml(app.job_url)}" target="_blank" rel="noopener noreferrer" class="link-btn" title="求人URLを別タブで開く">🔗</a>` : ''}
+          <!-- 求人URL (コンパクト) -->
+          <td style="text-align: center;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 3px;">
+              ${app.job_url ? `
+                <a href="${escapeHtml(app.job_url)}" target="_blank" rel="noopener noreferrer" class="link-btn-badge" title="求人・応募ページを開く:\n${escapeHtml(app.job_url)}">
+                  🔗
+                </a>
+              ` : `
+                <button type="button" class="link-btn-badge link-btn-empty" onclick="editJobUrl('${app.id}')" title="求人URLを手動登録">
+                  ＋
+                </button>
+              `}
             </div>
           </td>
 
-          <!-- 操作 -->
+          <!-- 操作 (コンパクト) -->
           <td style="text-align: center; white-space: nowrap;">
-            <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: center;">
-              <button class="ai-research-btn" id="ai-btn-${app.id}" onclick="triggerAiResearch('${app.id}')" title="社名と職種から給与・勤務形態・魅力をAIリサーチして自動補完">✨ リサーチ</button>
-              <button class="del-btn" onclick="deleteEntry('${app.id}')" title="この行を削除">🗑️</button>
+            <div style="display: inline-flex; align-items: center; gap: 3px; justify-content: center;">
+              <button class="action-btn-mini action-btn-ai" id="ai-btn-${app.id}" onclick="triggerAiResearch('${app.id}')" title="Google検索連動AIで求人ページURL・月収を再リサーチ">✨</button>
+              <button class="action-btn-mini action-btn-del" onclick="deleteEntry('${app.id}')" title="この行を削除">🗑️</button>
             </div>
           </td>
         `;
@@ -1507,6 +1575,20 @@
       setTimeout(() => {
         document.querySelectorAll('.cell-textarea').forEach(ta => autoResizeTextarea(ta));
       }, 0);
+    }
+
+    // URL手動編集
+    function editJobUrl(id) {
+      const app = applications.find(a => a.id === id);
+      if (!app) return;
+      const current = app.job_url || '';
+      const newUrl = prompt(`「${app.company_name}」の求人・応募ページURLを入力してください:\n（空欄にするとURLを削除します）`, current);
+      if (newUrl !== null) {
+        app.job_url = newUrl.trim();
+        app.updated_at = new Date().toISOString();
+        saveData();
+        render();
+      }
     }
 
     // Direct cell change handler
@@ -1613,12 +1695,12 @@
 
     // テーブルヘッダーのソート状態・矢印アイコンの更新
     function updateSortHeadersUI() {
-      const columns = ['priority', 'company_name', 'job_headline', 'job_title', 'status', 'source', 'salary', 'work_style', 'next_action_date', 'attraction'];
+      const columns = ['priority', 'company_name', 'job_title', 'status', 'source', 'salary', 'work_style', 'next_action_date', 'attraction'];
       columns.forEach(col => {
         const th = document.getElementById(`th-${col}`);
         const icon = document.getElementById(`sort-icon-${col}`);
         if (th && icon) {
-          if (currentSortColumn === col) {
+          if (currentSortColumn === col || (col === 'job_title' && currentSortColumn === 'job_headline')) {
             th.classList.add('active-sort');
             icon.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
             icon.style.opacity = '1';
@@ -1847,9 +1929,11 @@
               }
             }
 
-            // 求人URL: 既存が有効な求人リンクなら最優先保護、無効・空なら検索された公式URLを格納
-            if (d.job_url && (!item.job_url || item.job_url.includes('google.com/search'))) {
-              item.job_url = d.job_url;
+            // 求人URL: overwrite モードなら応募形態の求人ページURLを更新
+            if (d.job_url) {
+              if (mode === 'overwrite' || !item.job_url || item.job_url.includes('google.com/search')) {
+                item.job_url = d.job_url;
+              }
             }
 
             item.updated_at = new Date().toISOString();
@@ -1872,7 +1956,7 @@
 
     function resetResearchFields() {
       closeResearchModal();
-      if (!confirm('登録されている全求人の「想定月収」「魅力・志望理由」「選考メモ」を一旦リセット（クリア）しますか？\n（※ 会社名・応募職種・媒体名・正規の求人URLは保護されます）')) {
+      if (!confirm('登録されている全求人の「想定月収」「魅力・志望理由」「選考メモ」および【求人URL】をすべてリセット（クリア）しますか？\n（※ 会社名・応募職種・選考状況・応募媒体は安全に保持されます）')) {
         return;
       }
 
@@ -1880,16 +1964,13 @@
         app.salary = 0;
         app.attraction = '';
         app.job_notes = '';
-        // Google検索URLなどの無効URLが入っていた場合はクリア
-        if (app.job_url && app.job_url.includes('google.com/search')) {
-          app.job_url = '';
-        }
+        app.job_url = ''; // 求人URLも完全にリセット
         app.updated_at = new Date().toISOString();
       });
 
       saveData();
       render();
-      alert('🧹 全求人のリサーチ項目（月収・魅力）をリセットしました。\n続けて「✨ AI高精度リサーチ」から最新データの一括取得が可能です！');
+      alert('🧹 全求人のリサーチ項目（月収・魅力・求人URL）を完全にクリアしました！\n続けて「🚀 全求人を最新Web検索で再リサーチ」を押すと、応募可能な求人ページURLを含めて一括再取得できます。');
     }
 
     function exportData() {
