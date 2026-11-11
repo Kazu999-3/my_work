@@ -1829,6 +1829,156 @@
         }
       }
 
+      // 1.8. マイナビ転職（tenshoku.mynavi.jp）気になる求人リストの一括解析
+      if (text.includes('tenshoku.mynavi.jp') || text.includes('マイナビ転職') || (text.includes('掲載終了予定日：') && (text.includes('保存日：') || text.includes('気になる求人')))) {
+        // 「閲覧履歴からオススメ」以降のノイズをカット
+        let mynaviCleanText = text;
+        if (mynaviCleanText.includes('閲覧履歴からオススメ')) {
+          mynaviCleanText = mynaviCleanText.split('閲覧履歴からオススメ')[0];
+        }
+
+        const blocks = mynaviCleanText.split(/\n(?=掲載終了予定日：)/);
+        const mynaviItems = [];
+
+        for (const block of blocks) {
+          const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+          if (lines.length < 3 || !lines[0].includes('掲載終了予定日：')) continue;
+
+          let deadline = '';
+          const dateM = lines[0].match(/掲載終了予定日：\s*([0-9]{4})\/([0-9]{2})\/([0-9]{2})/);
+          if (dateM) {
+            deadline = `${dateM[1]}-${dateM[2]}-${dateM[3]}`;
+          }
+
+          let comp = '';
+          let compCatch = '';
+          const compLine = lines[1] || '';
+          if (compLine.includes('|')) {
+            const parts = compLine.split('|');
+            comp = parts[0].trim();
+            compCatch = parts.slice(1).join('|').trim();
+          } else {
+            comp = compLine.trim();
+          }
+
+          let rawTitle = lines[2] || '';
+          let url = '';
+
+          const linkM = rawTitle.match(/\[(.*?)\]\((https?:\/\/tenshoku\.mynavi\.jp\/jobinfo[^\)]+)\)/);
+          if (linkM) {
+            rawTitle = linkM[1].trim();
+            url = linkM[2].trim();
+          } else {
+            const plainUrlM = block.match(/https?:\/\/tenshoku\.mynavi\.jp\/jobinfo[^\s\)\"\'<>]+/);
+            if (plainUrlM) url = plainUrlM[0];
+            rawTitle = rawTitle.replace(/正社員|契約社員|追加コンテンツ/g, '').trim();
+          }
+
+          let jobTitle = '';
+          const bracketM = rawTitle.match(/【(.*?)】/);
+          if (bracketM) {
+            jobTitle = bracketM[1].trim();
+          } else {
+            jobTitle = rawTitle.split(/[（(◆／\/\s]/)[0].trim();
+          }
+          if (!jobTitle || jobTitle.length < 2) jobTitle = rawTitle.slice(0, 25);
+
+          let salary = 0;
+          const salLine = lines.find(l => l.startsWith('給与')) || '';
+          const nextToSal = lines[lines.indexOf(salLine) + 1] || '';
+          const salText = salLine + ' ' + nextToSal + ' ' + block;
+
+          const manMatch = salText.match(/(?:月給|【月給】)[：:\s]*([0-9０-９]+(?:\.[0-9]+)?)\s*万/);
+          if (manMatch) {
+            salary = Math.round(parseFloat(manMatch[1]));
+          } else {
+            const enMatch = salText.match(/(?:月給|【月給】)[：:\s]*([0-9,]+)\s*円/);
+            if (enMatch) {
+              const raw = parseInt(enMatch[1].replace(/,/g, ''));
+              if (raw > 10000) salary = Math.round(raw / 10000);
+            }
+          }
+
+          let workStyle = '出社';
+          if (block.includes('フルリモート') || block.includes('完全在宅')) {
+            workStyle = 'フルリモート';
+          } else if (block.includes('リモート') || block.includes('在宅')) {
+            workStyle = 'ハイブリッド';
+          }
+
+          const attractionParts = [];
+          if (compCatch) attractionParts.push(compCatch);
+          const locLineIdx = lines.findIndex(l => l.startsWith('勤務地'));
+          const locLine = locLineIdx !== -1 ? lines[locLineIdx + 1] : '';
+          if (locLine) attractionParts.push(locLine.slice(0, 30));
+
+          mynaviItems.push({
+            company_name: comp || 'マイナビ転職掲載企業',
+            job_headline: rawTitle,
+            job_title: jobTitle,
+            salary: salary,
+            work_style: workStyle,
+            source: 'マイナビ転職',
+            status: '書類準備',
+            priority: 3,
+            next_action_date: deadline,
+            attraction: attractionParts.join(' / ') || compCatch,
+            job_url: url,
+            job_notes: 'マイナビ転職気になる求人リストより取込'
+          });
+        }
+
+        if (mynaviItems.length > 0) {
+          let addedCount = 0;
+          let skippedCount = 0;
+          const existingUrls = new Set(applications.map(a => normalizeJobUrl(a.job_url)).filter(Boolean));
+          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
+
+          mynaviItems.forEach(item => {
+            const cleanUrl = normalizeJobUrl(item.job_url);
+            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
+
+            if ((cleanUrl && existingUrls.has(cleanUrl)) || (cleanKey !== '___' && existingKeys.has(cleanKey))) {
+              skippedCount++;
+              return;
+            }
+
+            if (cleanUrl) existingUrls.add(cleanUrl);
+            if (cleanKey !== '___') existingKeys.add(cleanKey);
+
+            applications.unshift({
+              id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+              company_name: item.company_name,
+              job_headline: item.job_headline,
+              job_title: item.job_title,
+              status: item.status,
+              source: item.source,
+              salary: item.salary,
+              work_style: item.work_style,
+              priority: item.priority,
+              next_action_date: item.next_action_date,
+              attraction: item.attraction,
+              job_url: item.job_url,
+              job_notes: item.job_notes,
+              created_at: now,
+              updated_at: now,
+              isNew: true
+            });
+            addedCount++;
+          });
+
+          saveData();
+          render();
+
+          if (skippedCount > 0) {
+            alert(`🎉 マイナビ転職から ${addedCount} 件の求人を新しく一括追加しました！\n（※ すでに登録済みの ${skippedCount} 件は重複のため安全にスキップしました）`);
+          } else {
+            alert(`🎉 マイナビ転職から ${addedCount} 件の求人を一括追加しました！`);
+          }
+          return true;
+        }
+      }
+
       // 1.7. エン転職（employment.en-japan.com）気になる求人リストの一括解析（Markdown & プレーン完全両対応）
       if (text.includes('employment.en-japan.com') || text.includes('エンの転職サイト') || text.includes('エン転職') || (text.includes('掲載期間') && (text.includes('カンタン応募') || text.includes('応募依頼する') || text.includes('気になる求人リスト')))) {
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);

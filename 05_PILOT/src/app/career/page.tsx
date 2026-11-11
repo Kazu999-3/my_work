@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, ExternalLink, RefreshCw, ArrowLeft, ShieldCheck, Sparkles } from 'lucide-react';
 
-const TRACKER_VERSION = '20261111_0450';
+const TRACKER_VERSION = '20261111_0500';
 
 export default function CareerTrackerPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
