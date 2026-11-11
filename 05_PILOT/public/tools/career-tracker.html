@@ -1227,11 +1227,67 @@
       if (tc) tc.scrollLeft = 0;
     });
 
+    function sanitizeApplications() {
+      if (!Array.isArray(applications)) return;
+      let hasChanges = false;
+
+      const isJobTitlePattern = (str) => {
+        if (!str) return false;
+        if (/^[【『「]/.test(str)) return true;
+        if (/[◆／\/]/.test(str)) return true;
+        if (/(?:エンジニア|スタッフ|プログラマ|アシスタント|サポート|運営|施工管理|デザイナー|クリエイター|事務|営業|警備)/.test(str)) {
+          if (!/(?:株式会社|合同会社|有限会社|\(株\)|Corp|Inc)/i.test(str)) return true;
+        }
+        return false;
+      };
+
+      const extractRealCompany = (str) => {
+        if (!str) return '';
+        const m = str.match(/(?:[^\s\/／、。]+\s*)?(?:株式会社[^\s\/／、。（()]+|合同会社[^\s\/／、。（()]+|有限会社[^\s\/／、。（()]+|\([株有]\)[^\s\/／、。（()]+|[A-Za-z0-9一-龥々]+株式会社|[A-Za-z0-9一-龥々]+合同会社)/);
+        if (m) {
+          return m[0].replace(/[\(（].*$/, '').trim();
+        }
+        return '';
+      };
+
+      applications.forEach(app => {
+        let comp = (app.company_name || '').trim();
+        let headline = (app.job_headline || '').trim();
+        let attraction = (app.attraction || '').trim();
+
+        // 1. 社名欄が職種・タイトルパターンになっている場合の救出
+        if (isJobTitlePattern(comp)) {
+          const realComp = extractRealCompany(attraction) || extractRealCompany(app.job_notes || '') || extractRealCompany(headline);
+          if (realComp && realComp !== comp) {
+            if (!headline || headline === comp || /^(?:東京都|大阪府|京都府|.+県|.+市)/.test(headline)) {
+              app.job_headline = comp;
+            }
+            app.company_name = realComp;
+            hasChanges = true;
+          }
+        }
+
+        // 2. 見出しが住所になっている場合の救出
+        if (headline && /^(?:東京都|大阪府|京都府|.+県|.+市[^\s]*区).*/.test(headline)) {
+          if (isJobTitlePattern(comp)) {
+            app.job_headline = comp;
+            app.company_name = '名称未確認企業';
+            hasChanges = true;
+          }
+        }
+      });
+
+      if (hasChanges) {
+        saveData();
+      }
+    }
+
     function loadData() {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           applications = JSON.parse(stored);
+          sanitizeApplications();
         } else {
           applications = getInitialSampleData();
           saveData();
@@ -2823,19 +2879,35 @@
         return false;
       }
 
+      // 社名とタイトルのテレコ補正
+      if (comp && /(?:[【『「]|◆|／|\/|エンジニア|スタッフ|プログラマ|アシスタント|サポート|運営|施工管理)/.test(comp)) {
+        if (!/(?:株式会社|合同会社|有限会社|\(株\))/i.test(comp)) {
+          // compが職種で、headlineに会社名がある場合
+          const realM = (headline + ' ' + text).match(/(?:株式会社[^\s\/／、。（()]+|合同会社[^\s\/／、。（()]+|有限会社[^\s\/／、。（()]+|\([株有]\)[^\s\/／、。（()]+|[A-Za-z0-9一-龥々]+株式会社|[A-Za-z0-9一-龥々]+合同会社)/);
+          if (realM) {
+            headline = comp;
+            comp = realM[0].replace(/[\(（].*$/, '').trim();
+          }
+        }
+      }
+
       // 重複チェック
       const cleanUrl = normalizeJobUrl(url);
       const isDup = applications.some(a => {
         if (cleanUrl && a.job_url && normalizeJobUrl(a.job_url) === cleanUrl) return true;
         if (a.company_name && a.company_name.trim() === comp.trim()) {
-          if (!title || (a.job_title && a.job_title.includes(title)) || (a.job_headline && a.job_headline.includes(title))) return true;
+          // 職種または見出しも一致している場合のみ重複疑い
+          if (title && a.job_title && a.job_title.trim() === title.trim()) return true;
+          if (headline && a.job_headline && a.job_headline.trim() === headline.trim()) return true;
         }
         return false;
       });
 
       if (isDup) {
-        alert(`⚠️「${comp}」はすでにトラッカーに登録されています（重複のためスキップしました）。`);
-        return true;
+        const shouldAdd = confirm(`⚠️「${comp}」はすでにトラッカーに登録されています。\n（既存の求人と重複している可能性があります）\n\n別ポジションや追加の求人として登録を続行しますか？`);
+        if (!shouldAdd) {
+          return true; // ユーザーがキャンセルした場合のみスキップ
+        }
       }
 
       const newEntry = {

@@ -56,18 +56,18 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
    - 主な業務内容、求められるスキルや人物像、企業の特徴（60〜120文字程度）。
 
 【出力形式】
-以下のJSONフォーマットのみを返してください。Markdownコードブロック (\`\`\`json) で囲んで出力してください。
+前置きや解説、思考メモは一切不要です。即座に以下のJSONコードブロックのみを出力し、必ず末尾の \`\`\` まで完結させてください。
 
 \`\`\`json
 {
   "company_name": "${company_name}",
-  "job_headline": "求人タイトルの要約・キャッチコピー（25〜40文字程度）",
-  "job_title": "明確な職種名（例: 施工管理アシスタント、社内SE、Webマーケター など。25文字以内）",
-  "salary": 数値（単位: 万円。整数値のみ。例: 25）,
-  "work_style": "フルリモート" | "ハイブリッド" | "出社",
-  "attraction": "魅力・志望理由ポイント",
-  "job_notes": "選考メモ・事業内容",
-  "job_url": "実在する公式採用ページURLまたは求人URL（架空URL厳禁）"
+  "job_headline": "求人タイトルの要約・キャッチコピー（20〜35文字程度）",
+  "job_title": "職種名（例: 社内SE、施工管理アシスタント など。20文字以内）",
+  "salary": 想定月収の数値（例: 25〜35万なら下限または標準の25、整数値のみ）,
+  "work_style": "フルリモート" または "ハイブリッド" または "出社",
+  "attraction": "魅力・アピール点（40〜70文字程度）",
+  "job_notes": "選考メモ（40〜80文字程度）",
+  "job_url": "実在する求人詳細ページURLまたは採用ページURL"
 }
 \`\`\`
 `;
@@ -83,7 +83,7 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
     try {
       result = await callGeminiDetailed(prompt, {
         temperature: 0.1,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 3000,
         enableSearch: true,
         timeoutMs: 30000,
       });
@@ -91,19 +91,48 @@ ${existing_notes ? `- 参考メモ: ${existing_notes}` : ''}
       console.warn('Google Search Grounding fallback:', searchErr.message);
       result = await callGeminiDetailed(prompt, {
         temperature: 0.2,
-        maxOutputTokens: 1000,
+        maxOutputTokens: 2500,
         enableSearch: false,
         timeoutMs: 20000,
       });
     }
 
     const text = (result?.text || '').trim();
+    let parsed: any = {};
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: 'AI解析結果のパースに失敗しました。', raw: text }, { status: 500 });
+    if (jsonMatch) {
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch (jsonErr) {
+        // 末尾切れの場合の補完パース試行
+        try {
+          const trimmed = jsonMatch[0].trim();
+          const lastQuote = trimmed.lastIndexOf('"');
+          if (lastQuote !== -1) {
+            parsed = JSON.parse(trimmed.slice(0, lastQuote + 1) + '\n}');
+          }
+        } catch {}
+      }
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    // JSONパースが失敗した場合でも、正規表現で各キーを確実に救出
+    if (!parsed || typeof parsed !== 'object' || Object.keys(parsed).length === 0) {
+      const getVal = (key: string): any => {
+        const m = text.match(new RegExp(`"${key}"\\s*:\\s*(?:"([^"]*)"|([0-9]+))`));
+        return m ? (m[1] !== undefined ? m[1] : Number(m[2])) : '';
+      };
+      parsed = {
+        company_name: getVal('company_name') || company_name,
+        job_headline: getVal('job_headline') || job_headline,
+        job_title: getVal('job_title') || job_title,
+        salary: Number(getVal('salary')) || preSalary || 0,
+        work_style: getVal('work_style') || '出社',
+        attraction: getVal('attraction') || '',
+        job_notes: getVal('job_notes') || '',
+        job_url: getVal('job_url') || '',
+      };
+    }
 
     // URLの精査: AIが架空URLを返した場合やトップページの場合、Google検索で実際にヒットした求人URLからフォールバック
     let finalUrl = String(parsed.job_url || '').trim();
