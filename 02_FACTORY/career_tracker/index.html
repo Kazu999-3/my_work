@@ -276,31 +276,85 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow-sm);
       overflow-x: auto;
+      position: relative;
+    }
+
+    /* Modern Custom Scrollbar for Smooth Navigation */
+    .table-container::-webkit-scrollbar {
+      height: 10px;
+    }
+    .table-container::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .table-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .table-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
 
     table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       text-align: left;
       font-size: 13px;
-      min-width: 1940px;
+      min-width: 1980px;
       table-layout: fixed;
     }
 
     thead {
       background: #f1f5f9;
-      border-bottom: 2px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 20;
     }
 
     th {
-      padding: 10px 10px;
+      padding: 10px 8px;
       font-weight: 700;
       color: var(--text-muted);
       white-space: nowrap;
       font-size: 12px;
+      border-bottom: 2px solid var(--border);
+      border-right: 1px solid #eef2f6;
+      background: #f1f5f9;
+    }
+
+    /* Sticky Left Columns (志望度 & 企業名) */
+    th.col-sticky-priority,
+    td.col-sticky-priority {
+      position: sticky !important;
+      left: 0 !important;
+      z-index: 10;
+      background: #ffffff;
+    }
+
+    th.col-sticky-company,
+    td.col-sticky-company {
+      position: sticky !important;
+      left: 80px !important;
+      z-index: 10;
+      background: #ffffff;
+      box-shadow: 4px 0 8px -3px rgba(0, 0, 0, 0.12);
+    }
+
+    thead th.col-sticky-priority,
+    thead th.col-sticky-company {
+      z-index: 35 !important;
+      background: #f1f5f9 !important;
+    }
+
+    tbody tr:hover td.col-sticky-priority,
+    tbody tr:hover td.col-sticky-company {
+      background: #f8fafc !important;
+    }
+
+    tbody tr.is-new-row td.col-sticky-priority,
+    tbody tr.is-new-row td.col-sticky-company {
+      background: #eff6ff !important;
     }
 
     .sortable-th {
@@ -315,7 +369,7 @@
     }
 
     .sortable-th.active-sort {
-      background-color: #e0f2fe;
+      background-color: #e0f2fe !important;
       color: #0369a1;
       font-weight: 800;
     }
@@ -343,8 +397,21 @@
     }
 
     td {
-      padding: 9px 10px;
+      padding: 8px 8px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid #f1f5f9;
+      background: #ffffff;
+    }
+
+    /* Wrap Mode vs Compact Mode */
+    table.mode-wrap td {
+      vertical-align: top;
+      padding: 10px 8px;
+    }
+
+    table.mode-compact td {
       vertical-align: middle;
+      padding: 6px 8px;
     }
 
     /* Spreadsheet-like Inline Inputs */
@@ -361,22 +428,58 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
+      box-sizing: border-box;
     }
 
-    .cell-input:hover {
+    .cell-textarea {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--text-main);
+      background: transparent;
+      font-family: inherit;
+      line-height: 1.45;
+      resize: vertical;
+      box-sizing: border-box;
+      transition: all 0.15s ease;
+      word-break: break-word;
+      white-space: pre-wrap;
+      display: block;
+    }
+
+    table.mode-wrap .cell-textarea {
+      min-height: 48px;
+      height: auto;
+    }
+
+    table.mode-compact .cell-textarea {
+      min-height: 32px;
+      height: 32px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      resize: none;
+      line-height: 20px;
+    }
+
+    .cell-input:hover,
+    .cell-textarea:hover {
       background: #ffffff;
       border-color: var(--border);
     }
 
-    .cell-input:focus {
+    .cell-input:focus,
+    .cell-textarea:focus {
       outline: none;
       background: #ffffff;
       border-color: var(--border-focus);
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-      overflow: visible;
     }
 
-    .cell-input-company {
+    .cell-input-company,
+    .cell-textarea-company {
       font-weight: 700;
       color: #0f172a;
     }
@@ -389,7 +492,7 @@
 
     .cell-select {
       width: 100%;
-      padding: 6px 6px;
+      padding: 6px 20px 6px 6px;
       border: 1px solid transparent;
       border-radius: 4px;
       font-size: 12px;
@@ -399,23 +502,44 @@
       font-family: inherit;
       transition: all 0.15s ease;
       white-space: nowrap;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      background-position: right 6px center;
+      background-repeat: no-repeat;
+      background-size: 9px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     }
 
     .cell-select:hover {
-      background: #ffffff;
+      background-color: #ffffff;
       border-color: var(--border);
     }
 
     .cell-select:focus {
       outline: none;
-      background: #ffffff;
+      background-color: #ffffff;
       border-color: var(--border-focus);
+    }
+
+    /* Star Select (志望度) */
+    .star-select {
+      color: #f59e0b;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 6px 4px;
+      text-align: center;
+      letter-spacing: 0.5px;
+      background-image: none !important;
+      appearance: auto;
+      -webkit-appearance: auto;
     }
 
     /* Status Select Badge Style */
     .status-badge-select {
       appearance: none;
       -webkit-appearance: none;
+      width: 100%;
       padding: 5px 16px 5px 8px;
       border-radius: 9999px;
       font-size: 11px;
@@ -423,6 +547,8 @@
       cursor: pointer;
       outline: none;
       border: 1px solid transparent;
+      text-align: center;
+      box-sizing: border-box;
       background-position: right 6px center;
       background-repeat: no-repeat;
       background-size: 8px;
@@ -443,13 +569,37 @@
     .badge-status-見送り { background-color: #fee2e2; color: #b91c1c; }
     .badge-status-辞退 { background-color: #f1f5f9; color: #64748b; }
 
-    /* Star Select */
-    .star-select {
-      color: #f59e0b;
-      font-weight: 800;
-      font-size: 13px;
-      padding: 6px 4px;
-      letter-spacing: 0.5px;
+    /* View Mode Switcher Button Group */
+    .view-mode-toggle {
+      display: inline-flex;
+      background: #f1f5f9;
+      padding: 2px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      gap: 2px;
+    }
+
+    .view-mode-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .view-mode-btn:hover {
+      color: var(--text-main);
+    }
+
+    .view-mode-btn.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-weight: 700;
     }
 
     /* URL link combo */
@@ -854,42 +1004,64 @@
       </div>
     </div>
 
+    <!-- Table Controls Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 4px; flex-wrap: wrap; gap: 8px;">
+      <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+        <span>表示中: <strong id="visibleCount" style="color: var(--primary); font-size: 13px;">0</strong> 件</span>
+        <span style="color: var(--border);">|</span>
+        <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+          📌 志望度・企業名は横スクロール固定
+        </span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">行の表示:</span>
+        <div class="view-mode-toggle">
+          <button type="button" class="view-mode-btn active" id="btnModeWrap" onclick="setViewMode('wrap')" title="テキストを折り返して全文表示（見切れを防止します）">
+            📖 折り返し (全文表示)
+          </button>
+          <button type="button" class="view-mode-btn" id="btnModeCompact" onclick="setViewMode('compact')" title="1行スプレッドシート風表示">
+            📏 1行コンパクト
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Spreadsheet-like Table -->
-    <div class="table-container">
-      <table>
+    <div class="table-container" id="tableContainer">
+      <table id="mainDataTable" class="mode-wrap">
         <thead>
           <tr>
-            <th id="th-priority" style="width: 110px;" class="sortable-th" onclick="handleColumnSort('priority')" title="クリックで志望度順にソート">
+            <th id="th-priority" style="width: 80px;" class="sortable-th col-sticky-priority" onclick="handleColumnSort('priority')" title="クリックで志望度順にソート">
               志望度 <span class="sort-icon" id="sort-icon-priority">⇅</span>
             </th>
-            <th id="th-company_name" style="width: 220px;" class="sortable-th" onclick="handleColumnSort('company_name')" title="クリックで企業名50音順にソート">
+            <th id="th-company_name" style="width: 200px;" class="sortable-th col-sticky-company" onclick="handleColumnSort('company_name')" title="クリックで企業名50音順にソート">
               企業名 <span style="color:var(--danger)">*</span> <span class="sort-icon" id="sort-icon-company_name">⇅</span>
             </th>
-            <th id="th-job_headline" style="width: 260px;" class="sortable-th" onclick="handleColumnSort('job_headline')" title="クリックで見出し順にソート">
+            <th id="th-job_headline" style="width: 280px;" class="sortable-th" onclick="handleColumnSort('job_headline')" title="クリックで見出し順にソート">
               求人タイトル (見出し) <span class="sort-icon" id="sort-icon-job_headline">⇅</span>
             </th>
-            <th id="th-job_title" style="width: 200px;" class="sortable-th" onclick="handleColumnSort('job_title')" title="クリックで職種名順にソート">
+            <th id="th-job_title" style="width: 220px;" class="sortable-th" onclick="handleColumnSort('job_title')" title="クリックで職種名順にソート">
               応募職種 <span class="sort-icon" id="sort-icon-job_title">⇅</span>
             </th>
             <th id="th-status" style="width: 115px;" class="sortable-th" onclick="handleColumnSort('status')" title="クリックで選考フェーズ順にソート">
               選考状況 <span class="sort-icon" id="sort-icon-status">⇅</span>
             </th>
-            <th id="th-source" style="width: 140px;" class="sortable-th" onclick="handleColumnSort('source')" title="クリックで応募媒体順にソート">
+            <th id="th-source" style="width: 130px;" class="sortable-th" onclick="handleColumnSort('source')" title="クリックで応募媒体順にソート">
               応募媒体 <span class="sort-icon" id="sort-icon-source">⇅</span>
             </th>
-            <th id="th-salary" style="width: 105px;" class="sortable-th" onclick="handleColumnSort('salary')" title="クリックで月収順にソート">
+            <th id="th-salary" style="width: 100px;" class="sortable-th" onclick="handleColumnSort('salary')" title="クリックで月収順にソート">
               想定月収(万) <span class="sort-icon" id="sort-icon-salary">⇅</span>
             </th>
-            <th id="th-work_style" style="width: 125px;" class="sortable-th" onclick="handleColumnSort('work_style')" title="クリックで勤務形態順にソート">
+            <th id="th-work_style" style="width: 135px;" class="sortable-th" onclick="handleColumnSort('work_style')" title="クリックで勤務形態順にソート">
               勤務形態 <span class="sort-icon" id="sort-icon-work_style">⇅</span>
             </th>
-            <th id="th-next_action_date" style="width: 140px;" class="sortable-th" onclick="handleColumnSort('next_action_date')" title="クリックで選考日・締切日順にソート">
+            <th id="th-next_action_date" style="width: 135px;" class="sortable-th" onclick="handleColumnSort('next_action_date')" title="クリックで選考日・締切日順にソート">
               次回選考日 <span class="sort-icon" id="sort-icon-next_action_date">⇅</span>
             </th>
-            <th id="th-attraction" style="width: 260px;" class="sortable-th" onclick="handleColumnSort('attraction')" title="クリックで魅力・理由順にソート">
+            <th id="th-attraction" style="width: 320px;" class="sortable-th" onclick="handleColumnSort('attraction')" title="クリックで魅力・理由順にソート">
               魅力・志望理由 <span class="sort-icon" id="sort-icon-attraction">⇅</span>
             </th>
-            <th style="width: 140px;">求人URL</th>
+            <th style="width: 130px;">求人URL</th>
             <th style="width: 125px; text-align: center;">操作</th>
           </tr>
         </thead>
@@ -928,8 +1100,14 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
+      const savedMode = localStorage.getItem('career_tracker_view_mode') || 'wrap';
+      setViewMode(savedMode, false);
       updateSortHeadersUI();
       render();
+
+      // 初期状態でテーブルを左端に確実にリセット
+      const tc = document.getElementById('tableContainer');
+      if (tc) tc.scrollLeft = 0;
     });
 
     function loadData() {
@@ -1075,18 +1253,62 @@
 
       // Focus company name input of the new row
       setTimeout(() => {
-        const firstInput = document.querySelector(`input[data-id="${newEntry.id}"][data-field="company_name"]`);
+        const firstInput = document.querySelector(`textarea[data-id="${newEntry.id}"][data-field="company_name"], input[data-id="${newEntry.id}"][data-field="company_name"]`);
         if (firstInput) {
           firstInput.focus();
         }
       }, 50);
     }
 
+    let currentViewMode = 'wrap';
+
+    function setViewMode(mode, save = true) {
+      currentViewMode = mode;
+      if (save) {
+        localStorage.setItem('career_tracker_view_mode', mode);
+      }
+
+      const table = document.getElementById('mainDataTable');
+      const btnWrap = document.getElementById('btnModeWrap');
+      const btnCompact = document.getElementById('btnModeCompact');
+
+      if (table) {
+        table.classList.remove('mode-wrap', 'mode-compact');
+        table.classList.add(`mode-${mode}`);
+      }
+
+      if (btnWrap && btnCompact) {
+        if (mode === 'wrap') {
+          btnWrap.classList.add('active');
+          btnCompact.classList.remove('active');
+        } else {
+          btnWrap.classList.remove('active');
+          btnCompact.classList.add('active');
+        }
+      }
+
+      // 既存のtextareaの高さを再計算
+      document.querySelectorAll('.cell-textarea').forEach(ta => autoResizeTextarea(ta));
+    }
+
+    function autoResizeTextarea(el) {
+      if (!el) return;
+      if (currentViewMode === 'wrap') {
+        el.style.height = 'auto';
+        el.style.height = Math.max(42, el.scrollHeight) + 'px';
+      } else {
+        el.style.height = '32px';
+      }
+    }
+
     // Render Table
     function render() {
       const tbody = document.getElementById('applicationTableBody');
       const emptyState = document.getElementById('emptyState');
+      const countEl = document.getElementById('visibleCount');
       const filtered = getFilteredAndSortedData();
+
+      if (countEl) countEl.textContent = filtered.length;
 
       updateKPIs(applications);
 
@@ -1137,29 +1359,29 @@
         }
 
         tr.innerHTML = `
-          <!-- 志望度 -->
-          <td>
+          <!-- 志望度 (左端固定) -->
+          <td class="col-sticky-priority">
             <select class="cell-select star-select" data-id="${app.id}" data-field="priority" onchange="handleCellChange(this)" title="志望度: ★${app.priority}">
               ${priorityOpts}
             </select>
           </td>
 
-          <!-- 企業名 -->
-          <td>
-            <input type="text" class="cell-input cell-input-company" data-id="${app.id}" data-field="company_name" 
-              value="${escapeHtml(app.company_name)}" title="${escapeHtml(app.company_name)}" placeholder="社名を入力..." onchange="handleCellChange(this)">
+          <!-- 企業名 (左端固定) -->
+          <td class="col-sticky-company">
+            <textarea class="cell-textarea cell-textarea-company" data-id="${app.id}" data-field="company_name" 
+              title="${escapeHtml(app.company_name)}" placeholder="社名を入力..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.company_name)}</textarea>
           </td>
 
           <!-- 求人タイトル (見出し) -->
           <td>
-            <input type="text" class="cell-input" data-id="${app.id}" data-field="job_headline" 
-              value="${escapeHtml(app.job_headline || '')}" title="${escapeHtml(app.job_headline || '')}" placeholder="見出し・キャッチコピー..." onchange="handleCellChange(this)">
+            <textarea class="cell-textarea" data-id="${app.id}" data-field="job_headline" 
+              title="${escapeHtml(app.job_headline || '')}" placeholder="見出し・キャッチコピー..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.job_headline || '')}</textarea>
           </td>
 
           <!-- 応募職種 -->
           <td>
-            <input type="text" class="cell-input" data-id="${app.id}" data-field="job_title" 
-              value="${escapeHtml(app.job_title || '')}" title="${escapeHtml(app.job_title || '')}" placeholder="職種 (人事, SE等)..." onchange="handleCellChange(this)">
+            <textarea class="cell-textarea" data-id="${app.id}" data-field="job_title" 
+              title="${escapeHtml(app.job_title || '')}" placeholder="職種 (人事, SE等)..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.job_title || '')}</textarea>
           </td>
 
           <!-- 選考状況 -->
@@ -1203,8 +1425,8 @@
 
           <!-- 魅力・志望理由 -->
           <td>
-            <input type="text" class="cell-input" data-id="${app.id}" data-field="attraction" 
-              value="${escapeHtml(app.attraction || '')}" title="${escapeHtml(app.attraction || '')}" placeholder="惹かれた点・メモ..." onchange="handleCellChange(this)">
+            <textarea class="cell-textarea" data-id="${app.id}" data-field="attraction" 
+              title="${escapeHtml(app.attraction || '')}" placeholder="惹かれた点・メモ..." onchange="handleCellChange(this)" oninput="autoResizeTextarea(this)">${escapeHtml(app.attraction || '')}</textarea>
           </td>
 
           <!-- 求人URL -->
@@ -1227,6 +1449,11 @@
 
         tbody.appendChild(tr);
       });
+
+      // レンダリング後に全textareaのサイズを調整
+      setTimeout(() => {
+        document.querySelectorAll('.cell-textarea').forEach(ta => autoResizeTextarea(ta));
+      }, 0);
     }
 
     // Direct cell change handler
