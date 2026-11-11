@@ -6,6 +6,7 @@ import { reportApiError } from '../../../../lib/apiHandler';
 // ktm_players の軽量一覧（プレイヤー検索・選択ドロップダウン用の読み取り専用API）。
 // 各プレイヤーの通算試合数（total_games）、直近30日参加数（recent_games_30d）、最終参加日（last_played_at）を集計してマージする。
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Vercel 10秒タイムアウト対策（集計処理の安全マージン確保）
 
 // 参加履歴(全件・1,200行超)は試合記録時にしか変わらないのに、毎リクエスト全件取得→集計していた
 // (応答0.8〜1.5秒の主因、2026-09-29実測)。参加者リスト本体(is_active等)は即時性が要るため
@@ -31,8 +32,18 @@ async function loadParticipants(): Promise<any[]> {
 
 export async function GET(request: Request) {
   try {
-    // ?lite=1: 名前・ランク等だけ欲しい画面(カジノの送金先候補など)向け。参加履歴の集計を省く
+    // ?lite=1: 名前・ランク等だけ欲しい画面(カジノの送金先候補など)向け。参加履歴の集計・巨大カラムを省いて超高速返却
     const lite = new URL(request.url).searchParams.get('lite') === '1';
+    if (lite) {
+      const { data: players, error: pError } = await supabase
+        .from('ktm_players')
+        .select('id, name, highest_rank, is_active')
+        .order('is_active', { ascending: false })
+        .order('name', { ascending: true });
+      if (pError) throw pError;
+      return NextResponse.json({ players: players || [] });
+    }
+
     const [{ data: players, error: pError }, participants] = await Promise.all([
       supabase
         .from('ktm_players')
@@ -43,13 +54,10 @@ export async function GET(request: Request) {
         .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences, ng_lane_1, ng_lane_2, weight, allow_higher, pity, off_role_pity, spectator_pity, joined_at:metadata->>joined_at')
         .order('is_active', { ascending: false })
         .order('name', { ascending: true }),
-      lite ? Promise.resolve([] as any[]) : loadParticipants(),
+      loadParticipants(),
     ]);
 
     if (pError) throw pError;
-    if (lite) {
-      return NextResponse.json({ players: players || [] });
-    }
 
     const now = Date.now();
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;

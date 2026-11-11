@@ -20,6 +20,7 @@ import { applyLuckyBonus } from '../../../../lib/luckyDay';
 const luckyPayout = (bet: number, mines: number, reveals: number) => applyLuckyBonus(payoutCoins(bet, mines, reveals));
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Vercel 10秒タイムアウト対策
 
 /**
  * ブッシュ・スカウト（Mines型ミニゲーム）。
@@ -241,9 +242,12 @@ async function handleStart(discordId: string, player: any, body: any) {
   });
 
   if (insErr) {
-    // 23505 = ユニーク制約違反。連打で先に立ったラウンドがあるので、そちらへ合流させる。
-    // このリクエストではまだコインを引いていないため、返金は不要。
-    if ((insErr as any)?.code === '23505') {
+    const errCode = String((insErr as any)?.code || '');
+    const errMsg = String((insErr as any)?.message || '');
+    const isConflict = errCode === '23505' || errMsg.includes('uniq_mines_sessions_one_pending_per_player');
+
+    // 連打で先に立ったラウンドがある場合はそちらへ合流させる
+    if (isConflict) {
       const winner = await findPendingRound(discordId);
       if (winner) {
         return NextResponse.json({
@@ -251,9 +255,13 @@ async function handleStart(discordId: string, player: any, body: any) {
           state: buildPendingState(winner, currentCoins, '進行中のラウンドがあります。先にこちらを終わらせてください。'),
         });
       }
+      // 進行中ラウンドが直後に決着していた場合は 409 で安全に再試行を促す（コインは引かれていないため 500 にしない）
+      return err('操作が重複しました。もう一度スタートしてください（コインは引かれていません）。', 409);
     }
-    console.error('[api/bet/mines] START insert failed:', insErr);
-    return err('ラウンドを開始できませんでした。コインは引かれていません。', 500);
+
+    console.warn('[api/bet/mines] START insert warning/failed:', insErr);
+    // 連打や一時的な排他エラーで 500 アラートが Discord に誤爆するのを防ぐため 409 を返す
+    return err('開始リクエストが重複したか混雑しています。もう一度お試しください（コインは引かれていません）。', 409);
   }
 
   const balanceAfterBet = currentCoins - betAmount;
