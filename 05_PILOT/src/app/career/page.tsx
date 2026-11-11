@@ -1,15 +1,20 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, ExternalLink, RefreshCw, ArrowLeft, ShieldCheck, Sparkles } from 'lucide-react';
 
+const TRACKER_VERSION = '20261111_0400';
+
 export default function CareerTrackerPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [trackerSrc, setTrackerSrc] = useState(`/tools/career-tracker.html?v=${TRACKER_VERSION}`);
 
   const handleReload = () => {
+    const freshSrc = `/tools/career-tracker.html?v=${Date.now()}`;
+    setTrackerSrc(freshSrc);
     if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
+      iframeRef.current.src = freshSrc;
     }
   };
 
@@ -51,13 +56,13 @@ export default function CareerTrackerPage() {
           <button
             onClick={handleReload}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition border border-zinc-700"
-            title="トラッカーを再読み込み"
+            title="最新バージョンを強制再読み込み"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">再読込</span>
+            <span className="hidden sm:inline">最新版に更新</span>
           </button>
           <a
-            href="/tools/career-tracker.html"
+            href={trackerSrc}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition shadow-md shadow-blue-900/30"
@@ -73,7 +78,7 @@ export default function CareerTrackerPage() {
       <div className="flex-1 w-full bg-white rounded-2xl overflow-hidden shadow-2xl border border-zinc-800">
         <iframe
           ref={iframeRef}
-          src="/tools/career-tracker.html"
+          src={trackerSrc}
           title="Career Tracker"
           className="w-full h-full border-0"
         />

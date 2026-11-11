@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>転職管理トラッカー | Career Tracker (インライン編集型)</title>
   <style>
     :root {
@@ -280,7 +283,7 @@
       border-collapse: collapse;
       text-align: left;
       font-size: 13px;
-      min-width: 1750px;
+      min-width: 1940px;
       table-layout: fixed;
     }
 
@@ -360,7 +363,7 @@
 
     .cell-select {
       width: 100%;
-      padding: 6px 14px 6px 6px;
+      padding: 6px 6px;
       border: 1px solid transparent;
       border-radius: 4px;
       font-size: 12px;
@@ -417,9 +420,10 @@
     /* Star Select */
     .star-select {
       color: #f59e0b;
-      font-weight: 700;
-      font-size: 12px;
-      padding: 6px 14px 6px 4px;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 6px 4px;
+      letter-spacing: 0.5px;
     }
 
     /* URL link combo */
@@ -828,18 +832,18 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 105px;">志望度</th>
-            <th style="width: 200px;">企業名 <span style="color:var(--danger)">*</span></th>
-            <th style="width: 240px;">求人タイトル (見出し)</th>
-            <th style="width: 150px;">応募職種</th>
+            <th style="width: 110px;">志望度</th>
+            <th style="width: 220px;">企業名 <span style="color:var(--danger)">*</span></th>
+            <th style="width: 260px;">求人タイトル (見出し)</th>
+            <th style="width: 200px;">応募職種</th>
             <th style="width: 115px;">選考状況</th>
-            <th style="width: 125px;">応募媒体</th>
-            <th style="width: 100px;">想定月収(万)</th>
-            <th style="width: 120px;">勤務形態</th>
-            <th style="width: 135px;">次回選考日</th>
-            <th style="width: 220px;">魅力・志望理由</th>
+            <th style="width: 140px;">応募媒体</th>
+            <th style="width: 105px;">想定月収(万)</th>
+            <th style="width: 125px;">勤務形態</th>
+            <th style="width: 140px;">次回選考日</th>
+            <th style="width: 260px;">魅力・志望理由</th>
             <th style="width: 140px;">求人URL</th>
-            <th style="width: 120px; text-align: center;">操作</th>
+            <th style="width: 125px; text-align: center;">操作</th>
           </tr>
         </thead>
         <tbody id="applicationTableBody">
