@@ -1126,8 +1126,12 @@
 
     <!-- Table Controls Bar -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 4px; flex-wrap: wrap; gap: 8px;">
-      <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+      <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <span>表示中: <strong id="visibleCount" style="color: var(--primary); font-size: 13px;">0</strong> 件</span>
+        <span style="color: var(--border);">|</span>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="deduplicateApplications(true)" style="padding: 2px 10px; font-size: 11px; height: 26px; border-color: #cbd5e1; background: #ffffff; color: var(--text);" title="社名や求人URLが重複している求人を検知し、最新情報で統合・整理します">
+          🧹 重複行を一括整理
+        </button>
         <span style="color: var(--border);">|</span>
         <span style="font-size: 11px; background: #ecfdf5; color: #047857; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
           ✨ 画面全幅フィット（スクロール不要）
@@ -1227,6 +1231,191 @@
       if (tc) tc.scrollLeft = 0;
     });
 
+    // === 厳格な重複判定 ＆ 名寄せエンジン ===
+
+    // 社名コア文字列の正規化（前株・後株、法人格、全角半角、記号を除去）
+    function normalizeCompanyName(name) {
+      if (!name || typeof name !== 'string') return '';
+      return name
+        .replace(/[（\(][株有同代合][\)）]/g, '')
+        .replace(/(?:株式会社|合同会社|有限会社|合名会社|合資会社|一般社団法人|公益社団法人|医療法人|学校法人|特定非営利活動法人|NPO法人|Inc\.?|Corp\.?|Co\.,?\s*Ltd\.?)/gi, '')
+        .replace(/[【】「」『』\[\]()（）]/g, '')
+        .replace(/[　\s\-_・、。]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    // 求人URLの正規化（媒体ごとの求人固有IDを抽出しトラッキングパラメータを完全除去）
+    function normalizeJobUrl(url) {
+      if (!url || typeof url !== 'string') return '';
+      url = url.trim();
+      try {
+        const u = new URL(url);
+        // Indeed: jk パラメータ
+        if (u.hostname.includes('indeed')) {
+          const jk = u.searchParams.get('jk');
+          if (jk) return `indeed_${jk}`;
+        }
+        // エン転職: /desc_1234567
+        const enMatch = u.pathname.match(/desc_([0-9]+)/);
+        if (enMatch) return `en_${enMatch[1]}`;
+
+        // マイナビ転職: /jobinfo-123456-1-8-1
+        const mynaviMatch = u.pathname.match(/jobinfo-([0-9\-]+)/);
+        if (mynaviMatch) return `mynavi_${mynaviMatch[1]}`;
+
+        // リクナビNEXT: /nx1_rq12345/
+        const rikuMatch = u.pathname.match(/rq([0-9]+)/);
+        if (rikuMatch) return `rikunabi_${rikuMatch[1]}`;
+
+        // doda: /job-detail/...
+        const dodaMatch = u.pathname.match(/([0-9]{8,})/);
+        if (dodaMatch) return `doda_${dodaMatch[1]}`;
+
+        // 一般URL: クエリ・ハッシュを除去し小文字化
+        return `${u.origin}${u.pathname}`.replace(/\/$/, '').toLowerCase();
+      } catch (e) {
+        return url.split('?')[0].replace(/\/$/, '').toLowerCase();
+      }
+    }
+
+    // タイトル・見出しのクレンジング
+    function cleanJobText(str) {
+      if (!str) return '';
+      return str
+        .replace(/[【】「」『』\[\]()（）◆／\/★☆※■●~～\-]/g, ' ')
+        .replace(/(?:未経験歓迎|未経験OK|学歴不問|土日祝休み|完全週休2日制|年休120日以上|正社員|契約社員|急募|リモート|在宅|賞与|月給|月収|福岡|東京|大阪)/g, '')
+        .replace(/[　\s]/g, '')
+        .toLowerCase();
+    }
+
+    // 既存求人一覧の中から重複求人を厳格に検出
+    function findDuplicateApplication(newItem, existingList) {
+      if (!newItem || !Array.isArray(existingList)) return null;
+
+      const newUrl = normalizeJobUrl(newItem.job_url);
+      const newCompCore = normalizeCompanyName(newItem.company_name);
+      const newTitleClean = cleanJobText((newItem.job_title || '') + ' ' + (newItem.job_headline || ''));
+
+      for (const exist of existingList) {
+        // 条件A: 求人URLが完全一致（最も確実）
+        const existUrl = normalizeJobUrl(exist.job_url);
+        if (newUrl && existUrl && newUrl === existUrl) {
+          return exist;
+        }
+
+        // 条件B: 社名コアが一致する場合
+        const existCompCore = normalizeCompanyName(exist.company_name);
+        if (newCompCore && existCompCore && newCompCore === existCompCore) {
+          // 一般名称（「名称未確認企業」「マイナビ転職掲載企業」等）でない場合
+          if (!newCompCore.includes('未確認') && !newCompCore.includes('掲載企業') && newCompCore.length >= 2) {
+            // 同一社名の場合、原則として重複と判定
+            const existTitleClean = cleanJobText((exist.job_title || '') + ' ' + (exist.job_headline || ''));
+            if (!newTitleClean || !existTitleClean) {
+              return exist;
+            }
+            if (newTitleClean === existTitleClean || newTitleClean.includes(existTitleClean) || existTitleClean.includes(newTitleClean)) {
+              return exist;
+            }
+            // 主要職種キーワードの共通チェック
+            const keywords = ['エンジニア', 'se', 'プログラマ', 'ヘルプデスク', 'サポート', '施工管理', 'デザイナー', 'クリエイター', '営業', '事務', '警備', '運営', 'マーケティング', '就労支援', 'ドライバー', '店長', '販売'];
+            for (const kw of keywords) {
+              if (newTitleClean.includes(kw) && existTitleClean.includes(kw)) {
+                return exist;
+              }
+            }
+            // 同一社名かつ一般名でなければ同一企業として重複とみなす
+            return exist;
+          }
+        }
+
+        // 条件C: 見出しが完全一致
+        const existHeadline = (exist.job_headline || '').trim();
+        const newHeadline = (newItem.job_headline || '').trim();
+        if (newHeadline && existHeadline && newHeadline === existHeadline && newHeadline.length > 8) {
+          return exist;
+        }
+      }
+
+      return null;
+    }
+
+    // 既存レコードに新規アイテムの不足情報をマージ補完
+    function mergeApplicationData(exist, newItem) {
+      if (!exist || !newItem) return false;
+      let updated = false;
+
+      // 給与
+      if ((!exist.salary || exist.salary === 0) && newItem.salary > 0) {
+        exist.salary = newItem.salary;
+        updated = true;
+      }
+      // URL
+      if (!exist.job_url && newItem.job_url) {
+        exist.job_url = newItem.job_url;
+        updated = true;
+      }
+      // 職種
+      if ((!exist.job_title || exist.job_title === '職種未確認') && newItem.job_title && newItem.job_title !== '職種未確認') {
+        exist.job_title = newItem.job_title;
+        updated = true;
+      }
+      // 見出し
+      if (!exist.job_headline && newItem.job_headline) {
+        exist.job_headline = newItem.job_headline;
+        updated = true;
+      }
+      // 魅力
+      if ((!exist.attraction || exist.attraction.includes('自動解析')) && newItem.attraction && !newItem.attraction.includes('自動解析')) {
+        exist.attraction = newItem.attraction;
+        updated = true;
+      }
+      // 次回選考日
+      if (!exist.next_action_date && newItem.next_action_date) {
+        exist.next_action_date = newItem.next_action_date;
+        updated = true;
+      }
+
+      if (updated) {
+        exist.updated_at = new Date().toISOString();
+      }
+      return updated;
+    }
+
+    // 既存データの重複行を検出して1行に統合・クリーンアップ
+    function deduplicateApplications(showNotice = false) {
+      if (!Array.isArray(applications) || applications.length <= 1) {
+        if (showNotice) alert('重複している求人はありません。');
+        return 0;
+      }
+
+      const uniqueList = [];
+      let mergedCount = 0;
+
+      for (const item of applications) {
+        const dup = findDuplicateApplication(item, uniqueList);
+        if (dup) {
+          mergeApplicationData(dup, item);
+          mergedCount++;
+        } else {
+          uniqueList.push(item);
+        }
+      }
+
+      if (mergedCount > 0) {
+        applications = uniqueList;
+        saveData();
+        render();
+        if (showNotice) {
+          alert(`🧹 重複していた ${mergedCount} 件の求人を検知し、1つの最新レコードに自動統合・整理しました！`);
+        }
+      } else if (showNotice) {
+        alert('✨ 重複している求人は見つかりませんでした（データは正常です）。');
+      }
+
+      return mergedCount;
+    }
+
     function sanitizeApplications() {
       if (!Array.isArray(applications)) return;
       let hasChanges = false;
@@ -1276,6 +1465,10 @@
           }
         }
       });
+
+      // 重複行の自動マージ統合を実行
+      const dupCount = deduplicateApplications(false);
+      if (dupCount > 0) hasChanges = true;
 
       if (hasChanges) {
         saveData();
@@ -2153,21 +2346,6 @@
       }
     }
 
-    function normalizeJobUrl(url) {
-      if (!url || typeof url !== 'string') return '';
-      url = url.trim();
-      try {
-        const u = new URL(url);
-        if (u.hostname.includes('indeed')) {
-          const jk = u.searchParams.get('jk');
-          return jk ? `${u.origin}/viewjob?jk=${jk}` : url;
-        }
-        return `${u.origin}${u.pathname}`.replace(/\/$/, '');
-      } catch (e) {
-        return url.split('?')[0].trim();
-      }
-    }
-
     function parseAndAddJobData(text) {
       text = text.trim();
       const now = new Date().toISOString();
@@ -2186,22 +2364,14 @@
           let addedCount = 0;
           let skippedCount = 0;
 
-          // 既存データの重複判定マップ (URL および 社名+職種)
-          const existingUrls = new Set(applications.map(a => normalizeJobUrl(a.job_url)).filter(Boolean));
-          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
-
           items.forEach(item => {
-            const cleanUrl = normalizeJobUrl(item.job_url);
-            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
-
-            // 重複チェック: URLまたは社名+タイトルが一致していればスキップ
-            if ((cleanUrl && existingUrls.has(cleanUrl)) || (cleanKey !== '___' && existingKeys.has(cleanKey))) {
+            // 厳格な重複チェック
+            const dup = findDuplicateApplication(item, applications);
+            if (dup) {
+              mergeApplicationData(dup, item);
               skippedCount++;
               return;
             }
-
-            if (cleanUrl) existingUrls.add(cleanUrl);
-            if (cleanKey !== '___') existingKeys.add(cleanKey);
 
             applications.unshift({
               id: item.id || ('job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
@@ -2228,7 +2398,7 @@
           render();
 
           if (skippedCount > 0) {
-            alert(`🎉 ${addedCount} 件の求人を新しく追加しました！\n（※ すでに登録済みの ${skippedCount} 件は重複のため安全にスキップしました）`);
+            alert(`🎉 ${addedCount} 件の求人を新しく追加しました！\n（※ 重複していた ${skippedCount} 件は既存求人へ最新情報を自動補完・統合しました）`);
           } else {
             alert(`🎉 ${addedCount} 件の求人データを取り込みました！`);
           }
@@ -2303,16 +2473,14 @@
         if (multiItems.length > 0) {
           let addedCount = 0;
           let skippedCount = 0;
-          const existingUrls = new Set(applications.map(a => (a.job_url || '').split('?')[0].trim()).filter(Boolean));
-          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
 
           multiItems.forEach(item => {
-            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
-            if (existingKeys.has(cleanKey)) {
+            const dup = findDuplicateApplication(item, applications);
+            if (dup) {
+              mergeApplicationData(dup, item);
               skippedCount++;
               return;
             }
-            existingKeys.add(cleanKey);
 
             applications.unshift({
               id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2339,7 +2507,7 @@
           render();
 
           if (skippedCount > 0) {
-            alert(`🎉 ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は安全にスキップしました）`);
+            alert(`🎉 ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は既存求人へ最新情報を自動補完・統合しました）`);
           } else {
             alert(`🎉 ${addedCount} 件の求人を一括追加しました！`);
           }
@@ -2432,19 +2600,14 @@
         if (indeedItems.length > 0) {
           let addedCount = 0;
           let skippedCount = 0;
-          const existingUrls = new Set(applications.map(a => normalizeJobUrl(a.job_url)).filter(Boolean));
-          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
 
           indeedItems.forEach(item => {
-            const cleanUrl = normalizeJobUrl(item.job_url);
-            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
-
-            if ((cleanUrl && existingUrls.has(cleanUrl)) || (cleanKey !== '___' && existingKeys.has(cleanKey))) {
+            const dup = findDuplicateApplication(item, applications);
+            if (dup) {
+              mergeApplicationData(dup, item);
               skippedCount++;
               return;
             }
-            if (cleanUrl) existingUrls.add(cleanUrl);
-            if (cleanKey !== '___') existingKeys.add(cleanKey);
 
             applications.unshift({
               id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2471,7 +2634,7 @@
           render();
 
           if (skippedCount > 0) {
-            alert(`🎉 Indeedから ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は安全にスキップしました）`);
+            alert(`🎉 Indeedから ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は既存求人へ最新情報を自動補完・統合しました）`);
           } else {
             alert(`🎉 Indeedから ${addedCount} 件の求人を一括追加しました！`);
           }
@@ -2581,24 +2744,46 @@
         if (mynaviItems.length > 0) {
           let addedCount = 0;
           let skippedCount = 0;
-          const existingUrls = new Set(applications.map(a => normalizeJobUrl(a.job_url)).filter(Boolean));
-          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
 
           mynaviItems.forEach(item => {
-            const cleanUrl = normalizeJobUrl(item.job_url);
-            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
-
-            if ((cleanUrl && existingUrls.has(cleanUrl)) || (cleanKey !== '___' && existingKeys.has(cleanKey))) {
+            const dup = findDuplicateApplication(item, applications);
+            if (dup) {
+              mergeApplicationData(dup, item);
               skippedCount++;
               return;
             }
 
-            if (cleanUrl) existingUrls.add(cleanUrl);
-            if (cleanKey !== '___') existingKeys.add(cleanKey);
-
             applications.unshift({
               id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
               company_name: item.company_name,
+              job_headline: item.job_headline,
+              job_title: item.job_title,
+              status: item.status,
+              source: item.source,
+              salary: item.salary,
+              work_style: item.work_style,
+              priority: item.priority,
+              next_action_date: item.next_action_date,
+              attraction: item.attraction,
+              job_url: item.job_url,
+              job_notes: item.job_notes,
+              created_at: now,
+              updated_at: now,
+              isNew: true
+            });
+            addedCount++;
+          });
+
+          saveData();
+          render();
+
+          if (skippedCount > 0) {
+            alert(`🎉 マイナビ転職から ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は既存求人へ最新情報を自動補完・統合しました）`);
+          } else {
+            alert(`🎉 マイナビ転職から ${addedCount} 件の求人を一括追加しました！`);
+          }
+          return true;
+        }
               job_headline: item.job_headline,
               job_title: item.job_title,
               status: item.status,
@@ -2737,20 +2922,14 @@
         if (enItems.length > 0) {
           let addedCount = 0;
           let skippedCount = 0;
-          const existingUrls = new Set(applications.map(a => normalizeJobUrl(a.job_url)).filter(Boolean));
-          const existingKeys = new Set(applications.map(a => `${(a.company_name || '').trim()}___${(a.job_title || a.job_headline || '').trim()}`));
 
           enItems.forEach(item => {
-            const cleanUrl = normalizeJobUrl(item.job_url);
-            const cleanKey = `${(item.company_name || '').trim()}___${(item.job_title || item.job_headline || '').trim()}`;
-
-            if ((cleanUrl && existingUrls.has(cleanUrl)) || (cleanKey !== '___' && existingKeys.has(cleanKey))) {
+            const dup = findDuplicateApplication(item, applications);
+            if (dup) {
+              mergeApplicationData(dup, item);
               skippedCount++;
               return;
             }
-
-            if (cleanUrl) existingUrls.add(cleanUrl);
-            if (cleanKey !== '___') existingKeys.add(cleanKey);
 
             applications.unshift({
               id: 'job_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2777,7 +2956,7 @@
           render();
 
           if (skippedCount > 0) {
-            alert(`🎉 エン転職から ${addedCount} 件の求人を新しく一括追加しました！\n（※ すでに登録済みの ${skippedCount} 件は重複のため安全にスキップしました）`);
+            alert(`🎉 エン転職から ${addedCount} 件の求人を新しく一括追加しました！\n（※ 重複していた ${skippedCount} 件は既存求人へ最新情報を自動補完・統合しました）`);
           } else {
             alert(`🎉 エン転職から ${addedCount} 件の求人を一括追加しました！`);
           }
@@ -2891,23 +3070,27 @@
         }
       }
 
-      // 重複チェック
-      const cleanUrl = normalizeJobUrl(url);
-      const isDup = applications.some(a => {
-        if (cleanUrl && a.job_url && normalizeJobUrl(a.job_url) === cleanUrl) return true;
-        if (a.company_name && a.company_name.trim() === comp.trim()) {
-          // 職種または見出しも一致している場合のみ重複疑い
-          if (title && a.job_title && a.job_title.trim() === title.trim()) return true;
-          if (headline && a.job_headline && a.job_headline.trim() === headline.trim()) return true;
-        }
-        return false;
-      });
+      // 厳格な重複チェック
+      const candidateItem = {
+        company_name: comp,
+        job_headline: headline,
+        job_title: title,
+        job_url: url,
+        salary: salary,
+        work_style: work,
+        attraction: 'テキスト自動解析取込 / ' + work
+      };
 
-      if (isDup) {
-        const shouldAdd = confirm(`⚠️「${comp}」はすでにトラッカーに登録されています。\n（既存の求人と重複している可能性があります）\n\n別ポジションや追加の求人として登録を続行しますか？`);
-        if (!shouldAdd) {
-          return true; // ユーザーがキャンセルした場合のみスキップ
+      const dupExist = findDuplicateApplication(candidateItem, applications);
+      if (dupExist) {
+        const shouldOverwrite = confirm(`⚠️「${dupExist.company_name}」（${dupExist.job_title || dupExist.job_headline || '既存求人'}）はすでにトラッカーに登録されています。\n\n既存の求人データを最新情報で更新・補完しますか？\n（※ [OK] で最新情報に更新、[キャンセル] で二重登録を防止してスキップします）`);
+        if (shouldOverwrite) {
+          mergeApplicationData(dupExist, candidateItem);
+          saveData();
+          render();
+          alert(`✅「${dupExist.company_name}」の既存データを最新情報で更新しました！`);
         }
+        return true;
       }
 
       const newEntry = {
