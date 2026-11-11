@@ -18,6 +18,7 @@ export interface GeminiOptions {
   maxOutputTokens?: number;
   responseMimeType?: string;
   timeoutMs?: number;
+  enableSearch?: boolean; // Google Search Grounding (Web検索連動)
 }
 
 export function formatGeminiError(status: number, errText: string): string {
@@ -85,6 +86,11 @@ export async function callGemini(prompt: string, options: GeminiOptions = {}): P
         body.generationConfig.responseMimeType = options.responseMimeType;
       }
 
+      // Google Search Grounding の有効化
+      if (options.enableSearch) {
+        body.tools = [{ googleSearch: {} }];
+      }
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -112,6 +118,90 @@ export async function callGemini(prompt: string, options: GeminiOptions = {}): P
       }
       if (text) {
         return text;
+      }
+    } catch (e: any) {
+      console.warn(`[Gemini ${model}] 呼び出し失敗:`, e.message);
+      lastError = e;
+    }
+  }
+
+  throw lastError || new Error('全Geminiモデルの呼び出しに失敗しました。');
+}
+
+export interface GeminiDetailedResponse {
+  text: string;
+  searchChunks: Array<{ uri: string; title: string }>;
+  webSearchQueries: string[];
+}
+
+export async function callGeminiDetailed(prompt: string, options: GeminiOptions = {}): Promise<GeminiDetailedResponse> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_FREE;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY が設定されていません。');
+  }
+
+  const models = options.model ? [options.model, ...FALLBACK_MODELS] : FALLBACK_MODELS;
+  let lastError: any = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const body: any = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: options.temperature ?? 0.2,
+          maxOutputTokens: options.maxOutputTokens ?? 4096,
+        }
+      };
+
+      if (options.responseMimeType) {
+        body.generationConfig.responseMimeType = options.responseMimeType;
+      }
+
+      if (options.enableSearch) {
+        body.tools = [{ googleSearch: {} }];
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 60000),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.warn(`[Gemini ${model}] エラー status: ${res.status}`, errText);
+        lastError = new Error(formatGeminiError(res.status, errText));
+        continue;
+      }
+
+      const data = await res.json();
+      const candidate = data.candidates?.[0];
+      const text = (candidate?.content?.parts || [])
+        .filter((p: any) => typeof p?.text === 'string' && !p.thought)
+        .map((p: any) => p.text)
+        .join('');
+
+      const searchChunks: Array<{ uri: string; title: string }> = [];
+      const rawChunks = candidate?.groundingMetadata?.groundingChunks || [];
+      for (const chunk of rawChunks) {
+        if (chunk?.web?.uri) {
+          searchChunks.push({
+            uri: String(chunk.web.uri),
+            title: String(chunk.web.title || ''),
+          });
+        }
+      }
+
+      const webSearchQueries: string[] = candidate?.groundingMetadata?.webSearchQueries || [];
+
+      if (text) {
+        return { text, searchChunks, webSearchQueries };
       }
     } catch (e: any) {
       console.warn(`[Gemini ${model}] 呼び出し失敗:`, e.message);

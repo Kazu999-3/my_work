@@ -851,8 +851,8 @@
       </div>
       <div class="header-actions">
         <span class="save-indicator" id="saveIndicator">✓ 自動保存完了</span>
-        <button class="btn btn-secondary btn-sm" id="batchResearchBtn" onclick="triggerBatchResearch()" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-color: #bfdbfe; font-weight: 700;" title="想定月給や魅力が未設定の求人をGemini AIでまとめて自動リサーチします">
-          ✨ 空欄を一括リサーチ
+        <button class="btn btn-secondary btn-sm" id="batchResearchBtn" onclick="openResearchModal()" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-color: #bfdbfe; font-weight: 700;" title="Google検索連動AIで求人情報の月収・勤務形態・魅力を高精度リサーチ">
+          ✨ AI高精度リサーチ
         </button>
         <button class="btn btn-secondary btn-sm" onclick="quickPasteFromClipboard()" title="クリップボードの求人データやJSONを最上行に追加 (Ctrl+Vでも可)">
           📋 貼り付け追加
@@ -873,6 +873,59 @@
       </div>
     </div>
   </header>
+
+  <!-- Research Options Modal -->
+  <div class="modal-overlay" id="researchModalOverlay" onclick="closeResearchModalOnOutside(event)">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 6px;">
+          <span>✨</span>
+          <span>Google検索連動 AI高精度リサーチ</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeResearchModal()">×</button>
+      </div>
+      <div class="modal-body" style="gap: 16px; padding: 20px;">
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+          Google検索（Grounding）を起動し、Web上の実在する採用要項・初任給・中途提示月給・公式採用ページをリアルタイムに調査します。
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- 選択肢 1: 全件上書き再リサーチ -->
+          <button type="button" class="btn btn-primary" onclick="startBatchResearch('overwrite')" style="padding: 12px 16px; justify-content: flex-start; text-align: left; height: auto;">
+            <div>
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">🚀 全求人を最新Web検索で再リサーチ（上書き推奨）</div>
+              <div style="font-size: 11px; opacity: 0.9; font-weight: normal; line-height: 1.4;">
+                過去の推定結果をクリアし、最新の求人票・公式サイトから正確な月給・勤務形態・魅力を再調査して上書きします。
+              </div>
+            </div>
+          </button>
+
+          <!-- 選択肢 2: 空欄のみ補完 -->
+          <button type="button" class="btn btn-secondary" onclick="startBatchResearch('fill_empty')" style="padding: 12px 16px; justify-content: flex-start; text-align: left; height: auto;">
+            <div>
+              <div style="font-weight: 700; font-size: 13px; margin-bottom: 2px;">✨ 未入力の項目のみ補完する</div>
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
+                月収が0万円や、魅力が空欄の求人のみ調査・補完します。（既存データは保護）
+              </div>
+            </div>
+          </button>
+
+          <!-- 選択肢 3: リサーチ結果をリセット -->
+          <button type="button" class="btn btn-secondary" onclick="resetResearchFields()" style="padding: 10px 16px; justify-content: flex-start; text-align: left; height: auto; color: var(--danger); border-color: #fecaca; background: #fff5f5;">
+            <div>
+              <div style="font-weight: 700; font-size: 13px; margin-bottom: 2px;">🧹 入力・リサーチ結果をクリア（リセット）</div>
+              <div style="font-size: 11px; color: #991b1b; font-weight: normal; line-height: 1.4;">
+                月給を0、魅力・メモを空欄にリセットします。（社名や媒体名、正規URLは保護されます）
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="closeResearchModal()">閉じる</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Quick Import Modal -->
   <div class="modal-overlay" id="importModalOverlay" onclick="closeImportModalOnOutside(event)">
@@ -1688,22 +1741,52 @@
 
     let isBatchResearching = false;
 
+    function openResearchModal() {
+      const modal = document.getElementById('researchModalOverlay');
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeResearchModal() {
+      const modal = document.getElementById('researchModalOverlay');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function closeResearchModalOnOutside(e) {
+      if (e.target.id === 'researchModalOverlay') {
+        closeResearchModal();
+      }
+    }
+
     async function triggerBatchResearch() {
+      openResearchModal();
+    }
+
+    async function startBatchResearch(mode = 'overwrite') {
+      closeResearchModal();
       if (isBatchResearching) {
         isBatchResearching = false;
         const btn = document.getElementById('batchResearchBtn');
-        if (btn) btn.innerHTML = '✨ 空欄を一括リサーチ';
+        if (btn) btn.innerHTML = '✨ AI高精度リサーチ';
         return;
       }
 
-      // 未補完求人（想定月給0万、または魅力・勤務形態が未設定）
-      const targets = applications.filter(a => Number(a.salary) === 0 || !a.attraction || !a.work_style);
+      let targets = [];
+      if (mode === 'overwrite') {
+        targets = applications.filter(a => a.company_name && a.company_name.trim());
+      } else {
+        targets = applications.filter(a => Number(a.salary) === 0 || !a.attraction || !a.work_style);
+      }
+
       if (targets.length === 0) {
-        alert('リサーチが必要な求人（給与0万円など）はありません。すべて完了しています！');
+        alert('リサーチ対象の求人がありません。');
         return;
       }
 
-      if (!confirm(`現在、情報が不足している求人が ${targets.length} 件あります。\nGemini AIによる一括リサーチを開始しますか？\n（途中でボタンを押して中断も可能です）`)) {
+      const modeTitle = (mode === 'overwrite') 
+        ? '【全件最新データで再リサーチ（上書き）】' 
+        : '【未入力の項目のみ補完】';
+
+      if (!confirm(`求人 ${targets.length} 件をGoogle検索連動AIで高精度リサーチします。\n\nモード: ${modeTitle}\n※ Web検索を1社ずつ丁寧に行うため、少々お時間がかかります。\n開始しますか？`)) {
         return;
       }
 
@@ -1714,7 +1797,7 @@
       for (let i = 0; i < targets.length; i++) {
         if (!isBatchResearching) break;
         const item = targets[i];
-        if (btn) btn.innerHTML = `🔄 リサーチ中 (${i + 1}/${targets.length})... [停止]`;
+        if (btn) btn.innerHTML = `🔄 調査中 (${i + 1}/${targets.length})... [停止]`;
 
         try {
           const res = await fetch('/api/career/research', {
@@ -1722,16 +1805,53 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               company_name: item.company_name,
-              job_headline: item.job_headline,
-              job_title: item.job_title
+              job_headline: item.job_headline || '',
+              job_title: item.job_title || '',
+              source: item.source || '',
+              job_url: item.job_url || '',
+              job_notes: item.job_notes || ''
             })
           });
+
           const data = await res.json();
           if (data.success && data.data) {
-            if (data.data.salary && Number(item.salary) === 0) item.salary = data.data.salary;
-            if (data.data.work_style && (!item.work_style || item.work_style === '出社')) item.work_style = data.data.work_style;
-            if (data.data.attraction && !item.attraction) item.attraction = data.data.attraction;
-            if (data.data.job_url && !item.job_url) item.job_url = data.data.job_url;
+            const d = data.data;
+
+            // 月収の反映: mode === 'overwrite' なら実測値を上書き、fill_empty なら 0 の場合のみ
+            if (d.salary > 0) {
+              if (mode === 'overwrite' || Number(item.salary) === 0) {
+                item.salary = d.salary;
+              }
+            }
+
+            // 勤務形態
+            if (d.work_style) {
+              if (mode === 'overwrite' || !item.work_style || item.work_style === '出社') {
+                item.work_style = d.work_style;
+              }
+            }
+
+            // 魅力・志望動機
+            if (d.attraction) {
+              if (mode === 'overwrite' || !item.attraction) {
+                item.attraction = d.attraction;
+              }
+            }
+
+            // 選考メモ
+            if (d.job_notes) {
+              if (mode === 'overwrite') {
+                item.job_notes = d.job_notes;
+              } else if (!item.job_notes) {
+                item.job_notes = d.job_notes;
+              }
+            }
+
+            // 求人URL: 既存が有効な求人リンクなら最優先保護、無効・空なら検索された公式URLを格納
+            if (d.job_url && (!item.job_url || item.job_url.includes('google.com/search'))) {
+              item.job_url = d.job_url;
+            }
+
             item.updated_at = new Date().toISOString();
             successCount++;
             saveData();
@@ -1741,12 +1861,35 @@
           console.warn('Batch research error on:', item.company_name, err);
         }
 
-        await new Promise(r => setTimeout(r, 600));
+        // Web検索負荷を考慮し、1社ごとにウェイト
+        await new Promise(r => setTimeout(r, 700));
       }
 
       isBatchResearching = false;
-      if (btn) btn.innerHTML = '✨ 空欄を一括リサーチ';
-      alert(`🎉 一括リサーチが完了しました！（${successCount} 件の求人情報を補完しました）`);
+      if (btn) btn.innerHTML = '✨ AI高精度リサーチ';
+      alert(`🎉 高精度Webリサーチが完了しました！（${successCount} 件の求人情報を更新しました）`);
+    }
+
+    function resetResearchFields() {
+      closeResearchModal();
+      if (!confirm('登録されている全求人の「想定月収」「魅力・志望理由」「選考メモ」を一旦リセット（クリア）しますか？\n（※ 会社名・応募職種・媒体名・正規の求人URLは保護されます）')) {
+        return;
+      }
+
+      applications.forEach(app => {
+        app.salary = 0;
+        app.attraction = '';
+        app.job_notes = '';
+        // Google検索URLなどの無効URLが入っていた場合はクリア
+        if (app.job_url && app.job_url.includes('google.com/search')) {
+          app.job_url = '';
+        }
+        app.updated_at = new Date().toISOString();
+      });
+
+      saveData();
+      render();
+      alert('🧹 全求人のリサーチ項目（月収・魅力）をリセットしました。\n続けて「✨ AI高精度リサーチ」から最新データの一括取得が可能です！');
     }
 
     function exportData() {
@@ -2653,16 +2796,16 @@
 
       if (!app.company_name || !app.company_name.trim()) {
         alert('⚠️ 企業名を入力してから「✨ リサーチ」を押してください。');
-        const compInput = document.querySelector(`input[data-id="${id}"][data-field="company_name"]`);
+        const compInput = document.querySelector(`textarea[data-id="${id}"][data-field="company_name"], input[data-id="${id}"][data-field="company_name"]`);
         if (compInput) compInput.focus();
         return;
       }
 
       const btn = document.getElementById(`ai-btn-${id}`);
-      const origHtml = btn ? btn.innerHTML : '';
+      const origHtml = btn ? btn.innerHTML : '✨ リサーチ';
       if (btn) {
         btn.classList.add('loading');
-        btn.innerHTML = '🔄 リサーチ中...';
+        btn.innerHTML = '🔄 Web調査中...';
       }
 
       try {
@@ -2672,7 +2815,10 @@
           body: JSON.stringify({
             company_name: app.company_name,
             job_headline: app.job_headline || '',
-            job_title: app.job_title || ''
+            job_title: app.job_title || '',
+            source: app.source || '',
+            job_url: app.job_url || '',
+            job_notes: app.job_notes || ''
           })
         });
 
@@ -2683,26 +2829,26 @@
 
         const data = json.data;
 
-        // 不足情報を賢く補完（既存データがある場合は追記または補完）
+        // Google検索連動による高精度データを反映
         if (data.job_headline && !app.job_headline) {
           app.job_headline = data.job_headline;
         }
         if (data.job_title && !app.job_title) {
           app.job_title = data.job_title;
         }
-        if (data.salary && (!app.salary || app.salary === 0)) {
+        if (data.salary > 0) {
           app.salary = data.salary;
         }
-        if (data.work_style && (!app.work_style || app.work_style === '出社')) {
+        if (data.work_style) {
           app.work_style = data.work_style;
         }
         if (data.attraction) {
-          app.attraction = app.attraction ? `${app.attraction} / ${data.attraction}` : data.attraction;
+          app.attraction = data.attraction;
         }
         if (data.job_notes) {
-          app.job_notes = app.job_notes ? `${app.job_notes}\n${data.job_notes}` : data.job_notes;
+          app.job_notes = data.job_notes;
         }
-        if (data.job_url && !app.job_url) {
+        if (data.job_url && (!app.job_url || app.job_url.includes('google.com/search'))) {
           app.job_url = data.job_url;
         }
 
@@ -2711,7 +2857,7 @@
         saveData();
         render();
 
-        alert(`✨「${app.company_name}」の情報をAIリサーチして補完しました！\n\n・想定月収: ${data.salary || '-'}万円\n・勤務形態: ${data.work_style}\n・魅力: ${data.attraction.substring(0, 50)}...\n・企業URL: ${data.job_url || 'なし'}`);
+        alert(`✨「${app.company_name}」のリアルタイムWeb調査が完了しました！\n\n・想定月収: ${data.salary ? data.salary + '万円' : '要確認'}\n・勤務形態: ${data.work_style}\n・魅力: ${data.attraction}\n・URL: ${app.job_url || 'なし'}`);
       } catch (err) {
         console.error('AI Research Error:', err);
         alert('AIリサーチ失敗: ' + err.message);
