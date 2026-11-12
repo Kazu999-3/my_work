@@ -300,9 +300,12 @@ export default function KtmAdminPage() {
               setSearchQuery={setSearchQuery}
               saving={saving}
               loading={loading}
+              syncingDiscord={sync.syncingDiscord}
               syncingMaintenance={sync.syncingMaintenance}
+              syncData={sync.syncData}
               onAddFestivalAttendance={roster.handleAddFestivalAttendance}
               activeCount={roster.players.filter((p: any) => p.is_active).length}
+              onSyncCheck={sync.handleSyncCheck}
               onSyncAllMaintenance={sync.handleSyncAllMaintenance}
               onForceReset={() => {
                 sync.resetSyncFlags();

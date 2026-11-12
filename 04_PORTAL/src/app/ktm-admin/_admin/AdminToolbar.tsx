@@ -2,14 +2,17 @@
 
 import { Users, RefreshCw, Filter, X, Zap, PartyPopper } from "lucide-react";
 
-// 名簿タブの見出し・検索・自動保存の状態・操作ボタン（お祭り参加+1 / 全員メンテ）
+// 名簿タブの見出し・検索・自動保存の状態・操作ボタン（お祭り参加+1 / Discord & Riot同期 / 全員メンテ）
 export default function AdminToolbar({
   searchQuery,
   setSearchQuery,
   saving,
   loading,
+  syncingDiscord,
   syncingMaintenance,
+  syncData,
   onForceReset,
+  onSyncCheck,
   onSyncAllMaintenance,
   onAddFestivalAttendance,
   activeCount = 0,
@@ -18,8 +21,11 @@ export default function AdminToolbar({
   setSearchQuery: (v: string) => void;
   saving: boolean;
   loading: boolean;
+  syncingDiscord?: boolean;
   syncingMaintenance?: boolean;
+  syncData?: any;
   onForceReset: () => void;
+  onSyncCheck?: () => void;
   onSyncAllMaintenance?: () => void;
   onAddFestivalAttendance?: () => void;
   activeCount?: number;
@@ -83,11 +89,28 @@ export default function AdminToolbar({
           </button>
         )}
 
+        {/* 👤 Discord & Riot同期ボタン */}
+        {onSyncCheck && (
+          <button
+            onClick={onSyncCheck}
+            disabled={syncingDiscord || syncingMaintenance || loading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs shadow-sm cursor-pointer ${
+              syncingDiscord
+                ? 'bg-[#404eed]/50 border-[#404eed]/50 text-faint cursor-not-allowed'
+                : 'bg-[#5865F2]/15 border-[#5865F2]/50 text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
+            }`}
+            title="Discordサーバーの参加者とRiotアカウントの最新情報を照合し、新メンバー追加・退出者同期の差分プレビューを表示します"
+          >
+            <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} />
+            {syncingDiscord && !syncData ? "同期確認中..." : "👤 Discord & Riot同期"}
+          </button>
+        )}
+
         {/* ⚡ 全員メンテボタン */}
         {onSyncAllMaintenance && (
           <button
             onClick={onSyncAllMaintenance}
-            disabled={syncingMaintenance || loading}
+            disabled={syncingMaintenance || syncingDiscord || loading}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs shadow-sm ${
               syncingMaintenance
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-600 cursor-not-allowed'
@@ -101,7 +124,7 @@ export default function AdminToolbar({
         )}
 
         {/* ローディング強制解除ボタン（通信中のみ表示される救済策） */}
-        {(syncingMaintenance || saving) && (
+        {(syncingDiscord || syncingMaintenance || saving) && (
           <button
             onClick={onForceReset}
             className="flex items-center gap-1.5 bg-surface hover:bg-black/5 text-primary-500 border border-primary-edge-soft px-3 py-2 rounded-lg font-bold transition text-xs animate-pulse cursor-pointer"
