@@ -376,6 +376,37 @@ export default function NoteDraftsPage() {
           })}
         </div>
 
+        {/* 🚀 Xスレッド切り替え用クイックピル（スマホで即座に切り替え可能） */}
+        {viewTab === 'thread' && (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 border-t border-zinc-850 pt-2">
+            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Share2 className="w-3 h-3" />
+              <span>スレッド切替:</span>
+            </span>
+            {[
+              { id: 'profile_intro', label: '✨ 自己紹介 (固定/バイオ)' },
+              { id: 'zyra_jg_guide', label: '🌿 ザイラJG' },
+              { id: 'wukong_jg_guide', label: '🐒 ウーコンJG' },
+              { id: 'lillia_jg_guide', label: '🦌 リリアJG' }
+            ].map((t) => {
+              const isSelected = selectedId === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedId(t.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 border ${
+                    isSelected
+                      ? 'bg-sky-500 text-black border-sky-400 font-black shadow-md'
+                      : 'bg-zinc-900 text-zinc-300 hover:text-white border-zinc-700'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           {/* ドロップダウン式記事セレクター */}
           <select
@@ -383,11 +414,14 @@ export default function NoteDraftsPage() {
             onChange={(e) => setSelectedId(e.target.value)}
             className="flex-1 bg-zinc-900 border border-zinc-700 text-xs font-bold text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 cursor-pointer truncate"
           >
-            {filteredDrafts.map((d) => (
-              <option key={d.id} value={d.id}>
-                {publishMap[d.id]?.isPublished ? '✓ ' : ''}{d.title} ({d.charCount.toLocaleString()}字)
-              </option>
-            ))}
+            {filteredDrafts.map((d) => {
+              const hasThread = !!threadsMap[d.id];
+              return (
+                <option key={d.id} value={d.id}>
+                  {hasThread ? '📱 ' : ''}{publishMap[d.id]?.isPublished ? '✓ ' : ''}{d.title} ({d.charCount.toLocaleString()}字)
+                </option>
+              );
+            })}
           </select>
 
           {/* 全文コピーボタン */}
@@ -543,58 +577,91 @@ export default function NoteDraftsPage() {
             </div>
 
             {/* 📖 本文プレビュー / 📱 Xスレッド 切替タブ */}
-            <div className="flex items-center justify-between gap-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl p-2">
-              <div className="flex items-center gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
-                <button
-                  onClick={() => setViewTab('article')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    viewTab === 'article'
-                      ? 'bg-amber-500 text-black shadow font-black'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>note本文</span>
-                </button>
-                <button
-                  onClick={() => setViewTab('thread')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer relative ${
-                    viewTab === 'thread'
-                      ? 'bg-sky-500 text-white shadow font-black'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>X拡散スレッド</span>
-                  {currentThread && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-sky-400/30 text-sky-200 text-[10px] font-mono font-bold">
-                      {currentThread.posts.length}
-                    </span>
-                  )}
-                </button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl p-2">
+                <div className="flex items-center gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
+                  <button
+                    onClick={() => setViewTab('article')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      viewTab === 'article'
+                        ? 'bg-amber-500 text-black shadow font-black'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>note本文</span>
+                  </button>
+                  <button
+                    onClick={() => setViewTab('thread')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer relative ${
+                      viewTab === 'thread'
+                        ? 'bg-sky-500 text-white shadow font-black'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>X拡散スレッド</span>
+                    {currentThread && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-sky-400/30 text-sky-200 text-[10px] font-mono font-bold">
+                        {currentThread.posts.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {viewTab === 'thread' && currentThread && (
+                  <button
+                    onClick={handleCopyAllThread}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+                      copiedAllThread
+                        ? 'bg-emerald-600 border-emerald-500 text-white'
+                        : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
+                    }`}
+                  >
+                    {copiedAllThread ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>全ポストコピー済！</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>全ポスト一括コピー</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
-              {viewTab === 'thread' && currentThread && (
-                <button
-                  onClick={handleCopyAllThread}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
-                    copiedAllThread
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
-                      : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
-                  }`}
-                >
-                  {copiedAllThread ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-white" />
-                      <span>全ポストコピー済！</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>全ポスト一括コピー</span>
-                    </>
-                  )}
-                </button>
+              {/* 🚀 Xスレッド一覧ナビゲーションバー（どの画面サイズでも常時即時切り替え可能） */}
+              {viewTab === 'thread' && (
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-2 bg-sky-950/20 border border-sky-900/40 rounded-xl">
+                  <span className="text-[11px] font-bold text-sky-400 uppercase tracking-wider shrink-0 flex items-center gap-1 px-1">
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>スレッド選択:</span>
+                  </span>
+                  {[
+                    { id: 'profile_intro', label: '✨ 自己紹介 (固定/バイオ)' },
+                    { id: 'zyra_jg_guide', label: '🌿 ザイラJG' },
+                    { id: 'wukong_jg_guide', label: '🐒 ウーコンJG' },
+                    { id: 'lillia_jg_guide', label: '🦌 リリアJG' }
+                  ].map((t) => {
+                    const isSelected = selectedId === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setSelectedId(t.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0 border shadow-sm ${
+                          isSelected
+                            ? 'bg-sky-500 text-black border-sky-400 font-black scale-105'
+                            : 'bg-zinc-900/90 text-zinc-300 hover:text-white border-zinc-750 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
@@ -1184,7 +1251,7 @@ export default function NoteDraftsPage() {
               </div>
             </>
           ) : (
-            <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-8 sm:p-12 text-center space-y-3">
+            <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-8 sm:p-12 text-center space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
                 <Share2 className="w-6 h-6 text-sky-400/60" />
               </div>
@@ -1192,8 +1259,24 @@ export default function NoteDraftsPage() {
                 このドラフトのXスレッドはまだ作成されていません
               </h3>
               <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
-                左の一覧から「ザイラJG低ランク脱出完全攻略」を選択すると、作成済みのX拡散スレッドを確認・コピーできます。
+                以下のボタンをタップすると、作成済みのX拡散スレッド（自己紹介・ザイラ・ウーコン・リリア）を即座に確認・コピーできます。
               </p>
+              <div className="flex flex-wrap justify-center gap-2 pt-2">
+                {[
+                  { id: 'profile_intro', label: '✨ 自己紹介 (固定/バイオ)' },
+                  { id: 'zyra_jg_guide', label: '🌿 ザイラJG' },
+                  { id: 'wukong_jg_guide', label: '🐒 ウーコンJG' },
+                  { id: 'lillia_jg_guide', label: '🦌 リリアJG' }
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedId(t.id)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/50 transition cursor-pointer shadow-sm"
+                  >
+                    {t.label} を開く
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
