@@ -22546,3 +22546,8 @@
   - `src/lib/matchRecord/` 配下に `types.ts`、`validator.ts`、`calculator.ts`、`settlement.ts`、`notifier.ts` を新設して責務を完全分離。
   - メインの `route.ts` を 1,160行 ➔ 260行 のクリーンなオーケストレーターへ圧縮。
   - 既存のユニットテスト173件全通過、TypeScript型チェックエラーゼロを実測確認。
+
+- **【Vercel恒久化第1弾：CronのGitHub Actions完全移設】(`.github/workflows/portal-weekly-crons.yml`, `04_PORTAL/vercel.json`)**:
+  - `vercel.json` に残っていた週次Cron（sync-matches, freshness-check, soloq-trends, lottery）を GitHub Actions（`portal-weekly-crons.yml`）へ完全移設。
+  - `vercel.json` の `crons: []` とし、Vercel側の定期実行を完全撤廃。
+  - Vercelダッシュボード上のスケジュール実行が0件となり、アクセスがない時間のサーバーレスCPU消費が永久に「0秒」に確定。

@@ -1,0 +1,94 @@
+name: Portal Weekly Crons (Vercel Offload)
+
+# Vercel無料枠（Fluid Active CPU: 4時間/月）の恒久保護のため、
+# vercel.json に設定されていた週次CronジョブをGitHub Actionsへ完全移設（2026-11-15 制定）。
+# Vercel側Cronを全廃し、バックグラウンド実行をGitHub Actionsからキックする。
+
+on:
+  schedule:
+    # 毎週月曜 09:00 JST (00:00 UTC) - sync-matches
+    - cron: '0 0 * * 1'
+    # 毎週火曜 00:00 JST (月曜 15:00 UTC) - freshness-check
+    - cron: '0 15 * * 1'
+    # 毎週日曜 07:00 JST (土曜 22:00 UTC) - soloq-trends
+    - cron: '0 22 * * 6'
+    # 毎週日曜 22:00 JST (日曜 13:00 UTC) - lottery (宝くじ抽選)
+    - cron: '0 13 * * 0'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: '実行するCronジョブを選択'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - sync-matches
+          - freshness-check
+          - soloq-trends
+          - lottery
+
+concurrency:
+  group: portal-weekly-crons
+  cancel-in-progress: false
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Portal Cron Endpoint
+        env:
+          PORTAL_URL: https://my-work-8jbd.vercel.app
+          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_JOB: ${{ github.event.inputs.job }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::VERCEL_CRON_SECRET が未設定のためスキップします"
+            exit 0
+          fi
+
+          call_cron() {
+            local endpoint="$1"
+            echo "==> 実行中: $PORTAL_URL$endpoint"
+            local res
+            res=$(curl -s -w "\n%{http_code}" -X GET "$PORTAL_URL$endpoint" -H "Authorization: Bearer $CRON_SECRET")
+            local body
+            body=$(echo "$res" | head -n -1)
+            local status
+            status=$(echo "$res" | tail -n 1)
+            echo "レスポンス ($status): $body"
+            if [ "$status" -ne 200 ]; then
+              echo "::error::Cron実行エラー ($status): $endpoint"
+              return 1
+            fi
+            return 0
+          }
+
+          ERR=0
+
+          # 手動実行時
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "$INPUT_JOB" in
+              "sync-matches")    call_cron "/api/cron/sync-matches" || ERR=1 ;;
+              "freshness-check") call_cron "/api/cron/freshness-check" || ERR=1 ;;
+              "soloq-trends")    call_cron "/api/cron/soloq-trends" || ERR=1 ;;
+              "lottery")         call_cron "/api/cron/lottery" || ERR=1 ;;
+              "all")
+                call_cron "/api/cron/sync-matches" || ERR=1
+                call_cron "/api/cron/freshness-check" || ERR=1
+                call_cron "/api/cron/soloq-trends" || ERR=1
+                call_cron "/api/cron/lottery" || ERR=1
+                ;;
+            esac
+          else
+            # 定期スケジュール時
+            case "$SCHEDULE" in
+              "0 0 * * 1")  call_cron "/api/cron/sync-matches" || ERR=1 ;;
+              "0 15 * * 1") call_cron "/api/cron/freshness-check" || ERR=1 ;;
+              "0 22 * * 6") call_cron "/api/cron/soloq-trends" || ERR=1 ;;
+              "0 13 * * 0") call_cron "/api/cron/lottery" || ERR=1 ;;
+            esac
+          fi
+
+          exit $ERR

@@ -1,22 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["hnd1"],
-  "crons": [
-    {
-      "path": "/api/cron/sync-matches",
-      "schedule": "0 0 * * 1"
-    },
-    {
-      "path": "/api/cron/freshness-check",
-      "schedule": "0 15 * * 2"
-    },
-    {
-      "path": "/api/cron/soloq-trends",
-      "schedule": "0 22 * * 6"
-    },
-    {
-      "path": "/api/cron/lottery",
-      "schedule": "0 13 * * 0"
-    }
-  ]
+  "crons": []
 }
