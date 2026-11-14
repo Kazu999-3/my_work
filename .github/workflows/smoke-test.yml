@@ -10,8 +10,9 @@ name: Production Smoke Test
 #   Fluid Active CPU（月4時間）を圧迫していた（10/18 に使い切りの通知）。デプロイごとの実行はやめた。
 
 on:
-  schedule:
-    - cron: '10 21 * * *'   # 毎日 UTC21:10 = JST 06:10
+  # 2026-11-15: Vercel Fluid Active CPU 90%到達に伴う緊急延命のため、定期実行を一時休止（手動実行のみ有効化）
+  # schedule:
+  #   - cron: '10 21 * * *'   # 毎日 UTC21:10 = JST 06:10
   workflow_dispatch:
 
 permissions:

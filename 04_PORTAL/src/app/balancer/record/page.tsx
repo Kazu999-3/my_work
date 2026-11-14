@@ -104,6 +104,8 @@ function CustomRecordPageContent() {
   // 18分未満の敗北の MMR 減少緩和に使う（2026-10-16 追加。それまで未送信で緩和が一度も効いていなかった）。
   const [durationText, setDurationText] = useState('');
   const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
+  // 🏁 最終戦フラグ（保存時にDiscord VCステータスをインターバルではなくクリアする）
+  const [isFinalMatch, setIsFinalMatch] = useState(false);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const championsListRef = useRef(championsList);
   // 画像解析の非同期処理から最新の一覧を読むための参照。描画中に ref を書き換えない（react-hooks/refs）
@@ -691,6 +693,7 @@ function CustomRecordPageContent() {
           winningTeam,
           gameDuration: parseDurationText(durationText), // 秒。未入力・不正なら送らない（緩和なし）
           isExhibition: false, // 通常カスタムとして記録
+          isFinalMatch, // 🏁 最終戦フラグ（VCステータスクリア）
           balanceSatisfaction, // チーム分けの満足度（管理者が入力時に記録）
           riotMatchId: null, // 手動入力のため常にnull
           adminPassword: 'ktm', // API側で検証を無効化したため、デフォルト値を設定
@@ -1047,6 +1050,19 @@ function CustomRecordPageContent() {
                   </span>
                 )}
               </div>
+            </label>
+
+            {/* 🏁 最終戦チェックボックス（解散時にVCステータスを自動クリア） */}
+            <label className="flex items-center gap-2 cursor-pointer select-none bg-black/3 hover:bg-black/5 px-3 py-2 rounded-lg border border-border transition">
+              <input
+                type="checkbox"
+                checked={isFinalMatch}
+                onChange={(e) => setIsFinalMatch(e.target.checked)}
+                className="w-4 h-4 rounded text-secondary-600 focus:ring-secondary-500 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-foreground">
+                🏁 本日の最終戦（解散するためVCステータスをクリア）
+              </span>
             </label>
 
             <button

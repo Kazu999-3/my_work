@@ -9,6 +9,7 @@
 - 実装ワークフロー（自動デプロイフロー）: [05_implementation_workflow.md](file:///d:/my_work/.agent/rules/05_implementation_workflow.md)
 - セキュリティ・破壊操作縛り: [03_security_rules.md](file:///d:/my_work/.agent/rules/03_security_rules.md)
 - ハルシネーション防止＆知識カットオフ対策: [04_hallucination_prevention.md](file:///d:/my_work/.agent/rules/04_hallucination_prevention.md)
+- コードの臭い排除＆完成の定義（DoD）: [06_code_smells_and_dod.md](file:///d:/my_work/.agent/rules/06_code_smells_and_dod.md)
 
 ## 👑 行動原則
 1. **日本語完全対応**: 全ての応答・解説・ログ・コミットメッセージは日本語で行う。

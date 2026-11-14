@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     // ==================================
 
     const body = await request.json();
-    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition, dry_run } = body;
+    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition, isFinalMatch, dry_run } = body;
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
@@ -1140,10 +1140,11 @@ export async function POST(request: Request) {
     }
 
 
-    // 🔊 Discord VCチャンネル名を「インターバル・交代募集中」に自動更新
+    // 🔊 Discord VCステータスを更新（最終戦ならクリア、通常なら「インターバル・交代募集中」）
     try {
       const { updateCustomVoiceChannelStatus } = await import('../../../../lib/discordNotify');
-      await updateCustomVoiceChannelStatus('インターバル・交代募集中');
+      const targetStatus = isFinalMatch ? '' : 'インターバル・交代募集中';
+      await updateCustomVoiceChannelStatus(targetStatus);
     } catch (vcErr) {
       console.warn('[match/record] VC名更新エラー（続行）:', vcErr);
     }
