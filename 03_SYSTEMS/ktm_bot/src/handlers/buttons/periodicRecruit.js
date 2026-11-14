@@ -144,7 +144,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           // かずき（CONFIG.ADMIN_ID）へのメンション付きで個別案内チャットへ送信
           await fetchPortalAPI(env, '/api/bot/member-channel-message', {
             discordId: userId,
-            content: `<@${CONFIG.ADMIN_ID}> 📢 **【カスタム参加サポート：レーン変更希望】**\n<@${userId}> （${name}）さんが ${dayLabel} への参加にあたり、**「🔄 希望レーンの変更」** を希望されています。\n（※格上メンバーとの対面を避けるための調整です）\n現在の希望: **【${laneStr}】**\n変更したいレーンがあれば、この個別チャットでお気軽に教えてください！運営（<@${CONFIG.ADMIN_ID}>）が調整します。`
+            content: `<@${CONFIG.ADMIN_ID}> 📢 **【カスタム参加サポート：格上のレーン変更希望】**\n<@${userId}> （${name}）さんが ${dayLabel} への参加にあたり、**「🔄 格上の人の希望レーンを変更させたい」** を希望されています。\n（※本人が希望レーンで安心して対戦できるよう、格上メンバーに別レーンやオフロールへ回ってもらう調整です）\n本人の希望レーン: **【${laneStr}】**\n運営（<@${CONFIG.ADMIN_ID}>）側で格上メンバーへのお声がけやレーン調整を行います！`
           });
         } catch (err) {
           console.warn('higher_risk change_lane error:', err);
@@ -154,7 +154,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
       return Response.json({
         type: 7, // メッセージ更新
         data: {
-          content: `✅ **【受付完了】個別案内チャットへ送信しました！**\n個別案内チャット（\`🔒・案内\`）にて管理者（かずき）へメンション付きでお知らせしました。\nそちらのチャットで変更したい希望レーンを教えてください！運営が調整します。`,
+          content: `✅ **【受付完了】個別案内チャットへ送信しました！**\n個別案内チャット（\`🔒・案内\`）にて管理者（かずき）へメンション付きでお知らせしました。\nあなたが希望レーンで安心してプレイできるよう、格上の方への別レーン変更・調整を運営側で進めます！`,
           components: []
         }
       });
@@ -386,7 +386,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
                             type: 2, // BUTTON
                             style: 1, // PRIMARY
                             custom_id: `higher_risk:${userId}:${dayKey}:change_lane`,
-                            label: '🔄 希望レーンを変更したい'
+                            label: '🔄 格上の人を希望レーンから変更させたい'
                           },
                           {
                             type: 2, // BUTTON

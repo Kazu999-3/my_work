@@ -16,7 +16,7 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ★ スティッキー下部クイックアクションバー
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function QuickActionBar({ balancing, balanceResult, setShowResultModal, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, canBalance }: {
+export default function QuickActionBar({ balancing, balanceResult, setShowResultModal, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, canBalance, onOpenResultModal }: {
   balancing: boolean;
   balanceResult: any;
   setShowResultModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -25,6 +25,7 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
   activeCount: number;
   spectatorCount: number;
   canBalance: boolean;
+  onOpenResultModal?: () => void;
 }) {
   return (
         <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/95 text-foreground backdrop-blur-md border border-border rounded-2xl p-2.5 px-3 sm:p-3 sm:px-5 shadow-2xl flex items-center justify-between gap-2 sm:gap-4">
@@ -46,7 +47,7 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {balanceResult && (
               <button
-                onClick={() => setShowResultModal(true)}
+                onClick={onOpenResultModal || (() => setShowResultModal(true))}
                 className="px-3 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs border border-border transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Globe className="w-3.5 h-3.5 text-primary-600" /> <span className="hidden sm:inline">結果表示</span>
