@@ -325,7 +325,7 @@ export async function sendToMemberChannel(
         content: [`<@${discordId}>`, payload.content].filter(Boolean).join('\n'),
         embeds: payload.embeds,
         components: payload.components,
-        allowed_mentions: { users: [discordId] },
+        allowed_mentions: { users: [discordId, SERVER_ADMIN_USER_ID] },
       }),
     });
     if (!res.ok) console.warn(`[onboardingChannels] 個別案内チャンネルへの送信に失敗 (${res.status})`);

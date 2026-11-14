@@ -107,6 +107,98 @@ async function refreshEntryLines(env, lines, def) {
 
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
 export async function handlePeriodicRecruitButtons(interaction, env, ctx, { customId, userId, appId, token, botToken }) {
+  // ── 【格上対面リスク：3つのアクションボタン処理】 ──────────────────
+  if (customId.startsWith('higher_risk:')) {
+    // customId: higher_risk:targetUserId:dayKey:action
+    const parts = customId.split(':');
+    const targetUserId = parts[1];
+    const dayKey = parts[2] || 'sat';
+    const action = parts[3];
+
+    if (userId !== targetUserId) {
+      return Response.json({
+        type: 4,
+        data: {
+          content: "⚠️ この操作はエントリーしたご本人のみ実行できます。",
+          flags: 64
+        }
+      });
+    }
+
+    const { fetchPortalAPI } = await import('../../utils/api.js');
+
+    if (action === 'change_lane') {
+      ctx.waitUntil((async () => {
+        try {
+          const rows = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=name,role_preferences`).catch(() => []);
+          const p = rows && rows[0];
+          const name = p?.name || interaction.member?.nick || interaction.user?.username || 'メンバー';
+          let laneStr = 'ALL';
+          try {
+            const pref = typeof p?.role_preferences === 'string' ? JSON.parse(p.role_preferences) : p?.role_preferences;
+            if (pref?.primary) laneStr = pref.primary + (pref.secondary && pref.secondary !== '-' ? ` / ${pref.secondary}` : '');
+          } catch {}
+
+          const dayLabel = dayKey === 'sun' ? '日曜お祭りカスタム' : '土曜実力均等カスタム';
+
+          // かずき（CONFIG.ADMIN_ID）へのメンション付きで個別案内チャットへ送信
+          await fetchPortalAPI(env, '/api/bot/member-channel-message', {
+            discordId: userId,
+            content: `<@${CONFIG.ADMIN_ID}> 📢 **【カスタム参加サポート：レーン変更希望】**\n<@${userId}> （${name}）さんが ${dayLabel} への参加にあたり、**「🔄 希望レーンの変更」** を希望されています。\n（※格上メンバーとの対面を避けるための調整です）\n現在の希望: **【${laneStr}】**\n変更したいレーンがあれば、この個別チャットでお気軽に教えてください！運営（<@${CONFIG.ADMIN_ID}>）が調整します。`
+          });
+        } catch (err) {
+          console.warn('higher_risk change_lane error:', err);
+        }
+      })());
+
+      return Response.json({
+        type: 7, // メッセージ更新
+        data: {
+          content: `✅ **【受付完了】個別案内チャットへ送信しました！**\n個別案内チャット（\`🔒・案内\`）にて管理者（かずき）へメンション付きでお知らせしました。\nそちらのチャットで変更したい希望レーンを教えてください！運営が調整します。`,
+          components: []
+        }
+      });
+    }
+
+    if (action === 'recruit_others') {
+      ctx.waitUntil((async () => {
+        try {
+          const rows = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=name,mmr,highest_rank`).catch(() => []);
+          const p = rows && rows[0];
+          const name = p?.name || interaction.member?.nick || interaction.user?.username || 'メンバー';
+          const rank = p?.highest_rank || 'UNRANKED';
+          const dayLabel = dayKey === 'sun' ? '日曜お祭りカスタム' : '土曜実力均等カスタム';
+
+          // かずき（CONFIG.ADMIN_ID）へのメンション付きで個別案内チャットへ送信
+          await fetchPortalAPI(env, '/api/bot/member-channel-message', {
+            discordId: userId,
+            content: `<@${CONFIG.ADMIN_ID}> 📢 **【カスタム参加サポート：同格メンバー招集希望】**\n<@${userId}> （${name} / ${rank}）さんが ${dayLabel} への参加にあたり、**「📢 近いレート帯のメンバー招集」** を希望されています。\n（※安心して参加できるよう、近い実力の仲間を求めています）\n運営（<@${CONFIG.ADMIN_ID}>）側で同レート帯メンバーへのお声がけや募集調整を行います！`
+          });
+        } catch (err) {
+          console.warn('higher_risk recruit_others error:', err);
+        }
+      })());
+
+      return Response.json({
+        type: 7, // メッセージ更新
+        data: {
+          content: `✅ **【受付完了】個別案内チャットへ送信しました！**\n個別案内チャット（\`🔒・案内\`）にて管理者（かずき）へメンション付きでお知らせしました。\n同レート帯メンバーへのお声がけや募集調整を進めますので、そのままご参加ください！`,
+          components: []
+        }
+      });
+    }
+
+    if (action === 'accept_challenge') {
+      return Response.json({
+        type: 7, // メッセージ更新
+        data: {
+          content: `🔥 **【ナイスファイト！】**\n今回は格上との対戦も考慮してチーム分けを調整します。思い切って挑んでみてください！応援しています！\n*(※常に格上挑戦をOKにしたい場合は、ポータルのマイページから「⚔️挑戦したい」に変更も可能です)*`,
+          components: []
+        }
+      });
+    }
+  }
+
   if (customId.startsWith('join_periodic')) {
     // join_periodic_auto:style   : 土曜・本戦カスタム
     // join_periodic_sunday:style : 日曜・お祭りカスタム

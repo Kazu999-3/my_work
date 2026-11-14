@@ -367,36 +367,47 @@ export async function sendDiscordDirectMessage(
 }
 
 /**
- * カスタムの試合進行状況に合わせて、指定のボイスチャットチャンネル名を自動更新する
+ * カスタムの試合進行状況に合わせて、ボイスチャット（TEAM-BLUE / RED）のボイスステータス（吹き出し）を自動更新する
  * （例: 「１戦目進行中・交代歓迎」「インターバル・交代募集中」など）
  */
 export async function updateCustomVoiceChannelStatus(statusText: string): Promise<boolean> {
   const botToken = process.env.DISCORD_BOT_TOKEN;
-  const channelId = process.env.DISCORD_CUSTOM_STATUS_VC_ID || '1548675524086472796';
+  const configuredVc = process.env.DISCORD_CUSTOM_STATUS_VC_ID || process.env.DISCORD_CUSTOM_VC_ID;
+  const targetChannelIds = configuredVc
+    ? [configuredVc]
+    : ['1485636150725972104', '1487066156547444737'];
 
-  if (!botToken || !channelId) {
-    console.warn('[discordNotify] Cannot update VC channel: DISCORD_BOT_TOKEN or channelId not set');
+  if (!botToken || targetChannelIds.length === 0) {
+    console.warn('[discordNotify] Cannot update VC voice-status: DISCORD_BOT_TOKEN not set');
     return false;
   }
 
   try {
-    const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: statusText }),
-    });
+    const results = await Promise.all(
+      targetChannelIds.map(async (channelId) => {
+        try {
+          const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/voice-status`, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bot ${botToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: statusText }),
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      })
+    );
 
-    if (res.ok) {
-      console.log(`[discordNotify] VC channel name updated to: "${statusText}"`);
-      return true;
+    const success = results.some(Boolean);
+    if (success) {
+      console.log(`[discordNotify] VC voice-status updated to: "${statusText}"`);
     } else {
-      const errText = await res.text();
-      console.warn(`[discordNotify] Failed to update VC channel name (${res.status}):`, errText);
-      return false;
+      console.warn(`[discordNotify] Failed to update VC voice-status to: "${statusText}"`);
     }
+    return success;
   } catch (err) {
     console.warn('[discordNotify] Exception during updateCustomVoiceChannelStatus:', err);
     return false;
