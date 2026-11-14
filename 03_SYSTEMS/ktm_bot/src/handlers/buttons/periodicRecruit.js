@@ -353,7 +353,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             }
           }).catch((e) => console.warn('Activity log error:', e));
 
-          // ⚠️ 格上対面リスクの事前警告（本人限定エフェメラル通知）
+          // ⚠️ 格上対面リスクの事前警告（本人限定エフェメラル通知 ＆ 3つのアクション提案）
           if (activityAction === 'JOIN' && playerRow && playerRow.allow_higher === false) {
             try {
               const myMmr = getHighestLaneMmr(playerRow) || playerRow.mmr || 1200;
@@ -373,12 +373,36 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
                   return oppMmr - myMmr >= 200;
                 });
 
-                if (higherOpponents.length >= 2) {
+                if (higherOpponents.length >= 1) {
                   const oppSample = higherOpponents.slice(0, 3).map(o => o.name).join('さん、') + 'さん';
                   await sendInteractionFollowup(appId, token, {
-                    // 2026-10-17: 全員出場が基本になり観戦枠へ回すことは無くなったため、保護される旨の案内に変更
-                    content: `🛡️ **【格上との対面について】**\n今回のエントリーには、あなたよりMMRが大きく上の方（${oppSample} 等）がいます。\nあなたの設定は **「🛡️守ってほしい」** なので、チーム分けではなるべくMMRの近い人とレーンで当たるように調整します。\n（格上とも戦ってみたい場合は、マイページの「格上との対面」を「⚔️挑戦したい」に変えられます）`,
-                    flags: 64
+                    content: `🛡️ **【格上との対面に関する確認】**\n現在エントリーしているメンバーの中に、あなたよりMMRが大きく上の方（${oppSample} 等）がいます。\nあなたの設定は **「🛡️守ってほしい（格上対面NG）」** になっています。\n\nより安心してカスタムを楽しめるよう、以下の対応が可能です。ご希望の対応を選んでください：`,
+                    flags: 64,
+                    components: [
+                      {
+                        type: 1, // ACTION_ROW
+                        components: [
+                          {
+                            type: 2, // BUTTON
+                            style: 1, // PRIMARY
+                            custom_id: `higher_risk:${userId}:${dayKey}:change_lane`,
+                            label: '🔄 希望レーンを変更したい'
+                          },
+                          {
+                            type: 2, // BUTTON
+                            style: 2, // SECONDARY
+                            custom_id: `higher_risk:${userId}:${dayKey}:recruit_others`,
+                            label: '📢 他のメンバーを招集してほしい'
+                          },
+                          {
+                            type: 2, // BUTTON
+                            style: 3, // SUCCESS
+                            custom_id: `higher_risk:${userId}:${dayKey}:accept_challenge`,
+                            label: '⚔️ 挑戦してみたい'
+                          }
+                        ]
+                      }
+                    ]
                   }).catch(e => console.warn('Followup warn error:', e));
                 }
               }
