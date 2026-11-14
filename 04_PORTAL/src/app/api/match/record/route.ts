@@ -93,14 +93,40 @@ export async function POST(request: Request) {
     }
 
     // 1. データベースから全参加者の最新ステータスを取得
-    const { data: dbPlayers, error: pError } = await supabase
+    const { data: rawDbPlayers, error: pError } = await supabase
       .from('ktm_players')
       .select('*')
       .in('name', names);
 
-    if (pError || !dbPlayers || dbPlayers.length !== 10) {
-      return NextResponse.json({ error: '一部のプレイヤー情報がDBから見つかりません。' }, { status: 500 });
+    if (pError || !rawDbPlayers) {
+      return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
     }
+
+    // 同名プレイヤーが複数存在する場合（別アカウント・カジノ重複等）の解決：
+    // 各プレイヤー名につき、試合数が多いアクティブな本アカウントを優先して1件に絞る
+    const playerByName = new Map<string, any>();
+    for (const p of rawDbPlayers) {
+      const existing = playerByName.get(p.name);
+      if (!existing) {
+        playerByName.set(p.name, p);
+      } else {
+        const existingGames = (existing.games_top || 0) + (existing.games_jg || 0) + (existing.games_mid || 0) + (existing.games_adc || 0) + (existing.games_sup || 0);
+        const pGames = (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
+        if (pGames > existingGames) {
+          playerByName.set(p.name, p);
+        }
+      }
+    }
+
+    // 10人全員がDBに存在するかチェック
+    const missingNames = names.filter((n: string) => !playerByName.has(n));
+    if (missingNames.length > 0) {
+      return NextResponse.json({
+        error: `一部のプレイヤー情報がDBから見つかりません: ${missingNames.join(', ')}`
+      }, { status: 400 });
+    }
+
+    const dbPlayers = names.map((n: string) => playerByName.get(n)!);
 
     // 2. 過去の勝率・試合数を取得 (Supabaseのktm_match_participants等から)
     // 簡易的に全試合履歴をフェッチして集計（パフォーマンス問題があれば後日Viewや集計テーブルに移行）
