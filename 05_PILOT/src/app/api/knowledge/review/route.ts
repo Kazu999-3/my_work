@@ -653,6 +653,172 @@ export async function POST(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────
+    // 0-B. オートパス（条件合致の良質記事の一括自動承認）
+    // ──────────────────────────────────────────
+    if (action === 'auto_pass') {
+      const minLength = typeof body.minLength === 'number' ? Math.max(300, body.minLength) : 800;
+      const batchLimit = typeof body.limit === 'number' ? Math.min(100, Math.max(1, body.limit)) : 30;
+      const isDryRun = body.dryRun === true;
+
+      // 1. pending の記事を取得（最大1000件走査）
+      const { data: pendingRows, error: fetchErr } = await db
+        .from('personal_knowledge')
+        .select('id, title, content, raw_content, champion, tags, source_url, reanalysis_of, is_atomic')
+        .eq('review_status', 'pending')
+        .order('id', { ascending: false })
+        .limit(1000);
+
+      if (fetchErr) throw fetchErr;
+
+      // 2. 安全基準でフィルタリング（単一チャンプ特定 & 濃厚 & 複数タグなし）
+      const eligibleRows: any[] = [];
+      for (const row of pendingRows || []) {
+        if (!row || (row.tags || []).some((t: string) => SUPERSEDED_TAGS.includes(t))) continue;
+        if (row.is_atomic) continue;
+        const tags = Array.isArray(row.tags) ? row.tags : [];
+        if (tags.includes('複数チャンピオン') || tags.includes('ティアリスト')) continue;
+
+        const rawChamp = String(row.champion || '').trim();
+        const upper = rawChamp.toUpperCase();
+        if (!rawChamp || ['UNKNOWN', 'NONE', 'NULL', 'なし', '未設定', '全般', '共通', '未指定'].includes(upper)) continue;
+        if (rawChamp.includes(',') || rawChamp.includes('、') || rawChamp.includes('/')) continue;
+
+        const resolved = await resolveRosterChampion(rawChamp);
+        if (!resolved) continue;
+
+        const textLen = (row.content || row.raw_content || '').trim().length;
+        if (textLen < minLength) continue;
+
+        eligibleRows.push({ ...row, resolvedChampion: resolved });
+      }
+
+      const totalEligible = eligibleRows.length;
+
+      if (isDryRun) {
+        return NextResponse.json({
+          success: true,
+          dryRun: true,
+          totalEligible,
+          sample: eligibleRows.slice(0, 5).map((r) => ({
+            id: r.id,
+            title: r.title,
+            champion: r.resolvedChampion,
+            length: (r.content || '').length,
+          })),
+        });
+      }
+
+      if (totalEligible === 0) {
+        return NextResponse.json({
+          success: true,
+          processedCount: 0,
+          remainingCount: 0,
+          message: 'オートパスの条件を満たす記事はありませんでした',
+        });
+      }
+
+      // バッチ上限件数だけ承認実行
+      const targetBatch = eligibleRows.slice(0, batchLimit);
+      const targetIds = targetBatch.map((r) => r.id);
+
+      // 承認ステータスへ更新
+      const { data: updatedRows, error: upErr } = await db
+        .from('personal_knowledge')
+        .update({ review_status: 'approved' })
+        .in('id', targetIds)
+        .select('id, title, content, raw_content, champion, tags, source_url, reanalysis_of');
+
+      if (upErr) throw upErr;
+      const approvedRows = updatedRows || [];
+
+      // 再解析版の場合は旧版を履歴化
+      const supersededRoots = approvedRows.map((r: any) => r.reanalysis_of).filter((v: any) => v != null);
+      if (supersededRoots.length > 0) {
+        const approvedIds = approvedRows.map((r: any) => r.id);
+        const { data: olds } = await db
+          .from('personal_knowledge')
+          .select('id, tags')
+          .or(`id.in.(${supersededRoots.join(',')}),reanalysis_of.in.(${supersededRoots.join(',')})`);
+        for (const o of olds || []) {
+          if (approvedIds.includes(o.id)) continue;
+          await db.from('personal_knowledge').update({ tags: withTags(o.tags, SUPERSEDED_TAGS) }).eq('id', o.id);
+        }
+      }
+
+      // トラックA: チャンピオン教本統合
+      const champResult = await integrateArticles(db, approvedRows);
+
+      // トラックB, C, D を並行実行
+      const factTasks = approvedRows.map(async (row) => {
+        try {
+          const champList = await resolveRosterChampions(row.champion);
+          const articleText = row.content || row.raw_content || '';
+          if (champList.length > 0 && articleText.length >= 100) {
+            for (const champId of champList) {
+              await executeChampionFactsMerge(db, champId, row.title || '(無題)', articleText, row.id);
+            }
+          }
+        } catch {}
+      });
+
+      const laneTasks = approvedRows.map(async (row) => {
+        try {
+          const detection = await detectArticleLane({
+            title: row.title,
+            content: row.content,
+            tags: row.tags,
+            champion: row.champion,
+          });
+          if (detection.isLaneMacro) {
+            await mergeArticleToLaneGuide(db, detection.lane, row);
+          }
+        } catch {}
+      });
+
+      const matchupTasks = approvedRows.map(async (row) => {
+        try {
+          const champList = await resolveRosterChampions(row.champion);
+          const myChamp = champList[0];
+          if (!myChamp) return;
+          const detection = await detectArticleMatchup({
+            title: row.title,
+            content: row.content,
+            tags: row.tags,
+            champion: myChamp,
+          });
+          if (detection.isMatchup && detection.enemyChampion) {
+            const lane = (await detectArticleLane({ title: row.title, content: row.content, champion: myChamp })).lane;
+            await integrateMatchupArticle({
+              myChampion: myChamp,
+              enemyChampion: detection.enemyChampion,
+              title: row.title || '(無題)',
+              content: row.content || '',
+              lane,
+              sourceUrl: row.source_url,
+            });
+          }
+        } catch {}
+      });
+
+      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2000));
+      await Promise.race([
+        Promise.allSettled([...factTasks, ...laneTasks, ...matchupTasks]),
+        timeoutPromise,
+      ]);
+
+      invalidateReviewCache();
+
+      const remainingCount = totalEligible - targetBatch.length;
+      return NextResponse.json({
+        success: true,
+        processedCount: targetBatch.length,
+        remainingCount,
+        integratedChampions: champResult.integrated.length,
+        message: `⚡ ${targetBatch.length}件の良質記事を自動承認して教本へ統合しました（残り対象: ${remainingCount}件）`,
+      });
+    }
+
+    // ──────────────────────────────────────────
     // 1. プレビュー生成アクション
     // ──────────────────────────────────────────
     if (action === 'preview') {

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RefreshCw, Tv, Search, ArrowUpDown, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, Tv, Search, ArrowUpDown, SlidersHorizontal, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { LANE_OPTIONS, type LaneKey } from './types';
 
 // 種別タブ・チャンネル・並び替え・検索・レーン絞り込み・件数
-export default function ReviewControlBar({ type, setType, channel, setChannel, channels, totalAll, total, sort, setSort, searchQuery, setSearchQuery, lane, setLane, laneCounts, loading, onReload, quality, setQuality, qualityCounts }: {
+export default function ReviewControlBar({ type, setType, channel, setChannel, channels, totalAll, total, sort, setSort, searchQuery, setSearchQuery, lane, setLane, laneCounts, loading, onReload, quality, setQuality, qualityCounts, onAutoPass, autoPassRunning }: {
   type: '' | 'video' | 'atomic';
   setType: (v: '' | 'video' | 'atomic') => void;
   channel: string;
@@ -25,6 +25,8 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
   quality: string;
   setQuality: (v: string) => void;
   qualityCounts: { thin?: number; reanalyzed?: number; reanalyzing?: number; multi?: number; determined?: number; unknown?: number; approve?: number; check?: number; skip?: number };
+  onAutoPass?: () => void;
+  autoPassRunning?: boolean;
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const hasAdvancedFilter = Boolean(type || quality === 'thin' || quality === 'reanalyzed' || quality === 'reanalyzing');
@@ -81,6 +83,18 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
           >
             ❓ チャンプ未定（{qualityCounts.unknown ?? 0}）
           </button>
+
+          {onAutoPass && (
+            <button
+              onClick={onAutoPass}
+              disabled={autoPassRunning || loading}
+              className="px-3 py-1.5 rounded-lg border text-xs font-black cursor-pointer transition flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-950/40 disabled:opacity-50 ml-1"
+              title="単一チャンプ特定 & 濃厚（800文字以上）の安全な良質記事を一括自動承認して教本へ統合します"
+            >
+              <Zap className={`w-3.5 h-3.5 text-amber-300 ${autoPassRunning ? 'animate-bounce' : ''}`} />
+              <span>{autoPassRunning ? '⚡ 自動承認中...' : '⚡ オートパス一括承認'}</span>
+            </button>
+          )}
         </div>
 
         {/* 右側: チャンネル絞り込み ＆ ソート ＆ 検索 ＆ 詳細ボタン */}

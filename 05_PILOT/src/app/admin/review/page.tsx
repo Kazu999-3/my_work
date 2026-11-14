@@ -313,6 +313,64 @@ export default function ReviewPage() {
     }
   };
 
+  // ⚡ オートパス一括自動承認（良質記事の自動承認）
+  const [autoPassRunning, setAutoPassRunning] = useState(false);
+  const handleAutoPass = async () => {
+    if (autoPassRunning) return;
+    try {
+      setAutoPassRunning(true);
+      // 1. 事前に対象件数をチェック
+      const checkRes = await fetch('/api/knowledge/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auto_pass', dryRun: true, minLength: 800 }),
+      });
+      const checkJson = await checkRes.json();
+      if (!checkRes.ok) throw new Error(checkJson.error || '事前チェックに失敗しました');
+
+      const eligible = checkJson.totalEligible || 0;
+      if (eligible === 0) {
+        showMessage('オートパスの安全基準（単一チャンプ特定 & 800文字以上）を満たす記事はありませんでした', 'error');
+        return;
+      }
+
+      const sampleNames = (checkJson.sample || []).map((s: any) => `・${s.title} (${s.champion})`).join('\n');
+      const confirmMsg = `安全基準（単一チャンプ特定 & 800文字以上）を満たす良質な記事が【${eligible}件】あります。\n\n【対象サンプル】:\n${sampleNames}\n\nこれらを自動で教本・レーンガイド・対面DBへ一括承認しますか？`;
+
+      if (!confirm(confirmMsg)) {
+        return;
+      }
+
+      // 2. バッチで順次自動承認（30件ずつ）
+      let remaining = eligible;
+      let totalProcessed = 0;
+      while (remaining > 0) {
+        const execRes = await fetch('/api/knowledge/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'auto_pass', limit: 30, minLength: 800 }),
+        });
+        const execJson = await execRes.json();
+        if (!execRes.ok) throw new Error(execJson.error || '自動承認処理中にエラーが発生しました');
+
+        const count = execJson.processedCount || 0;
+        totalProcessed += count;
+        remaining = execJson.remainingCount ?? 0;
+
+        showMessage(`⚡ 自動承認中... 計${totalProcessed}件統合完了（残り対象: ${remaining}件）`, 'success');
+        if (count === 0) break;
+      }
+
+      showMessage(`🎉 合計${totalProcessed}件の良質記事を教本・レーンガイドへ自動統合しました！`, 'success');
+      load();
+    } catch (e: any) {
+      showMessage(`オートパス失敗: ${e.message}`, 'error');
+      load({ silent: true });
+    } finally {
+      setAutoPassRunning(false);
+    }
+  };
+
   // プレビューの読み込み
   const openPreview = async (item: ReviewItem) => {
     setPreviewModalItem(item);
@@ -599,6 +657,7 @@ export default function ReviewPage() {
           totalAll={totalAll} total={total} sort={sort} setSort={setSort} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           lane={lane} setLane={setLane} laneCounts={laneCounts} loading={loading} onReload={() => load()}
           quality={quality} setQuality={setQuality} qualityCounts={qualityCounts}
+          onAutoPass={handleAutoPass} autoPassRunning={autoPassRunning}
         />
 
         {/* 一括操作バー ＆ キーボードショートカットガイド */}
