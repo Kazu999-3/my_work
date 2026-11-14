@@ -7,6 +7,7 @@ import { RefreshCw, Trophy, Target, Search, ArrowLeftRight } from 'lucide-react'
 import Image from 'next/image';
 import { toast } from '../../../components/Toaster';
 import { getChampIcon } from '../../../lib/ddragonClient';
+import CustomSubNav from '../../../components/CustomSubNav';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -740,8 +741,10 @@ function CustomRecordPageContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground-soft p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <CustomSubNav />
+
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h1 className="text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-3">
             <Trophy className="h-7 w-7 md:h-8 md:w-8 text-success-600" />
             カスタム試合を手動記録
