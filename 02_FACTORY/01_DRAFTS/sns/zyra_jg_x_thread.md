@@ -9,7 +9,7 @@ target: "Iron - Silver - Gold"
 # 【X拡散スレッド】ザイラJG低ランク脱出完全攻略
 
 ## ポスト1（フック ＋ 実績画像）
-※添付画像: `05_PILOT/public/note_assets/champ_stats_zyra.png`
+※添付画像: `05_PILOT/public/note_assets/zyra_jg_thumb.jpg`
 
 「味方が寄らない」「キル譲ったのに即死された」とイライラしてブロンズまで大転落した僕が、味方に期待するのを一切やめて【125戦 勝率60.8%】でプラチナへ駆け上がった話。
 

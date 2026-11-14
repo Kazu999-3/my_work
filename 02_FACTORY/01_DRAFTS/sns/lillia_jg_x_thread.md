@@ -9,7 +9,7 @@ target: "Iron - Silver - Gold"
 # 【X拡散スレッド】リリアJG低ランク脱出完全攻略
 
 ## ポスト1（フック ＋ 実績）
-※添付推奨画像: `05_PILOT/public/note_assets/lillia_jg_thumb.png`
+※添付推奨画像: `05_PILOT/public/note_assets/lillia_jg_thumb.jpg`
 
 「敵にチョガスやセジュアニ等の巨漢タンクが並んで味方が削り殺された」。
 

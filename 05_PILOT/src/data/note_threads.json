@@ -33,7 +33,7 @@
   },
   "zyra_jg_guide": {
     "title": "ザイラJG低ランク脱出完全攻略 X拡散スレッド",
-    "updatedAt": "2026-11-13T10:20:00.000Z",
+    "updatedAt": "2026-11-14T16:25:00.000Z",
     "posts": [
       {
         "index": 1,
@@ -41,8 +41,8 @@
         "charCount": 132,
         "media": {
           "type": "image",
-          "url": "/note_assets/champ_stats_zyra.png",
-          "alt": "ザイラJG 125戦勝率60.8%戦績グラフ"
+          "url": "/note_assets/zyra_jg_thumb.jpg",
+          "alt": "ザイラJG完全攻略アイキャッチ"
         }
       },
       {
@@ -97,7 +97,7 @@
   },
   "lillia_jg_guide": {
     "title": "リリアJG低ランク脱出完全攻略 X拡散スレッド",
-    "updatedAt": "2026-11-13T12:35:00.000Z",
+    "updatedAt": "2026-11-14T16:25:00.000Z",
     "posts": [
       {
         "index": 1,
@@ -105,7 +105,7 @@
         "charCount": 135,
         "media": {
           "type": "image",
-          "url": "/note_assets/lillia_jg_thumb.png",
+          "url": "/note_assets/lillia_jg_thumb.jpg",
           "alt": "リリアJG完全攻略アイキャッチ"
         }
       },

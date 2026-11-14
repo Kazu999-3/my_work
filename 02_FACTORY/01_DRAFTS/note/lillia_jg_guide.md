@@ -9,13 +9,13 @@ champion: "Lillia"
 role: "Jungle"
 word_count_target: 8500
 created_at: 2026-11-13
-cover_image: "/note_assets/lillia_jg_thumb.png"
+cover_image: "/note_assets/lillia_jg_thumb.jpg"
 tags: ["#LoL", "#LeagueofLegends", "#ジャングル", "#JG", "#ゲーム攻略", "#初心者向け"]
 ---
 
 # 【LoL】敵のスキルが当たらない！リリアJG低ランク脱出完全攻略
 
-![リリアJG完全攻略アイキャッチ](/note_assets/lillia_jg_thumb.png)
+![リリアJG完全攻略アイキャッチ](/note_assets/lillia_jg_thumb.jpg)
 
 > 📌 **本記事の対応環境**: パッチ **26.21** 検証済み（現行ソロキュー環境対応 / Lolalytics統計準拠）
 

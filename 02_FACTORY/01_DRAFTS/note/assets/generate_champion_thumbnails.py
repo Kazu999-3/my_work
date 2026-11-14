@@ -237,6 +237,74 @@ def make_shyvana_thumb():
     base.convert("RGB").save(out_p, quality=95)
     print("Shyvana thumb created:", out_p)
 
+# ----------------------------------------------------
+# 4. リリアJG サムネイル (lillia_jg_thumb.jpg)
+# ----------------------------------------------------
+def make_lillia_thumb():
+    # ディープフォレストグリーン ➔ ドリームパープルピンク
+    base = create_gradient((15, 35, 30, 255), (45, 15, 45, 255))
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    g_draw = ImageDraw.Draw(glow)
+    g_draw.ellipse([750, 80, 1380, 680], fill=(220, 80, 160, 65))
+    g_draw.ellipse([50, 350, 600, 850], fill=(30, 160, 120, 50))
+    glow = glow.filter(ImageFilter.GaussianBlur(55))
+    base = Image.alpha_composite(base, glow)
+
+    card_x0, card_y0, card_x1, card_y1 = 60, 60, 840, 660
+    base = draw_card(base, card_x0, card_y0, card_x1, card_y1, radius=24, bg_color=(255, 255, 255, 248), border_color=(200, 70, 150, 220))
+    draw = ImageDraw.Draw(base)
+
+    f_ribbon = ImageFont.truetype(font_bold, 20)
+    f_title = ImageFont.truetype(font_bold, 40)
+    f_sub = ImageFont.truetype(font_bold, 22)
+    f_item_num = ImageFont.truetype(font_bold, 20)
+    f_item_text = ImageFont.truetype(font_bold, 21)
+    f_item_sub = ImageFont.truetype(font_reg, 16)
+
+    # リボン帯
+    draw.rounded_rectangle([card_x0+30, card_y0+25, card_x0+450, card_y0+68], radius=10, fill=(190, 50, 130, 255))
+    draw.text((card_x0+45, card_y0+32), "🦌 敵のスキルが当たらない！", font=f_ribbon, fill=(255, 255, 255, 255))
+
+    draw.text((card_x0+30, card_y0+85), "リリアJG 低ランク脱出攻略", font=f_title, fill=(30, 20, 35, 255))
+    draw.line([(card_x0+30, card_y0+148), (card_x1-30, card_y0+148)], fill=(190, 50, 130, 180), width=3)
+
+    items = [
+        ("1", "MS防御壁と「ドリブル」の極意", "敵のスキルを歩いて回避し味方を完全フリーにする"),
+        ("2", "2:44爆速フルクリア ＆ 置きファーム", "スカトルに11秒先行！Qスタック4維持で敵森を侵略"),
+        ("3", "2コア ✕ ダークシール10スタック", "ライアンドリー＋リフトメーカーで絶対に死なない要塞")
+    ]
+    curr_y = card_y0 + 170
+    for num, title, desc in items:
+        draw.ellipse([card_x0+30, curr_y, card_x0+68, curr_y+38], fill=(190, 50, 130, 240))
+        draw.text((card_x0+42, curr_y+5), num, font=f_item_num, fill=(255, 255, 255, 255))
+        draw.text((card_x0+82, curr_y+4), title, font=f_item_text, fill=(35, 25, 40, 255))
+        draw.text((card_x0+82, curr_y+36), desc, font=f_item_sub, fill=(95, 85, 100, 255))
+        curr_y += 82
+
+    draw.rounded_rectangle([card_x0+30, card_y1-60, card_x0+330, card_y1-22], radius=8, fill=(255, 240, 250, 255), outline=(210, 100, 170, 200), width=1)
+    draw.text((card_x0+42, card_y1-53), "⚡ 征服者 ✕ ライアンドリーの仮面", font=ImageFont.truetype(font_bold, 16), fill=(160, 30, 110, 255))
+
+    # 右側：バッジパネル
+    bx0, by0, bx1, by1 = 880, 140, 1220, 580
+    base = draw_card(base, bx0, by0, bx1, by1, radius=24, bg_color=(255, 255, 255, 245), border_color=(200, 50, 130, 220))
+    draw = ImageDraw.Draw(base)
+
+    draw.rounded_rectangle([bx0+20, by0+25, bx1-20, by0+75], radius=12, fill=(190, 50, 130, 255))
+    draw.text((bx0+45, by0+34), "🏆 Lolalytics実測データ", font=ImageFont.truetype(font_bold, 22), fill=(255, 255, 255, 255))
+
+    draw.text((bx0+35, by0+105), "Tier 1", font=ImageFont.truetype(font_bold, 36), fill=(45, 30, 50, 255))
+    draw.text((bx0+35, by0+155), "勝率 53.6%", font=ImageFont.truetype(font_bold, 44), fill=(210, 40, 120, 255))
+
+    draw.line([(bx0+30, by0+230), (bx1-30, by0+230)], fill=(200, 200, 210, 200), width=2)
+    draw.text((bx0+35, by0+250), "・全JG中 第4位", font=f_sub, fill=(40, 40, 50, 255))
+    draw.text((bx0+35, by0+295), "・上位勝率 : 59.7%", font=ImageFont.truetype(font_bold, 22), fill=(180, 30, 100, 255))
+    draw.text((bx0+35, by0+340), "・反響スリープ集団戦破壊", font=f_sub, fill=(90, 80, 95, 255))
+
+    out_p = r"d:\my_work\02_FACTORY\01_DRAFTS\note\assets\lillia_jg_thumb.jpg"
+    base.convert("RGB").save(out_p, quality=95)
+    print("Lillia thumb created:", out_p)
+
 make_zyra_thumb()
 make_wukong_thumb()
 make_shyvana_thumb()
+make_lillia_thumb()
