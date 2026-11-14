@@ -144,7 +144,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           // かずき（CONFIG.ADMIN_ID）へのメンション付きで個別案内チャットへ送信
           await fetchPortalAPI(env, '/api/bot/member-channel-message', {
             discordId: userId,
-            content: `<@${CONFIG.ADMIN_ID}> 📢 **【カスタム参加サポート：格上のレーン変更希望】**\n<@${userId}> （${name}）さんが ${dayLabel} への参加にあたり、**「🔄 格上の人の希望レーンを変更させたい」** を希望されています。\n（※本人が希望レーンで安心して対戦できるよう、格上メンバーに別レーンやオフロールへ回ってもらう調整です）\n本人の希望レーン: **【${laneStr}】**\n運営（<@${CONFIG.ADMIN_ID}>）側で格上メンバーへのお声がけやレーン調整を行います！`
+            content: `<@${CONFIG.ADMIN_ID}> 📢 **【土曜カスタム参加サポート：格上のレーン変更依頼】**\n<@${userId}> （${name}）さんが土曜カスタムへの参加にあたり、**「🛡️ 格上の方に別レーンをお願いしたい」** を希望されています。\n（※本人が希望レーンで安心して対戦できるよう、格上メンバーに別レーンやオフロールへ回ってもらう調整です）\n本人の希望レーン: **【${laneStr}】**\n運営（<@${CONFIG.ADMIN_ID}>）側で格上メンバーへのお声がけやレーン調整を行います！`
           });
         } catch (err) {
           console.warn('higher_risk change_lane error:', err);
@@ -353,8 +353,8 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             }
           }).catch((e) => console.warn('Activity log error:', e));
 
-          // ⚠️ 格上対面リスクの事前警告（本人限定エフェメラル通知 ＆ 3つのアクション提案）
-          if (activityAction === 'JOIN' && playerRow && playerRow.allow_higher === false) {
+          // ⚠️ 格上対面リスクの事前警告（土曜・実力均等カスタムのみ、本人限定エフェメラル通知 ＆ 3つのアクション提案）
+          if (dayKey === 'sat' && activityAction === 'JOIN' && playerRow && playerRow.allow_higher === false) {
             try {
               const myMmr = getHighestLaneMmr(playerRow) || playerRow.mmr || 1200;
               // 現在のエントリー者（自分以外）の Discord ID を抽出
@@ -386,7 +386,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
                             type: 2, // BUTTON
                             style: 1, // PRIMARY
                             custom_id: `higher_risk:${userId}:${dayKey}:change_lane`,
-                            label: '🔄 格上の人を希望レーンから変更させたい'
+                            label: '🛡️ 格上の方に別レーンをお願いしたい'
                           },
                           {
                             type: 2, // BUTTON
