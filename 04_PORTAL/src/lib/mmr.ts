@@ -479,7 +479,7 @@ export async function replayMmrHistory(supabase: SupabaseClient) {
   // 2026-10-16: 試合記録（/api/match/record）と同じ計算にそろえるため、試合時間とエキシビション判定も読む。
   // それまでリビルドは「全レーン波及(25%)」「早期投了の緩和」「エキシビション除外」を行っておらず、
   // リビルドすると記録時に付いた分が消えて値が変わる状態だった。
-  const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team, game_duration, riot_match_id').order('created_at', { ascending: true });
+  const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team, game_duration, riot_match_id, match_type').order('created_at', { ascending: true });
   if (mError || !allMatches) throw mError;
 
   // すべての参加者データを一括ロードして match_id ごとにマッピング (N+1問題の解消)

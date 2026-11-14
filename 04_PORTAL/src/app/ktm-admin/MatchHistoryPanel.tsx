@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { toast } from '../../components/Toaster';
-import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
+import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical, PartyPopper } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getChampIcon, getItemIcon, getSummonerSpellIcon } from '../../lib/ddragonClient';
 import type { MmrBreakdown } from '../../lib/mmr';
+import { isEventMatch, isNormalMatch, getMatchType } from '../../lib/matchType';
 
 interface Match {
   id: string;
   created_at: string;
   winning_team: 'BLUE' | 'RED' | 'DRAW';
   game_duration?: number | null;
-  riot_match_id?: string;
+  riot_match_id?: string | null;
+  match_type?: string | null;
   participants: Participant[];
 }
 
@@ -268,8 +270,42 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
     loadPlayersAndChamps();
   }, []);
 
+  const [togglingMatchId, setTogglingMatchId] = useState<string | null>(null);
+
+  const handleToggleMatchType = async (match: Match) => {
+    const isCurrentlyEvent = isEventMatch(match);
+    const nextType = isCurrentlyEvent ? 'NORMAL' : 'EVENT';
+    const confirmMsg = isCurrentlyEvent
+      ? `マッチ #${match.id} を「公式戦」に変更しますか？\n（勝敗・MMR変動が公式記録に再反映され、自動で全MMRが再計算されます）`
+      : `マッチ #${match.id} を「お祭り・エキシビション」に変更しますか？\n（レート非干渉となり、勝敗・MMR変動が公式記録から除外され、自動で全MMRが再計算されます）`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setTogglingMatchId(match.id);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/admin/match/${match.id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchType: nextType })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '試合種別の更新に失敗しました');
+
+      toast.success(data.message || '試合種別を更新し、MMRを再計算しました！');
+      setActionMessage({ type: 'success', text: data.message || '試合種別を更新しました。' });
+      fetchMatches();
+    } catch (err: any) {
+      toast.error(`エラー: ${err.message}`);
+      setActionMessage({ type: 'error', text: `更新エラー: ${err.message}` });
+    } finally {
+      setTogglingMatchId(null);
+    }
+  };
+
   const handleDeleteMatch = async (matchId: string) => {
-    if (!confirm(`本当にこの試合 (Match #${matchId}) を削除しますか？\n(※削除後、名簿から「Rebuild」を実行してMMRを再計算するまで整合性は失われます)`)) return;
+    if (!confirm(`本当にこの試合 (Match #${matchId}) を削除しますか？\n(※削除後、自動でMMRが再計算されます)`)) return;
     
     try {
       const res = await fetch(`/api/admin/match/${matchId}`, {
@@ -279,8 +315,8 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '削除に失敗しました');
 
-      toast.success('試合履歴を削除しました。プレイヤーのMMRに反映させるために、必ず名簿タブの「Rebuild」を実行してください。');
-      setActionMessage({ type: 'success', text: '試合履歴を削除しました。「Rebuild」を実行してください。' });
+      toast.success('試合履歴を削除し、MMRを再計算しました。');
+      setActionMessage({ type: 'success', text: '試合履歴を削除し、MMRを再計算しました。' });
       fetchMatches();
     } catch (err: any) {
       toast.error(`削除エラー: ${err.message}`);
@@ -298,14 +334,15 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam: editingMatch.winning_team,
-          participants: editingMatch.participants
+          participants: editingMatch.participants,
+          matchType: isEventMatch(editingMatch) ? 'EVENT' : 'NORMAL'
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '更新に失敗しました');
 
-      toast.success('試合データを更新しました。プレイヤーのMMRに反映させるために、必ず名簿タブの「Rebuild」を実行してください。');
-      setActionMessage({ type: 'success', text: '試合データを更新しました。「Rebuild」を実行してください。' });
+      toast.success('試合データを更新し、MMRを再計算しました。');
+      setActionMessage({ type: 'success', text: '試合データを更新し、MMRを再計算しました。' });
       setEditingMatch(null);
       fetchMatches();
     } catch (err: any) {
@@ -522,7 +559,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           })
           .map(match => {
           const isExpanded = expandedMatchIds.has(match.id);
-          const isFestival = match.winning_team === 'DRAW' || match.riot_match_id === 'EXHIBITION' || match.participants.some(p => p.team === 'FESTIVAL');
+          const isFestival = isEventMatch(match);
           const blueTeam = match.participants.filter(p => p.team === 'BLUE');
           const redTeam = match.participants.filter(p => p.team === 'RED');
 
@@ -624,6 +661,19 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                   <div className="flex items-center gap-2">
                     {isAdmin && (
                       <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleToggleMatchType(match)}
+                          disabled={togglingMatchId === match.id}
+                          className={`px-2 py-1 border rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 ${
+                            isFestival
+                              ? 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-600'
+                              : 'bg-black/10 hover:bg-black/20 border-border text-faint hover:text-foreground'
+                          }`}
+                          title={isFestival ? "お祭り（レート非干渉）モード中。クリックで公式戦に戻します" : "クリックしてお祭り（レート非干渉）に変更"}
+                        >
+                          <PartyPopper className={`h-3 w-3 ${isFestival ? 'text-amber-500' : 'text-muted-strong'}`} />
+                          <span>{togglingMatchId === match.id ? '切替中...' : (isFestival ? 'お祭り' : '公式戦')}</span>
+                        </button>
                         <button
                           onClick={() => { setTapSwapIndex(null); setEditingMatch(JSON.parse(JSON.stringify(match))); }}
                           className="p-1.5 bg-black/10 hover:bg-black/20 border border-border text-primary-600 rounded-lg transition cursor-pointer"
@@ -1037,22 +1087,44 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
             {/* 勝敗選択と保存 */}
             <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4 bg-black/5 p-2 rounded-lg border border-border">
-                <span className="font-bold text-muted-strong px-2 text-sm">勝利チーム:</span>
-                <button
-                  onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'BLUE' } : null)}
-                  type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-secondary-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
-                >
-                  BLUE WIN
-                </button>
-                <button
-                  onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'RED' } : null)}
-                  type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-danger-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
-                >
-                  RED WIN
-                </button>
+              <div className="flex flex-wrap items-center gap-4 bg-black/5 p-2 rounded-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-muted-strong px-2 text-sm">勝利チーム:</span>
+                  <button
+                    onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'BLUE' } : null)}
+                    type="button"
+                    className={`px-4 sm:px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-secondary-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
+                  >
+                    BLUE WIN
+                  </button>
+                  <button
+                    onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'RED' } : null)}
+                    type="button"
+                    className={`px-4 sm:px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-danger-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
+                  >
+                    RED WIN
+                  </button>
+                </div>
+
+                <div className="h-5 w-px bg-border hidden sm:block" />
+
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-muted-strong px-2 text-sm">種別:</span>
+                  <button
+                    onClick={() => setEditingMatch(prev => prev ? { ...prev, match_type: 'NORMAL', riot_match_id: prev.riot_match_id === 'EXHIBITION' ? null : prev.riot_match_id } : null)}
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-bold transition text-xs ${!isEventMatch(editingMatch) ? 'bg-primary-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.3)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
+                  >
+                    ⚔️ 公式戦
+                  </button>
+                  <button
+                    onClick={() => setEditingMatch(prev => prev ? { ...prev, match_type: 'EVENT', riot_match_id: 'EXHIBITION' } : null)}
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-bold transition text-xs ${isEventMatch(editingMatch) ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
+                  >
+                    🎪 お祭り (除外)
+                  </button>
+                </div>
               </div>
 
               <div className="flex gap-3">

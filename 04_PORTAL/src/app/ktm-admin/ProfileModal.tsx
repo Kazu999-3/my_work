@@ -8,6 +8,8 @@ import ScoutingReport from "../../components/ScoutingReport";
 interface ProfileModalProps {
   player: any;
   onClose: () => void;
+  onSyncSinglePlayer?: (playerId: number, playerName?: string) => void;
+  reSyncingPlayerId?: number | null;
 }
 
 const roleIcons: Record<string, any> = {
@@ -18,7 +20,7 @@ const roleIcons: Record<string, any> = {
   SUP: <Star className="w-5 h-5 text-primary-700" />
 };
 
-export default function ProfileModal({ player, onClose }: ProfileModalProps) {
+export default function ProfileModal({ player, onClose, onSyncSinglePlayer, reSyncingPlayerId }: ProfileModalProps) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
@@ -76,8 +78,20 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
             </div>
             <div>
               <h2 className="text-3xl font-extrabold text-foreground">{player.name}</h2>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-faint text-sm font-medium">{player.ign || "IGN未登録"}</span>
+                {onSyncSinglePlayer && player.ign && player.ign.includes('#') && (
+                  <button
+                    type="button"
+                    onClick={() => onSyncSinglePlayer(player.id, player.name)}
+                    disabled={reSyncingPlayerId === player.id}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-primary-100 hover:bg-primary-200 text-primary-700 border border-primary-edge-soft transition disabled:opacity-50 cursor-pointer"
+                    title="Riot APIから最新ランク・PUUID・マスタリーを再取得"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${reSyncingPlayerId === player.id ? 'animate-spin' : ''}`} />
+                    <span>{reSyncingPlayerId === player.id ? '同期中...' : 'Riot再同期'}</span>
+                  </button>
+                )}
                 <span className="bg-primary-100 text-primary-700 border border-primary-edge-soft px-2 py-0.5 rounded text-xs font-bold">
                   {player.highest_rank || "UNRANKED"}
                 </span>

@@ -177,6 +177,15 @@ note記事や発信コンテンツの制作において、**「AIが単独で勝
       - **Phase 3 (対戦)**: ドリームチームデッキ編成 ＆ オートバトル対戦エンジン
     - **技術スタック**: Next.js 16 (`04_PORTAL`), Supabase (`ktm_cards`, `ktm_user_cards`, `ktm_player_card_stats`, `ktm_user_decks`), TailwindCSS, Framer Motion
     - **現在のステップ**: 設計完了（実装保留・仕様策定フェーズ）
+18. **KTM管理ダッシュボード高度化（お祭り試合トグルMMR保護 ＆ プレイヤー単体即時Riot同期）[NEW]**:
+    - **目的**: 
+      1. お遊び・エキシビション試合の勝敗やMMR変動が公式記録に混ざるのを防ぎ、管理画面からワンタップでお祭り/公式戦を相互切り替え可能にする。
+      2. サモナー名変更や昇格があったプレイヤーだけを、時間のかかる「全員メンテ」を回さずにワンタップで即座にRiot同期・Discordロール反映可能にする。
+    - **MVPの範囲**:
+      1. **お祭りトグル ＆ MMRフルリビルド連携**: `MatchHistoryPanel` の各試合カードおよび編集モーダルに「🎪 お祭り / ⚔️ 公式戦」トグルを設置。API（`PUT /api/admin/match/[id]`）経由で `match_type` / `riot_match_id` を更新し、`performFullMmrRebuild` でMMR・勝率を自動再計算。
+      2. **プレイヤー単体Riot即時同期**: `PlayerTableDesktop`, `PlayerCardsMobile`, `ProfileModal` の各行・ヘッダーに「🔄 単体再同期」ボタンを設置。`/api/admin/riot-sync`（`playerIds: [id]`）経由でSoloQランク・PUUID・マスタリー・Discord高位ロールを即座に更新。
+    - **技術スタック**: Next.js (`04_PORTAL`), TypeScript, TailwindCSS, Supabase, Riot Games API, Discord API
+    - **現在のステップ**: 実装中
 
 ---
 

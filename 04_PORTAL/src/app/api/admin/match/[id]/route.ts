@@ -182,7 +182,7 @@ export async function PUT(
       return NextResponse.json({ error: '無効なマッチIDです。' }, { status: 400 });
     }
 
-    const { winningTeam, participants } = await request.json();
+    const { winningTeam, participants, matchType } = await request.json();
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
@@ -198,9 +198,23 @@ export async function PUT(
     }
 
     // 1. ktm_matches の更新
+    const updatePayload: Record<string, any> = { winning_team: winningTeam };
+    if (matchType !== undefined) {
+      const isFestival = matchType === 'EVENT';
+      updatePayload.match_type = isFestival ? 'EVENT' : 'NORMAL';
+      if (isFestival) {
+        updatePayload.riot_match_id = 'EXHIBITION';
+      } else {
+        const { data: currentMatch } = await supabase.from('ktm_matches').select('riot_match_id').eq('id', matchId).maybeSingle();
+        if (currentMatch?.riot_match_id === 'EXHIBITION') {
+          updatePayload.riot_match_id = null;
+        }
+      }
+    }
+
     const { error: matchError } = await supabase
       .from('ktm_matches')
-      .update({ winning_team: winningTeam })
+      .update(updatePayload)
       .eq('id', matchId);
 
     if (matchError) {
@@ -347,5 +361,61 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Delete Match Error:', error);
     return NextResponse.json({ error: error.message || '試合の削除中にエラーが発生しました。' }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+    const resolvedParams = await params;
+    const matchId = resolvedParams.id;
+    if (!matchId) {
+      return NextResponse.json({ error: '無効なマッチIDです。' }, { status: 400 });
+    }
+
+    const { matchType } = await request.json();
+    if (!matchType || !['NORMAL', 'EVENT'].includes(matchType)) {
+      return NextResponse.json({ error: 'matchType は NORMAL または EVENT である必要があります。' }, { status: 400 });
+    }
+
+    const isFestival = matchType === 'EVENT';
+    const updatePayload: Record<string, any> = { match_type: matchType };
+    if (isFestival) {
+      updatePayload.riot_match_id = 'EXHIBITION';
+    } else {
+      const { data: currentMatch } = await supabase.from('ktm_matches').select('riot_match_id').eq('id', matchId).maybeSingle();
+      if (currentMatch?.riot_match_id === 'EXHIBITION') {
+        updatePayload.riot_match_id = null;
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from('ktm_matches')
+      .update(updatePayload)
+      .eq('id', matchId);
+
+    if (updateError) {
+      throw new Error(`試合種別の更新に失敗: ${updateError.message}`);
+    }
+
+    // MMRを自動フルリビルド（お祭り化時はMMR変動除外、公式戦化時はMMR変動再計算）
+    await performFullMmrRebuild(supabase);
+
+    return NextResponse.json({
+      success: true,
+      matchType,
+      message: isFestival 
+        ? '試合種別を「お祭り（レート非干渉）」に変更し、MMRを再計算しました。' 
+        : '試合種別を「公式戦」に変更し、MMRを再計算しました。',
+    });
+  } catch (error: any) {
+    console.error('Patch Match Error:', error);
+    return NextResponse.json({ error: error.message || '試合種別の更新中にエラーが発生しました。' }, { status: 500 });
   }
 }

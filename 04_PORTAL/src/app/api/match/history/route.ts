@@ -21,6 +21,7 @@ export async function GET(req: Request) {
         winning_team,
         game_duration,
         riot_match_id,
+        match_type,
         ktm_match_participants (
           player_name, team, role, champion_name, kills, deaths, assists,
           player_mmr, kda_score, mmr_delta, mmr_breakdown, cs, gold, damage_dealt, vision_score

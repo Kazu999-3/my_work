@@ -327,10 +327,45 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
     setSyncingMaintenance(false);
   };
 
+  /** プレイヤー単体の即時Riot同期 (3-C) */
+  const syncSinglePlayer = async (playerId: number, playerName?: string) => {
+    setReSyncingPlayerId(playerId);
+    try {
+      const res = await fetchWithTimeout('/api/admin/riot-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerIds: [playerId] }),
+        timeout: 15000,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '単体同期処理に失敗しました');
+
+      if (data.errors && data.errors.length > 0) {
+        const match = data.errors[0].match(/^\[(.*?)\]\s*(.*)$/);
+        const errMsg = match ? match[2] : data.errors[0];
+        setMessage({ type: "error", text: `⚠️ [${playerName || playerId}] のRiot同期エラー: ${errMsg}` });
+      } else {
+        const promo = data.promotions && data.promotions.length > 0 ? data.promotions[0] : null;
+        const promoText = promo ? `（🎉 ランク昇格: ${promo.oldRank} ➔ ${promo.newRank}）` : '';
+        setMessage({ type: "success", text: `✅ [${playerName || 'プレイヤー'}] のRiot最新情報を同期しました！${promoText}` });
+        triggerRowFlash(playerId);
+        // MMR自動Rebuild
+        try { await fetchWithTimeout('/api/mmr/rebuild', { method: 'POST', timeout: 30000 }); } catch (e) { console.warn('自動Rebuild失敗:', e); }
+      }
+      fetchPlayers();
+      checkIntegrity();
+    } catch (err: any) {
+      setMessage({ type: "error", text: `❌ 単体同期エラー: ${err.message}` });
+    } finally {
+      setReSyncingPlayerId(null);
+    }
+  };
+
   const cancelSyncPreview = () => { setSyncData(null); setSyncingDiscord(false); };
 
   return {
     syncingDiscord, syncingMaintenance, syncData, setSyncData, riotSyncErrors, setRiotSyncErrors, reSyncingPlayerId,
     handleResolveRiotError, handleSyncCheck, executeSync, resetSyncFlags, cancelSyncPreview, handleSyncAllMaintenance,
+    syncSinglePlayer,
   };
 }

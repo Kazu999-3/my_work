@@ -1,17 +1,19 @@
 "use client";
 
-import { Info } from "lucide-react";
+import { Info, RefreshCw } from "lucide-react";
 import { HIGHEST_RANK_OPTIONS, getColorFromRankName } from "../../../lib/mmr";
 import { getColorFromRole, getPlayerExperienceBadge } from "./adminUtils";
 
 // 名簿（スマホ用カード: 片手で出欠・ロール・最高Rankを編集）
 // 2026-10-07: app/ktm-admin/page.tsx（1,885行）から分割。表示内容・動作は分割前と同じ。
-export default function PlayerCardsMobile({ sortedPlayers, handleInputChange, handleInputSave, handleBlurSave, setSelectedPlayer }: {
+export default function PlayerCardsMobile({ sortedPlayers, handleInputChange, handleInputSave, handleBlurSave, setSelectedPlayer, onSyncSinglePlayer, reSyncingPlayerId }: {
   sortedPlayers: any[];
   handleInputChange: (uid: string, field: string, value: any) => void;
   handleInputSave: (uid: string, field: string, value: any) => void;
   handleBlurSave: () => void;
   setSelectedPlayer: (p: any) => void;
+  onSyncSinglePlayer?: (playerId: number, playerName?: string) => void;
+  reSyncingPlayerId?: number | null;
 }) {
   return (
             <div className="md:hidden space-y-2.5">
@@ -90,6 +92,32 @@ export default function PlayerCardsMobile({ sortedPlayers, handleInputChange, ha
                           </select>
                         </div>
                       </label>
+                    </div>
+
+                    {/* IGN & 単体再同期 */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40 text-[11px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] text-faint font-bold shrink-0">Riot:</span>
+                        <input
+                          type="text"
+                          value={p.ign || ""}
+                          onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
+                          onBlur={handleBlurSave}
+                          placeholder="Name#TAG"
+                          className="bg-transparent border border-transparent focus:border-border rounded px-1 py-0.5 outline-none font-mono text-primary-700 text-[11px] truncate"
+                        />
+                      </div>
+                      {onSyncSinglePlayer && p.ign && p.ign.includes('#') && (
+                        <button
+                          type="button"
+                          onClick={() => onSyncSinglePlayer(p.id, p.name)}
+                          disabled={reSyncingPlayerId === p.id}
+                          className="px-2 py-0.5 bg-black/5 hover:bg-black/10 border border-border rounded text-[10px] font-bold text-muted-strong hover:text-primary-600 transition flex items-center gap-1 shrink-0 disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-2.5 h-2.5 ${reSyncingPlayerId === p.id ? 'animate-spin text-primary-600' : ''}`} />
+                          <span>{reSyncingPlayerId === p.id ? '同期中' : '同期'}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

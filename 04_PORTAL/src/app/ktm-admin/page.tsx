@@ -353,18 +353,25 @@ export default function KtmAdminPage() {
             <PlayerCardsMobile
               sortedPlayers={sortedPlayers} handleInputChange={roster.handleInputChange} handleInputSave={roster.handleInputSave}
               handleBlurSave={roster.handleBlurSave} setSelectedPlayer={setSelectedPlayer}
+              onSyncSinglePlayer={sync.syncSinglePlayer} reSyncingPlayerId={sync.reSyncingPlayerId}
             />
 
             <PlayerTableDesktop
               sortedPlayers={sortedPlayers} playerCount={players.length} loading={loading} sortConfig={sortConfig} requestSort={requestSort}
               flashingPlayerIds={roster.flashingPlayerIds} handleInputChange={roster.handleInputChange} handleInputSave={roster.handleInputSave}
               handleBlurSave={roster.handleBlurSave} setSelectedPlayer={setSelectedPlayer}
+              onSyncSinglePlayer={sync.syncSinglePlayer} reSyncingPlayerId={sync.reSyncingPlayerId}
             />
           </div>
         )}
 
         {selectedPlayer && (
-          <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+          <ProfileModal
+            player={selectedPlayer}
+            onClose={() => setSelectedPlayer(null)}
+            onSyncSinglePlayer={sync.syncSinglePlayer}
+            reSyncingPlayerId={sync.reSyncingPlayerId}
+          />
         )}
       </div>
     </div>

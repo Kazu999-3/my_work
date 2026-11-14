@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Info, ChevronDown, Settings } from "lucide-react";
+import { Info, ChevronDown, Settings, RefreshCw } from "lucide-react";
 import { HIGHEST_RANK_OPTIONS, getColorFromRankName } from "../../../lib/mmr";
 import { RoleIcon, MmrBadgeInput, getColorFromRole, getPlayerExperienceBadge } from "./adminUtils";
 
@@ -29,7 +29,7 @@ function SortableHeader({ label, sortKey, sticky = false, sortConfig, requestSor
   );
 }
 
-export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading, sortConfig, requestSort, flashingPlayerIds, handleInputChange, handleInputSave, handleBlurSave, setSelectedPlayer }: {
+export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading, sortConfig, requestSort, flashingPlayerIds, handleInputChange, handleInputSave, handleBlurSave, setSelectedPlayer, onSyncSinglePlayer, reSyncingPlayerId }: {
   sortedPlayers: any[];
   playerCount: number;
   loading: boolean;
@@ -40,6 +40,8 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
   handleInputSave: (uid: string, field: string, value: any) => void;
   handleBlurSave: () => void;
   setSelectedPlayer: (p: any) => void;
+  onSyncSinglePlayer?: (playerId: number, playerName?: string) => void;
+  reSyncingPlayerId?: number | null;
 }) {
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<string[]>([]);
   const togglePlayerDetails = (uid: string) => {
@@ -214,16 +216,29 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                             title={p.discord_id}
                           />
                         </td>
-                        <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
-                          <input
-                            type="text"
-                            value={p.ign || ""}
-                            onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
-                            onBlur={handleBlurSave}
-                            placeholder="Name#TAG"
-                            className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-primary-700"
-                            title={p.ign || "未登録"}
-                          />
+                        <td className="px-2 py-1.5 opacity-70 hover:opacity-100 transition">
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={p.ign || ""}
+                              onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
+                              onBlur={handleBlurSave}
+                              placeholder="Name#TAG"
+                              className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-primary-700"
+                              title={p.ign || "未登録"}
+                            />
+                            {onSyncSinglePlayer && p.ign && p.ign.includes('#') && (
+                              <button
+                                type="button"
+                                onClick={() => onSyncSinglePlayer(p.id, p.name)}
+                                disabled={reSyncingPlayerId === p.id}
+                                className="p-1 text-muted-strong hover:text-primary-600 hover:bg-black/10 rounded transition cursor-pointer disabled:opacity-50"
+                                title="このプレイヤーのRiot情報・SoloQランクを即座に再同期"
+                              >
+                                <RefreshCw className={`w-3 h-3 ${reSyncingPlayerId === p.id ? 'animate-spin text-primary-600' : ''}`} />
+                              </button>
+                            )}
+                          </div>
                         </td>
                         <td className="px-2 py-1.5">
                           <input
