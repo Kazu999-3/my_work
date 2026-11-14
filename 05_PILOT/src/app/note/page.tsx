@@ -1155,9 +1155,9 @@ export default function NoteDraftsPage() {
                   <AlertCircle className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="text-zinc-200 font-bold">💡 X運用の重要ポイント: </span>
-                    1ポスト目にnoteのURLを直貼りすると、Xのアルゴリズムで表示回数が激減します。URLは必ず
-                    <span className="text-sky-300 font-bold">「4ポスト目のリプライ欄（ぶら下げ）」</span>
-                    に貼ってください。
+                    1ポスト目（親ツイート）にnoteのURLを直貼りすると、Xのアルゴリズムで表示回数が激減します。URLは必ずスレッドの最後である
+                    <span className="text-sky-300 font-bold">「4ポスト目の本文」</span>
+                    に貼って投稿してください。
                   </div>
                 </div>
               </div>
