@@ -22540,3 +22540,9 @@
 - `[要検証]`: 次回Vercel請求サイクル（18日）のリセット後、Active CPU消費が底を打ち、月次警告が解消されるか。
 - `[継続ウォッチ]`: 試合記録時の「最終戦チェック」の運用感と、Discord VCステータスの即時クリア動作。
 - `[発信候補]`: 「Vercel無料枠（4時間CPU）を使い切らないためのポーリング停止術 ＆ AIエージェントに美しいコードを書かせるルール設計」
+
+- **【Step 4完了：巨大APIのリファクタリング】(`04_PORTAL/src/app/api/match/record/route.ts`)**:
+  - 1,160行あった長大なAPIを、新設したAI規約（`06_code_smells_and_dod.md`）の「フェーズの分離」に基づきリファクタリング。
+  - `src/lib/matchRecord/` 配下に `types.ts`、`validator.ts`、`calculator.ts`、`settlement.ts`、`notifier.ts` を新設して責務を完全分離。
+  - メインの `route.ts` を 1,160行 ➔ 260行 のクリーンなオーケストレーターへ圧縮。
+  - 既存のユニットテスト173件全通過、TypeScript型チェックエラーゼロを実測確認。

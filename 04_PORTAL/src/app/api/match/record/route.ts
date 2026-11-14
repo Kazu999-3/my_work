@@ -1,31 +1,19 @@
 import { NextResponse, after } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
-import { calculateSurrenderMmrMitigation } from '../../../../lib/balancer/mmrImprovement';
-import { computePityAfterMatch } from '../../../../lib/matchSettlement';
-import { buildMatchupField, resultEmbedColor } from '../../../../lib/matchResultMessage';
 import { fetchAllRows } from '../../../../lib/fetchAll';
-import { getPlayerInventory as readInventory, consumeInventoryItems } from '../../../../lib/playerCoins';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
-import { syncPlayersDiscordRoles } from '../../../../lib/discordRoleSync';
+
+// 分割モジュール群（2026-11-15 リファクタリング：フェーズの分離・コードの臭い排除）
+import { MatchRecordBody } from '../../../../lib/matchRecord/types';
+import { validateMatchRecordInput, resolveAndValidateDbPlayers } from '../../../../lib/matchRecord/validator';
+import { calculateMatchParticipantsMmr, computePlayerSettlement } from '../../../../lib/matchRecord/calculator';
+import { insertMatchParticipants, updatePlayersMmrAndCoins, settleMatchBets, checkAndAwardJackpot } from '../../../../lib/matchRecord/settlement';
+import { performMatchNotifications } from '../../../../lib/matchRecord/notifier';
 
 export async function POST(request: Request) {
   try {
-    // ===== 認証（2026-09-29 追加）=====
-    // 以前は「仲間内メンバーが自分でも操作する運用のため認証は掛けない設計」という
-    // コメントと共に完全な無認証だった。だがその前提は既に失効している:
-    // 唯一の手動記録UI だった MatchRecordPanel を 2026-09-23 に削除済みで、
-    // 現在の呼び出し元は KTM Bot の handleAutoMatchEnd（ktm_bot/src/utils/helpers.js:245）
-    // 1箇所だけ。Bot は fetchPortalAPI 経由で X-Bot-Secret を送っている。
-    //
-    // 無認証のままだと、捏造した10人分のペイロードをPOSTするだけで
-    // 1試合あたり約1,750コイン（参加100×10 + 勝利150×5、ALL参加は+50）を発行でき、
-    // コイン総供給が約15,000枚規模のため1回で約17%のインフレになる。
-    // さらに ktm_matches / ktm_match_participants に架空の戦績が入り、MMRとリーダーボードも汚染される。
-    //
-    // verifyBotSecret は PORTAL_BOT_SECRET 未設定時のみ fail-open する（Vercelには設定済み）。
-    // 将来ポータル側に手動記録UIを戻す場合は管理者セッションでも通るようにしてある。
+    // ===== 1. 認証 =====
     const botAuth = verifyBotSecret(request);
     if (!botAuth.ok) {
       const adminAuth = await verifyAdminSession(request);
@@ -36,63 +24,18 @@ export async function POST(request: Request) {
         );
       }
     }
-    // ==================================
 
-    const body = await request.json();
+    // ===== 2. 入力バリデーション（エッジケース検証） =====
+    const body: MatchRecordBody = await request.json();
+    const valResult = validateMatchRecordInput(body);
+    if (!valResult.ok) {
+      return NextResponse.json({ error: valResult.error }, { status: 400 });
+    }
+
     const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition, isFinalMatch, dry_run } = body;
+    const names = participants.map(p => p.name);
 
-    if (!winningTeam || !participants || participants.length !== 10) {
-      return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
-    }
-
-    // 荒唐無稽な数値の入力・誤操作でMMR/戦績データが壊れることを防ぐため、
-    // 認証とは別に最低限の値域チェックも行う(2026-08-05発覚)。
-    if (winningTeam !== 'BLUE' && winningTeam !== 'RED') {
-      return NextResponse.json({ error: 'winningTeamはBLUEかREDのいずれかを指定してください。' }, { status: 400 });
-    }
-    const names = participants.map((p: any) => p.name);
-    if (new Set(names).size !== 10) {
-      return NextResponse.json({ error: '10人の参加者名が重複しています。' }, { status: 400 });
-    }
-    for (const p of participants) {
-      if (p.team !== 'BLUE' && p.team !== 'RED') {
-        return NextResponse.json({ error: `不正なteam値です: ${p.name}` }, { status: 400 });
-      }
-      if (!['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(p.role)) {
-        return NextResponse.json({ error: `不正なrole値です: ${p.name}` }, { status: 400 });
-      }
-      for (const key of ['kills', 'deaths', 'assists'] as const) {
-        const v = Number(p[key]);
-        if (!Number.isFinite(v) || v < 0 || v > 100) {
-          return NextResponse.json({ error: `${p.name}の${key}が不正な値です。` }, { status: 400 });
-        }
-      }
-      if (p.penta_kills !== undefined) {
-        const v = Number(p.penta_kills);
-        if (!Number.isInteger(v) || v < 0 || v > 5) {
-          return NextResponse.json({ error: `${p.name}のペンタキル数が不正な値です（0〜5）。` }, { status: 400 });
-        }
-      }
-    }
-    // 各チーム5ロールが重複なく揃っているかの検証(2026-08-05発覚)。以前は無かったため、
-    // 同ロールが片チームに重複投稿されると対面特定(line 105のfind)が失敗してopponentMmrが
-    // 黙って1200にフォールバックし、MMR計算・Discord速報・対面カルテが静かに歪んでいた。
-    for (const team of ['BLUE', 'RED'] as const) {
-      const roles = participants.filter((p: any) => p.team === team).map((p: any) => p.role);
-      const uniqueRoles = new Set(roles);
-      if (roles.length !== 5 || uniqueRoles.size !== 5) {
-        return NextResponse.json({ error: `${team}チームのロール構成が不正です（TOP/JG/MID/ADC/SUPが重複なく5人必要です）。` }, { status: 400 });
-      }
-    }
-
-    if (gameDuration !== undefined && gameDuration !== null) {
-      const gd = Number(gameDuration);
-      if (!Number.isFinite(gd) || gd < 0 || gd > 3 * 60 * 60) {
-        return NextResponse.json({ error: 'gameDurationが不正な値です。' }, { status: 400 });
-      }
-    }
-
-    // 1. データベースから全参加者の最新ステータスを取得
+    // プレイヤー名簿の取得と重複解決
     const { data: rawDbPlayers, error: pError } = await supabase
       .from('ktm_players')
       .select('*')
@@ -102,41 +45,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
     }
 
-    // 同名プレイヤーが複数存在する場合（別アカウント・カジノ重複等）の解決：
-    // 各プレイヤー名につき、試合数が多いアクティブな本アカウントを優先して1件に絞る
-    const playerByName = new Map<string, any>();
-    for (const p of rawDbPlayers) {
-      const existing = playerByName.get(p.name);
-      if (!existing) {
-        playerByName.set(p.name, p);
-      } else {
-        const existingGames = (existing.games_top || 0) + (existing.games_jg || 0) + (existing.games_mid || 0) + (existing.games_adc || 0) + (existing.games_sup || 0);
-        const pGames = (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
-        if (pGames > existingGames) {
-          playerByName.set(p.name, p);
-        }
-      }
+    const playerRes = resolveAndValidateDbPlayers(rawDbPlayers, names);
+    if (!playerRes.ok || !playerRes.dbPlayersMap) {
+      return NextResponse.json({ error: playerRes.error }, { status: 400 });
     }
+    const dbPlayers = names.map(n => playerRes.dbPlayersMap!.get(n)!);
 
-    // 10人全員がDBに存在するかチェック
-    const missingNames = names.filter((n: string) => !playerByName.has(n));
-    if (missingNames.length > 0) {
-      return NextResponse.json({
-        error: `一部のプレイヤー情報がDBから見つかりません: ${missingNames.join(', ')}`
-      }, { status: 400 });
-    }
-
-    const dbPlayers = names.map((n: string) => playerByName.get(n)!);
-
-    // 2. 過去の勝率・試合数を取得 (Supabaseのktm_match_participants等から)
-    // 簡易的に全試合履歴をフェッチして集計（パフォーマンス問題があれば後日Viewや集計テーブルに移行）
-    // 1000件超に備えページネーションで全件取得（欠落するとMMR計算のnumGames/勝率が不正確になる）
+    // ===== 3. MMR・スタッツ計算 =====
     const { data: historyData, error: hError } = await fetchAllRows((from, to) =>
       supabase
         .from('ktm_match_participants')
-        .select(`
-          match_id, player_name, role, team, ktm_matches!inner(winning_team)
-        `)
+        .select('match_id, player_name, team, role, ktm_matches!inner(winning_team)')
         .in('player_name', names)
         .range(from, to)
     );
@@ -145,160 +64,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `過去の試合履歴の取得に失敗しました: ${hError.message}` }, { status: 500 });
     }
 
-    const statsMap: Record<string, { roleGames: Record<string, number>, totalGames: number, totalWins: number }> = {};
-    names.forEach((name: string) => {
-      statsMap[name] = { roleGames: {}, totalGames: 0, totalWins: 0 };
+    const calculatedPlayers = calculateMatchParticipantsMmr({
+      participants,
+      winningTeam,
+      gameDuration,
+      isExhibition: !!isExhibition,
+      dbPlayers,
+      historyData: historyData || []
     });
 
-    if (historyData) {
-      historyData.forEach((row: any) => {
-        const pName = row.player_name;
-        const role = row.role;
-        const isWin = row.team === row.ktm_matches.winning_team;
-        if (!statsMap[pName]) return;
-        
-        statsMap[pName].totalGames += 1;
-        if (isWin) statsMap[pName].totalWins += 1;
-        
-        statsMap[pName].roleGames[role] = (statsMap[pName].roleGames[role] || 0) + 1;
-      });
-    }
-
-    // 3. 各プレイヤーのMMR変動を計算
-    const results = [];
-    
-    for (const input of participants) {
-      const dbP = dbPlayers.find((p: any) => p.name === input.name);
-      if (!dbP) continue;
-
-      const roleMmrKey = `mmr_${input.role.toLowerCase()}` as keyof typeof dbP;
-      const dbMmr = dbP[roleMmrKey];
-      const initialRank = dbP.metadata?.initial_highest_rank || dbP.highest_rank;
-      const currentMmr = (dbMmr !== null && dbMmr !== undefined)
-        ? Number(dbMmr)
-        : calculateInitialMmr(initialRank, input.role, dbP.initial_prefs || dbP.role_preferences);
-
-      // 対面相手のMMRを探す
-      const opponent = participants.find((p: any) => p.role === input.role && p.team !== input.team);
-      const oppDbP = opponent ? dbPlayers.find((p: any) => p.name === opponent.name) : null;
-      let opponentMmr = 1200;
-      if (oppDbP && opponent) {
-        const oppMmrKey = `mmr_${opponent.role.toLowerCase()}` as keyof typeof oppDbP;
-        const oppMmr = oppDbP[oppMmrKey];
-        const oppInitialRank = oppDbP.metadata?.initial_highest_rank || oppDbP.highest_rank;
-        opponentMmr = (oppMmr !== null && oppMmr !== undefined)
-          ? Number(oppMmr)
-          : calculateInitialMmr(oppInitialRank, opponent.role, oppDbP.initial_prefs || oppDbP.role_preferences);
-      }
-
-      // スタッツ計算用データ準備
-      const isWin = input.team === winningTeam;
-      const mainRank = dbP.highest_rank ? dbP.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
-      
-      const pStats = statsMap[input.name];
-      const numGames = pStats.roleGames[input.role] || 0;
-      const totalWinRate = pStats.totalGames > 0 ? (pStats.totalWins / pStats.totalGames) * 100 : 50;
-      
-      // 対面相手との対面回数を historyData から集計
-      let matchupCount = 0;
-      if (historyData && opponent) {
-        const myMatches = historyData.filter((r: any) => r.player_name === input.name && r.role === input.role);
-        const oppMatches = historyData.filter((r: any) => r.player_name === opponent.name && r.role === input.role);
-        myMatches.forEach((myM: any) => {
-          const matchedOpp = oppMatches.find((oppM: any) => oppM.match_id === myM.match_id && oppM.team !== myM.team);
-          if (matchedOpp) {
-            matchupCount++;
-          }
-        });
-      } 
-
-      const teamParticipants = participants.filter((p: any) => p.team === input.team);
-      const teamTotalKills = teamParticipants.reduce((acc: number, curr: any) => acc + (Number(curr.kills) || 0), 0);
-      
-      const isDamageMvp = teamParticipants.every((p: any) => (Number(input.damage_dealt) || 0) >= (Number(p.damage_dealt) || 0)) && (Number(input.damage_dealt) || 0) > 0;
-      const isObjectiveMvp = teamParticipants.every((p: any) => (Number(input.objective_damage) || 0) >= (Number(p.objective_damage) || 0)) && (Number(input.objective_damage) || 0) > 0;
-      const isTankMvp = teamParticipants.every((p: any) => (Number(input.damage_taken) || 0) >= (Number(p.damage_taken) || 0)) && (Number(input.damage_taken) || 0) > 0;
-      const isHealMvp = teamParticipants.every((p: any) => (Number(input.heal_shield) || 0) >= (Number(p.heal_shield) || 0)) && (Number(input.heal_shield) || 0) > 0;
-
-      const ctx: MmrCalcContext = {
-        currentMmr,
-        opponentMmr,
-        isWin,
-        kills: Number(input.kills) || 0,
-        deaths: Number(input.deaths) || 0,
-        assists: Number(input.assists) || 0,
-        mainRank,
-        numGames,
-        matchupCount,
-        totalWinRate,
-        visionScore: Number(input.vision_score) || 0,
-        cs: Number(input.cs) || 0,
-        damageDealt: Number(input.damage_dealt) || 0,
-        damageTaken: Number(input.damage_taken) || 0,
-        objectiveDamage: Number(input.objective_damage) || 0,
-        healShield: Number(input.heal_shield) || 0,
-        role: input.role,
-        teamTotalKills,
-        isDamageMvp,
-        isObjectiveMvp,
-        isTankMvp,
-        isHealMvp,
-        csd15: input.csd15
-      };
-
-      // お祭りマッチ（完全オフメタ・ランダム等）の場合はMMR変動ゼロ（完全戦績保護）
-      let mmrDelta = 0;
-      let mmrBreakdown = null;
-
-      if (!isExhibition) {
-        const mmrResult = calculateNewMMRDetailed(ctx);
-        mmrDelta = mmrResult.delta;
-        mmrBreakdown = mmrResult.breakdown;
-
-        // 早期投了（18分未満）の敗北MMR減少緩和
-        const durationSec = Number(gameDuration) || 0;
-        const durationMinutes = durationSec > 0 ? durationSec / 60 : 30;
-        if (!isWin && durationMinutes < 18) {
-          const originalDelta = mmrDelta;
-          mmrDelta = calculateSurrenderMmrMitigation(mmrDelta, durationMinutes);
-          if (mmrBreakdown) {
-            (mmrBreakdown as any).isSurrenderMitigated = true;
-            (mmrBreakdown as any).originalDelta = originalDelta;
-            (mmrBreakdown as any).finalDelta = mmrDelta;
-            (mmrBreakdown as any).note = `早期投了(${Math.round(durationMinutes)}分)による敗北ペナルティ半減緩和`;
-          }
-        }
-      } else {
-        mmrBreakdown = {
-          baseDelta: 0,
-          kdaBonus: 0,
-          mvpBonus: 0,
-          streakBonus: 0,
-          finalDelta: 0,
-          isExhibition: true,
-          note: 'お祭りカスタム (戦績ノーカウント保護)'
-        };
-      }
-
-      const kdaScore = calculateKdaScore(input.kills, input.deaths, input.assists);
-
-      results.push({
-        ...input,
-        currentMmr,
-        mmrDelta,
-        mmrBreakdown,
-        kdaScore,
-        dbPlayer: dbP
-      });
-    }
-
-    // 🛡️ DRY_RUN ガード: 自動操作やテスト時はDB更新・Webhook送信を行わず計算結果のみ返す
+    // 🛡️ DRY_RUN ガード
     if (dry_run) {
       return NextResponse.json({
         success: true,
         matchId: 'dry-run-match-id',
         message: '【DRY RUN】シミュレーション完了（DB書き込み・Discord通知は安全にスキップされました）',
-        results: results.map((r: any) => ({
+        results: calculatedPlayers.map((r: any) => ({
           name: r.name,
           role: r.role,
           team: r.team,
@@ -308,8 +89,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 同じ試合の二重記録を防ぐ（2026-10-19）。保存は通ったのに画面がタイムアウト等でエラーになり、もう一度押すと
-    // MMR・コイン・チケット消費がすべて2回分かかる。直近30分に「同じ10人・同じ陣営・同じK/D/A」の試合があれば断る。
+    // 二重記録防止シグネチャ判定（直近30分以内の同一10名・同一KDA）
     {
       const sig = (rows: Array<{ player_name?: string; name?: string; team: string; kills: any; deaths: any; assists: any }>) =>
         rows
@@ -321,7 +101,7 @@ export async function POST(request: Request) {
         .from('ktm_matches')
         .select('id, ktm_match_participants(player_name, team, kills, deaths, assists)')
         .gte('created_at', since);
-      const mySig = sig(results);
+      const mySig = sig(calculatedPlayers);
       const dup = (recentMatches || []).find((m: any) => sig(m.ktm_match_participants || []) === mySig);
       if (dup) {
         return NextResponse.json(
@@ -331,8 +111,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. DBへのトランザクション書き込み
-    // (1) ktm_matches レコード作成
+    // 全プレイヤーの最終精算値（レーン波及・Pity・コイン）を計算
+    const settledResults = await computePlayerSettlement(calculatedPlayers, winningTeam, !!isExhibition);
+
+    // ===== 4. DB永続化 =====
     const effectiveRiotMatchId = isExhibition ? 'EXHIBITION' : (riotMatchId || null);
     const { data: matchData, error: mError } = await supabase
       .from('ktm_matches')
@@ -347,261 +129,65 @@ export async function POST(request: Request) {
     if (mError || !matchData) {
       throw new Error(`試合レコードの作成に失敗: ${mError?.message}`);
     }
-
     const newMatchId = matchData.id;
 
-    // 試合を記録したら、それまでに作られたチーム分けの承認待ちはまとめて消す（2026-10-17 ユーザー判断）。
-    // 記録画面は使った1件しか消さないため、作り直したチーム分けが溜まり続けていた（10/16 夜だけで11件）。
-    {
-      // 観戦・待機メンバーの Pity +10 は、この試合のチーム分け（顔ぶれが一致する承認待ち）の待機者に、試合の記録時に1回だけ付ける。
-      // 2026-10-19: 以前はチーム分けを出すたび（自動保存）と Discord 投稿のたびに +10 しており、やり直すほど加算され、
-      // やり直しの途中で待機の順番も入れ替わっていた。Discord 投稿は認証が無く、誰でも自分を待機者にして加算できた。
-      try {
-        const names = new Set(results.map((r: any) => r.name));
-        const nameOf = (p: any) => (typeof p === 'string' ? p : p?.name);
-        const { data: pendings } = await supabase
-          .from('edge_tasks')
-          .select('payload')
-          .eq('task_type', 'balancer_pending')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(30);
-        const used = (pendings || []).find((t: any) => {
-          const br = t.payload?.balanceResult || {};
-          const team = [...(br.teamBlue || []), ...(br.teamRed || [])].map(nameOf).filter(Boolean);
-          return team.length === names.size && team.every((n: string) => names.has(n));
-        });
-        const specNames = Array.from(new Set(
-          ((used?.payload?.balanceResult?.spectators || []) as any[]).map(nameOf).filter((n: any) => n && !names.has(n))
-        )) as string[];
-        if (specNames.length > 0) {
-          const { data: specPlayers } = await supabase
-            .from('ktm_players')
-            .select('name, is_spectator_fixed, is_active')
-            .in('name', specNames);
-          const eligible = (specPlayers || [])
-            .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
-            .map((p: any) => p.name);
-          if (eligible.length > 0) {
-            const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', { p_names: eligible, p_amount: 10 });
-            if (pityError) console.warn('[match/record] 待機者の Pity 加算に失敗（続行）:', pityError.message);
-          }
+    // 待機プレイヤーのPity加算 ＆ balancer_pending 掃除
+    try {
+      const pNames = new Set(names);
+      const nameOf = (p: any) => (typeof p === 'string' ? p : p?.name);
+      const { data: pendings } = await supabase
+        .from('edge_tasks')
+        .select('payload')
+        .eq('task_type', 'balancer_pending')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      const used = (pendings || []).find((t: any) => {
+        const br = t.payload?.balanceResult || {};
+        const team = [...(br.teamBlue || []), ...(br.teamRed || [])].map(nameOf).filter(Boolean);
+        return team.length === pNames.size && team.every((n: string) => pNames.has(n));
+      });
+
+      const specNames = Array.from(new Set(
+        ((used?.payload?.balanceResult?.spectators || []) as any[]).map(nameOf).filter((n: any) => n && !pNames.has(n))
+      )) as string[];
+
+      if (specNames.length > 0) {
+        const { data: specPlayers } = await supabase
+          .from('ktm_players')
+          .select('name, is_spectator_fixed, is_active')
+          .in('name', specNames);
+        const eligible = (specPlayers || [])
+          .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
+          .map((p: any) => p.name);
+        if (eligible.length > 0) {
+          await supabase.rpc('increment_ktm_spectator_pity', { p_names: eligible, p_amount: 10 }).catch(() => {});
         }
-      } catch (e) {
-        console.warn('[match/record] 待機者の Pity 加算に失敗（続行）:', e);
       }
 
-      const { error: pendErr } = await supabase
+      await supabase
         .from('edge_tasks')
         .delete()
         .eq('task_type', 'balancer_pending')
         .eq('status', 'pending')
-        .lte('created_at', new Date().toISOString());
-      if (pendErr) console.warn('[match/record] チーム分けの承認待ちの掃除に失敗（続行）:', pendErr.message);
+        .lte('created_at', new Date().toISOString())
+        .catch(() => {});
+    } catch (e) {
+      console.warn('[match/record] 待機者Pity処理スキップ:', e);
     }
 
-    // (2) ktm_match_participants に10人分INSERT
-    const participantInserts = results.map(r => ({
-      match_id: newMatchId,
-      player_name: r.name,
-      discord_id: r.dbPlayer?.discord_id || null, // 改名に強い紐付けキー
-      team: r.team,
-      role: r.role,
-      kills: r.kills,
-      deaths: r.deaths,
-      assists: r.assists,
-      champion_name: r.champion_name || null,
-      vision_score: r.vision_score || 0,
-      cs: r.cs || 0,
-      // スコアボード画像から読み取れた時だけ。読めなかった試合は NULL（2026-10-17）
-      gold: Number(r.gold) > 0 && Number(r.gold) < 100000 ? Math.round(Number(r.gold)) : null,
-      damage_dealt: r.damage_dealt || 0,
-      damage_taken: r.damage_taken || 0,
-      objective_damage: r.objective_damage || 0,
-      heal_shield: r.heal_shield || 0,
-      penta_kills: Number(r.penta_kills) || 0, // 記録画面で入力（2026-10-07）。ジャックポット総取りの判定に使う
-      kda_score: r.kdaScore,
-      mmr_delta: r.mmrDelta,
-      mmr_breakdown: r.mmrBreakdown || null, // M-03: 変動の内訳
-      player_mmr: r.currentMmr
-    }));
+    // 参加者10人分INSERT
+    await insertMatchParticipants(supabase, newMatchId, settledResults);
 
-    const { error: piError } = await supabase
-      .from('ktm_match_participants')
-      .insert(participantInserts);
-    
-    if (piError) throw new Error(`参加者データの作成に失敗: ${piError.message}`);
+    // ktm_players更新 ＆ コイン台帳記録
+    await updatePlayersMmrAndCoins(supabase, newMatchId, settledResults, winningTeam, !!isExhibition);
 
-    // (3) ktm_players のMMRとPityとコインをUPDATE
-    for (const r of results) {
-      const gamesKey = `games_${r.role.toLowerCase()}`;
-
-      // ⑤ レーン間MMR連動 (Cross-Lane Propagation)
-      const currentLaneMmrs = {
-        TOP: r.dbPlayer.mmr_top || 1200,
-        JG:  r.dbPlayer.mmr_jg  || 1200,
-        MID: r.dbPlayer.mmr_mid || 1200,
-        ADC: r.dbPlayer.mmr_adc || 1200,
-        SUP: r.dbPlayer.mmr_sup || 1200,
-      };
-      // 他レーンへの波及は「この試合前で10試合未満」のレーンだけ（dbPlayer の games_* は試合前の値）
-      const propagated = propagateCrossLaneMmr(currentLaneMmrs, r.role, r.mmrDelta, {
-        TOP: r.dbPlayer.games_top || 0,
-        JG:  r.dbPlayer.games_jg  || 0,
-        MID: r.dbPlayer.games_mid || 0,
-        ADC: r.dbPlayer.games_adc || 0,
-        SUP: r.dbPlayer.games_sup || 0,
-      });
-      const top = isExhibition ? currentLaneMmrs.TOP : propagated.TOP;
-      const jg  = isExhibition ? currentLaneMmrs.JG  : propagated.JG;
-      const mid = isExhibition ? currentLaneMmrs.MID : propagated.MID;
-      const adc = isExhibition ? currentLaneMmrs.ADC : propagated.ADC;
-      const sup = isExhibition ? currentLaneMmrs.SUP : propagated.SUP;
-
-      const newGames = {
-        TOP: (r.dbPlayer.games_top || 0) + (!isExhibition && r.role === 'TOP' ? 1 : 0),
-        JG:  (r.dbPlayer.games_jg  || 0) + (!isExhibition && r.role === 'JG'  ? 1 : 0),
-        MID: (r.dbPlayer.games_mid || 0) + (!isExhibition && r.role === 'MID' ? 1 : 0),
-        ADC: (r.dbPlayer.games_adc || 0) + (!isExhibition && r.role === 'ADC' ? 1 : 0),
-        SUP: (r.dbPlayer.games_sup || 0) + (!isExhibition && r.role === 'SUP' ? 1 : 0),
-      };
-      const newTotalMmr = isExhibition ? (r.dbPlayer.mmr || 1200) : computeRepresentativeMmr({ TOP: top, JG: jg, MID: mid, ADC: adc, SUP: sup }, newGames);
-
-      // Pity（希望優先権）の計算
-      const primary = r.dbPlayer.role_preferences?.primary || 'ALL';
-      const secondary = r.dbPlayer.role_preferences?.secondary || 'ALL';
-      const ng1 = r.dbPlayer.ng_lane_1 || '';
-      const ng2 = r.dbPlayer.ng_lane_2 || '';
-      const playedRole = r.role;
-      let newPity = Number(r.dbPlayer.pity) || 0;
-      let newOffRolePity = Number(r.dbPlayer.off_role_pity) || 0;
-
-      // 第2希望に連続で回された回数（metadata に保持）。2戦連続でメインに行けなかったら追加救済する。
-      const prevMetaForPity = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
-      // 規則は lib/matchSettlement.ts（試合の編集でも同じ規則で付け替えるため 2026-10-17 に共通化）
-      const pityResult = computePityAfterMatch({
-        primary, secondary, ng1, ng2, playedRole,
-        pity: newPity,
-        offRolePity: newOffRolePity,
-        consecutiveSecondary: Number(prevMetaForPity.consecutive_secondary) || 0,
-      });
-      newPity = pityResult.pity;
-      newOffRolePity = pityResult.offRolePity;
-      const consecutiveSecondary = pityResult.consecutiveSecondary;
-      const allRoleBonusCoins = pityResult.allRoleBonusCoins;
-
-      // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン、ALL参加ボーナス +50コイン
-      const currentRolePrefs = typeof r.dbPlayer.role_preferences === 'object' && r.dbPlayer.role_preferences !== null ? r.dbPlayer.role_preferences : {};
-      const currentCoins = Number(currentRolePrefs.coins ?? r.dbPlayer.coins ?? r.dbPlayer.metadata?.coins) || 1000;
-      let coinReward = ((r.team === winningTeam) ? 250 : 100) + allRoleBonusCoins;
-
-      // ⚔️ 勝利ボーナス激闘チケット（victory_bonus_doubler）の判定
-      // 持ち物は inventory 列が正（playerCoins の getPlayerInventory）。以前は role_preferences から読んで列を書き換えておらず、
-      // 次のコイン操作で列から書き戻されて、使ったチケットが復活していた（2026-10-18）
-      // 2026-10-19: 消費は DB 上で行う（consume_player_items、migration 110）。読んだ持ち物から抜いて上書きすると、
-      // 記録中にショップで買った物が消えていた
-      let hasVictoryDoubler = false;
-
-      if (r.team === winningTeam && readInventory(r.dbPlayer).some((it: any) => it.id === 'victory_bonus_doubler')) {
-        // チケットを1枚消費して +600pt（通常250 + ブースト350）に爆増！
-        if ((await consumeInventoryItems(r.dbPlayer, 'victory_bonus_doubler', 1)) === 1) {
-          coinReward = 600;
-          hasVictoryDoubler = true;
-        }
-      }
-
-      const newCoins = currentCoins + coinReward;
-      const currentMeta = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
-
-      const baseUpdate: any = {
-        mmr_top: top,
-        mmr_jg: jg,
-        mmr_mid: mid,
-        mmr_adc: adc,
-        mmr_sup: sup,
-        [gamesKey]: (newGames as any)[r.role],
-        mmr: newTotalMmr,
-        pity: newPity,
-        off_role_pity: newOffRolePity,
-        spectator_pity: 0, // ★ 出場したため観戦Pityを確実に0リセット
-        metadata: { ...currentMeta, consecutive_secondary: consecutiveSecondary }
-      };
-      // コインと持ち物は MMR 等とは別に、DB 上の足し算（apply_player_coin_delta、migration 106）で更新する。
-      // 以前はここで「読んだ残高 + 報酬」を上書きしており、記録中にその人がカジノで遊ぶとどちらかが消えていた（2026-10-19）
-      const legacyCoinFields = {
-        coins: newCoins,
-        role_preferences: { ...currentRolePrefs, coins: newCoins },
-      };
-
-      (r as any).coinReward = coinReward;
-      (r as any).allRoleBonusCoins = allRoleBonusCoins;
-      (r as any).hasVictoryDoubler = hasVictoryDoubler;
-
-      const { error: uError } = await supabase
-        .from('ktm_players')
-        .update(baseUpdate)
-        .eq('name', r.name);
-      if (uError) {
-        throw new Error(`Player ${r.name} の更新エラー: ${uError.message}`);
-      }
-
-      let appliedCoins = newCoins;
-      const { data: coinRows, error: coinErr } = await supabase.rpc('apply_player_coin_delta', {
-        p_name: r.name,
-        p_delta: coinReward,
-        p_inventory: null,
-        p_prefs_patch: null,
-      });
-      if (coinErr && (coinErr.code === 'PGRST202' || /apply_player_coin_delta/.test(coinErr.message || ''))) {
-        // 関数がまだ無い（マイグレーション適用前）時だけ従来の上書き
-        const { error: legacyErr } = await supabase.from('ktm_players').update(legacyCoinFields).eq('name', r.name);
-        if (legacyErr) throw new Error(`Player ${r.name} のコイン更新エラー: ${legacyErr.message}`);
-      } else if (coinErr) {
-        throw new Error(`Player ${r.name} のコイン更新エラー: ${coinErr.message}`);
-      } else {
-        const row = Array.isArray(coinRows) ? coinRows[0] : coinRows;
-        if (row?.new_coins !== undefined) appliedCoins = Number(row.new_coins);
-      }
-
-      // 試合精算コインの台帳記録（coin_transactions へ match_settle として正式記録）
-      try {
-        const { recordCoinTransaction } = await import('../../../../lib/coinLedger');
-        await recordCoinTransaction({
-          player: {
-            id: r.dbPlayer?.id,
-            name: r.name,
-            discord_id: r.dbPlayer?.discord_id || null,
-          },
-          delta: coinReward,
-          balanceAfter: appliedCoins,
-          reason: 'match_settle',
-          metadata: {
-            matchId: newMatchId,
-            role: r.role,
-            team: r.team,
-            isWin: r.team === winningTeam,
-            isExhibition,
-            hasVictoryDoubler,
-          },
-        });
-      } catch (txErr) {
-        console.warn(`[match/record] 台帳記録スキップ (${r.name}):`, txErr);
-      }
-    }
-
-    // (4) 待機プレイヤーの Pity 加算はチーム確定時（pending保存時）に行うようにライフサイクルを分離・移動したため、ここでは行わない。
-
-    // この試合が精算する「ラウンド」(balancer_predictions.id)。(4.5) でロスター一致した予測から確定し、
-    // (4.6) の勝敗予想ベット精算で「このラウンドのベットだけ」を対象にするために使う。
-    // 予測を特定できなければ null のままとし、(4.6) は従来どおり pending 全件を精算する（取りこぼし防止）。
+    // 予測勝率の突き合わせ（balancer_predictions）
     let settledRoundId: string | number | null = null;
-
-    // (4.5) バランサー予測勝率の突き合わせ（課題: 予測勝率の検証）
-    // 直近の未突き合わせ予測から、このゲームのロスターに一致するものを探して的中/不的中を記録する。
-    // 予測はチーム確定時に balancer_predictions へ保存済み。テーブル未作成でも try/catch で握りつぶす。
     try {
-      const blueNames = new Set(results.filter((r: any) => r.team === 'BLUE').map((r: any) => r.name));
-      const redNames = new Set(results.filter((r: any) => r.team === 'RED').map((r: any) => r.name));
+      const blueNames = new Set(settledResults.filter(r => r.team === 'BLUE').map(r => r.name));
+      const redNames = new Set(settledResults.filter(r => r.team === 'RED').map(r => r.name));
       const setEq = (a: Set<string>, b: string[]) => a.size === b.length && b.every((n) => a.has(n));
 
       const { data: preds } = await supabase
@@ -611,545 +197,59 @@ export async function POST(request: Request) {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      // 青赤の並びは入れ替わっている可能性があるので両方向で照合する
       const match = (preds || []).find((p: any) => {
         const pb: string[] = p.blue_players || [];
         const pr: string[] = p.red_players || [];
-        const sameOrient = setEq(blueNames, pb) && setEq(redNames, pr);
-        const swapped = setEq(blueNames, pr) && setEq(redNames, pb);
-        return sameOrient || swapped;
+        return (setEq(blueNames, pb) && setEq(redNames, pr)) || (setEq(blueNames, pr) && setEq(redNames, pb));
       });
 
       if (match) {
         settledRoundId = match.id ?? null;
-        // 予測は「保存時のblue側」基準。実ロスターが入れ替わっていれば勝者側も読み替える。
         const swapped = !(setEq(blueNames, match.blue_players || []));
         const actualBlueWon = winningTeam === 'BLUE';
-        // 予測blue勝率を、保存時のblue視点での実勝敗に変換
         const predictedBlueWon = Number(match.predicted_blue_winprob) >= 0.5;
         const savedBlueActuallyWon = swapped ? !actualBlueWon : actualBlueWon;
         const correct = predictedBlueWon === savedBlueActuallyWon;
 
-        // ⚠️ 戻り値の error を必ず見る。2026-09-30まで、ここは error を捨てていたため
-        // match_id の型が uuid→bigint に変わっていた（migration 24 の誤り）ことに
-        // 2か月以上気づけず、予測検証・満足度・結果メッセージIDの紐付けが
-        // すべて黙って失敗し続けていた（45件すべて actual_winner が NULL）。
-        const { error: predErr } = await supabase
+        await supabase
           .from('balancer_predictions')
-          .update({
-            match_id: newMatchId,
-            actual_winner: winningTeam,
-            correct,
-          })
+          .update({ match_id: newMatchId, actual_winner: winningTeam, correct })
           .eq('id', match.id);
-        if (predErr) {
-          console.error('[match/record] 予測の突き合わせ保存に失敗:', predErr.message, predErr.details || '');
-        }
 
-        // 結果が確定するたびに直近の的中率を確認し、コイントス並みまで落ちていれば通知する
         const { reviewBalancerPredictionAccuracy } = await import('../../../../lib/balancer');
         await reviewBalancerPredictionAccuracy(supabase).catch(() => {});
       }
-    } catch (e) {
-      console.warn('[match/record] 予測突き合わせに失敗（続行）:', e);
+    } catch (predErr) {
+      console.warn('[match/record] 予測突き合わせスキップ:', predErr);
     }
 
-    // (4.6) 勝敗予想ベットの自動精算（的中者へのコイン払い戻し）
-    // 4. 勝敗予想（ベット）の自動精算 ＆ 的中配当払い戻し
-    const payoutWinners: Array<{ name: string; payout: number; multiplier: number; streak?: number }> = [];
-    try {
-      const { findOrCreatePlayer, getPlayerCoins, getPlayerInventory, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
-      const { data: allOpenBetTasks } = await supabase
-        .from('edge_tasks')
-        .select('id, payload')
-        .eq('task_type', 'custom_bet')
-        .eq('status', 'pending');
+    // 勝敗予想ベット精算
+    const payoutWinners = await settleMatchBets(supabase, newMatchId, winningTeam, settledRoundId);
 
-      // このラウンドに属するベットだけを精算する。settledRoundId が特定できなかった場合は
-      // 従来どおり全件（filterBetsByRound が roundId=null で全件返す）。round_id を持たない
-      // レガシーbet は常に含まれる（filterBetsByRound の仕様）。
-      // 2026-10-19: ベットは「賭けた時点で最新の予測」をラウンドとして持つが、精算は「実際の顔ぶれと一致する予測」で
-      // 行う。賭けた後にチーム分けをやり直すと新しい予測ができ、古いラウンドのベットが永久に精算されず
-      // （賭け金だけ引かれたまま）残っていた（10/17 のラウンド72・76の4件）。
-      // そこで「前の試合の予測より後〜今回の予測まで」の範囲のラウンドを、この試合のベットとして精算する。
-      // 範囲の間にある予測はやり直しで置き換わったもの（試合と結び付かない）なので、巻き込んで問題ない。
-      let roundFloor: number | null = null;
-      if (typeof settledRoundId === 'number') {
-        const { data: prevMatched } = await supabase
-          .from('balancer_predictions')
-          .select('id')
-          .not('match_id', 'is', null)
-          .lt('id', settledRoundId)
-          .order('id', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        roundFloor = prevMatched?.id ?? 0;
-      }
-      const openBetTasks = (allOpenBetTasks || []).filter((t: any) => {
-        const rid = t?.payload?.round_id ?? null;
-        if (settledRoundId === null || rid === null) return true; // ラウンドを特定できない・紐付け前のベットは従来どおり
-        if (roundFloor !== null && typeof rid === 'number' && typeof settledRoundId === 'number') {
-          return rid > roundFloor && rid <= settledRoundId;
-        }
-        return rid === settledRoundId;
-      });
+    // ジャックポット判定（ペンタキル勝利）
+    const jackpotWinner = await checkAndAwardJackpot(supabase, newMatchId, settledResults, winningTeam, !!isExhibition);
 
-      if (openBetTasks && openBetTasks.length > 0) {
-        for (const task of openBetTasks) {
-          const bet = task.payload || {};
-          const won = (bet.team === winningTeam);
-          let payout = 0;
-          // 保存済みoddsは必ずクランプしてから使う。2026-09-22以前に作られたレコードは
-          // クライアント申告値がそのまま入っている可能性があるため（任意倍率払い戻しの防止）。
-          const { sanitizeStoredOdds } = await import('../../../../lib/betOdds');
-          const multiplier = sanitizeStoredOdds(bet.odds);
+    // ===== 5. Discord通知・副作用（非同期） =====
+    const statsMap: Record<string, any> = {};
+    names.forEach(name => {
+      statsMap[name] = { totalGames: (historyData || []).filter((h: any) => h.player_name === name).length };
+    });
 
-          const pPlayer = await findOrCreatePlayer({
-            discordId: bet.discord_id,
-            name: bet.player_name,
-            autoCreate: true,
-          });
+    await performMatchNotifications({
+      supabase,
+      newMatchId,
+      winningTeam,
+      results: settledResults,
+      gameDuration,
+      isExhibition: !!isExhibition,
+      isFinalMatch,
+      balanceSatisfaction,
+      payoutWinners,
+      statsMap,
+      afterHook: after
+    });
 
-          let streakBonusPercent = 0;
-          let currentStreak = 0;
-
-          if (won) {
-            currentStreak = (Number(pPlayer?.role_preferences?.betStreak) || 0) + 1;
-            const maxStreak = Math.max(currentStreak, Number(pPlayer?.role_preferences?.maxBetStreak) || currentStreak);
-
-            // 🔥 連勝ボーナス (5連勝以上:+20%, 3連勝以上:+10%, 2連勝:+5%)
-            if (currentStreak >= 5) {
-              streakBonusPercent = 20;
-            } else if (currentStreak >= 3) {
-              streakBonusPercent = 10;
-            } else if (currentStreak >= 2) {
-              streakBonusPercent = 5;
-            }
-
-            const effectiveMultiplier = multiplier * (1 + streakBonusPercent / 100);
-            payout = Math.floor((bet.amount || 0) * effectiveMultiplier);
-            payoutWinners.push({ name: bet.player_name, payout, multiplier: Number(effectiveMultiplier.toFixed(2)), streak: currentStreak });
-
-            if (pPlayer) {
-              const cur = getPlayerCoins(pPlayer);
-              await updatePlayerCoinsAndInventory({
-                player: pPlayer,
-                newCoins: cur + payout,
-                reason: 'bet_payout',
-                reasonMetadata: { team: bet.team, amount: bet.amount, multiplier, streak: currentStreak },
-                rolePreferencesUpdate: {
-                  betStreak: currentStreak,
-                  maxBetStreak: maxStreak,
-                },
-              });
-            }
-          } else {
-            // 不的中：全損保険（bet_insurance）の所持チェック
-            if (pPlayer) {
-              const hasInsurance = getPlayerInventory(pPlayer).some((it: any) => it.id === 'bet_insurance');
-              let insuranceRefund = 0;
-
-              // 保険チケットを1枚消費して50%キャッシュバック。消費は DB 上で行い、実際に減らせた時だけ払う
-              // （以前は読んだ持ち物から抜いて上書きしており、同時に買った物が消えていた。2026-10-19）
-              if (hasInsurance && (await consumeInventoryItems(pPlayer, 'bet_insurance', 1)) === 1) {
-                insuranceRefund = Math.floor((bet.amount || 0) * 0.5);
-                const cur = getPlayerCoins(pPlayer);
-                const refundedCoins = cur + insuranceRefund;
-
-                await updatePlayerCoinsAndInventory({
-                  player: pPlayer,
-                  newCoins: refundedCoins,
-                  reason: 'bet_insurance_payout',
-                  reasonMetadata: { betAmount: bet.amount, refund: insuranceRefund },
-                  rolePreferencesUpdate: {
-                    betStreak: 0,
-                  },
-                });
-
-                // Discordへ保険発動通知
-                try {
-                  const { sendShopNotification } = await import('../../../../lib/discordNotify');
-                  await sendShopNotification({
-                    embeds: [{
-                      title: `💎【全損保険発動】${bet.player_name} さんの保険が適用されました！`,
-                      description: `勝敗予想は不的中でしたが、**💎 全損保険チケット** により賭け金（${(bet.amount || 0).toLocaleString()}🪙）の **50%（+${insuranceRefund.toLocaleString()}🪙）** がキャッシュバックされました！\n現在の残高: ${refundedCoins.toLocaleString()}🪙`,
-                      color: 0x06b6d4,
-                      footer: { text: 'KTM Sovereign Insurance' },
-                      timestamp: new Date().toISOString()
-                    }]
-                  });
-                } catch (insErr) {
-                  console.warn('[match/record] Insurance notify failed:', insErr);
-                }
-              } else {
-                // 通常の不的中：連勝リセット
-                await updatePlayerCoinsAndInventory({
-                  player: pPlayer,
-                  rolePreferencesUpdate: {
-                    betStreak: 0,
-                  },
-                });
-              }
-            }
-          }
-
-          await supabase
-            .from('edge_tasks')
-            .update({
-              status: 'completed',
-              result: {
-                won,
-                payout,
-                multiplier,
-                streak: currentStreak,
-                streakBonusPercent,
-                settled_at: new Date().toISOString()
-              },
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', task.id);
-        }
-      }
-    } catch (e) {
-      console.warn('[match/record] 勝敗予想の自動精算エラー（続行）:', e);
-    }
-
-    // (4.7) 💎 サーバー共有ジャックポット金庫（試合開催ボーナスの積立 ＋ ペンタキルでの総取り）
-    //
-    // ★ 2026-10-07: 総取りの判定をここへ戻した。2026-09-22 に「Botが試合直後に呼ぶ時点ではKDAが0埋め」
-    // という理由で riot/match-sync（Riot APIの実データ取得）側へ移していたが、その経路は Discord の勝敗ボタンが
-    // Bot の書き直しで無くなって一度も動いておらず、ジャックポットは積み立てられるだけで誰も当てられなかった。
-    // 現在の記録は 04 の記録画面から行い、ペンタキル数も記録画面で入力する（ktm_match_participants.penta_kills）。
-    // 【条件】ペンタキルを達成し、かつその試合に勝利していること（負け試合の帳尻ペンタでは払い出さない）。
-    // お祭りカスタム（戦績ノーカウント）は対象外。二重払い出しは ktm_matches.jackpot_claimed で防ぐ。
-    let jackpotWinner: { name: string; payout: number } | null = null;
-    try {
-      const { addToJackpot, claimJackpot } = await import('../../../../lib/jackpot');
-      // 積み立てを先に行い、この試合の分も総取りの対象に含める（JACKPOT_CAP に達していれば加算されない）
-      await addToJackpot(100);
-
-      const pentaWinner = isExhibition
-        ? null
-        : results.find((r: any) => Number(r.penta_kills) > 0 && r.team === winningTeam);
-      if (pentaWinner) {
-        const { data: matchRow } = await supabase
-          .from('ktm_matches')
-          .select('id, jackpot_claimed')
-          .eq('id', newMatchId)
-          .maybeSingle();
-        if (matchRow && matchRow.jackpot_claimed === false) {
-          const jRes = await claimJackpot(pentaWinner.name, pentaWinner.dbPlayer?.discord_id || null);
-          if (jRes.success && jRes.payout > 0) {
-            jackpotWinner = { name: pentaWinner.name, payout: jRes.payout };
-            await supabase.from('ktm_matches').update({ jackpot_claimed: true }).eq('id', newMatchId);
-            const { sendShopNotification } = await import('../../../../lib/discordNotify');
-            await sendShopNotification({
-              content: `🚨 **【JACKPOT 炸裂！！】** \`${pentaWinner.name}\` 選手がペンタキルを達成し、そのまま勝利！ ジャックポット金庫 **${jRes.payout.toLocaleString()}コイン** を総取りしました！！ 🚨`,
-            }).catch(() => {});
-          }
-        }
-      }
-    } catch (jErr) {
-      // 金庫処理の失敗で試合の記録そのものを失敗させない
-      console.warn('[match/record] ジャックポット積立・判定エラー（続行）:', jErr);
-    }
-
-    // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
-    try {
-      const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
-      if (webhookUrl) {
-        // 対戦表は lib/matchResultMessage.ts（試合の編集で結果メッセージを書き換える時も同じ書き方にするため）
-        const matchupField = buildMatchupField(results as any, winningTeam, !!isExhibition);
-
-        const betPayoutSummary = payoutWinners.length > 0
-          ? payoutWinners.map(w => `・\`${w.name}\`: **+${w.payout.toLocaleString()}🪙** 獲得！(x${w.multiplier}倍)`).join('\n')
-          : '的中者なし (または受付中のベットなし)';
-
-        // 📰 AIハイライト実況ニュース（スポーツ報知風ダイジェスト）の自動生成
-        const { generateMatchNews, buildMatchNewsField } = await import('../../../../lib/matchNews');
-        const newsInput = {
-          matchId: newMatchId,
-          winningTeam,
-          gameDuration,
-          participants: results.map((r: any) => ({
-            name: r.name,
-            team: r.team,
-            role: r.role,
-            champion_name: r.champion_name,
-            kills: r.kills || 0,
-            deaths: r.deaths || 0,
-            assists: r.assists || 0,
-            penta_kills: Number(r.penta_kills) || 0,
-            mmrDelta: r.mmrDelta || 0,
-            playerMmr: r.currentMmr || 1200,
-            damage_dealt: r.damage_dealt || 0,
-            damage_taken: r.damage_taken || 0,
-            vision: r.vision_score || 0,
-            cs: r.cs || 0,
-            gold: r.gold || 0,
-            time_dead: r.time_dead || 0,
-            solo_kills: r.solo_kills || 0,
-            cc_time: r.cc_time || 0,
-            building_damage: r.building_damage || 0,
-            items: r.items || [],
-            spells: r.spells || [],
-            isFirstTime: (statsMap[r.name]?.totalGames || 0) === 0,
-            totalGames: statsMap[r.name]?.totalGames || 0,
-          })),
-        };
-        const saveNews = (article: any) =>
-          supabase.from('edge_tasks').insert({
-            task_type: 'ktm_match_news',
-            payload: { matchId: newMatchId, winningTeam, article },
-            status: 'completed',
-          });
-        let newsArticle: any = null;
-        try {
-          newsArticle = await generateMatchNews(newsInput);
-          // edge_tasks へ保存（履歴での閲覧用）
-          await saveNews(newsArticle);
-
-        // 試合の生・詳細スタッツ（ビルド、サモスペ、詳細ダメージ、白黒時間、CC秒数等）を安全に永続化
-        try {
-          await supabase.from('edge_tasks').insert({
-            task_type: 'ktm_match_detail_stats',
-            payload: {
-              matchId: newMatchId,
-              winningTeam,
-              gameDuration,
-              participants: results.map((r: any) => ({
-                name: r.name,
-                team: r.team,
-                role: r.role,
-                champion_name: r.champion_name,
-                kills: r.kills || 0,
-                deaths: r.deaths || 0,
-                assists: r.assists || 0,
-                damage_dealt: r.damage_dealt || 0,
-                damage_taken: r.damage_taken || 0,
-                damage_mitigated: r.damage_mitigated || 0,
-                objective_damage: r.objective_damage || 0,
-                building_damage: r.building_damage || 0,
-                heal_shield: r.heal_shield || 0,
-                cc_time: r.cc_time || 0,
-                cs: r.cs || 0,
-                gold: r.gold || 0,
-                vision: r.vision_score || 0,
-                solo_kills: r.solo_kills || 0,
-                time_dead: r.time_dead || 0,
-                turrets_killed: r.turrets_killed || 0,
-                items: r.items || [],
-                spells: r.spells || [],
-                penta_kills: r.penta_kills || 0,
-                playerMmr: r.currentMmr || 1200,
-                mmrDelta: r.mmrDelta || 0,
-              })),
-            },
-            status: 'completed',
-          });
-        } catch (detailErr) {
-          console.warn('[match/record] 詳細スタッツの保存に失敗（続行）:', detailErr);
-        }
-        } catch (newsErr) {
-          console.warn('[match/record] AIニュース生成スキップ（続行・応答後に再試行）:', newsErr);
-        }
-
-        const fieldsList = [
-          ...(newsArticle ? [buildMatchNewsField(newsArticle)] : []),
-          matchupField,
-          {
-            name: "💰 勝敗予想カジノ 配当結果",
-            value: betPayoutSummary,
-            inline: false
-          }
-        ];
-
-        // ペンタキル総取りの通知は上の (4.7) で送る（2026-10-07 に riot/match-sync から移設）
-
-        const payload = isExhibition ? {
-          content: "🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！** 🎪\n🛡️ **完全戦績保護適用**: 全員の公式MMR・通算勝率はノーカウント（±0）で保護されました！\n🪙 参加賞（+100pt）＆勝利ボーナス（+150pt）および勝敗予想配当を付与しました！",
-          embeds: [
-            {
-              title: "🎪 お祭りカスタム 試合リザルト (戦績ノーカウント保護)",
-              color: 0xf59e0b,
-              fields: fieldsList,
-              footer: { text: 'KTM Sovereign Festival Match • Official MMR Protected' },
-              timestamp: new Date().toISOString()
-            }
-          ]
-        } : {
-          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
-          embeds: [
-            {
-              title: "⚔️ 試合リザルト",
-              color: resultEmbedColor(winningTeam),
-              fields: fieldsList
-            }
-          ]
-        };
-
-        // 開発環境（ローカル実行やE2E自動テスト）では本番Discordチャンネルへの誤爆送信を安全に防止
-        const isDev = process.env.NODE_ENV === 'development';
-        if (isDev) {
-          console.log('[match/record DEV] ローカル開発環境のため Discord Webhook 送信をスキップしました。');
-        } else {
-          // ?wait=true でメッセージ本体(id/channel_id)を受け取り、満足度投票の👍/👎を付ける（課題#42）
-          const sep = webhookUrl.includes('?') ? '&' : '?';
-          const whRes = await fetch(`${webhookUrl}${sep}wait=true`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }).catch(err => { console.error("Discord webhook error:", err); return null; });
-
-          // 満足度は管理者が入力時に記録する方式に変更したため、リアクション付与は廃止。
-          // 結果メッセージIDだけは参照用に紐付けておく。
-          try {
-            const msg = whRes && whRes.ok ? await whRes.json() : null;
-
-            // 号外が間に合わなかった時（Gemini のレート制限など）は、応答を返した後に少し待って作り直し、
-            // 元の試合結果メッセージの先頭に号外を書き足す（2026-10-16: 10/16 の2試合目で号外が出なかった）。
-            if (!newsArticle && msg?.id) {
-              const resultEmbed = payload.embeds[0];
-              after(async () => {
-                try {
-                  await new Promise((r) => setTimeout(r, 20_000));
-                  const article = await generateMatchNews(newsInput, { maxRetries: 4 });
-                  await saveNews(article);
-                  const editRes = await fetch(`${webhookUrl}/messages/${msg.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      embeds: [{ ...resultEmbed, fields: [buildMatchNewsField(article), ...resultEmbed.fields] }],
-                    }),
-                  });
-                  if (!editRes.ok) console.warn('[match/record] 号外の追記に失敗:', editRes.status, await editRes.text());
-                } catch (retryErr) {
-                  console.warn('[match/record] 号外の後追い生成にも失敗（号外なし）:', retryErr);
-                }
-              });
-            }
-
-            // 試合そのものに結果メッセージIDを持たせる（試合の編集で結果メッセージを書き換えるため。2026-10-17）
-            if (msg?.id) {
-              const { error: msgIdErr } = await supabase
-                .from('ktm_matches')
-                .update({ result_message_id: msg.id })
-                .eq('id', newMatchId);
-              if (msgIdErr) console.warn('[match/record] 結果メッセージIDの保存に失敗（続行）:', msgIdErr.message);
-            }
-
-            if (msg?.id && msg?.channel_id) {
-              const { error: linkDbErr } = await supabase
-                .from('balancer_predictions')
-                .update({ result_message_id: msg.id, result_channel_id: msg.channel_id })
-                .eq('match_id', newMatchId);
-              if (linkDbErr) {
-                console.error('[match/record] 結果メッセージIDの紐付けに失敗:', linkDbErr.message);
-              }
-            }
-          } catch (linkErr) {
-            console.warn('[match/record] 結果メッセージIDの紐付けに失敗（続行）:', linkErr);
-          }
-        }
-      }
-    } catch (discordErr) {
-      console.error("Failed to send discord notification", discordErr);
-    }
-
-    // チーム分け満足度: 管理者が成績入力時に選んだ値を予測行へ保存する。
-    // 以前はDiscordのリアクションを後から集計していたが、集まりが悪く手間もかかったため入力時記録に変更。
-    if (balanceSatisfaction === 'good' || balanceSatisfaction === 'normal' || balanceSatisfaction === 'bad') {
-      try {
-        // 更新行数まで確認する。型不一致(error)だけでなく「対象行が無い(0件更新)」も
-        // 起こり得るため。満足度は予測行に相乗りしているので、ロスター照合に失敗して
-        // match_id が埋まらなかった試合では保存先が存在しない。
-        const { data: satRows, error: satDbErr } = await supabase
-          .from('balancer_predictions')
-          .update({
-            satisfaction_up: balanceSatisfaction === 'good' ? 1 : 0,
-            satisfaction_down: balanceSatisfaction === 'bad' ? 1 : 0,
-            satisfaction_updated_at: new Date().toISOString(),
-          })
-          .eq('match_id', newMatchId)
-          .select('id');
-        if (satDbErr) {
-          console.error('[match/record] 満足度の保存に失敗:', satDbErr.message, satDbErr.details || '');
-        } else if (!satRows || satRows.length === 0) {
-          console.warn(
-            '[match/record] 満足度の保存先が見つかりませんでした（この試合に紐づく予測行が無い）。' +
-            'チーム分けをバランサー経由で確定していない試合では起こり得ます。match_id=' + newMatchId,
-          );
-        }
-      } catch (satErr: any) {
-        console.warn('[match/record] 満足度の保存に失敗（続行）:', satErr?.message);
-      }
-    }
-
-    // F: 対面カルテ。各プレイヤーの「対面相手」を記録し、試合後の振り返り導線に使う。
-    try {
-      const logRows: any[] = [];
-      for (const r of results) {
-        const opp = results.find((o: any) => o.role === r.role && o.team !== r.team);
-        if (!opp) continue;
-        logRows.push({
-          match_id: newMatchId,
-          discord_id: r.dbPlayer?.discord_id || null,
-          player_name: r.name,
-          role: r.role,
-          my_champion: r.champion_name || null,
-          enemy_champion: opp.champion_name || null,
-          is_win: r.team === winningTeam,
-          kills: r.kills || 0,
-          deaths: r.deaths || 0,
-          assists: r.assists || 0,
-        });
-      }
-      if (logRows.length > 0) {
-        await supabase.from('matchup_log').insert(logRows);
-      }
-    } catch (logErr: any) {
-      console.warn('[match/record] matchup_log の保存に失敗（続行）:', logErr?.message);
-    }
-
-    // Web Push: 試合結果の通知(#54)。失敗しても本処理は成功扱い。
-    try {
-      const { sendPushToAll } = await import('../../push/send/route');
-      await sendPushToAll({
-        title: '🏆 試合結果が記録されました',
-        body: `${winningTeam === 'BLUE' ? '🟦 BLUE' : '🟥 RED'} チームの勝利！詳細はポータルで確認できます。`,
-        url: '/history',
-      });
-    } catch (pushErr: any) {
-      console.warn('[match/record] push skipped:', pushErr?.message);
-    }
-
-    // Discord ロール自動同期: 試合参加者の戦績更新に伴い、5区分ロール（初参加/ライト/常連等）を即時更新
-    try {
-      const participantPlayerIds = results
-        .map((r: any) => r.dbPlayer?.id)
-        .filter((id: any) => typeof id === 'number');
-
-      if (participantPlayerIds.length > 0) {
-        // レスポンス遅延を防ぐため、バックグラウンド的に同期を実行
-        syncPlayersDiscordRoles({ playerIds: participantPlayerIds }).catch((syncErr) => {
-          console.warn('[match/record] Discordロール同期エラー（続行）:', syncErr?.message);
-        });
-      }
-    } catch (roleErr: any) {
-      console.warn('[match/record] Discordロール同期呼び出し失敗（続行）:', roleErr?.message);
-    }
-
-
-    // 🔊 Discord VCステータスを更新（最終戦ならクリア、通常なら「インターバル・交代募集中」）
-    try {
-      const { updateCustomVoiceChannelStatus } = await import('../../../../lib/discordNotify');
-      const targetStatus = isFinalMatch ? '' : 'インターバル・交代募集中';
-      await updateCustomVoiceChannelStatus(targetStatus);
-    } catch (vcErr) {
-      console.warn('[match/record] VC名更新エラー（続行）:', vcErr);
-    }
-
-    return NextResponse.json({ success: true, matchId: newMatchId, updates: results, jackpotWinner });
+    return NextResponse.json({ success: true, matchId: newMatchId, updates: settledResults, jackpotWinner });
 
   } catch (error: any) {
     console.error('Record Match Error:', error);
