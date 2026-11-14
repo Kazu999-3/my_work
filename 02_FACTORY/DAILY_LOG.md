@@ -1,5 +1,38 @@
 ## 📅 2026-11-14（土）
 
+### 🚨 緊急障害復旧：/history 画面 500エラー解消（DB match_type カラム欠落耐性 & マイグレーション配備）
+
+**概要**:
+1. **背景と目的**:
+   - Discord のエラー検知 BOT（KTM Portal Error Watcher）より、複数の一般ユーザー（berry, ごり, もちもち望井）から `/history` 画面を開いた際に `GET /api/match/history → 500` が継続発生しているアラートを受信。
+   - 直前（19:52）にリリースしたコミット `8d04d7e7`（お祭りトグル機能）において、クエリに追加した `match_type` カラムが Supabase DB 側に未マイグレーションだったため、PostgREST が `column ktm_matches.match_type does not exist (code: 42703)` を返して API が 500 クラッシュしていた。
+2. **実施内容**:
+   - **【DBマイグレーションの新規配備】(`04_PORTAL/supabase/migrations/126_add_match_type_to_ktm_matches.sql`)**:
+     - `ktm_matches` テーブルに `match_type text DEFAULT 'NORMAL'` を追加。
+     - 過去に `riot_match_id = 'EXHIBITION'` として保存されていた試合を自動で `EVENT` に初期化し、検索用インデックスを付与。
+     - GitHub Actions（`migrate.yml`）による本番 Supabase 自動マイグレーションの導線を確立。
+   - **【API & MMR計算の自動フォールバック強化】(`04_PORTAL`)**:
+     - `src/app/api/match/history/route.ts`: クエリ実行時に 42703（カラム未存在）を検知した場合、自動で `match_type` を除外した旧クエリへフォールバックして正常取得。レスポンス作成時に `riot_match_id === 'EXHIBITION' ? 'EVENT' : 'NORMAL'` で動的補完して返却。
+     - `src/lib/mmr.ts`: `replayMmrHistory` 内でも同様のカラム未存在フォールバックを実装し、MMR再計算がクラッシュしないように防御。
+     - `src/app/api/admin/match/[id]/route.ts`: PUT / PATCH ハンドラーにおいて、`match_type` カラムが存在しない環境でも `riot_match_id = 'EXHIBITION'` によるトグル動作を維持できるようフォールバック更新を実装。
+3. **機械的実値検証**:
+   - Supabase 接続スクリプト検証: 42703検知およびフォールバックによる試合データ5件の正常取得を確認（`SUCCESS`）。
+   - TypeScript型チェック（`npx tsc --noEmit`）: エラー0件で完全合格。
+   - ユニットテスト全173件（`npm test`）: 173 pass / 0 fail で全件成功。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. DBカラム追加を伴う新機能を配備する際は、コード側のデプロイとDBマイグレーションの適用タイムラグによる「PostgREST 42703（カラム不存在）即死障害」を防ぐため、アプリ側に必ずクエリのフォールバック機構を用意しておく。
+> 2. 後方互換用の判定関数（`getMatchType` 等）がコード内にあっても、SQLクエリの `select` 句に未存在列を直書きするとクエリ全体が400エラーで落とされるため、DB未配備時でも旧カラムだけで動くセーフティネットが不可欠。
+> 3. GitHub Actions 等で push 連動マイグレーションを組んでいる場合、マイグレーションファイル（`.sql`）をコード修正と同時にリポジトリへ反映させることで、ゼロダウンタイムでの完全復旧が実現する。
+
+- `[要検証]`: 本番環境（Vercel）デプロイ完了後、`/history` 画面を開いてエラー通知が止まり正常表示されることを確認。
+- `[継続ウォッチ]`: GitHub Actions による DB マイグレーション（126番）の自動適用ステータス。
+- `[発信候補]`: 「DBマイグレーションとPostgRESTのタイムラグをゼロにする、堅牢なNext.js/Supabaseフォールバック設計」。
+
+---
+
+## 📅 2026-11-14（土）
+
 ### 🛡️ KTM管理ダッシュボード高度化：試合履歴のお祭りトグル（MMR保護）＆ プレイヤー単体即時Riot同期の配備
 
 **概要**:

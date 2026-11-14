@@ -34,7 +34,33 @@ export async function GET(req: Request) {
       query = query.neq('winning_team', 'DRAW');
     }
 
-    const { data, error } = await query.limit(limit);
+    let { data, error } = await query.limit(limit);
+
+    // DB に match_type カラムが未配備の場合（42703）の安全な自動フォールバック
+    if (error && ((error as any).code === '42703' || String((error as any).message).includes('match_type'))) {
+      console.warn('[match/history] match_type column missing in DB, falling back to legacy select');
+      let fallbackQuery = supabase
+        .from('ktm_matches')
+        .select(`
+          id,
+          created_at,
+          winning_team,
+          game_duration,
+          riot_match_id,
+          ktm_match_participants (
+            player_name, team, role, champion_name, kills, deaths, assists,
+            player_mmr, kda_score, mmr_delta, mmr_breakdown, cs, gold, damage_dealt, vision_score
+          )
+        `)
+        .order('created_at', { ascending: false });
+      if (!includeFestival) {
+        fallbackQuery = fallbackQuery.neq('winning_team', 'DRAW');
+      }
+      const fallbackRes = await fallbackQuery.limit(limit);
+      data = fallbackRes.data;
+      error = fallbackRes.error;
+    }
+
     if (error) throw error;
 
     const matchIds = (data || []).map((m: any) => m.id);
@@ -91,6 +117,7 @@ export async function GET(req: Request) {
         winning_team: m.winning_team,
         game_duration: m.game_duration || 0,
         riot_match_id: m.riot_match_id,
+        match_type: m.match_type || (m.riot_match_id === 'EXHIBITION' ? 'EVENT' : 'NORMAL'),
         participants: mergedParticipants,
       };
     });

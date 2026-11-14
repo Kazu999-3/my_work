@@ -212,10 +212,16 @@ export async function PUT(
       }
     }
 
-    const { error: matchError } = await supabase
+    let { error: matchError } = await supabase
       .from('ktm_matches')
       .update(updatePayload)
       .eq('id', matchId);
+
+    if (matchError && ((matchError as any).code === '42703' || String((matchError as any).message).includes('match_type'))) {
+      const { match_type, ...fallbackPayload } = updatePayload;
+      const res = await supabase.from('ktm_matches').update(fallbackPayload).eq('id', matchId);
+      matchError = res.error;
+    }
 
     if (matchError) {
       throw new Error(`試合レコードの更新に失敗: ${matchError.message}`);
@@ -395,10 +401,16 @@ export async function PATCH(
       }
     }
 
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from('ktm_matches')
       .update(updatePayload)
       .eq('id', matchId);
+
+    if (updateError && ((updateError as any).code === '42703' || String((updateError as any).message).includes('match_type'))) {
+      const { match_type, ...fallbackPayload } = updatePayload;
+      const res = await supabase.from('ktm_matches').update(fallbackPayload).eq('id', matchId);
+      updateError = res.error;
+    }
 
     if (updateError) {
       throw new Error(`試合種別の更新に失敗: ${updateError.message}`);
