@@ -257,6 +257,14 @@ export default function BalancerPage() {
   const inactiveCount  = players.filter(p => !p.is_active).length;
   const canBalance     = activeCount >= 10;
 
+  // ★ 結果表示モーダルを開くハンドラー（confirmedResult がある場合はそれをセットして確実に開く）
+  const handleOpenResultModal = () => {
+    if (!balanceResult && confirmedResult) {
+      setBalanceResult(confirmedResult);
+    }
+    setShowResultModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground-soft p-4 pb-28 md:p-8 md:pb-28 lg:p-10 lg:pb-28 max-w-[1680px] w-full mx-auto space-y-6">
       <CustomSubNav />
@@ -267,10 +275,10 @@ export default function BalancerPage() {
       </div>
 
       {/* ★ チーム分け結果モーダル */}
-      {balanceResult && showResultModal && (
+      {(balanceResult || confirmedResult) && showResultModal && (
         <BalanceResultModal
           players={players} savingPending={actions.savingPending} copiedResult={actions.copiedResult} setMessage={setMessage}
-          balanceResult={balanceResult} setBalanceResult={setBalanceResult} proposals={proposals}
+          balanceResult={balanceResult || confirmedResult} setBalanceResult={setBalanceResult} proposals={proposals}
           selectedProposalIdx={selectedProposalIdx} setSelectedProposalIdx={setSelectedProposalIdx} analysis={analysis}
           swapSource={swap.swapSource} sendingDiscord={actions.sendingDiscord} setShowResultModal={setShowResultModal}
           selectedTable={selectedTable} dragOverSlot={swap.dragOverSlot}
@@ -309,7 +317,7 @@ export default function BalancerPage() {
         <BalancerHeader
           players={players} setPlayers={setPlayers} saving={saving} announcingStats={actions.announcingStats} isAdmin={isAdmin}
           predStats={predStats} satStats={satStats} integrityData={integrityData} balancing={balancing} balanceResult={confirmedResult}
-          showResultModal={showResultModal} setShowResultModal={setShowResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth} selectionMode={selectionMode} setSelectionMode={setSelectionMode}
+          showResultModal={showResultModal} setShowResultModal={setShowResultModal} onOpenResultModal={handleOpenResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth} selectionMode={selectionMode} setSelectionMode={setSelectionMode}
           selectedTable={selectedTable} setSelectedTable={setSelectedTable} bo3State={bo3.bo3State} handleResetBo3={bo3.handleResetBo3}
           handleAnnounceStats={actions.handleAnnounceStats} handleBalance={handleBalance}
           handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount}
@@ -361,7 +369,7 @@ export default function BalancerPage() {
         />
 
         {/* ★ スティッキー下部クイックアクションバー */}
-        <QuickActionBar balancing={balancing} balanceResult={confirmedResult} setShowResultModal={setShowResultModal} handleBalance={handleBalance} handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount} canBalance={canBalance} />
+        <QuickActionBar balancing={balancing} balanceResult={confirmedResult} setShowResultModal={setShowResultModal} onOpenResultModal={handleOpenResultModal} handleBalance={handleBalance} handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount} canBalance={canBalance} />
 
         {selectedPlayer && (
           <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />

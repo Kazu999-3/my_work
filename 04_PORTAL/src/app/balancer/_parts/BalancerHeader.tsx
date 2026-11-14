@@ -16,7 +16,7 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ヘッダー（タイトル・操作ボタン群）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalancerHeader({ players, setPlayers, saving, isAdmin, predStats, satStats, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance, selectionMode, setSelectionMode }: {
+export default function BalancerHeader({ players, setPlayers, saving, isAdmin, predStats, satStats, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance, selectionMode, setSelectionMode, onOpenResultModal }: {
   players: any[];
   setPlayers: React.Dispatch<React.SetStateAction<any[]>>;
   saving: boolean;
@@ -45,6 +45,7 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
   canBalance: boolean;
   selectionMode?: 'fair' | 'low' | 'high';
   setSelectionMode?: React.Dispatch<React.SetStateAction<'fair' | 'low' | 'high'>>;
+  onOpenResultModal?: () => void;
 }) {
   return (
         <div className="flex flex-col gap-3 border-b border-border pb-4">
@@ -134,7 +135,7 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowResultModal(true)}
+                    onClick={onOpenResultModal || (() => setShowResultModal(true))}
                     className="px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs shadow-xs transition cursor-pointer flex items-center gap-1"
                   >
                     <span>スコアボードを開く 📊</span>
@@ -242,7 +243,7 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
 
           {/* 前回結果の再表示ボタン */}
           {balanceResult && !showResultModal && (
-            <button onClick={() => setShowResultModal(true)}
+            <button onClick={onOpenResultModal || (() => setShowResultModal(true))}
               className="flex items-center gap-2 bg-primary-100 hover:bg-primary-100 border border-primary-edge/50 text-primary-700 px-4 py-2 rounded-lg font-bold transition text-sm">
               <Globe className="h-4 w-4" /> 前回のチーム分け結果を再表示
             </button>
