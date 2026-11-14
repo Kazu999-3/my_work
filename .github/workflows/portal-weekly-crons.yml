@@ -1,11 +1,13 @@
-name: Portal Weekly Crons (Vercel Offload)
+name: Portal Scheduled Crons (Vercel Offload)
 
 # Vercel無料枠（Fluid Active CPU: 4時間/月）の恒久保護のため、
-# vercel.json に設定されていた週次CronジョブをGitHub Actionsへ完全移設（2026-11-15 制定）。
-# Vercel側Cronを全廃し、バックグラウンド実行をGitHub Actionsからキックする。
+# 常時ポーリングを完全撤廃し、必要な定期ジョブのみGitHub Actionsからキックする（2026-11-15 制定）。
+# Vercel側CronおよびSupabase pg_cronの毎時空振りポーリングを全廃。
 
 on:
   schedule:
+    # 毎日 20:00 JST (11:00 UTC) - オンボーディング自己紹介＆新着チェック（ゴールデンタイムに1日1回だけ実行）
+    - cron: '0 11 * * *'
     # 毎週月曜 09:00 JST (00:00 UTC) - sync-matches
     - cron: '0 0 * * 1'
     # 毎週火曜 00:00 JST (月曜 15:00 UTC) - freshness-check
@@ -23,13 +25,14 @@ on:
         type: choice
         options:
           - all
+          - onboarding-daily
           - sync-matches
           - freshness-check
           - soloq-trends
           - lottery
 
 concurrency:
-  group: portal-weekly-crons
+  group: portal-scheduled-crons
   cancel-in-progress: false
 
 jobs:
@@ -50,9 +53,10 @@ jobs:
 
           call_cron() {
             local endpoint="$1"
-            echo "==> 実行中: $PORTAL_URL$endpoint"
+            local method="${2:-GET}"
+            echo "==> 実行中 ($method): $PORTAL_URL$endpoint"
             local res
-            res=$(curl -s -w "\n%{http_code}" -X GET "$PORTAL_URL$endpoint" -H "Authorization: Bearer $CRON_SECRET")
+            res=$(curl -s -w "\n%{http_code}" -X "$method" "$PORTAL_URL$endpoint" -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json")
             local body
             body=$(echo "$res" | head -n -1)
             local status
@@ -67,27 +71,37 @@ jobs:
 
           ERR=0
 
+          run_onboarding() {
+            echo "--- オンボーディング自己紹介チェック ---"
+            call_cron "/api/onboarding/process-intro" "POST" || ERR=1
+            echo "--- 個別案内チャンネル新着チェック ---"
+            call_cron "/api/onboarding/channels/poll" "POST" || ERR=1
+          }
+
           # 手動実行時
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             case "$INPUT_JOB" in
-              "sync-matches")    call_cron "/api/cron/sync-matches" || ERR=1 ;;
-              "freshness-check") call_cron "/api/cron/freshness-check" || ERR=1 ;;
-              "soloq-trends")    call_cron "/api/cron/soloq-trends" || ERR=1 ;;
-              "lottery")         call_cron "/api/cron/lottery" || ERR=1 ;;
+              "onboarding-daily") run_onboarding ;;
+              "sync-matches")     call_cron "/api/cron/sync-matches" "GET" || ERR=1 ;;
+              "freshness-check")  call_cron "/api/cron/freshness-check" "GET" || ERR=1 ;;
+              "soloq-trends")     call_cron "/api/cron/soloq-trends" "GET" || ERR=1 ;;
+              "lottery")          call_cron "/api/cron/lottery" "GET" || ERR=1 ;;
               "all")
-                call_cron "/api/cron/sync-matches" || ERR=1
-                call_cron "/api/cron/freshness-check" || ERR=1
-                call_cron "/api/cron/soloq-trends" || ERR=1
-                call_cron "/api/cron/lottery" || ERR=1
+                run_onboarding
+                call_cron "/api/cron/sync-matches" "GET" || ERR=1
+                call_cron "/api/cron/freshness-check" "GET" || ERR=1
+                call_cron "/api/cron/soloq-trends" "GET" || ERR=1
+                call_cron "/api/cron/lottery" "GET" || ERR=1
                 ;;
             esac
           else
             # 定期スケジュール時
             case "$SCHEDULE" in
-              "0 0 * * 1")  call_cron "/api/cron/sync-matches" || ERR=1 ;;
-              "0 15 * * 1") call_cron "/api/cron/freshness-check" || ERR=1 ;;
-              "0 22 * * 6") call_cron "/api/cron/soloq-trends" || ERR=1 ;;
-              "0 13 * * 0") call_cron "/api/cron/lottery" || ERR=1 ;;
+              "0 11 * * *") run_onboarding ;;
+              "0 0 * * 1")  call_cron "/api/cron/sync-matches" "GET" || ERR=1 ;;
+              "0 15 * * 1") call_cron "/api/cron/freshness-check" "GET" || ERR=1 ;;
+              "0 22 * * 6") call_cron "/api/cron/soloq-trends" "GET" || ERR=1 ;;
+              "0 13 * * 0") call_cron "/api/cron/lottery" "GET" || ERR=1 ;;
             esac
           fi
 

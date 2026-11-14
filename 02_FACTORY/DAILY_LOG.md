@@ -22551,3 +22551,8 @@
   - `vercel.json` に残っていた週次Cron（sync-matches, freshness-check, soloq-trends, lottery）を GitHub Actions（`portal-weekly-crons.yml`）へ完全移設。
   - `vercel.json` の `crons: []` とし、Vercel側の定期実行を完全撤廃。
   - Vercelダッシュボード上のスケジュール実行が0件となり、アクセスがない時間のサーバーレスCPU消費が永久に「0秒」に確定。
+
+- **【恒久対応第2弾：オンボーディングの夜間日次バッチ化＆Vercel完全オフロード】(`.github/workflows/portal-weekly-crons.yml`)**:
+  - 毎時2回（月1,440回）空振りしていたオンボーディングポーリングを、新メンバー活動時間帯（毎日20:00 JST）の1日1回バッチへ完全集約。
+  - GitHub Actions（`onboarding-daily`）へ移設し、手動即時実行（workflow_dispatch）および管理画面（`/ktm-admin`）での即時更新とのハイブリッド運用を確立。
+  - これにより、VercelのバックグラウンドCPU稼働ゼロのまま、新メンバーの名簿登録・個別案内チャンネル開通の自動化を両立。
