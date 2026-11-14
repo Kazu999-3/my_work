@@ -115,7 +115,7 @@ export async function POST(request: Request) {
 
         // 🎖️ Discordのランクロールを最新ランクに合わせて全自動付与・剥奪！
         if (player.discord_id && highestRank !== 'UNRANKED') {
-          updateMemberDiscordRankRole(player.discord_id, highestRank).catch((rErr) =>
+          await updateMemberDiscordRankRole(player.discord_id, highestRank).catch((rErr) =>
             console.warn(`[Riot Sync] Role update error (${player.name}):`, rErr)
           );
         }

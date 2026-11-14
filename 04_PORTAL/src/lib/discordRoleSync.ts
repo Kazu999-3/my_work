@@ -2,6 +2,7 @@ import { supabaseAdmin } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
 import { fetchAllRows } from './fetchAll';
 import { getPlayerTier, ExperienceTier } from './playerTier';
+import { higherRank, rankScore } from './mmr';
 
 export type PlaystyleRoleKey = 'soloq' | 'flex' | 'aram' | 'casual' | 'learner';
 
@@ -85,19 +86,6 @@ export async function updateMemberDiscordRankRole(
 
   // rankTier の大文字正規化（例: "PLATINUM 4" -> "PLATINUM"）
   const cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
-  
-  // UNRANKED は「アイアン&アンレート」にマップ
-  let lookupRank = cleanRank;
-  if (cleanRank === 'UNRANKED') {
-    lookupRank = 'IRON';
-  } else if (['DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(cleanRank)) {
-    // サーバー上の最上位ロールはエメラルド
-    lookupRank = 'EMERALD';
-  }
-
-  // 対応するロールIDを検索
-  const targetEntry = Object.entries(DISCORD_RANK_ROLES).find(([, name]) => name === lookupRank);
-  const targetRoleId = targetEntry ? targetEntry[0] : null;
 
   try {
     const memberRes = await discordFetch(
@@ -110,6 +98,23 @@ export async function updateMemberDiscordRankRole(
     const memberData: { roles: string[] } = await memberRes.json();
     const currentRoles = new Set(memberData.roles || []);
     let changed = false;
+
+    // 現在Discord上で付与されているランクロールを検知し、高い方に上書き（降格巻き戻し防止）
+    const currentDiscordRank = getRankFromDiscordRoles(currentRoles);
+    const targetRank = higherRank(currentDiscordRank, cleanRank);
+
+    // UNRANKED は「アイアン&アンレート」にマップ
+    let lookupRank = targetRank;
+    if (targetRank === 'UNRANKED') {
+      lookupRank = 'IRON';
+    } else if (['DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(targetRank)) {
+      // サーバー上の最上位ロールはエメラルド
+      lookupRank = 'EMERALD';
+    }
+
+    // 対応するロールIDを検索
+    const targetEntry = Object.entries(DISCORD_RANK_ROLES).find(([, name]) => name === lookupRank);
+    const targetRoleId = targetEntry ? targetEntry[0] : null;
 
     // 1. 目標ランクロールを付与
     if (targetRoleId && !currentRoles.has(targetRoleId)) {
@@ -130,7 +135,6 @@ export async function updateMemberDiscordRankRole(
         if (removeRes.ok) changed = true;
       }
     }
-
 
     return { success: true, changed };
   } catch (err: any) {
@@ -518,19 +522,32 @@ export async function syncMemberDiscordRole(
       }
     }
 
-    // ★ DiscordのランクロールとDBの highest_rank の自動双方向同期
+    // ★ DiscordのランクロールとDBの highest_rank の自動双方向同期（常に高い方に上書き）
     let effectiveRank = highestRank;
     const detectedDiscordRank = getRankFromDiscordRoles(currentRoles);
-    if (detectedDiscordRank && detectedDiscordRank !== highestRank && supabaseAdmin) {
+    const highestEffectiveRank = higherRank(highestRank, detectedDiscordRank);
+
+    // (A) DB側の最高ランクが低ければ、高い方に引き上げ更新
+    if (rankScore(highestEffectiveRank) > rankScore(highestRank) && supabaseAdmin) {
       try {
         await supabaseAdmin
           .from('ktm_players')
-          .update({ highest_rank: detectedDiscordRank })
+          .update({ highest_rank: highestEffectiveRank })
           .eq('discord_id', discordId);
-        effectiveRank = detectedDiscordRank;
-        console.log(`[discordRoleSync] DB highest_rank を自動更新: ${discordId} -> ${detectedDiscordRank}`);
+        effectiveRank = highestEffectiveRank;
+        console.log(`[discordRoleSync] DB highest_rank を引き上げ更新: ${discordId} -> ${highestEffectiveRank}`);
       } catch (dbErr: any) {
         console.warn(`[discordRoleSync] DB highest_rank 自動更新失敗 (${discordId}):`, dbErr?.message);
+      }
+    }
+
+    // (B) Discord側のランクロールが低ければ、高い方に付与・更新
+    if (highestEffectiveRank && highestEffectiveRank !== 'UNRANKED' && rankScore(highestEffectiveRank) > rankScore(detectedDiscordRank)) {
+      try {
+        const rankUpdateRes = await updateMemberDiscordRankRole(discordId, highestEffectiveRank);
+        if (rankUpdateRes.changed) changed = true;
+      } catch (roleErr: any) {
+        console.warn(`[discordRoleSync] Discord ランクロール更新失敗 (${discordId}):`, roleErr?.message);
       }
     }
 
@@ -701,25 +718,40 @@ export async function syncPlayersDiscordRoles(options?: {
       continue;
     }
 
-    // Discord上のランクロールを検知し、DBと不一致ならDBを自動更新
+    // Discord上のランクロールとDBの最高ランクを照合し、常に高い方に引き上げる
     const detectedDiscordRank = currentRoles ? getRankFromDiscordRoles(currentRoles) : null;
-    let effectiveRank = player.highest_rank;
-    if (detectedDiscordRank && detectedDiscordRank !== player.highest_rank && supabaseAdmin) {
+    const highestEffectiveRank = higherRank(player.highest_rank, detectedDiscordRank);
+
+    // (A) DB側の最高ランクが低ければ、高い方に引き上げ更新
+    if (rankScore(highestEffectiveRank) > rankScore(player.highest_rank) && supabaseAdmin) {
       try {
         await supabaseAdmin
           .from('ktm_players')
-          .update({ highest_rank: detectedDiscordRank })
+          .update({ highest_rank: highestEffectiveRank })
           .eq('discord_id', dId);
-        effectiveRank = detectedDiscordRank;
-        player.highest_rank = detectedDiscordRank;
-        console.log(`[discordRoleSync:bulk] DB highest_rank を自動更新: ${player.name} (${dId}) -> ${detectedDiscordRank}`);
+        player.highest_rank = highestEffectiveRank;
+        console.log(`[discordRoleSync:bulk] DB highest_rank を引き上げ更新: ${player.name} (${dId}) -> ${highestEffectiveRank}`);
       } catch (err: any) {
         console.warn(`[discordRoleSync:bulk] DB更新失敗 (${dId}):`, err?.message);
       }
     }
 
-    // 既に目標ロールが付いており、余分な管理ロールも付いていなければ完全スキップ
-    if (currentRoles && targetRoleId && currentRoles.has(targetRoleId)) {
+    // (B) Discord側のランクロールが低ければ、高い方に付与・更新
+    let rankRoleChanged = false;
+    if (highestEffectiveRank && highestEffectiveRank !== 'UNRANKED' && rankScore(highestEffectiveRank) > rankScore(detectedDiscordRank)) {
+      try {
+        const rankRes = await updateMemberDiscordRankRole(dId, highestEffectiveRank);
+        if (rankRes.changed) {
+          rankRoleChanged = true;
+          console.log(`[discordRoleSync:bulk] Discord ランクロールを引き上げ付与: ${player.name} (${dId}) -> ${highestEffectiveRank}`);
+        }
+      } catch (roleErr: any) {
+        console.warn(`[discordRoleSync:bulk] Discord ランクロール更新失敗 (${dId}):`, roleErr?.message);
+      }
+    }
+
+    // 既に目標ロールが付いており、余分な管理ロールも付いていなければ完全スキップ（ランクロール変更もなければ）
+    if (currentRoles && targetRoleId && currentRoles.has(targetRoleId) && !rankRoleChanged) {
       const hasOtherManagedRole = allManagedRoleIds.some((rId) => rId !== targetRoleId && currentRoles.has(rId));
 
       if (!hasOtherManagedRole) {
