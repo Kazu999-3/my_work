@@ -6,6 +6,7 @@ import {
   Rocket, CheckSquare, Square, Share2, MessageSquare, ThumbsUp, Eye, Edit3, DollarSign, Layers, Compass
 } from 'lucide-react';
 import initialDraftsData from '@/data/note_drafts.json';
+import initialThreadsData from '@/data/note_threads.json';
 
 interface NotePublishRecord {
   isPublished: boolean;
@@ -14,6 +15,24 @@ interface NotePublishRecord {
   likes?: string;
   views?: string;
   notes?: string;
+}
+
+interface ThreadPost {
+  index: number;
+  text: string;
+  charCount: number;
+  isCta?: boolean;
+  media?: {
+    type: string;
+    url: string;
+    alt: string;
+  };
+}
+
+interface ThreadData {
+  title: string;
+  updatedAt: string;
+  posts: ThreadPost[];
 }
 
 interface NoteDraft {
@@ -29,12 +48,18 @@ interface NoteDraft {
 
 export default function NoteDraftsPage() {
   const staticDrafts: NoteDraft[] = (initialDraftsData as any)?.drafts || [];
+  const threadsMap: Record<string, ThreadData> = (initialThreadsData as any) || {};
   const [drafts, setDrafts] = useState<NoteDraft[]>(staticDrafts);
   const [loading, setLoading] = useState(staticDrafts.length === 0);
   const [selectedId, setSelectedId] = useState<string>(staticDrafts[0]?.id || '');
   const [copied, setCopied] = useState(false);
   const [showToc, setShowToc] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all'); // 'all' | 'profile' | 'free_guide' | 'paid_master'
+
+  // 🚀 X (Twitter) スレッド表示・コピー用ステート
+  const [viewTab, setViewTab] = useState<'article' | 'thread'>('article');
+  const [copiedPostIndex, setCopiedPostIndex] = useState<number | null>(null);
+  const [copiedAllThread, setCopiedAllThread] = useState(false);
 
   // 🚀 公開ステータス＆メモのローカル永続化
   const [publishMap, setPublishMap] = useState<Record<string, NotePublishRecord>>({});
@@ -105,12 +130,29 @@ export default function NoteDraftsPage() {
   }, [selectedId]);
 
   const currentDraft = drafts.find((d) => d.id === selectedId) || drafts[0];
+  const currentThread: ThreadData | undefined = currentDraft ? threadsMap[currentDraft.id] : undefined;
 
   const handleCopy = () => {
     if (!currentDraft) return;
     navigator.clipboard.writeText(currentDraft.content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  const handleCopyPost = (index: number, text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedPostIndex(index);
+      setTimeout(() => setCopiedPostIndex(null), 2500);
+    });
+  };
+
+  const handleCopyAllThread = () => {
+    if (!currentThread || !currentThread.posts) return;
+    const fullText = currentThread.posts.map(p => `【ポスト${p.index}】\n${p.text}`).join('\n\n---\n\n');
+    navigator.clipboard.writeText(fullText).then(() => {
+      setCopiedAllThread(true);
+      setTimeout(() => setCopiedAllThread(false), 2500);
     });
   };
 
@@ -452,6 +494,12 @@ export default function NoteDraftsPage() {
                         公開済
                       </span>
                     )}
+                    {threadsMap[d.id] && (
+                      <span className="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-400 border border-sky-500/40 font-bold flex items-center gap-0.5">
+                        <Share2 className="w-2.5 h-2.5" />
+                        <span>Xスレッド</span>
+                      </span>
+                    )}
                   </div>
                 </button>
               );
@@ -493,9 +541,67 @@ export default function NoteDraftsPage() {
                 )}
               </button>
             </div>
-          
-          {/* 記事メタ情報カード */}
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 sm:p-5 mb-4 shadow-xl">
+
+            {/* 📖 本文プレビュー / 📱 Xスレッド 切替タブ */}
+            <div className="flex items-center justify-between gap-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl p-2">
+              <div className="flex items-center gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
+                <button
+                  onClick={() => setViewTab('article')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    viewTab === 'article'
+                      ? 'bg-amber-500 text-black shadow font-black'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>note本文</span>
+                </button>
+                <button
+                  onClick={() => setViewTab('thread')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer relative ${
+                    viewTab === 'thread'
+                      ? 'bg-sky-500 text-white shadow font-black'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>X拡散スレッド</span>
+                  {currentThread && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-sky-400/30 text-sky-200 text-[10px] font-mono font-bold">
+                      {currentThread.posts.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {viewTab === 'thread' && currentThread && (
+                <button
+                  onClick={handleCopyAllThread}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+                    copiedAllThread
+                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
+                  }`}
+                >
+                  {copiedAllThread ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-white" />
+                      <span>全ポストコピー済！</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>全ポスト一括コピー</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {viewTab === 'article' ? (
+              <>
+                {/* 記事メタ情報カード */}
+                <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 sm:p-5 mb-4 shadow-xl">
             <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
               <div className="flex items-center gap-2 flex-wrap">
                 {publishMap[currentDraft.id]?.isPublished ? (
@@ -953,8 +1059,147 @@ export default function NoteDraftsPage() {
               )}
             </button>
           </div>
+        </>
+      ) : (
+        /* 📱 X (Twitter) スレッド専用ビュー */
+        <div className="space-y-4">
+          {currentThread ? (
+            <>
+              {/* スレッド案内カード */}
+              <div className="bg-sky-950/30 border border-sky-800/50 rounded-2xl p-4 sm:p-5 shadow-xl">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-mono text-[11px] font-black border border-sky-500/40 flex items-center gap-1">
+                        <Share2 className="w-3 h-3" />
+                        <span>X (Twitter) 拡散スレッド</span>
+                      </span>
+                      <span className="text-xs text-zinc-400 font-bold">
+                        全 {currentThread.posts.length} ポスト構成
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-zinc-200">
+                      {currentThread.title}
+                    </h3>
+                  </div>
+                </div>
 
-        </main>
+                <div className="mt-3 p-3 bg-zinc-950/70 border border-zinc-800/80 rounded-xl text-xs text-zinc-400 leading-relaxed flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-zinc-200 font-bold">💡 X運用の重要ポイント: </span>
+                    1ポスト目にnoteのURLを直貼りすると、Xのアルゴリズムで表示回数が激減します。URLは必ず
+                    <span className="text-sky-300 font-bold">「4ポスト目のリプライ欄（ぶら下げ）」</span>
+                    に貼ってください。
+                  </div>
+                </div>
+              </div>
+
+              {/* タイムライン風ポスト一覧 */}
+              <div className="space-y-4">
+                {currentThread.posts.map((post) => {
+                  const isCopiedThis = copiedPostIndex === post.index;
+                  const isOverLimit = post.charCount > 140;
+
+                  return (
+                    <div
+                      key={post.index}
+                      className={`bg-zinc-950/80 border rounded-2xl p-4 sm:p-6 shadow-xl transition relative ${
+                        post.isCta
+                          ? 'border-amber-500/50 bg-amber-950/10'
+                          : 'border-zinc-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono flex items-center gap-1.5 ${
+                            post.isCta
+                              ? 'bg-amber-500 text-black'
+                              : 'bg-zinc-800 text-zinc-200 border border-zinc-700'
+                          }`}>
+                            <span>ポスト {post.index}/{currentThread.posts.length}</span>
+                          </span>
+
+                          <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border ${
+                            isOverLimit
+                              ? 'bg-rose-950/60 text-rose-300 border-rose-800'
+                              : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                          }`}>
+                            {post.charCount}/140文字 {isOverLimit ? '⚠️超過' : '✓'}
+                          </span>
+
+                          {post.isCta && (
+                            <span className="text-[11px] font-bold text-amber-400 hidden sm:inline">
+                              🎯 note誘導（リプ欄にURL）
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => handleCopyPost(post.index, post.text)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                            isCopiedThis
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-sky-500 hover:bg-sky-400 text-black font-black'
+                          }`}
+                        >
+                          {isCopiedThis ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>コピー完了！</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>このポストをコピー</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* ポスト本文 */}
+                      <div className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap font-sans bg-zinc-900/40 p-4 rounded-xl border border-zinc-850">
+                        {post.text}
+                      </div>
+
+                      {/* 添付メディアプレビュー */}
+                      {post.media && (
+                        <div className="mt-3 p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
+                          <div className="text-xs font-bold text-amber-300 mb-2 flex items-center gap-1.5">
+                            <span>🖼️ 添付推奨画像:</span>
+                            <span className="text-zinc-400 font-mono text-[11px]">{post.media.url}</span>
+                          </div>
+                          <div className="rounded-lg overflow-hidden border border-zinc-800 max-w-md">
+                            <img
+                              src={post.media.url}
+                              alt={post.media.alt || '添付画像'}
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-8 sm:p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                <Share2 className="w-6 h-6 text-sky-400/60" />
+              </div>
+              <h3 className="text-base font-bold text-zinc-200">
+                このドラフトのXスレッドはまだ作成されていません
+              </h3>
+              <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+                左の一覧から「ザイラJG低ランク脱出完全攻略」を選択すると、作成済みのX拡散スレッドを確認・コピーできます。
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+    </main>
       ) : (
         <div className="max-w-md mx-auto px-4 py-16 text-center">
           <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-4 text-zinc-500">
