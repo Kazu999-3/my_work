@@ -147,6 +147,8 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
 ---
 
 ## 📊 6. 監査 ＆ 分析レポート書庫 (Reports & Audits)
+- **[MMR・チーム分け健全性スキャン分析スクリプト (scripts/analyze_mmr_health.mjs)](file:///d:/my_work/scripts/analyze_mmr_health.mjs)**: 直近試合のサイド別勝率、レーン別MMR変動、早期投了の健全性集計。
+- **[YouTube動画解析キュー点検スクリプト (scripts/check_youtube_queue.mjs)](file:///d:/my_work/scripts/check_youtube_queue.mjs)**: Edge Tasksの滞留・失敗タスク実測点検。
 - **[カスタム参加者ランク帯＆MMR実数分析レポート (custom_tier_analysis_report.md)](file:///d:/my_work/02_FACTORY/custom_tier_analysis_report.md)**: 49名のMMR分布と2部屋分けしきい値分析。
 - **[辞典事実監査レポート (DICT_FACT_AUDIT_20261007.md)](file:///d:/my_work/02_FACTORY/DICT_FACT_AUDIT_20261007.md)**: 全チャンピオン教本の事実性・整合性監査。
 - **[ナレッジ健全性点検レポート (KNOWLEDGE_LINT_REPORT.md)](file:///d:/my_work/02_FACTORY/KNOWLEDGE_LINT_REPORT.md)**: LLM Wiki健全性点検レポート。
