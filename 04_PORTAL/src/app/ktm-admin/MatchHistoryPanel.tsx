@@ -3,44 +3,15 @@ import { toast } from '../../components/Toaster';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical, PartyPopper } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getChampIcon, getItemIcon, getSummonerSpellIcon } from '../../lib/ddragonClient';
+import { getItemIcon, getSummonerSpellIcon } from '../../lib/ddragonClient';
 import type { MmrBreakdown } from '../../lib/mmr';
 import { isEventMatch, isNormalMatch, getMatchType } from '../../lib/matchType';
+import ChampionIcon from '../../components/ChampionIcon';
+import MatchItemSlots from './_parts/MatchItemSlots';
+import MatchChampSelectorModal from './_parts/MatchChampSelectorModal';
+import type { Match, Participant } from './_parts/types';
 
-interface Match {
-  id: string;
-  created_at: string;
-  winning_team: 'BLUE' | 'RED' | 'DRAW';
-  game_duration?: number | null;
-  riot_match_id?: string | null;
-  match_type?: string | null;
-  participants: Participant[];
-}
-
-interface Participant {
-  player_name: string;
-  team: 'BLUE' | 'RED' | 'FESTIVAL';
-  role: string;
-  kills: number;
-  deaths: number;
-  assists: number;
-  kda_score: number;
-  mmr_delta: number;
-  mmr_breakdown?: MmrBreakdown | null;
-  champion_name?: string;
-  cs?: number;
-  gold?: number | null;
-  damage_dealt?: number;
-  damage_taken?: number;
-  vision_score?: number;
-  items?: number[];
-  spells?: number[];
-  cc_time?: number;
-  solo_kills?: number;
-  time_dead?: number;
-  damage_mitigated?: number;
-  building_damage?: number;
-}
+export type { Match, Participant };
 
 function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
   if (!b) return delta !== undefined ? `MMR変動: ${delta > 0 ? '+' : ''}${delta}` : '';
@@ -73,38 +44,6 @@ function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
   }
   parts.push(`計 ${b.final > 0 ? '+' : ''}${b.final ?? delta ?? 0}`);
   return parts.join(' / ');
-}
-
-function ItemSlots({ items }: { items?: number[] }) {
-  if (!items || items.length === 0 || items.every(id => !id || id <= 0)) return null;
-  return (
-    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-      <div className="grid grid-flow-col grid-rows-2 gap-0.5">
-        {items.slice(0, 6).map((itemId, i) => {
-          const icon = getItemIcon(itemId);
-          return (
-            <div key={i} className="w-5 h-5 rounded bg-black/40 border border-border/40 overflow-hidden flex items-center justify-center shrink-0">
-              {icon ? (
-                <img src={icon} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-black/20" />
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {/* トリンケット枠 */}
-      {items[6] !== undefined && items[6] > 0 && (
-        <div className="w-5 h-5 rounded-full bg-black/40 border border-amber-500/30 overflow-hidden flex items-center justify-center shrink-0 ml-0.5 self-center">
-          {getItemIcon(items[6]) ? (
-            <img src={getItemIcon(items[6])!} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-black/20" />
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function DamageBar({ damage, maxDamage, team }: { damage?: number; maxDamage: number; team: 'BLUE' | 'RED' }) {
@@ -752,13 +691,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         <div key={p.player_name} className="flex items-center gap-2 sm:gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition flex-wrap sm:flex-nowrap">
                           <div className="w-7 sm:w-8 text-center text-[10px] sm:text-[11px] font-black text-muted-strong shrink-0">{p.role}</div>
                           {p.champion_name ? (
-                            <Image
-                              src={getChampIcon(p.champion_name)}
-                              alt={p.champion_name}
-                              width={36}
-                              height={36}
-                              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border shrink-0 object-cover shadow-2xs"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            <ChampionIcon
+                              champId={p.champion_name}
+                              champName={p.champion_name}
+                              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border shrink-0 shadow-2xs"
                             />
                           ) : (
                             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/5 shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
@@ -776,7 +712,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           </div>
 
                           <DamageBar damage={p.damage_dealt} maxDamage={blueMaxDmg} team="BLUE" />
-                          <ItemSlots items={p.items} />
+                          <MatchItemSlots items={p.items} />
 
                           <div className="flex flex-col items-end justify-center shrink-0">
                             <div className="text-xs font-bold text-foreground-subtle font-mono">
@@ -814,13 +750,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         <div key={p.player_name} className="flex items-center gap-2 sm:gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition flex-wrap sm:flex-nowrap">
                           <div className="w-7 sm:w-8 text-center text-[10px] sm:text-[11px] font-black text-muted-strong shrink-0">{p.role}</div>
                           {p.champion_name ? (
-                            <Image
-                              src={getChampIcon(p.champion_name)}
-                              alt={p.champion_name}
-                              width={36}
-                              height={36}
-                              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border shrink-0 object-cover shadow-2xs"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            <ChampionIcon
+                              champId={p.champion_name}
+                              champName={p.champion_name}
+                              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-border shrink-0 shadow-2xs"
                             />
                           ) : (
                             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/5 shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
@@ -838,7 +771,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           </div>
 
                           <DamageBar damage={p.damage_dealt} maxDamage={redMaxDmg} team="RED" />
-                          <ItemSlots items={p.items} />
+                          <MatchItemSlots items={p.items} />
 
                           <div className="flex flex-col items-end justify-center shrink-0">
                             <div className="text-xs font-bold text-foreground-subtle font-mono">
@@ -971,13 +904,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                               {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
                             </span>
                             {p.champion_name && (
-                              <Image
-                                src={getChampIcon(p.champion_name)}
-                                width={16}
-                                height={16}
-                                className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
-                                alt={p.champion_name}
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              <ChampionIcon
+                                champId={p.champion_name}
+                                champName={p.champion_name}
+                                className="w-4 h-4 rounded-full border border-border shrink-0"
                               />
                             )}
                           </button>
@@ -1059,13 +989,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
                           </span>
                           {p.champion_name && (
-                            <Image
-                              src={getChampIcon(p.champion_name)}
-                              width={16}
-                              height={16}
-                              className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
-                              alt={p.champion_name}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            <ChampionIcon
+                              champId={p.champion_name}
+                              champName={p.champion_name}
+                              className="w-4 h-4 rounded-full border border-border shrink-0"
                             />
                           )}
                         </button>
@@ -1150,75 +1077,25 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         </div>
       )}
 
-      {/* チャンピオン選択アイコンモーダル (編集モーダル用) */}
-      {activeChampSelectorPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                <Target className="h-5 w-5 text-success-700" />
-                チャンピオン選択
-              </h3>
-              <button 
-                onClick={() => { setActiveChampSelectorPlayer(null); setChampSearchQuery(''); }}
-                className="text-faint hover:text-foreground text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
-              >
-                閉じる
-              </button>
-            </div>
-            
-            <input 
-              type="text" 
-              placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..." 
-              value={champSearchQuery}
-              onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-success-edge-strong text-sm"
-              autoFocus
-            />
-            
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-              {championsList
-                .filter(c => 
-                  c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) || 
-                  c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
-                )
-                .map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => {
-                      const idx = parseInt(activeChampSelectorPlayer);
-                      handleEditingParticipantChange(idx, 'champion_name', c.id);
-                      setActiveChampSelectorPlayer(null);
-                      setChampSearchQuery('');
-                    }}
-                    type="button"
-                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 transition group"
-                  >
-                    <Image
-                      src={getChampIcon(c.id)}
-                      width={48}
-                      height={48}
-                      className="w-12 h-12 rounded-xl border border-border group-hover:border-success-edge-strong transition object-cover"
-                      alt={c.name}
-                    />
-                    <span className="text-[10px] text-faint truncate w-14 text-center group-hover:text-foreground transition">
-                      {c.name}
-                    </span>
-                  </button>
-                ))
-              }
-              {championsList.filter(c => 
-                c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) || 
-                c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
-              ).length === 0 && (
-                <div className="col-span-full text-center py-12 text-muted-strong text-sm">
-                  該当するチャンピオンが見つかりません。
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* チャンピオン選択アイコンモーダル (編集モーダル用・外部コンポーネント化) */}
+      <MatchChampSelectorModal
+        isOpen={Boolean(activeChampSelectorPlayer)}
+        onClose={() => {
+          setActiveChampSelectorPlayer(null);
+          setChampSearchQuery('');
+        }}
+        onSelect={(champId) => {
+          if (activeChampSelectorPlayer) {
+            const idx = parseInt(activeChampSelectorPlayer);
+            handleEditingParticipantChange(idx, 'champion_name', champId);
+            setActiveChampSelectorPlayer(null);
+            setChampSearchQuery('');
+          }
+        }}
+        championsList={championsList}
+        champSearchQuery={champSearchQuery}
+        setChampSearchQuery={setChampSearchQuery}
+      />
     </div>
   );
 }
