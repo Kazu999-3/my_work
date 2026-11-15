@@ -56,6 +56,7 @@
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。
 
 - **[システム全体依存関係マップ ＆ ナレッジグラフ (SYSTEM_DEPENDENCY_GRAPH.md)](file:///d:/my_work/01_INTEL/SYSTEM_DEPENDENCY_GRAPH.md)**: UI・API・DBテーブル・Bot・定期タスクの双方向依存関係と逆引きインパクトチェッカー。
+- **[世界水準デザインリソース ＆ メディア自動化ツールボックス (DESIGN_AND_MEDIA_TOOLBOX.md)](file:///d:/my_work/01_INTEL/DESIGN_AND_MEDIA_TOOLBOX.md)**: Web/UI最高峰デザイン集、Marpスライド生成、Remotion動画自動化、MarkItDown変換ツールの総合ガイド。
 - **[帝国オートメーション全体構成図 (AUTOMATION_MAP.md)](file:///d:/my_work/02_FACTORY/AUTOMATION_MAP.md)**: 全自動パイプライン・常駐デーモン・DB連携マップ。
 - **[総合システムデザイン](file:///d:/my_work/SYSTEM_DESIGN_BY_FUNCTION.md)**: Sovereign OS の全体の機能・設計書。
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
