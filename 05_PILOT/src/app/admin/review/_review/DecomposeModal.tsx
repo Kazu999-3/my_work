@@ -64,6 +64,40 @@ export default function DecomposeModal({
 
   const selectedCount = items.filter((i) => i.selected).length;
 
+  // キーボードショートカット対応 (Esc: 閉じる, Ctrl+Enter: 即時統合, Space: 全選択トグル)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toUpperCase();
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      // Ctrl + Enter または Cmd + Enter で即時教本統合
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!busy && !loading && selectedCount > 0) {
+          onSave(items.filter((i) => i.selected));
+        }
+        return;
+      }
+
+      // 入力フォームフォーカス中でない時の Space で全選択/全解除トグル
+      if (!isInput && (e.code === 'Space' || e.key === ' ')) {
+        e.preventDefault();
+        const allSelected = items.length > 0 && items.every((i) => i.selected);
+        toggleAll(!allSelected);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [busy, loading, items, selectedCount, onClose, onSave]);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
       <div className="bg-[#141418] border border-zinc-700/80 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden font-sans">
@@ -302,14 +336,26 @@ export default function DecomposeModal({
         </div>
 
         {/* フッター操作バー */}
-        <div className="p-4 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-between gap-3">
-          <button
-            onClick={onClose}
-            disabled={busy}
-            className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs transition cursor-pointer"
-          >
-            キャンセル
-          </button>
+        <div className="p-4 border-t border-zinc-800 bg-zinc-900/80 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              disabled={busy}
+              className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs transition cursor-pointer"
+            >
+              キャンセル
+            </button>
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
+              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 border border-zinc-700/50 text-zinc-400">Space</span>
+              <span>全選択</span>
+              <span className="text-zinc-600">・</span>
+              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 border border-zinc-700/50 text-zinc-400">Ctrl+Enter</span>
+              <span>即時統合</span>
+              <span className="text-zinc-600">・</span>
+              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 border border-zinc-700/50 text-zinc-400">Esc</span>
+              <span>閉じる</span>
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
             <button

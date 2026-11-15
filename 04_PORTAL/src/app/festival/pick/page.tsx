@@ -17,6 +17,7 @@ import {
   FESTIVAL_THEME_CATEGORIES,
 } from "../../../lib/championMetadata";
 import { getChampIcon } from "../../../lib/ddragonClient";
+import { ChampionIcon } from "../../../components/ChampionIcon";
 import {
   Sparkles,
   RotateCcw,
@@ -1122,9 +1123,9 @@ export default function FestivalPickPage() {
                   className="bg-surface-subtle border border-border rounded-2xl p-3 flex flex-col items-center gap-2 shadow-sm"
                 >
                   <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary-500/60 shadow-md">
-                    <img
-                      src={getChampIcon(c.id)}
-                      alt={c.name}
+                    <ChampionIcon
+                      champId={c.id}
+                      champName={c.name}
                       className="w-full h-full object-cover"
                     />
                   </div>

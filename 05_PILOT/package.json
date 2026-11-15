@@ -9,6 +9,8 @@
     "build": "next build",
     "start": "next start -p 3005",
     "compile": "node scripts/compile_champions.mjs",
+    "compile:note": "node scripts/compile_note_drafts.mjs",
+    "export:vending": "node ../scripts/export_note_vending_pack.mjs",
     "sync:markdown": "node scripts/sync_to_markdown.mjs",
     "test": "npx tsx --test src/lib/__tests__/*.test.ts"
   },

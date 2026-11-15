@@ -287,10 +287,66 @@ export default function OverlayPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-[10px] text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                {habit.status === 'loading'
-                  ? '対面の直近試合を集計中…'
-                  : '対面の実測データがありません（Riot ID 不明・試合履歴なし）'}
+              <div className="space-y-2">
+                {habit.status === 'loading' ? (
+                  <div className="text-[10px] text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                    対面の直近試合を集計中…
+                  </div>
+                ) : (
+                  <>
+                    {/* 定石フォールバックタイマー */}
+                    {data.gameTimeSec < 165 ? (
+                      <div className="rounded-lg bg-teal-950/50 border border-teal-500/30 p-2 shadow-md">
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-teal-200 font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                            🛡️ 定石川ワード目安 02:45:
+                          </span>
+                          <span className="font-mono font-black text-teal-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+                            あと {formatTime(165 - data.gameTimeSec)}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          相手JGのLv3ガンク警戒。川・トライブッシュを確保
+                        </div>
+                      </div>
+                    ) : data.gameTimeSec < 240 ? (
+                      <div className="rounded-lg bg-rose-950/50 border border-rose-500/30 p-2 shadow-md">
+                        <div className="text-[11px] font-bold text-rose-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          ⚠️ JG Lv3ガンク警戒帯 (02:45〜04:00)
+                        </div>
+                        <div className="mt-1 text-[10px] text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          無理なプッシュは避け、敵JGの写り込みを確認
+                        </div>
+                      </div>
+                    ) : data.gameTimeSec < 300 ? (
+                      <div className="rounded-lg bg-amber-950/50 border border-amber-500/30 p-2 shadow-md">
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-amber-200 font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                            🛒 定石1stリコール目安 05:00:
+                          </span>
+                          <span className="font-mono font-black text-amber-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+                            あと {formatTime(300 - data.gameTimeSec)}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          キャノンウェーブ押し切り後の帰還・1300G/1100G目標
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg bg-indigo-950/50 border border-indigo-500/30 p-2 shadow-md">
+                        <div className="text-[11px] font-bold text-indigo-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          ⚔️ 1stリコール・Lv6 パワースパイク期
+                        </div>
+                        <div className="mt-1 text-[10px] text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          対面の装備更新とウルト習得に注意してダメージトレード
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-[9px] text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                      定石ガイド（対面の実測データなし）
+                    </div>
+                  </>
+                )}
               </div>
             )
           ) : (
