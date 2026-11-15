@@ -4,6 +4,16 @@
 
 内容はTODO.mdからの単純な移動であり、情報は一切削除・要約していません。
 
+## ✅ 2026-11-15 セッションで対応済み（ナレッジグラフ・リファクタリング・脆弱性解消・動的シミュレータ・X知見吸収）
+
+- [x] **【完了】システム全体の依存関係マップ（ナレッジグラフ）整備**（2026-11-15）: `01_INTEL/SYSTEM_DEPENDENCY_GRAPH.md` 新設、画面 ⇔ API ⇔ DB ⇔ Bot の双方向マップ構築およびインパクトチェッカー策定。
+- [x] **【完了】バランサー画面（`balancer/page.tsx`）のリファクタリング**（2026-11-15）: `_parts/types.ts` 新設、引数オブジェクト化、any完全排除、メインハンドラを30行台へ圧縮。
+- [x] **【完了】試合結果記録画面（`balancer/record/page.tsx` 1,059行➔388行）の分割**（2026-11-15）: `_parts/` 配下に `types.ts`, `ocrUtils.ts`, `useOcrImageProcessor.ts`, `ChampionSelectorModal.tsx`, `TeamStatsTable.tsx`, `MatchSummaryControls.tsx` を新設し解体。
+- [x] **【完了】お祭りピック画面（`festival/pick/page.tsx` 2,267行➔1,750行）の第1弾解体**（2026-11-15）: `_parts/` 配下に `types.ts`, `ChampionCard.tsx`, `DraftPlayerCard.tsx`, `CapturePreviewModal.tsx` を新設し、末尾510行を完全外部化。
+- [x] **【完了】Dependabot脆弱性（CVE-2026-118764 / minimatch）完全解消**（2026-11-15）: `04_PORTAL/package.json` に `overrides: { "minimatch": "^11.0.1" }` を指定し、Alert #118 が `"state": "fixed"` となったことを `gh api` で機械的実値確認。
+- [x] **【完了】コアロジック動的シミュレータ新設 ＆ AIコーディング規約アップデート**（2026-11-15）: `04_PORTAL/public/tools/logic-simulator.html` 新設、スロットマシン思考・DoD・Out of Scope明文化。
+- [x] **【完了】X知見の完全吸収（コンテンツ規約500円自販機モデル・Anti-Ad-Smell、デザインツール集・Marpスライド雛形新設、1年継続哲学）**（2026-11-15）: `30_content_factory.md`（§11〜§14）、`06_code_smells_and_dod.md`（§6）、`DESIGN_AND_MEDIA_TOOLBOX.md`、`template_marp_slides.md` 配備。
+
 ## ✅ 2026-10-27 セッションで対応済み（TODO棚卸し・実測確認・全域メンテナンス）
 
 - [x] **【完了】Cloudflare本命cronの空振り検証（実測実証済み）**: `bot_cron_runs` の実測ログにより、10/21(水) 12:00 JST に `source=cloudflare` で定期カスタム募集の投稿が完璧に成功（`status: success`）していることを確認。

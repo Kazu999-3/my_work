@@ -52,37 +52,20 @@ import { toast } from "../../../components/Toaster";
 import CustomSubNav from "../../../components/CustomSubNav";
 import FestivalTournamentDraftModal from "./FestivalTournamentDraftModal";
 import SundayThemeModal from "./SundayThemeModal";
-import { SundayFestivalTheme } from "../../../lib/sundayFestivalTheme";
-import { getRoleChampionsBreakdown } from "../../../lib/laneMeta";
 import type { ViewMode, DraftPlayer } from "./_parts/types";
 import ChampionCard from "./_parts/ChampionCard";
 import DraftPlayerCard from "./_parts/DraftPlayerCard";
 import CapturePreviewModal from "./_parts/CapturePreviewModal";
+import { useFestivalGroups } from "./_parts/useFestivalGroups";
+import { useFestivalDraft } from "./_parts/useFestivalDraft";
+import { useFestivalStorage } from "./_parts/useFestivalStorage";
 
 export type { DraftPlayer };
 
 export default function FestivalPickPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("region");
   const [searchQuery, setSearchQuery] = useState("");
   // 除外されたチャンピオンIDのセット（❌が付いているもの）
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
-  // ルーレット選出結果モーダル用（旧来の単体・5体選出）
-  const [rouletteResults, setRouletteResults] = useState<ChampionMeta[]>([]);
-  const [isRouletteRolling, setIsRouletteRolling] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  // 👥 少人数・ドラフト機能用
-  const [playerCount, setPlayerCount] = useState<number>(6); // 2〜10人（デフォルト3v3=6人）
-  const [picksPerPlayer, setPicksPerPlayer] = useState<number>(3); // 1人あたりの候補数（1/2/3択）
-  const [teamMode, setTeamMode] = useState<boolean>(true); // ⚔️ チーム対戦（BLUE vs RED）モード
-  const [draftResults, setDraftResults] = useState<DraftPlayer[]>([]);
-  const [isDraftRolling, setIsDraftRolling] = useState(false);
-  const [copiedDraft, setCopiedDraft] = useState(false);
-  const [copiedShareUrl, setCopiedShareUrl] = useState(false);
-
-  // 🎲 今日のテーマおまかせダイス
-  const [isThemeRolling, setIsThemeRolling] = useState(false);
-  const [activeTheme, setActiveTheme] = useState<FestivalTheme | null>(null);
 
   // 📸 キャプチャ用1枚プレビューモーダル
   const [showCaptureModal, setShowCaptureModal] = useState(false);
@@ -92,9 +75,11 @@ export default function FestivalPickPage() {
   // ⚔️ 大会式 5v5 ドラフトピックモーダル
   const [showTournamentDraftModal, setShowTournamentDraftModal] = useState(false);
 
-  // 🎪 日曜お祭りお題モーダル＆現在のお題
+  // 🎪 日曜お祭りお題モーダル
   const [showSundayThemeModal, setShowSundayThemeModal] = useState(false);
-  const [sundayTheme, setSundayTheme] = useState<SundayFestivalTheme | null>(null);
+
+  // 🎲 今日のテーマおまかせダイス演出中フラグ
+  const [isThemeRolling, setIsThemeRolling] = useState(false);
 
   // チャンピオンクリックで ❌ のトグル
   const toggleExclude = useCallback((id: string) => {
@@ -107,13 +92,6 @@ export default function FestivalPickPage() {
       }
       return next;
     });
-  }, []);
-
-  // 全リセット
-  const handleResetAll = useCallback(() => {
-    setExcludedIds(new Set());
-    setActiveTheme(null);
-    toast.success("すべての除外（❌）をリセットしました");
   }, []);
 
   // グループ内を一括❌
@@ -134,168 +112,41 @@ export default function FestivalPickPage() {
     });
   }, []);
 
-  // 特定テーマのみ残して他を全除外（❌）
-  const handleKeepOnlyTheme = useCallback((targetChampIds: string[], themeObj?: FestivalTheme) => {
-    const keepSet = new Set(targetChampIds);
-    const newExcluded = new Set<string>();
-    ALL_METADATA_CHAMPIONS.forEach((c) => {
-      if (!keepSet.has(c.id)) {
-        newExcluded.add(c.id);
-      }
-    });
-    setExcludedIds(newExcluded);
-    if (themeObj) {
-      setActiveTheme(themeObj);
-    }
-    toast.success(`このテーマの${targetChampIds.length}体のみを残して他を全除外（❌）しました！`);
-  }, []);
+  // 1. グループ・フィルタ計算フック
+  const groups = useFestivalGroups(searchQuery, excludedIds);
 
-  // 🔗 初回マウント時: URLクエリパラメータから状態を安全に復元
+  // 2. ドラフト結果状態（先に宣言してストレージと循環参照を解消）
+  const [draftResults, setDraftResults] = useState<DraftPlayer[]>([]);
+
+  // 3. ストレージ・永続化フック
+  const storage = useFestivalStorage({
+    excludedIds,
+    setExcludedIds,
+    draftResults,
+    setDraftResults,
+  });
+
+  // 全リセット
+  const handleResetAll = useCallback(() => {
+    setExcludedIds(new Set());
+    storage.setActiveTheme(null);
+    toast.success("すべての除外（❌）をリセットしました");
+  }, [storage]);
+
+  // 4. ドラフト・ルーレット実行フック
+  const draft = useFestivalDraft({
+    filteredChamps: groups.filteredChamps,
+    excludedIds,
+    playerCount: storage.playerCount,
+    picksPerPlayer: storage.picksPerPlayer,
+    teamMode: storage.teamMode,
+    activeTheme: storage.activeTheme,
+  });
+
+  // draftResultsの同期（draftフック内の結果を外へ反映）
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const themeParam = params.get("theme");
-      const playersParam = params.get("players");
-      const picksParam = params.get("picks");
-      const teamParam = params.get("team");
-      const viewParam = params.get("view");
-
-      if (playersParam) {
-        const p = parseInt(playersParam, 10);
-        if (p >= 2 && p <= 10) setPlayerCount(p);
-      }
-      if (picksParam) {
-        const k = parseInt(picksParam, 10);
-        if (k >= 1 && k <= 3) setPicksPerPlayer(k);
-      }
-      if (teamParam !== null) {
-        setTeamMode(teamParam === "1" || teamParam === "true");
-      }
-      if (viewParam && ["region", "role", "class", "theme", "all"].includes(viewParam)) {
-        setViewMode(viewParam as ViewMode);
-      }
-      if (themeParam) {
-        const targetTheme = FESTIVAL_THEMES.find((t) => t.id === themeParam);
-        if (targetTheme) {
-          handleKeepOnlyTheme(targetTheme.champIds, targetTheme);
-          setViewMode("theme");
-        }
-      }
-    } catch (e) {
-      console.warn("[FestivalPick] URL params restore error:", e);
-    }
-  }, [handleKeepOnlyTheme]);
-
-  // 🔗 現在のお祭り設定をワンクリック共有リンクとしてコピー
-  const handleCopyShareLink = useCallback(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const url = new URL(window.location.origin + window.location.pathname);
-      if (activeTheme) url.searchParams.set("theme", activeTheme.id);
-      url.searchParams.set("players", playerCount.toString());
-      url.searchParams.set("picks", picksPerPlayer.toString());
-      url.searchParams.set("team", teamMode ? "1" : "0");
-      url.searchParams.set("view", viewMode);
-
-      navigator.clipboard.writeText(url.toString());
-      setCopiedShareUrl(true);
-      toast.success("🔗 お祭り設定URLをコピーしました！Discord等にそのまま共有できます");
-      setTimeout(() => setCopiedShareUrl(false), 2000);
-    } catch (e) {
-      toast.error("URLのコピーに失敗しました");
-    }
-  }, [activeTheme, playerCount, picksPerPlayer, teamMode, viewMode]);
-
-  // 💾 一時保存（LocalStorage）
-  const [hasSavedData, setHasSavedData] = useState(false);
-  const [savedTimeLabel, setSavedTimeLabel] = useState<string | null>(null);
-
-  // マウント時に保存データの有無をチェック
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("ktm_festival_pick_saved_state");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setHasSavedData(true);
-        if (parsed.savedAt) {
-          const d = new Date(parsed.savedAt);
-          setSavedTimeLabel(`${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`);
-        }
-      }
-    } catch {}
-
-    // 今週の日曜お祭りお題を取得
-    fetch("/api/festival/theme")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.ok && data.theme) {
-          setSundayTheme(data.theme);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleSaveState = useCallback(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const payload = {
-        savedAt: new Date().toISOString(),
-        excludedIds: Array.from(excludedIds),
-        draftResults,
-        playerCount,
-        picksPerPlayer,
-        teamMode,
-        viewMode,
-        activeThemeId: activeTheme?.id || null,
-      };
-      localStorage.setItem("ktm_festival_pick_saved_state", JSON.stringify(payload));
-      setHasSavedData(true);
-      const now = new Date();
-      setSavedTimeLabel(`${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`);
-      toast.success("💾 現在の状態（除外設定＆ドラフト候補・確定状況）を一時保存しました！");
-    } catch (e) {
-      toast.error("一時保存に失敗しました");
-    }
-  }, [excludedIds, draftResults, playerCount, picksPerPlayer, teamMode, viewMode, activeTheme]);
-
-  const handleRestoreState = useCallback(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("ktm_festival_pick_saved_state");
-      if (!raw) {
-        toast.info("一時保存されたデータはありません");
-        return;
-      }
-      const data = JSON.parse(raw);
-      if (Array.isArray(data.excludedIds)) {
-        setExcludedIds(new Set(data.excludedIds));
-      }
-      if (Array.isArray(data.draftResults) && data.draftResults.length > 0) {
-        setDraftResults(data.draftResults);
-      }
-      if (data.playerCount && data.playerCount >= 2 && data.playerCount <= 10) {
-        setPlayerCount(data.playerCount);
-      }
-      if (data.picksPerPlayer && data.picksPerPlayer >= 1 && data.picksPerPlayer <= 3) {
-        setPicksPerPlayer(data.picksPerPlayer);
-      }
-      if (typeof data.teamMode === "boolean") {
-        setTeamMode(data.teamMode);
-      }
-      if (data.viewMode) {
-        setViewMode(data.viewMode);
-      }
-      if (data.activeThemeId) {
-        const targetTheme = FESTIVAL_THEMES.find((t) => t.id === data.activeThemeId);
-        if (targetTheme) setActiveTheme(targetTheme);
-      }
-      toast.success("📂 一時保存されていたお祭りピック状態を復元しました！");
-    } catch (e) {
-      toast.error("復元に失敗しました");
-    }
-  }, []);
+    setDraftResults(draft.draftResults);
+  }, [draft.draftResults]);
 
   // 🎲 今日のテーマおまかせダイス
   const handleRandomThemeDice = useCallback(() => {
@@ -306,297 +157,63 @@ export default function FestivalPickPage() {
     const interval = setInterval(() => {
       step++;
       const randomTheme = FESTIVAL_THEMES[Math.floor(Math.random() * FESTIVAL_THEMES.length)];
-      setActiveTheme(randomTheme);
+      storage.setActiveTheme(randomTheme);
       if (step >= maxSteps) {
         clearInterval(interval);
         setIsThemeRolling(false);
-        handleKeepOnlyTheme(randomTheme.champIds, randomTheme);
-        setViewMode("theme");
+        storage.handleKeepOnlyTheme(randomTheme.champIds, randomTheme);
+        storage.setViewMode("theme");
         toast.success(`🎲 今日のテーマ決定: 【${randomTheme.name}】！対象外を全除外しました`);
       }
     }, 60);
-  }, [handleKeepOnlyTheme]);
+  }, [storage]);
 
-  // 検索フィルタ済みの全チャンピオン
-  const filteredChamps = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return ALL_METADATA_CHAMPIONS.filter((meta) => {
-      if (!q) return true;
-      return (
-        meta.name.toLowerCase().includes(q) ||
-        meta.ruby.toLowerCase().includes(q) ||
-        meta.id.toLowerCase().includes(q)
-      );
-    });
-  }, [searchQuery]);
+  // 各種変数のエイリアス（JSXとの100%互換維持）
+  const {
+    viewMode,
+    setViewMode,
+    playerCount,
+    setPlayerCount,
+    picksPerPlayer,
+    setPicksPerPlayer,
+    teamMode,
+    setTeamMode,
+    activeTheme,
+    setActiveTheme,
+    copiedShareUrl,
+    hasSavedData,
+    savedTimeLabel,
+    sundayTheme,
+    setSundayTheme,
+    handleCopyShareLink,
+    handleSaveState,
+    handleRestoreState,
+    handleKeepOnlyTheme,
+  } = storage;
 
-  // 残り有効チャンピオン数
-  const activeCount = useMemo(() => {
-    return filteredChamps.filter((c) => !excludedIds.has(c.id)).length;
-  }, [filteredChamps, excludedIds]);
+  const {
+    filteredChamps,
+    activeCount,
+    regionGroups,
+    roleBreakdowns,
+    roleGroups,
+    classGroups,
+  } = groups;
 
-  // 👥 ドラフト抽選（人数 × 候補数を重複なしで各プレイヤーに配布）
-  const handleDraftRoulette = useCallback(() => {
-    const available = filteredChamps.filter((c) => !excludedIds.has(c.id));
-    const totalNeeded = playerCount * picksPerPlayer;
-    if (available.length < totalNeeded) {
-      toast.error(
-        `候補チャンピオンが不足しています（必要: ${totalNeeded}体 / 残り: ${available.length}体）。除外を減らすか人数/候補数を調整してください`
-      );
-      return;
-    }
-    setIsDraftRolling(true);
-
-    const isTeamSplit = teamMode && playerCount % 2 === 0;
-    const half = playerCount / 2;
-
-    let step = 0;
-    const maxSteps = 10;
-    const interval = setInterval(() => {
-      step++;
-      const shuffled = [...available].sort(() => Math.random() - 0.5);
-      const players: DraftPlayer[] = [];
-      for (let i = 0; i < playerCount; i++) {
-        const team = isTeamSplit ? (i < half ? "BLUE" : "RED") : undefined;
-        const matchupPairIndex = isTeamSplit
-          ? i < half
-            ? i + 1
-            : i - half + 1
-          : undefined;
-
-        players.push({
-          playerNumber: i + 1,
-          team,
-          matchupPairIndex,
-          champions: shuffled.slice(i * picksPerPlayer, (i + 1) * picksPerPlayer),
-        });
-      }
-      setDraftResults(players);
-      if (step >= maxSteps) {
-        clearInterval(interval);
-        setIsDraftRolling(false);
-        const modeText = isTeamSplit ? ` (${half}v${half} チーム対戦)` : "";
-        toast.success(
-          `🎲 ${playerCount}名分${modeText}（各${picksPerPlayer}択・計${totalNeeded}体）のドラフト候補を抽選しました！`
-        );
-      }
-    }, 70);
-  }, [filteredChamps, excludedIds, playerCount, picksPerPlayer, teamMode]);
-
-  // 特定プレイヤーのドラフト候補を1人だけリロール
-  const handleRerollSinglePlayer = useCallback(
-    (playerNum: number) => {
-      const available = filteredChamps.filter((c) => !excludedIds.has(c.id));
-      // 現在他のプレイヤーに割り振られているチャンプIDを収集
-      const assignedIds = new Set<string>();
-      draftResults.forEach((p) => {
-        if (p.playerNumber !== playerNum) {
-          p.champions.forEach((c) => assignedIds.add(c.id));
-        }
-      });
-      // 未割り振りのプール
-      const unassigned = available.filter((c) => !assignedIds.has(c.id));
-      if (unassigned.length < picksPerPlayer) {
-        toast.error("リロール可能な余りチャンピオンが不足しています");
-        return;
-      }
-      const shuffled = [...unassigned].sort(() => Math.random() - 0.5);
-      const newChamps = shuffled.slice(0, picksPerPlayer);
-
-      setDraftResults((prev) =>
-        prev.map((p) =>
-          p.playerNumber === playerNum
-            ? { ...p, champions: newChamps, selectedChampId: undefined }
-            : p
-        )
-      );
-      toast.success(`プレイヤー ${playerNum} の候補を再抽選しました！`);
-    },
-    [filteredChamps, excludedIds, draftResults, picksPerPlayer]
-  );
-
-  // プレイヤーが候補の中から1体を選んで確定
-  const handleSelectDraftChamp = useCallback((playerNum: number, champId: string) => {
-    setDraftResults((prev) =>
-      prev.map((p) =>
-        p.playerNumber === playerNum
-          ? {
-              ...p,
-              selectedChampId: p.selectedChampId === champId ? undefined : champId,
-            }
-          : p
-      )
-    );
-  }, []);
-
-  // ドラフト結果をDiscord用フォーマットでコピー（チーム別または個人別）
-  const handleCopyDraftResults = useCallback(() => {
-    if (draftResults.length === 0) return;
-    const totalNeeded = draftResults.length * picksPerPlayer;
-    const themeNote = activeTheme ? `\n🎭 **テーマ**: ${activeTheme.name}` : "";
-    const isTeamSplit = draftResults.some((p) => p.team);
-
-    const formatPlayerLine = (p: DraftPlayer) => {
-      const champLines = p.champions
-        .map((c) => {
-          const isChosen = p.selectedChampId === c.id;
-          const reg = REGIONS[c.region]?.name || c.region;
-          return `    ${isChosen ? "👉 **" : "・ "}${c.name} (${reg})${
-            isChosen ? "** (確定★)" : ""
-          }`;
-        })
-        .join("\n");
-      const vsText = p.matchupPairIndex ? ` [対面 ${p.matchupPairIndex}]` : "";
-      return `  👤 **プレイヤー ${p.playerNumber}**${vsText}:\n${champLines}`;
-    };
-
-    let bodyText = "";
-    if (isTeamSplit) {
-      const bluePlayers = draftResults.filter((p) => p.team === "BLUE");
-      const redPlayers = draftResults.filter((p) => p.team === "RED");
-
-      bodyText = `🔵 ════ **BLUE チーム** ════\n${bluePlayers
-        .map(formatPlayerLine)
-        .join("\n\n")}\n\n🔴 ════ **RED チーム** ════\n${redPlayers
-        .map(formatPlayerLine)
-        .join("\n\n")}`;
-    } else {
-      bodyText = draftResults.map(formatPlayerLine).join("\n\n");
-    }
-
-    const modeLabel = isTeamSplit
-      ? `${draftResults.length / 2}v${draftResults.length / 2} チーム対戦`
-      : `${draftResults.length}名 個人戦`;
-
-    const text = `【🎪 KTM お祭りカスタム ドラフト候補】${themeNote}
-👥 形式: ${modeLabel}（各${picksPerPlayer}択・計${totalNeeded}体）
-
-${bodyText}
-
-※ 各プレイヤーは自分の候補の中から1体選んでピックしてください！`;
-
-    navigator.clipboard.writeText(text);
-    setCopiedDraft(true);
-    toast.success("ドラフト結果をDiscord用にコピーしました！");
-    setTimeout(() => setCopiedDraft(false), 2000);
-  }, [draftResults, picksPerPlayer, activeTheme]);
-
-  // ルーレット抽選（未除外から count 体をランダム選出）
-  const handleRoulette = useCallback(
-    (count: number) => {
-      const available = filteredChamps.filter((c) => !excludedIds.has(c.id));
-      if (available.length === 0) {
-        toast.error("ピック可能なチャンピオンがいません（すべて除外されています）");
-        return;
-      }
-      setIsRouletteRolling(true);
-
-      // ルーレット演出
-      let steps = 0;
-      const maxSteps = 10;
-      const interval = setInterval(() => {
-        steps++;
-        const shuffled = [...available].sort(() => Math.random() - 0.5);
-        setRouletteResults(shuffled.slice(0, Math.min(count, available.length)));
-        if (steps >= maxSteps) {
-          clearInterval(interval);
-          setIsRouletteRolling(false);
-          toast.success(`🎲 ${Math.min(count, available.length)}体のチャンピオンを抽選しました！`);
-        }
-      }, 70);
-    },
-    [filteredChamps, excludedIds]
-  );
-
-  // 選出結果をクリップボードにコピー
-  const handleCopyResults = useCallback(() => {
-    if (rouletteResults.length === 0) return;
-    const text = rouletteResults
-      .map((c, i) => `${i + 1}. ${c.name} (${c.region})`)
-      .join("\n");
-    navigator.clipboard.writeText(`【KTM お祭りカスタム選出】\n${text}`);
-    setCopied(true);
-    toast.success("結果をコピーしました！");
-    setTimeout(() => setCopied(false), 2000);
-  }, [rouletteResults]);
-
-  // 地域別グループ
-  const regionGroups = useMemo(() => {
-    const map: Record<RegionKey, ChampionMeta[]> = {
-      Ionia: [],
-      Demacia: [],
-      Noxus: [],
-      Piltover: [],
-      Zaun: [],
-      Freljord: [],
-      Shurima: [],
-      Targon: [],
-      Bilgewater: [],
-      ShadowIsles: [],
-      Ixtal: [],
-      Void: [],
-      BandleCity: [],
-      Runeterra: [],
-    };
-    filteredChamps.forEach((c) => {
-      if (map[c.region]) map[c.region].push(c);
-      else map.Runeterra.push(c);
-    });
-    return map;
-  }, [filteredChamps]);
-
-  // ロール別グループ＆Lolalytics過去30日準拠の内訳（通常 / オフメタ）
-  const roleBreakdowns = useMemo(() => {
-    const filterSet = new Set(filteredChamps.map((c) => c.id));
-    const result: Record<ChampionRole, { standard: ChampionMeta[]; offmeta: ChampionMeta[]; all: ChampionMeta[] }> = {
-      TOP: { standard: [], offmeta: [], all: [] },
-      JG: { standard: [], offmeta: [], all: [] },
-      MID: { standard: [], offmeta: [], all: [] },
-      ADC: { standard: [], offmeta: [], all: [] },
-      SUP: { standard: [], offmeta: [], all: [] },
-    };
-
-    ROLES_LIST.forEach((role) => {
-      const b = getRoleChampionsBreakdown(role);
-      const std = b.standard.filter((c) => filterSet.has(c.id));
-      const off = b.offmeta.filter((c) => filterSet.has(c.id));
-      result[role] = {
-        standard: std,
-        offmeta: off,
-        all: [...std, ...off],
-      };
-    });
-
-    return result;
-  }, [filteredChamps]);
-
-  const roleGroups = useMemo(() => {
-    const map: Record<ChampionRole, ChampionMeta[]> = {
-      TOP: roleBreakdowns.TOP.all,
-      JG: roleBreakdowns.JG.all,
-      MID: roleBreakdowns.MID.all,
-      ADC: roleBreakdowns.ADC.all,
-      SUP: roleBreakdowns.SUP.all,
-    };
-    return map;
-  }, [roleBreakdowns]);
-
-  // クラス別グループ
-  const classGroups = useMemo(() => {
-    const map: Record<ChampionClass, ChampionMeta[]> = {
-      Fighter: [],
-      Mage: [],
-      Assassin: [],
-      Marksman: [],
-      Tank: [],
-      Support: [],
-    };
-    filteredChamps.forEach((c) => {
-      if (map[c.class]) map[c.class].push(c);
-      else map.Fighter.push(c);
-    });
-    return map;
-  }, [filteredChamps]);
+  const {
+    isDraftRolling,
+    copiedDraft,
+    rouletteResults,
+    setRouletteResults,
+    isRouletteRolling,
+    copied,
+    handleDraftRoulette,
+    handleRerollSinglePlayer,
+    handleSelectDraftChamp,
+    handleCopyDraftResults,
+    handleRoulette,
+    handleCopyResults,
+  } = draft;
 
   return (
     <div className="min-h-screen bg-background text-foreground p-3 sm:p-6 pb-28">

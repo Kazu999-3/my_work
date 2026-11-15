@@ -60,7 +60,7 @@ export default function DraftPlayerCard({
         <button
           type="button"
           onClick={onReroll}
-          className="text-[10px] text-muted-strong hover:text-primary-600 bg-surface hover:bg-surface-hover px-2 py-0.5 rounded-lg border border-border flex items-center gap-1 transition cursor-pointer"
+          className="text-[10px] text-muted-strong hover:text-primary-600 bg-surface hover:bg-surface-hover active:scale-95 px-2.5 py-1 rounded-lg border border-border flex items-center gap-1 transition cursor-pointer shadow-2xs"
           title="このプレイヤーの候補だけを余りプールから再抽選"
         >
           <RotateCcw className="w-3 h-3" />
@@ -77,17 +77,17 @@ export default function DraftPlayerCard({
               key={`${player.playerNumber}-${champ.id}`}
               type="button"
               onClick={() => onSelect(champ.id)}
-              className={`relative flex flex-col items-center p-2 rounded-xl border text-center transition cursor-pointer select-none ${
+              className={`relative flex flex-col items-center p-2 rounded-xl border text-center transition-all active:scale-95 cursor-pointer select-none ${
                 isSelected
-                  ? 'bg-gradient-to-b from-amber-500/20 to-amber-500/5 border-amber-500 shadow-xs'
-                  : 'bg-surface hover:bg-surface-hover border-border/80'
+                  ? 'bg-gradient-to-b from-amber-500/20 to-amber-500/5 border-amber-500/80 shadow-md ring-1 ring-amber-500/30'
+                  : 'bg-surface hover:bg-surface-hover border-border/80 hover:border-border'
               }`}
             >
               <div
                 className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-transform ${
                   isSelected
                     ? 'border-amber-500 scale-105 shadow-sm'
-                    : 'border-border'
+                    : 'border-border/80 group-hover:border-border'
                 }`}
               >
                 <img
@@ -96,7 +96,7 @@ export default function DraftPlayerCard({
                   className="w-full h-full object-cover"
                 />
                 {isSelected && (
-                  <div className="absolute inset-0 bg-amber-500/20 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-amber-500/25 flex items-center justify-center backdrop-blur-[1px]">
                     <span className="bg-amber-500 text-white p-0.5 rounded-full shadow-xs">
                       <Check className="w-3 h-3" />
                     </span>
