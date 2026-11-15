@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from '../../../components/Toaster';
 import { RefreshCw, X, Activity, Globe, MessageSquare, Trophy, AlertTriangle, ArrowLeftRight, Dices, Copy, Check, Shuffle } from "lucide-react";
 import { detectUnallowedHigherMatchups, swapWholeTeams, assignFestivalRestrictions } from "../../../lib/balancer/teams";
@@ -46,13 +46,11 @@ export default function BalanceResultModal({
   handicapNames,
   handleSwapWholeTeams,
 }: BalanceResultModalProps) {
-  if (!balanceResult) return null;
-
   const [clashData, setClashData] = useState<ClashResponseData | null>(null);
   const [loadingClash, setLoadingClash] = useState(false);
 
-  const teamBlue = balanceResult?.teamBlue || balanceResult?.blueTeam || [];
-  const teamRed = balanceResult?.teamRed || balanceResult?.redTeam || [];
+  const teamBlue = useMemo(() => balanceResult?.teamBlue || balanceResult?.blueTeam || [], [balanceResult]);
+  const teamRed = useMemo(() => balanceResult?.teamRed || balanceResult?.redTeam || [], [balanceResult]);
 
   // 🛡️ チームメンバーやレーン入れ替え時にもリアルタイムに格上対面警告を再計算
   const unallowedHigherMatchups = detectUnallowedHigherMatchups(
@@ -80,7 +78,9 @@ export default function BalanceResultModal({
       })
       .catch((err) => console.error('[NemesisClash] fetch error:', err))
       .finally(() => setLoadingClash(false));
-  }, [balanceResult]);
+  }, [balanceResult, teamBlue, teamRed]);
+
+  if (!balanceResult) return null;
 
   return (
     <div

@@ -107,7 +107,7 @@ function CustomRecordPageContent() {
     };
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [playersPool, championsList]);
+  }, [playersPool, championsList, handleImageUpload]);
 
   // スタッツ値変更ハンドラ
   const handleStatChangeByIndex = (index: number, field: keyof PlayerStat, value: string) => {
