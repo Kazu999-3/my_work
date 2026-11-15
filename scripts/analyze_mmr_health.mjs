@@ -95,12 +95,14 @@ async function main() {
   let matchesWithDuration = 0;
 
   const roleStats = {
-    TOP: { count: 0, totalDelta: 0 },
-    JG: { count: 0, totalDelta: 0 },
-    MID: { count: 0, totalDelta: 0 },
-    ADC: { count: 0, totalDelta: 0 },
-    SUP: { count: 0, totalDelta: 0 },
+    TOP: { count: 0, totalDelta: 0, uniquePlayers: new Set() },
+    JG: { count: 0, totalDelta: 0, uniquePlayers: new Set() },
+    MID: { count: 0, totalDelta: 0, uniquePlayers: new Set() },
+    ADC: { count: 0, totalDelta: 0, uniquePlayers: new Set() },
+    SUP: { count: 0, totalDelta: 0, uniquePlayers: new Set() },
   };
+
+  const allUniquePlayers = new Set();
 
   for (const m of matches) {
     const isEvent = m.match_type === 'EVENT' || m.riot_match_id === 'EXHIBITION';
@@ -122,9 +124,11 @@ async function main() {
     const participants = m.ktm_match_participants || m.participants;
     if (Array.isArray(participants)) {
       for (const p of participants) {
+        if (p.player_name) allUniquePlayers.add(p.player_name);
         if (roleStats[p.role]) {
           roleStats[p.role].count++;
           roleStats[p.role].totalDelta += p.mmr_delta || 0;
+          if (p.player_name) roleStats[p.role].uniquePlayers.add(p.player_name);
         }
       }
     }
@@ -151,11 +155,12 @@ async function main() {
   console.log(`  🎪  お祭りカスタム（除外）: ${eventMatches} 試合`);
   console.log(`  ⏱️  平均試合時間         : ${avgDurationMin} 分`);
   console.log(`  🛡️  18分未満早期投了     : ${earlySurrenders} 試合 (MMR減少緩和 -50% 適用)`);
+  console.log(`  👥  実参加ユニーク人数   : ${allUniquePlayers.size} 名（重複なし人物数）`);
 
-  console.log('\n--- 3. レーン別参加状況 ＆ 変動平均 ---');
+  console.log('\n--- 3. レーン別参加枠数 ＆ ユニーク人数 ＆ 変動平均 ---');
   for (const [role, s] of Object.entries(roleStats)) {
     const avgDelta = s.count > 0 ? (s.totalDelta / s.count).toFixed(2) : '0.00';
-    console.log(`  ${role.padEnd(4)} : ${s.count} 名参戦 (平均MMR変動: ${avgDelta > 0 ? '+' : ''}${avgDelta})`);
+    console.log(`  ${role.padEnd(4)} : 延べ ${s.count} 枠 / 実参加 ${s.uniquePlayers.size} 名 (平均MMR変動: ${avgDelta > 0 ? '+' : ''}${avgDelta})`);
   }
 
   console.log('\n' + '='.repeat(65));

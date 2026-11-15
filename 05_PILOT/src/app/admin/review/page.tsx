@@ -94,7 +94,10 @@ export default function ReviewPage() {
       if (json.laneCounts) setLaneCounts(json.laneCounts);
       if (json.qualityCounts) setQualityCounts(json.qualityCounts);
       if (json.roster?.length) setRoster(json.roster);
-      if (!opts.silent) setSelected(new Set());
+      if (!opts.silent) {
+        setSelected(new Set());
+        setFocusedIndex(loadedItems.length > 0 ? 0 : -1);
+      }
 
       // 各アイテムの初期編集ステートを自動判定値から構築
       const initialEdits: Record<number, ItemEditState> = {};
@@ -582,6 +585,20 @@ export default function ReviewPage() {
       const currentItem = focusedIndex >= 0 && focusedIndex < items.length ? items[focusedIndex] : null;
       if (!currentItem) return;
 
+      // Space: 選択トグル（チェックボックスのON/OFF）
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        setSelected((prev) => toggle(prev, currentItem.id));
+        return;
+      }
+
+      // Enter / P: プレビュー確認
+      if (e.key === 'Enter' || key === 'p') {
+        e.preventDefault();
+        openPreview(currentItem);
+        return;
+      }
+
       // A: 即時承認（統合）
       if (key === 'a') {
         e.preventDefault();
@@ -602,13 +619,6 @@ export default function ReviewPage() {
         if (!currentItem.is_atomic) {
           openDecompose(currentItem);
         }
-        return;
-      }
-
-      // P: プレビュー確認
-      if (key === 'p') {
-        e.preventDefault();
-        openPreview(currentItem);
         return;
       }
 
@@ -714,13 +724,15 @@ export default function ReviewPage() {
                 <span className="text-zinc-500 font-bold">⌨️ ショートカット:</span>
                 <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-400">J/K</span>
                 <span>移動</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-cyan-400">Space</span>
+                <span>選択</span>
                 <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-emerald-400">A</span>
                 <span>即時承認</span>
                 <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-rose-400">X</span>
                 <span>却下</span>
                 <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-teal-400">D</span>
                 <span>分解</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-300">P</span>
+                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-300">Enter/P</span>
                 <span>プレビュー</span>
                 <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-300">E</span>
                 <span>詳細</span>

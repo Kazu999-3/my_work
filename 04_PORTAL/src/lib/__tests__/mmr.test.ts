@@ -209,3 +209,10 @@ test('KDAボーナス: 同じKDA 3.0 でも、負けなら救済され、勝ち�
   assert.ok(calculateKdaBonus(3.0, 'MID', false) > 0);
   assert.equal(calculateKdaBonus(3.0, 'MID', true), 0);
 });
+
+test('KDAボーナス（2026-11-15改訂）: SUP(4.5) と TOP(3.0) の緩和が正しく反映されていること', () => {
+  // SUP: KDA 5.0 で勝利した時、旧基準(5.7)では0だったが新基準(4.5)では加点が付くこと
+  assert.ok(calculateKdaBonus(5.0, 'SUP', true) > 0);
+  // TOP: KDA 3.2 で勝利した時、旧基準(3.5)では0だったが新基準(3.0)では加点が付くこと
+  assert.ok(calculateKdaBonus(3.2, 'TOP', true) > 0);
+});

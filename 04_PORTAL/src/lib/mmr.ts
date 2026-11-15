@@ -225,8 +225,12 @@ export interface MmrCalcContext {
  * バックテスト（133試合）では、予測のずれ 0.7061（旧 0.7098 / 半減 0.7080）で3方式のうち最も良かった。
  */
 export const KDA_BONUS_MAX = 15;
-/** 勝ち負け×ロールごとの基準KDA（2026-10-17、KDAのある69試合の中央値） */
-export const KDA_BASELINE_WIN: Record<string, number> = { TOP: 3.5, JG: 7.0, MID: 4.5, ADC: 5.8, SUP: 5.7 };
+/**
+ * 勝ち負け×ロールごとの基準KDA（2026-11-15 改訂）。
+ * - SUP: 5.7 ➔ 4.5（キルを取らずピール・視界取りを行うサポート職人が正当に報われるよう緩和）
+ * - TOP: 3.5 ➔ 3.0（孤立レーンで耐え抜いて勝ったトップレーナーを適正評価）
+ */
+export const KDA_BASELINE_WIN: Record<string, number> = { TOP: 3.0, JG: 7.0, MID: 4.5, ADC: 5.8, SUP: 4.5 };
 export const KDA_BASELINE_LOSS: Record<string, number> = { TOP: 1.2, JG: 1.6, MID: 1.0, ADC: 1.4, SUP: 1.1 };
 const KDA_BASELINE_DEFAULT = { win: 5.25, loss: 1.3 }; // 勝ち・負け全体の中央値（ロール不明時）
 export const kdaBaseline = (role: string | undefined, isWin: boolean) =>

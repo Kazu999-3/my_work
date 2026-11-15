@@ -78,6 +78,7 @@ export interface BalanceResult {
     overall: number;
   };
   notes?: string;
+  balanceReport?: string | string[];
   [key: string]: unknown;
 }
 
@@ -98,3 +99,91 @@ export interface TableSplit {
 }
 
 export type SelectionMode = 'fair' | 'low' | 'high';
+
+
+import type { Bo3State } from "../components/BalancerBo3Manager";
+
+export interface FestivalRestriction {
+  level: 'light' | 'medium' | 'heavy';
+  levelLabel: string;
+  title: string;
+  description: string;
+}
+
+export interface LaneClashData {
+  role: string;
+  games: number;
+  bluePlayer: string;
+  redPlayer: string;
+  blueWins: number;
+  redWins: number;
+  headline?: string;
+}
+
+export interface GoldenDuoData {
+  teamSide: 'BLUE' | 'RED';
+  player1: string;
+  player2: string;
+  label: string;
+  winRate?: number;
+  games?: number;
+}
+
+export interface FeaturedClashData {
+  type: 'NEMESIS' | 'RIVAL';
+  headline: string;
+  subtext: string;
+  bluePlayer: string;
+  redPlayer: string;
+  blueWins: number;
+  redWins: number;
+}
+
+export interface ClashResponseData {
+  success: boolean;
+  featuredClash?: FeaturedClashData;
+  goldenDuos?: GoldenDuoData[];
+  laneClashes?: LaneClashData[];
+}
+
+export interface BalanceResultModalProps {
+  players: BalancerPlayer[];
+  savingPending: boolean;
+  copiedResult: boolean;
+  setMessage: React.Dispatch<React.SetStateAction<any>>;
+  balanceResult: BalanceResult | null;
+  setBalanceResult: React.Dispatch<React.SetStateAction<any>>;
+  proposals: BalanceResult[];
+  selectedProposalIdx: number;
+  setSelectedProposalIdx: React.Dispatch<React.SetStateAction<number>>;
+  analysis: {
+    level: string;
+    message: string;
+    averageMMR: number;
+    minMMR: number;
+    maxMMR: number;
+    mmrRange: number;
+    [key: string]: unknown;
+  } | Record<string, any> | null;
+  swapSource: { team: string; role: string; name: string } | null;
+  sendingDiscord: boolean;
+  setShowResultModal: (show: boolean) => void;
+  selectedTable: { label: string; ids: (string | number)[] } | null;
+  dragOverSlot: string | null;
+  bo3State: Bo3State | null | undefined;
+  handleStartBo3: () => void;
+  handleRecordBo3Win: (side: 'BLUE' | 'RED') => void;
+  handleNextBo3Game: () => void;
+  handleResetBo3: () => void;
+  handleRecordNavigate: () => void;
+  handleSendDiscord: () => void;
+  handleCopyResultText: () => void;
+  handleDragStart: (e: React.DragEvent, team: string, role: string, name: string) => void;
+  handleDragOver: (e: React.DragEvent, slotKey: string) => void;
+  handleDragLeave: () => void;
+  handleDropPlayer: (e: React.DragEvent, targetTeam: 'teamBlue' | 'teamRed' | 'spectators', targetRole: string) => void;
+  handleSelectSwapPlayer: (team: string, role: string, name: string) => void;
+  renderSwapSelect: (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => React.ReactNode;
+  handicapNames: Set<string>;
+  handleSwapWholeTeams?: () => void;
+}
