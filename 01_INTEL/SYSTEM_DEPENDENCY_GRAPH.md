@@ -26,6 +26,7 @@ flowchart TD
         UI_Bet["/bet<br/>勝敗予想・オッズ"]
         UI_Shop["/shop<br/>コイン交換所・ガチャ"]
         UI_History["/history<br/>対戦履歴・戦績"]
+        UI_Sim["/tools/logic-simulator.html<br/>動的ロジック味見シミュレータ"]
         UI_Pilot["05_PILOT<br/>AIコーチ・辞典・ライブラリ"]
     end
 

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sovereign OS - コアロジック動的シミュレータ</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: #18181b;
+      --card-border: #27272a;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --primary: #f59e0b;
+      --primary-hover: #d97706;
+      --blue: #3b82f6;
+      --blue-bg: rgba(59, 130, 246, 0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.1);
+      --green: #10b981;
+      --green-bg: rgba(16, 185, 129, 0.1);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.15);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: var(--amber-bg);
+      color: var(--primary);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 10px;
+    }
+    .param-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .param-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .param-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #27272a;
+      outline: none;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .result-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .result-highlight {
+      font-size: 18px;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .alert-banner {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .alert-warning {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .alert-success {
+      background: var(--green-bg);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+    .alert-amber {
+      background: var(--amber-bg);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-label input {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #27272a;
+      color: var(--text);
+    }
+    .btn:hover {
+      background: #3f3f46;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .bar-container {
+      height: 10px;
+      background: #27272a;
+      border-radius: 5px;
+      overflow: hidden;
+      display: flex;
+      margin-top: 4px;
+    }
+    .bar-blue {
+      background: var(--blue);
+      transition: width 0.2s;
+    }
+    .bar-red {
+      background: var(--red);
+      transition: width 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>🎮 Sovereign OS コアロジック動的シミュレータ <span class="badge">DoD 実証ツール</span></h1>
+        <p>仕様書や計算式のテキストを読む代わりに、スライダーを動かして境界値・エッジケースをリアルタイムに味見できます（@kenta_feels_ayu 原則）</p>
+      </div>
+      <div>
+        <a href="/balancer" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">← ポータルへ戻る</a>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- 1. MMR格差診断 ＆ ハンデシミュレータ -->
+      <div class="card">
+        <div class="card-title">
+          <span>⚖️ 1. MMR格差診断 (GAP_THRESHOLD=250)</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted);">
+          レーン対面のMMR差が250以上の場合に「格差大（要ハンデ）」の警告を発火させます。
+        </p>
+
+        <div class="param-group">
+          <div class="param-header">
+            <span>🟦 BLUE 対面プレイヤー MMR</span>
+            <span class="param-value" id="val-blue-mmr">1500</span>
+          </div>
+          <input type="range" id="input-blue-mmr" min="800" max="2500" step="10" value="1500">
+        </div>
+
+        <div class="param-group">
+          <div class="param-header">
+            <span>🟥 RED 対面プレイヤー MMR</span>
+            <span class="param-value" id="val-red-mmr">1800</span>
+          </div>
+          <input type="range" id="input-red-mmr" min="800" max="2500" step="10" value="1800">
+        </div>
+
+        <label class="toggle-label">
+          <input type="checkbox" id="check-handicap">
+          <span>🛡️ ハンデ参加を適用 (-150 MMR 補正)</span>
+        </label>
+
+        <div class="result-box">
+          <div class="result-row">
+            <span>生のMMR格差:</span>
+            <span class="result-highlight" id="raw-gap">300</span>
+          </div>
+          <div class="result-row">
+            <span>実効MMR格差 (計算後):</span>
+            <span class="result-highlight" id="effective-gap" style="color: var(--primary);">150</span>
+          </div>
+        </div>
+
+        <div id="gap-alert" class="alert-banner alert-warning">
+          <span>⚠️ 対面格差大: 格上対面です（要ハンデ指定またはロール交代）</span>
+        </div>
+      </div>
+
+      <!-- 2. 勝敗予想オッズ（ベイズ平滑化）シミュレータ -->
+      <div class="card">
+        <div class="card-title">
+          <span>🎲 2. 勝敗オッズ計算機 (ベイズ平滑化 ＆ 上限キャップ)</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted);">
+          少人数投票でのオッズ爆発を防ぐベイズ平滑化（擬似投票+200pt）と上限5.0倍ガードのシミュレーション。
+        </p>
+
+        <div class="param-group">
+          <div class="param-header">
+            <span>🟦 BLUE側 投票ポイント</span>
+            <span class="param-value" id="val-blue-bets">500 pt</span>
+          </div>
+          <input type="range" id="input-blue-bets" min="0" max="5000" step="50" value="500">
+        </div>
+
+        <div class="param-group">
+          <div class="param-header">
+            <span>🟥 RED側 投票ポイント</span>
+            <span class="param-value" id="val-red-bets">1500 pt</span>
+          </div>
+          <input type="range" id="input-red-bets" min="0" max="5000" step="50" value="1500">
+        </div>
+
+        <div class="bar-container">
+          <div id="bar-blue" class="bar-blue" style="width: 25%;"></div>
+          <div id="bar-red" class="bar-red" style="width: 75%;"></div>
+        </div>
+
+        <div class="result-box">
+          <div class="result-row">
+            <span>🟦 BLUE オッズ倍率:</span>
+            <span class="result-highlight" id="odds-blue" style="color: var(--blue);">2.64x</span>
+          </div>
+          <div class="result-row">
+            <span>🟥 RED オッズ倍率:</span>
+            <span class="result-highlight" id="odds-red" style="color: var(--red);">1.35x</span>
+          </div>
+        </div>
+
+        <div id="odds-alert" class="alert-banner alert-success">
+          <span>✅ 正常オッズ（上限ガード 5.00x 未満）</span>
+        </div>
+      </div>
+
+      <!-- 3. 試合時間 ＆ 早期投了緩和・精算シミュレータ -->
+      <div class="card">
+        <div class="card-title">
+          <span>⏱️ 3. 早期投了緩和 (-50%) ＆ 精算トリガー</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted);">
+          18分未満（1080秒）の敗北時、MMR減少が自動的に50%緩和される安全ガードの挙動。
+        </p>
+
+        <div class="param-group">
+          <div class="param-header">
+            <span>試合時間 (分:秒)</span>
+            <span class="param-value" id="val-match-time">16分30秒</span>
+          </div>
+          <input type="range" id="input-match-time" min="180" max="3000" step="15" value="990">
+        </div>
+
+        <div class="param-group">
+          <div class="param-header">
+            <span>通常時の敗北MMR減少幅</span>
+            <span class="param-value" id="val-base-loss">-20 MMR</span>
+          </div>
+          <input type="range" id="input-base-loss" min="10" max="40" step="1" value="20">
+        </div>
+
+        <div class="result-box">
+          <div class="result-row">
+            <span>総秒数:</span>
+            <span class="result-highlight" id="total-sec">990 秒</span>
+          </div>
+          <div class="result-row">
+            <span>実際の敗北MMR変動:</span>
+            <span class="result-highlight" id="actual-loss" style="color: #60a5fa;">-10 MMR</span>
+          </div>
+        </div>
+
+        <div id="time-alert" class="alert-banner alert-amber">
+          <span>⚡ 18分未満投了: 緩和ロジック発動（MMR減少 -50%）</span>
+        </div>
+
+        <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; display: flex; gap: 8px;">
+          <button class="btn btn-primary" id="btn-test-jackpot" style="flex: 1;">🎰 ペンタキル発生テスト</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── 1. MMR格差診断ロジック ──
+    const blueMmrInput = document.getElementById('input-blue-mmr');
+    const redMmrInput = document.getElementById('input-red-mmr');
+    const handicapCheck = document.getElementById('check-handicap');
+    const valBlueMmr = document.getElementById('val-blue-mmr');
+    const valRedMmr = document.getElementById('val-red-mmr');
+    const rawGapEl = document.getElementById('raw-gap');
+    const effectiveGapEl = document.getElementById('effective-gap');
+    const gapAlert = document.getElementById('gap-alert');
+
+    function updateGapDiagnosis() {
+      const blue = Number(blueMmrInput.value);
+      const red = Number(redMmrInput.value);
+      const isHandicap = handicapCheck.checked;
+      valBlueMmr.textContent = blue;
+      valRedMmr.textContent = red;
+
+      const rawDiff = Math.abs(blue - red);
+      rawGapEl.textContent = rawDiff;
+
+      // ハンデ適用（高い側から150差し引く）
+      const higherIsBlue = blue > red;
+      const blueEffective = higherIsBlue && isHandicap ? blue - 150 : blue;
+      const redEffective = !higherIsBlue && isHandicap ? red - 150 : red;
+      const effectiveDiff = Math.abs(blueEffective - redEffective);
+
+      effectiveGapEl.textContent = effectiveDiff;
+
+      if (effectiveDiff >= 250) {
+        gapAlert.className = 'alert-banner alert-warning';
+        gapAlert.innerHTML = '<span>⚠️ 対面格差大: 格上対面です（要ハンデ指定またはロール交代）</span>';
+      } else {
+        gapAlert.className = 'alert-banner alert-success';
+        gapAlert.innerHTML = '<span>✅ 適正レンジ: 許容範囲内のマッチングです（GAP &lt; 250）</span>';
+      }
+    }
+
+    blueMmrInput.addEventListener('input', updateGapDiagnosis);
+    redMmrInput.addEventListener('input', updateGapDiagnosis);
+    handicapCheck.addEventListener('change', updateGapDiagnosis);
+    updateGapDiagnosis();
+
+    // ── 2. 勝敗オッズ計算ロジック（ベイズ平滑化） ──
+    const blueBetsInput = document.getElementById('input-blue-bets');
+    const redBetsInput = document.getElementById('input-red-bets');
+    const valBlueBets = document.getElementById('val-blue-bets');
+    const valRedBets = document.getElementById('val-red-bets');
+    const barBlue = document.getElementById('bar-blue');
+    const barRed = document.getElementById('bar-red');
+    const oddsBlueEl = document.getElementById('odds-blue');
+    const oddsRedEl = document.getElementById('odds-red');
+    const oddsAlert = document.getElementById('odds-alert');
+
+    function updateOdds() {
+      const blueBets = Number(blueBetsInput.value);
+      const redBets = Number(redBetsInput.value);
+      valBlueBets.textContent = blueBets + ' pt';
+      valRedBets.textContent = redBets + ' pt';
+
+      const totalBets = blueBets + redBets;
+      const blueRatio = totalBets === 0 ? 50 : Math.round((blueBets / totalBets) * 100);
+      barBlue.style.width = blueRatio + '%';
+      barRed.style.width = (100 - blueRatio) + '%';
+
+      // ベイズ平滑化（両者に+200ptの擬似投票を足して急激なオッズ偏りを緩和）
+      const pseudoTotal = totalBets + 400;
+      const blueSmooth = (blueBets + 200) / pseudoTotal;
+      const redSmooth = (redBets + 200) / pseudoTotal;
+
+      // オッズ = 1 / 確率 (ハウスエッジ控除後 95%)、上限 5.00x、下限 1.10x
+      let blueOdds = Math.min(5.0, Math.max(1.10, Number((0.95 / blueSmooth).toFixed(2))));
+      let redOdds = Math.min(5.0, Math.max(1.10, Number((0.95 / redSmooth).toFixed(2))));
+
+      oddsBlueEl.textContent = blueOdds.toFixed(2) + 'x';
+      oddsRedEl.textContent = redOdds.toFixed(2) + 'x';
+
+      if (blueOdds >= 5.0 || redOdds >= 5.0) {
+        oddsAlert.className = 'alert-banner alert-amber';
+        oddsAlert.innerHTML = '<span>⚠️ 上限キャップ適用中: 片方のオッズが上限（5.00倍）で頭打ちされています</span>';
+      } else {
+        oddsAlert.className = 'alert-banner alert-success';
+        oddsAlert.innerHTML = '<span>✅ 正常オッズ（上限ガード 5.00x 未満）</span>';
+      }
+    }
+
+    blueBetsInput.addEventListener('input', updateOdds);
+    redBetsInput.addEventListener('input', updateOdds);
+    updateOdds();
+
+    // ── 3. 試合時間 ＆ 早期投了緩和ロジック ──
+    const matchTimeInput = document.getElementById('input-match-time');
+    const baseLossInput = document.getElementById('input-base-loss');
+    const valMatchTime = document.getElementById('val-match-time');
+    const valBaseLoss = document.getElementById('val-base-loss');
+    const totalSecEl = document.getElementById('total-sec');
+    const actualLossEl = document.getElementById('actual-loss');
+    const timeAlert = document.getElementById('time-alert');
+
+    function updateTimeMitigation() {
+      const sec = Number(matchTimeInput.value);
+      const baseLoss = Number(baseLossInput.value);
+      const min = Math.floor(sec / 60);
+      const remSec = sec % 60;
+
+      valMatchTime.textContent = `${min}分${String(remSec).padStart(2, '0')}秒`;
+      valBaseLoss.textContent = `-${baseLoss} MMR`;
+      totalSecEl.textContent = `${sec} 秒`;
+
+      // 18分未満（1080秒）判定
+      if (sec < 1080) {
+        const mitigatedLoss = Math.max(2, Math.round(baseLoss * 0.5));
+        actualLossEl.textContent = `-${mitigatedLoss} MMR (-50%緩和)`;
+        actualLossEl.style.color = '#60a5fa';
+        timeAlert.className = 'alert-banner alert-amber';
+        timeAlert.innerHTML = '<span>⚡ 18分未満投了: 緩和ロジック発動（MMR減少が半分になります）</span>';
+      } else {
+        actualLossEl.textContent = `-${baseLoss} MMR (通常減少)`;
+        actualLossEl.style.color = 'var(--text-muted)';
+        timeAlert.className = 'alert-banner alert-success';
+        timeAlert.innerHTML = '<span>⏳ 18分以上経過: 通常の試合としてMMRがフル変動します</span>';
+      }
+    }
+
+    matchTimeInput.addEventListener('input', updateTimeMitigation);
+    baseLossInput.addEventListener('input', updateTimeMitigation);
+    updateTimeMitigation();
+
+    // ペンタキル・ジャックポット演出
+    document.getElementById('btn-test-jackpot').addEventListener('click', () => {
+      alert('🎰 【JACKPOT 炸裂！】\nペンタキル達成プレイヤーが勝利チームにいるため、宝くじプール金（現在 18,400 コイン）が全額授与されます！');
+    });
+  </script>
+</body>
+</html>
