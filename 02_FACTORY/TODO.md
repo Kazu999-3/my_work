@@ -10,14 +10,12 @@
 
 ## 🚀 進行中・次期タスク
 
-- [ ] **【恒久対応】Vercel無料枠（CPU 4時間/月）の3層インフラ分離（0円運用完全確立）**:
-  - `vercel.json` の残存cron（4件）をGitHub Actions / Cloudflare Workers へ移行し、Vercel側cronを全廃
-  - Discordオンボーディングをポーリングから完全イベント駆動（Bot webhook）へ一本化
-- [ ] **【Step 4完了へ】1,159行の巨大API（`match/record/route.ts`）のフェーズ分離とリファクタリング**:
-  - 作成済みの `src/lib/matchRecord/` モジュール群（validator, calculator, notifier）を組み込み、メインハンドラを約100行のクリーン構成へリプレイス
+- [ ] **【案A】システム全体の依存関係マップ（ナレッジグラフ）整備**:
+  - `01_INTEL/SYSTEM_DEPENDENCY_GRAPH.md` 新設、画面 ⇔ API ⇔ DB ⇔ Bot の双方向マップ構築
+- [ ] **【案B】バランサー画面（`balancer/page.tsx`）のリファクタリング**:
+  - `06_code_smells_and_dod.md`（ネスト3段・50行・引数オブジェクト化・any排除）の実践
 - [ ] **【候補3】note記事・戦術発信パイプライン（Sovereign ADO Engine）の再起動**（保留中: ストック224本あり、執筆タイミング待ち）
 - [ ] **再生時刻付きミス集［大］**: 死亡シーンと、ライブラリ動画の同じ状況の解説箇所（時刻付き）を対にする。記事の時刻リンク蓄積が前提。
-- [ ] **転職管理トラッカー (career_tracker)**: MVP実装完了（LocalStorage・インライン編集・自動保存）。日常実務での動作確認と改善点の収集。
 
 ---
 

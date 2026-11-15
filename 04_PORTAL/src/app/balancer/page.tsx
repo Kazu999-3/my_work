@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { X } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Spinner } from "../../components/Feedback";
@@ -21,6 +21,13 @@ import TableSplitPanel from "./_parts/TableSplitPanel";
 import PlayerListTable from "./_parts/PlayerListTable";
 import QuickActionBar from "./_parts/QuickActionBar";
 import CustomSubNav from "../../components/CustomSubNav";
+import type {
+  BalancerPlayer,
+  BalanceResult,
+  BalancerPayloadParticipant,
+  TableSplit,
+  SelectionMode,
+} from "./_parts/types";
 
 // ── 遅延読込 ───────────────────────────────────────────────────────
 // いずれも「常に表示されるわけではない」ものを、必要になるまで読み込まない。
@@ -35,6 +42,38 @@ const BalancerStadiumView = dynamic(() => import("./components/BalancerStadiumVi
 const GAP_THRESHOLD = 250;
 // ハンデ参加時にチーム分けの計算上で差し引くMMR（実際の戦績・MMRは変わらない）
 const HANDICAP_MMR_PENALTY = 150;
+
+/**
+ * 参加者リストからチーム分けAPIリクエスト用のペイロードを構築する純粋関数
+ * （06_code_smells_and_dod.md: 引数オブジェクト化 ＆ 責務の分離）
+ */
+function buildParticipantPayloads({
+  activePlayers,
+  handicapIds,
+  defaultHandicapPenalty,
+}: {
+  activePlayers: BalancerPlayer[];
+  handicapIds: (string | number)[];
+  defaultHandicapPenalty: number;
+}): BalancerPayloadParticipant[] {
+  return activePlayers.map((p) => {
+    const pref1 = p.role_preferences?.primary;
+    const customH = p.customHandicap || p.role_preferences?.customHandicap;
+    const isHandicapped = handicapIds.includes(p.id) || Boolean(customH);
+    const fixedRole = p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-' ? pref1 : null;
+
+    return {
+      name: p.name,
+      isFixed: Boolean(p.is_fixed),
+      isSpectatorFixed: Boolean(p.is_spectator_fixed),
+      fixedRole,
+      handicap: isHandicapped,
+      handicapMmrPenalty: customH?.mmrPenalty ?? (handicapIds.includes(p.id) ? defaultHandicapPenalty : 0),
+      handicapRule: customH?.rule ?? (handicapIds.includes(p.id) ? 'ハンデ参加' : null),
+      handicappedBy: customH?.by ?? null,
+    };
+  });
+}
 
 // カスタムバランサー。状態の大半は _parts/ のフック（参加者リスト・BO3・入れ替え・共有操作・初期レーン編集）が持ち、
 // ここはチーム分けの実行と画面の組み立てだけを担う。
@@ -54,11 +93,11 @@ export default function BalancerPage() {
   const { players, setPlayers, loading, saving, flashingPlayerIds, fetchPlayers, handleInputChange } = usePlayerRoster(isAdmin, setMessage);
 
   const [balancing, setBalancing] = useState(false);
-  const [balanceResult, setBalanceResult] = useState<any>(null); // モーダルプレビュー用
-  const [confirmedResult, setConfirmedResult] = useState<any>(null); // 正式に確定されたチーム分け
-  const [proposals, setProposals] = useState<any[]>([]);
+  const [balanceResult, setBalanceResult] = useState<BalanceResult | null>(null); // モーダルプレビュー用
+  const [confirmedResult, setConfirmedResult] = useState<BalanceResult | null>(null); // 正式に確定されたチーム分け
+  const [proposals, setProposals] = useState<BalanceResult[]>([]);
   const [selectedProposalIdx, setSelectedProposalIdx] = useState<number>(0);
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(null);
   // ★ チーム分け結果モーダルの表示フラグ
   const [showResultModal, setShowResultModal] = useState(false);
 
@@ -67,29 +106,30 @@ export default function BalancerPage() {
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
-  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<BalancerPlayer | null>(null);
 
   // BL-02: 探索強度（常に200=精密で固定）
   const [searchDepth, setSearchDepth] = useState(200);
   // 11人以上の時に出る人の選び方（公平 / 低レート優先 / 高レート優先）
-  const [selectionMode, setSelectionMode] = useState<'fair' | 'low' | 'high'>('fair');
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('fair');
 
   // 格差診断: 参加者をMMR順に2人ずつペアにし、「近い実力の相手がいない人」を検出する。
   // チーム全体のMMR幅より「レーン対面の格差」が体験に効くため、対面を組めない外れ値を警告する。
   const gapDiagnosis = useMemo(() => diagnoseMmrGaps(players, GAP_THRESHOLD), [players]);
 
   // ハンデ参加(オフロール等)の指定。チーム分け結果とDiscord通知に明示する。
-  const [handicapIds, setHandicapIds] = useState<any[]>([]);
-  const toggleHandicap = (id: any) => setHandicapIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const [handicapIds, setHandicapIds] = useState<(string | number)[]>([]);
+  const toggleHandicap = (id: string | number) =>
+    setHandicapIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   // チーム分け結果は名前ベースなので、ハンデ対象の「名前」集合に変換して照合する
   const handicapNames = useMemo(
-    () => new Set<string>(players.filter((p: any) => handicapIds.includes(p.id)).map((p: any) => p.name)),
+    () => new Set<string>(players.filter((p: BalancerPlayer) => handicapIds.includes(p.id)).map((p: BalancerPlayer) => p.name)),
     [players, handicapIds]
   );
 
   // 卓分割: 参加者が20人以上のとき、代表MMR順で「上位卓/下位卓」に自動分割する。
   // 卓分け=代表MMR(ktm_players.mmr)、卓の中のチーム分け=レーン別MMR、という役割分担。
-  const [selectedTable, setSelectedTable] = useState<{ label: string; ids: any[] } | null>(null);
+  const [selectedTable, setSelectedTable] = useState<TableSplit | null>(null);
   const tableSplit = useMemo(() => splitTables(players), [players]);
 
   const bo3 = useBo3Series(balanceResult, setBalanceResult, setMessage);
@@ -114,7 +154,7 @@ export default function BalancerPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data && data.balanceResult) {
-          setConfirmedResult((prev: any) => prev || data.balanceResult);
+          setConfirmedResult((prev) => prev || data.balanceResult);
         }
       })
       .catch(() => {});
@@ -137,29 +177,36 @@ export default function BalancerPage() {
       setMessage({ type: "success", text: "✅ " + data.message });
       await checkIntegrity();
       fetchPlayers();
-    } catch (err: any) {
-      setMessage({ type: "error", text: "❌ Rebuild エラー: " + err.message });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: "error", text: "❌ Rebuild エラー: " + errMsg });
     } finally {
       setRebuildingMmr(false);
     }
   };
 
   const handleBalance = async () => {
-    // 卓分割(#B): 20人以上いる場合、選択中の卓のメンバーだけをチーム分け対象にする
-    const allActive = players.filter((p: any) => p.is_active);
+    // 卓分割: 選択中の卓があればそのメンバーのみ、なければ全員
+    const allActive = (players as BalancerPlayer[]).filter((p) => p.is_active);
     const activePlayers = selectedTable
-      ? allActive.filter((p: any) => selectedTable.ids.includes(p.id))
+      ? allActive.filter((p) => selectedTable.ids.includes(p.id))
       : allActive;
+
+    // ガード節（06_code_smells_and_dod.md）
     if (activePlayers.length < 10) {
-      setMessage({ type: "error", text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
+      setMessage({
+        type: "error",
+        text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)`,
+      });
       return;
     }
 
-    // 「⏪前回構成を復元」ボタンが参照する保存先。実際にチーム分けを実行するこの時点で、使ったメンバー構成を保存する
-    // (以前は「全員参加ON/解除」ボタンでしか書き込まれず、復元が常に「見つかりません」になっていた。2026-08-08)
-    try { localStorage.setItem('balancer_active_ids', JSON.stringify(activePlayers.map(p => p.id))); } catch {}
+    // 構成復元用のローカルキャッシュ保存
+    try {
+      localStorage.setItem('balancer_active_ids', JSON.stringify(activePlayers.map((p) => p.id)));
+    } catch {}
 
-    // 前回のチーム分け結果が表示されている場合、結果記録の確認を促す
+    // 前回結果が残っている場合の確認
     if (balanceResult) {
       const confirmNext = confirm("前回のチーム分けの試合結果は記録しましたか？\n（[キャンセル] を押すと結果画面に戻ります）");
       if (!confirmNext) {
@@ -174,44 +221,36 @@ export default function BalancerPage() {
     setShowResultModal(false);
 
     try {
+      const participants = buildParticipantPayloads({
+        activePlayers,
+        handicapIds,
+        defaultHandicapPenalty: HANDICAP_MMR_PENALTY,
+      });
+
       const res = await fetch('/api/balancer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          participants: activePlayers.map(p => {
-            const pref1 = p.role_preferences?.primary;
-            const customH = (p as any).customHandicap;
-            return {
-              name: p.name,
-              isFixed: p.is_fixed || false,
-              isSpectatorFixed: p.is_spectator_fixed || false,
-              fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-') ? pref1 : null,
-              // ハンデ参加: チーム分けの計算上だけMMRを下げて格差を緩和する（実際の戦績は変えない）
-              handicap: handicapIds.includes(p.id) || !!customH,
-              handicapMmrPenalty: customH?.mmrPenalty || (handicapIds.includes(p.id) ? HANDICAP_MMR_PENALTY : 0),
-              handicapRule: customH?.rule || (handicapIds.includes(p.id) ? 'ハンデ参加' : null),
-              handicappedBy: customH?.by || null,
-            };
-          }),
-          searchDepth, // BL-02: 探索強度
+          participants,
+          searchDepth,
           selectionMode,
           handicapPenalty: HANDICAP_MMR_PENALTY,
-        })
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'チーム分けに失敗しました');
 
       const hasProposals = Array.isArray(data.proposals) && data.proposals.length > 0;
-      const activeResult = hasProposals ? data.proposals[0] : data;
+      const activeResult: BalanceResult = hasProposals ? data.proposals[0] : data;
       setProposals(hasProposals ? data.proposals : [data]);
       setBalanceResult(activeResult);
       setSelectedProposalIdx(0);
       setAnalysis(hasProposals ? (data.analysis || null) : null);
-      // ★ 完了後にモーダルを開く（※この時点ではまだ下書きプレビューであり、確定保存はしない）
       setShowResultModal(true);
-    } catch (err: any) {
-      setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: "error", text: "❌ バランス計算エラー: " + errMsg });
     } finally {
       setBalancing(false);
     }
