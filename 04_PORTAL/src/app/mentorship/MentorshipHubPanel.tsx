@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
+import type { MentorshipMatch, SecretProposal, UserTierInfo } from './types';
 import { MentorshipCard } from './MentorshipCard';
 import { MentorshipProfileModal } from './MentorshipProfileModal';
 import { MentorshipRequestModal } from './MentorshipRequestModal';
@@ -27,9 +28,9 @@ export default function MentorshipHubPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeOnly, setActiveOnly] = useState(true);
   const [profiles, setProfiles] = useState<MentorshipProfile[]>([]);
-  const [matches, setMatches] = useState<any[]>([]);
-  const [pendingReceived, setPendingReceived] = useState<any[]>([]);
-  const [pendingSent, setPendingSent] = useState<any[]>([]);
+  const [matches, setMatches] = useState<MentorshipMatch[]>([]);
+  const [pendingReceived, setPendingReceived] = useState<MentorshipMatch[]>([]);
+  const [pendingSent, setPendingSent] = useState<MentorshipMatch[]>([]);
   const [myDiscordId, setMyDiscordId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +45,7 @@ export default function MentorshipHubPanel() {
 
   // 🚀 キックオフガイドモーダル管理
   const [isKickoffModalOpen, setIsKickoffModalOpen] = useState(false);
-  const [selectedKickoffMatch, setSelectedKickoffMatch] = useState<any | null>(null);
+  const [selectedKickoffMatch, setSelectedKickoffMatch] = useState<MentorshipMatch | null>(null);
 
   // 📜 師弟心得モーダル管理
   const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false);
@@ -53,7 +54,7 @@ export default function MentorshipHubPanel() {
 
   // 🤖 シークレットお見合い便モーダル管理
   const [isSecretMatchmakerOpen, setIsSecretMatchmakerOpen] = useState(false);
-  const [myProposals, setMyProposals] = useState<any[]>([]);
+  const [myProposals, setMyProposals] = useState<SecretProposal[]>([]);
   const [isRespondingProposal, setIsRespondingProposal] = useState(false);
 
   // 💬 Discord同期ステート
@@ -65,7 +66,7 @@ export default function MentorshipHubPanel() {
   const [creatingThreadMatchId, setCreatingThreadMatchId] = useState<string | null>(null);
   // 👑 先輩資格ステート（常連・経験者判定）
   const [canBeMentor, setCanBeMentor] = useState(true);
-  const [userTier, setUserTier] = useState<any>(null);
+  const [userTier, setUserTier] = useState<UserTierInfo | null>(null);
 
   // お見合い回答処理（承諾 / 個別見送り / 全て見送り）
   const handleRespondProposal = async (decision: 'ACCEPT' | 'DECLINE' | 'DECLINE_ALL', targetMatchId?: string) => {
@@ -97,7 +98,7 @@ export default function MentorshipHubPanel() {
           toast.success('🎉 お見合い成立！双方が話してみたいを選びました！');
           if (data.threadUrl) window.open(data.threadUrl, '_blank');
         } else {
-          const isUserMentor = myProposals.find((p: any) => p.matchId === matchIdToUse)?.isMentor ?? myProposals[0]?.isMentor;
+          const isUserMentor = myProposals.find((p: SecretProposal) => p.matchId === matchIdToUse)?.isMentor ?? myProposals[0]?.isMentor;
           const partnerRole = isUserMentor ? '後輩' : '先輩';
           toast.success(`👍 「話してみたい」を記録しました！${partnerRole}へリクエストを届けました`);
         }

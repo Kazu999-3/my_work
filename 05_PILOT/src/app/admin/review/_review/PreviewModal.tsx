@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { CheckCircle2, RefreshCw, AlertTriangle, Eye, Compass, BookOpen, Edit3, Dna, Swords } from 'lucide-react';
 import StrategyPreviewTab from './StrategyPreviewTab';
 import MatchupPreviewTab from './MatchupPreviewTab';
@@ -32,6 +32,50 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
   // 表示の切り替えはこのモーダルの中だけで使う（開き直すと既定に戻る）
   const [factsViewMode, setFactsViewMode] = useState<'highlight' | 'split'>('highlight');
   const [laneViewMode, setLaneViewMode] = useState<'highlight' | 'split' | 'edit'>('highlight');
+
+  // ⌨️ モーダル内のキーボードショートカット (1~4:タブ切替 Ctrl+Enter:承認 Esc:閉じる)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // フォーム入力中は 1~4 のタブ切り替えを抑制（Ctrl+Enter や Esc は通す）
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toUpperCase();
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      // Ctrl + Enter または Cmd + Enter で即時承認
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!busy && !previewLoading) {
+          onApprove();
+        }
+        return;
+      }
+
+      if (isInput) return;
+
+      if (e.key === '1') {
+        e.preventDefault();
+        setPreviewTab('strategy');
+      } else if (e.key === '2' && ((previewData?.matchupPreviews && previewData.matchupPreviews.length > 0) || edit?.enemyChampion)) {
+        e.preventDefault();
+        setPreviewTab('matchup');
+      } else if (e.key === '3' && edit?.includeFactMerge) {
+        e.preventDefault();
+        setPreviewTab('facts');
+      } else if (e.key === '4') {
+        e.preventDefault();
+        setPreviewTab('lane');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [busy, previewLoading, edit, previewData, onClose, onApprove, setPreviewTab]);
   return (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
             <div className="bg-[#141418] border border-zinc-700/80 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
@@ -164,6 +208,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                         <BookOpen size={13} />
                         <span>📖 教本プレビュー</span>
                         <span className="text-[10px] opacity-80">({previewData?.championPreviews?.length || 0}体)</span>
+                        <kbd className="text-[9px] font-mono bg-black/30 px-1 rounded opacity-75">1</kbd>
                       </button>
 
                       {((previewData?.matchupPreviews && previewData.matchupPreviews.length > 0) || edit?.enemyChampion) && (
@@ -178,6 +223,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                           <Swords size={13} />
                           <span>⚔️ 対面DBプレビュー</span>
                           <span className="text-[10px] opacity-80">({previewData?.matchupPreviews?.length || 0}件)</span>
+                          <kbd className="text-[9px] font-mono bg-black/30 px-1 rounded opacity-75">2</kbd>
                         </button>
                       )}
 
@@ -193,6 +239,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                           <Dna size={13} />
                           <span>🧬 項目マージ差分</span>
                           <span className="text-[10px] opacity-80">({previewData?.factPreviews?.length || 0}体)</span>
+                          <kbd className="text-[9px] font-mono bg-black/30 px-1 rounded opacity-75">3</kbd>
                         </button>
                       )}
 
@@ -207,6 +254,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                         <Compass size={13} />
                         <span>🗺️ レーンガイドプレビュー</span>
                         {previewData?.laneGuidePreview && <span className="text-[10px] opacity-80">(ON)</span>}
+                        <kbd className="text-[9px] font-mono bg-black/30 px-1 rounded opacity-75">4</kbd>
                       </button>
                     </div>
 
@@ -237,14 +285,21 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
               </div>
 
               {/* モーダルフッター */}
-              <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between gap-3">
-                <button
-                  onClick={() => onClose()}
-                  disabled={busy}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer transition disabled:opacity-50"
-                >
-                  キャンセル
-                </button>
+              <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onClose()}
+                    disabled={busy}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer transition disabled:opacity-50"
+                  >
+                    キャンセル (Esc)
+                  </button>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+                    <span>1~4: タブ切替</span>
+                    <span className="text-zinc-600">/</span>
+                    <span className="text-emerald-400">Ctrl+Enter: 承認</span>
+                  </span>
+                </div>
                 <button
                   onClick={() => onApprove()}
                   disabled={busy || previewLoading}
@@ -264,6 +319,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                     <>
                       <CheckCircle2 className="w-4 h-4" />
                       <span>この完全な文面で承認して統合を実行</span>
+                      <span className="text-[10px] opacity-75 font-mono">(Ctrl+Enter)</span>
                     </>
                   )}
                 </button>

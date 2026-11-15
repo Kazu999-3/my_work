@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { toast } from "../../../components/Toaster";
-import { getChampIcon, getChampSplash } from "../../../lib/ddragonClient";
+import { getChampSplash } from "../../../lib/ddragonClient";
+import { ChampionIcon } from "../../../components/ChampionIcon";
 import {
   ChampionMeta,
   ChampionRole,
@@ -520,10 +521,10 @@ export default function FestivalTournamentDraftModal({
                   >
                     {/* アイコン */}
                     <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-stone-700/80 group-hover:border-primary-400 shrink-0">
-                      <img
-                        src={getChampIcon(champ.id)}
+                      <ChampionIcon
+                        champId={champ.id}
                         alt={champ.name}
-                        loading="lazy"
+                        size={48}
                         className="w-full h-full object-cover"
                       />
                       {isPicked && (
@@ -629,6 +630,9 @@ function DraftTeamSlotCard({
           <img
             src={getChampSplash(champ.id)}
             alt=""
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
             className="w-full h-full object-cover object-center filter saturate-150 scale-110"
           />
           <div
@@ -658,9 +662,10 @@ function DraftTeamSlotCard({
         {champ ? (
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-11 h-11 rounded-xl overflow-hidden border border-stone-600/80 shrink-0 shadow-sm">
-              <img
-                src={getChampIcon(champ.id)}
+              <ChampionIcon
+                champId={champ.id}
                 alt={champ.name}
+                size={44}
                 className="w-full h-full object-cover"
               />
             </div>
