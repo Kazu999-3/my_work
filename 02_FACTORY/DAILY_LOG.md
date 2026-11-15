@@ -1,5 +1,36 @@
 ## 📅 2026-11-15（日）
 
+### 🏆 試合結果記録画面（1,059行➔388行）＆ お祭りピック画面（2,267行➔1,750行）の解体分割 ＆ Dependabot脆弱性完全解消
+
+**概要**:
+1. **背景と目的**:
+   - 先ほど策定したAIコーディング規約（`06_code_smells_and_dod.md`）の本格展開第2弾・第3弾として、プロジェクト内で最も行数が肥大化していた「試合結果記録画面（`balancer/record/page.tsx` 1,059行）」および「日曜お祭りピック画面（`festival/pick/page.tsx` 2,267行）」のコンポーネント解体・カプセル化を実施。
+   - あわせて、GitHub Dependabotから警告されていた脆弱性（Alert #118 / `minimatch` CVE-2026-118764）を安全にアップデート・解消。
+2. **実施内容**:
+   - **【Dependabot 脆弱性（CVE-2026-118764）の解消】**:
+     - `04_PORTAL/package.json` に `overrides: { "minimatch": "^11.0.1" }` を定義し `npm install`。全 `minimatch` を 11.0.8 に引き上げ、`found 0 vulnerabilities` を達成。
+   - **【試合結果記録画面（`balancer/record/page.tsx`）の分割】**:
+     - `_parts/` 配下に `types.ts`, `ocrUtils.ts`, `useOcrImageProcessor.ts`, `ChampionSelectorModal.tsx`, `TeamStatsTable.tsx`, `MatchSummaryControls.tsx` を新設。
+     - OCR画像リサイズ・Base64解析、学習済みエイリアスマッチング、チャンピオン選択、BLUE/REDスタッツ入力テーブル、勝敗・試合時間・最終戦トグルを部品化。
+     - メイン画面を 1,059行 ➔ 388行のクリーンなオーケストレーターへ大幅圧縮。
+   - **【お祭りピック画面（`festival/pick/page.tsx`）の解体】**:
+     - `_parts/` 配下に `types.ts`, `ChampionCard.tsx`, `DraftPlayerCard.tsx`, `CapturePreviewModal.tsx`（`CompactCaptureIcon` 含む）を新設。
+     - 末尾にインライン定義されていた 510行分の巨大UIコンポーネントを完全外部化し、本体を 2,267行 ➔ 1,750行へスリム化。
+3. **機械的実値検証**:
+   - `04_PORTAL`: `npx tsc --noEmit` エラー0件（型完全一致）。
+   - 単体テスト全173件: `npm test` ➔ **173 tests passed, 0 failed（ALL PASS）**。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. Next.jsの巨大画面（1,000〜2,000行）を安全に解体する際は、末尾のインラインコンポーネント（カードやモーダル）から順に `_parts/` へ抽出し、最後にフックとテーブルを切り出すことで、型チェックを一切壊さず安全にリファクタリングできる。
+> 2. 間接依存（transitive dependencies）のセキュリティ脆弱性は、`package.json` の `overrides` フィールドで安全なパッチバージョン（例: `minimatch: ^11.0.1`）を指定することで、親ライブラリを破壊的アップデートすることなく0件化できる。
+> 3. OCR画像アップロード処理は、Canvas圧縮・API通信・結果マッピング・エイリアス学習の各責務を1つのカスタムフック（`useOcrImageProcessor`）にカプセル化することで、画面コンポーネント側の可読性が劇的に向上する。
+
+- `[要検証]`: 試合結果記録画面（`/balancer/record`）でのスクショ貼り付け（OCR）および手動入力・保存が従来通り動作することを確認。
+- `[継続ウォッチ]`: GitHub Dependabot のオープンアラートが0件のまま維持されているか。
+- `[発信候補]`: 「2,000行のNext.jsモンスターコンポーネントを安全に解体・テスト全件通過させたリファクタリング手順」。
+
+---
+
 ### 🌐 システム全体ナレッジグラフ整備 ＆ バランサー画面リファクタリング ＆ 転職トラッカー廃止クリーンアップ
 
 **概要**:

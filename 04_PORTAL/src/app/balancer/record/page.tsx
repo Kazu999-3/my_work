@@ -2,82 +2,22 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { RefreshCw, Trophy, Target, Search, ArrowLeftRight } from 'lucide-react';
-import Image from 'next/image';
+import { RefreshCw, Trophy, Target, ArrowLeftRight } from 'lucide-react';
 import { toast } from '../../../components/Toaster';
-import { getChampIcon } from '../../../lib/ddragonClient';
 import CustomSubNav from '../../../components/CustomSubNav';
 
-type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
-const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
-
-interface PlayerStat {
-  name: string;
-  raw_ocr_name?: string; // OCRが抽出した元の名前（学習用）
-  team: 'BLUE' | 'RED';
-  currentRole: Role;
-  kills: number;
-  deaths: number;
-  assists: number;
-  vision: number;
-  champion_name: string;
-  damage_dealt: number;
-  damage_taken: number;
-  heal_shield: number;
-  objective_damage: number;
-  cs: number;
-  /** 獲得ゴールド。スコアボード画像（2枚目・任意）か、リザルト画面に数値がある時だけ入る（2026-10-17） */
-  gold?: number;
-  /** ペンタキル数。勝利チームの選手が1以上ならジャックポット総取り（/api/match/record が判定。2026-10-07） */
-  penta_kills?: number;
-}
-
-const OCR_ALIAS_STORAGE_KEY = 'ktm_ocr_player_aliases_v1';
-
-// OCR誤認識の別名マッピングを取得
-const getOcrAliases = (): Record<string, string> => {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = localStorage.getItem(OCR_ALIAS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-};
-
-// OCR誤認識の別名マッピングを保存・学習
-const saveOcrAlias = (ocrExtractedName: string, registeredName: string) => {
-  if (typeof window === 'undefined' || !ocrExtractedName || !registeredName) return;
-  const cleanExtracted = ocrExtractedName.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-  if (!cleanExtracted) return;
-  try {
-    const current = getOcrAliases();
-    current[cleanExtracted] = registeredName;
-    localStorage.setItem(OCR_ALIAS_STORAGE_KEY, JSON.stringify(current));
-    // クラウド（DB）へも非同期で自動同期
-    fetch('/api/admin/ocr-aliases', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw: cleanExtracted, target: registeredName }),
-    }).catch(() => {});
-  } catch (err) {
-    console.warn('OCRエイリアスの保存に失敗:', err);
-  }
-};
-
-/** "28:14" / "28" → 秒。空・不正・現実的でない値（3分未満・2時間超）は undefined（＝送らない） */
-const parseDurationText = (text: string): number | undefined => {
-  const t = text.trim();
-  if (!t) return undefined;
-  const m = t.match(/^(\d{1,3})(?::(\d{1,2}))?$/);
-  if (!m) return undefined;
-  const sec = Number(m[1]) * 60 + (m[2] ? Number(m[2]) : 0);
-  return sec >= 180 && sec <= 7200 ? sec : undefined;
-};
+import { ROLES, type PlayerStat, type PlayerPoolItem, type ChampionItem, type ActiveChampSelector, type Role } from './_parts/types';
+import { getOcrAliases, saveOcrAlias, parseDurationText, OCR_ALIAS_STORAGE_KEY } from './_parts/ocrUtils';
+import { useOcrImageProcessor } from './_parts/useOcrImageProcessor';
+import ChampionSelectorModal from './_parts/ChampionSelectorModal';
+import TeamStatsTable from './_parts/TeamStatsTable';
+import MatchSummaryControls from './_parts/MatchSummaryControls';
 
 function CustomRecordPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pendingId = searchParams.get('pending_id');
+
   // OCR学習データのクラウド同期
   useEffect(() => {
     fetch('/api/admin/ocr-aliases')
@@ -92,497 +32,198 @@ function CustomRecordPageContent() {
       .catch(() => {});
   }, []);
 
-  const router = useRouter();
-  const pendingId = searchParams.get('pending_id');
-
-  const [playersPool, setPlayersPool] = useState<{name: string, ign?: string}[]>([]);
+  const [playersPool, setPlayersPool] = useState<PlayerPoolItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | ''; text: string }>({ type: '', text: '' });
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
-  // 試合時間（"28:14" 形式で入力・表示）。スクショ解析で自動入力され、手で直せる。
-  // 18分未満の敗北の MMR 減少緩和に使う（2026-10-16 追加。それまで未送信で緩和が一度も効いていなかった）。
   const [durationText, setDurationText] = useState('');
-  const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
-  // 🏁 最終戦フラグ（保存時にDiscord VCステータスをインターバルではなくクリアする）
   const [isFinalMatch, setIsFinalMatch] = useState(false);
-  const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
+  const [championsList, setChampionsList] = useState<ChampionItem[]>([]);
   const championsListRef = useRef(championsList);
-  // 画像解析の非同期処理から最新の一覧を読むための参照。描画中に ref を書き換えない（react-hooks/refs）
-  useEffect(() => { championsListRef.current = championsList; }, [championsList]);
-  const activeChampSelectorState = useState<{ team: 'BLUE' | 'RED', role: Role, slotIndex: number } | null>(null);
-  const [activeChampSelector, setActiveChampSelector] = activeChampSelectorState;
-  const [champSearchQuery, setChampSearchQuery] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  
+  useEffect(() => {
+    championsListRef.current = championsList;
+  }, [championsList]);
+
+  const [activeChampSelector, setActiveChampSelector] = useState<ActiveChampSelector | null>(null);
+
   // 10人分のステートを初期化
   const [stats, setStats] = useState<PlayerStat[]>(() => {
     const initial: PlayerStat[] = [];
-    ['BLUE', 'RED'].forEach(team => {
-      ROLES.forEach(role => {
-        initial.push({ 
-          name: '', team: team as 'BLUE' | 'RED', currentRole: role, 
-          kills: 0, deaths: 0, assists: 0, vision: 0, 
-          champion_name: '', damage_dealt: 0, damage_taken: 0, 
-          heal_shield: 0, objective_damage: 0, cs: 0 
+    (['BLUE', 'RED'] as const).forEach((team) => {
+      ROLES.forEach((role) => {
+        initial.push({
+          name: '',
+          team,
+          currentRole: role,
+          kills: 0,
+          deaths: 0,
+          assists: 0,
+          vision: 0,
+          champion_name: '',
+          damage_dealt: 0,
+          damage_taken: 0,
+          heal_shield: 0,
+          objective_damage: 0,
+          cs: 0,
         });
       });
     });
     return initial;
   });
 
-  // プレイヤー名曖昧マッチング（学習済みエイリアス辞書 ➔ 完全一致 ➔ 部分一致）
-  const matchPlayer = (extractedName: string, pool: { name: string, ign?: string }[]) => {
-    if (!extractedName) return '';
-    const cleanExtracted = extractedName.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-    if (!cleanExtracted) return '';
+  // OCR画像解析フック
+  const {
+    analyzing,
+    isDragging,
+    handleImageUpload,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+  } = useOcrImageProcessor({
+    playersPool,
+    championsList,
+    stats,
+    setStats,
+    setWinningTeam,
+    setDurationText,
+    setMessage,
+  });
 
-    // 0. 学習済みOCR誤認識辞書（過去の修正履歴）から最優先で解決
-    const aliases = getOcrAliases();
-    if (aliases[cleanExtracted]) {
-      const aliasTarget = aliases[cleanExtracted];
-      if (pool.some(p => p.name === aliasTarget)) {
-        return aliasTarget;
-      }
-    }
-    
-    // 1. 完全一致（記号除外後）
-    for (const p of pool) {
-      const cleanName = p.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-      const cleanIgn = (p.ign || '').toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-      
-      if (cleanName === cleanExtracted || (p.ign && cleanIgn === cleanExtracted)) {
-        return p.name;
-      }
-    }
-    
-    // 2. 部分一致
-    for (const p of pool) {
-      const cleanName = p.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-      const cleanIgn = (p.ign || '').toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-      
-      if (cleanName.includes(cleanExtracted) || cleanExtracted.includes(cleanName) ||
-          (p.ign && (cleanIgn.includes(cleanExtracted) || cleanExtracted.includes(cleanIgn)))) {
-        return p.name;
-      }
-    }
-    
-    return '';
-  };
-
-  // チャンピオン曖昧マッチング
-  const matchChampion = (extractedChamp: string, list: { id: string, name: string }[]) => {
-    if (!extractedChamp) return '';
-    const cleanExtracted = extractedChamp.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-    
-    // 1. Ddragon ID (id) との一致を検索
-    for (const c of list) {
-      const cleanId = c.id.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (cleanId === cleanExtracted) {
-        return c.id;
-      }
-    }
-    
-    // 2. 日本語名 (name) との一致を検索
-    for (const c of list) {
-      const cleanName = c.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-      if (cleanName === cleanExtracted) {
-        return c.id;
-      }
-    }
-    
-    return '';
-  };
-
-  // 画像アップロード・解析
-  const handleImageUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: '画像ファイルのみアップロード可能です。' });
-      return;
-    }
-    
-    setAnalyzing(true);
-    setMessage({ type: '', text: '' });
-    
-    try {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new window.Image();
-        img.onload = async () => {
-          try {
-            // 429制限(TPM/RPM)を劇的に防ぐため、送信前にCanvasで最大幅1280pxにリサイズ＆圧縮
-            const canvas = document.createElement('canvas');
-            const maxW = 1280;
-            let w = img.width;
-            let h = img.height;
-            if (w > maxW) {
-              h = Math.round((h * maxW) / w);
-              w = maxW;
-            }
-            canvas.width = w;
-            canvas.height = h;
-            
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, w, h);
-            
-            // 圧縮率 0.7 の JPEG に変換して送信サイズを軽量化
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            const base64Content = compressedBase64.split(',')[1];
-            
-            const res = await fetch('/api/match/analyze-image', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                imageBase64: base64Content,
-                mimeType: 'image/jpeg',
-                champions: championsListRef.current
-              })
-            });
-            
-            const resData = await res.json();
-            if (!res.ok || resData.status !== 'SUCCESS') {
-              throw new Error(resData.error || '画像の解析に失敗しました。');
-            }
-            
-            const data = resData.data;
-            
-            // スタッツ＆勝敗の反映
-            // スクショの上5行＝勝利チーム(VICTORY BLOCK) または team プロパティで直接指定
-            // 勝利ブロックのプレイヤー名と、名簿(stats)のBLUE/REDチーム名を照合して勝者を確定する。
-            if (data.players && Array.isArray(data.players)) {
-              // OCR結果から BLUE / RED が明示されているかをチェック（インゲーム観戦TAB画面への対応）
-              const ocrBlue = data.players.filter((p: any) => p.team === 'BLUE');
-              const ocrRed = data.players.filter((p: any) => p.team === 'RED');
-
-              const winnerBlock = data.players.slice(0, 5);
-              const loserBlock = data.players.slice(5, 10);
-
-              // 事前入力済みの名簿（バランサーのサイド割当＝真実）と照合
-              const knownBlue = new Set(stats.filter(s => s.team === 'BLUE' && s.name).map(s => s.name));
-              const knownRed = new Set(stats.filter(s => s.team === 'RED' && s.name).map(s => s.name));
-
-              let winInBlue = 0;
-              let winInRed = 0;
-
-              winnerBlock.forEach((p: any) => {
-                const m = matchPlayer(p.name, playersPool);
-                if (m) {
-                  if (knownBlue.has(m)) winInBlue++;
-                  if (knownRed.has(m)) winInRed++;
-                }
-              });
-
-              // 照合結果から勝者を判定。照合できない場合は AI の winningTeam 判定を使用。
-              let resolvedWinner: 'BLUE' | 'RED' = 'BLUE';
-              if (winInRed > winInBlue) {
-                resolvedWinner = 'RED';
-              } else if (winInBlue > winInRed) {
-                resolvedWinner = 'BLUE';
-              } else if (data.winningTeam === 'RED' || data.winningTeam === 'BLUE') {
-                resolvedWinner = data.winningTeam;
-              }
-
-              setWinningTeam(resolvedWinner);
-
-              // 試合時間（読み取れた時だけ自動入力。読めなければ空欄のまま＝緩和なし）
-              const durSec = Number(data.gameDurationSec);
-              if (Number.isFinite(durSec) && durSec >= 180 && durSec <= 7200) {
-                setDurationText(`${Math.floor(durSec / 60)}:${String(Math.round(durSec % 60)).padStart(2, '0')}`);
-              }
-
-              // チームプレイヤーの決定：
-              // ocrBlue と ocrRed がそれぞれ5名ずつ綺麗に分かれている場合はそれを最優先
-              // （観戦・インゲーム画面でもBLUE/REDの配置ミスを構造的に防止）
-              const bluePlayers = (ocrBlue.length === 5 && ocrRed.length === 5)
-                ? ocrBlue
-                : (resolvedWinner === 'BLUE' ? winnerBlock : loserBlock);
-              const redPlayers = (ocrBlue.length === 5 && ocrRed.length === 5)
-                ? ocrRed
-                : (resolvedWinner === 'RED' ? winnerBlock : loserBlock);
-
-              let resolvedCount = 0;
-              let aliasHitCount = 0;
-              let unresolvedCount = 0;
-              let preservedBalancerCount = 0;
-              const currentAliases = getOcrAliases();
-
-              setStats(prev => {
-                return prev.map((currentStat, idx) => {
-                  const isBlue = currentStat.team === 'BLUE';
-                  const teamPlayers = isBlue ? bluePlayers : redPlayers;
-                  const playerIdx = isBlue ? idx : idx - 5;
-                  const targetRole = currentStat.currentRole || ROLES[playerIdx];
-
-                  // ★ チーム分け時の情報を真として検索:
-                  // 1. まず名前が一致するOCRプレイヤーを優先検索（チーム内 ➔ 全体）
-                  let found: any = null;
-                  if (currentStat.name) {
-                    found = teamPlayers.find((p: any) => matchPlayer(p.name, playersPool) === currentStat.name);
-                    if (!found && Array.isArray(data.players)) {
-                      found = data.players.find((p: any) => matchPlayer(p.name, playersPool) === currentStat.name);
-                    }
-                  }
-
-                  // 2. 名前で未特定の枠は、ロール一致で検索
-                  if (!found) {
-                    found = teamPlayers.find((p: any) => p.role && p.role.toUpperCase() === targetRole);
-                  }
-
-                  // 3. それでも見つからなければスロット index 順
-                  if (!found) {
-                    found = teamPlayers[playerIdx];
-                  }
-                  
-                  if (found) {
-                    const rawOcr = (found.name || '').trim();
-                    const cleanRaw = rawOcr.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-                    const isAliasMatch = !!(cleanRaw && currentAliases[cleanRaw]);
-                    const matchedName = matchPlayer(found.name, playersPool);
-                    const matchedChamp = matchChampion(found.champion_name, championsList);
-                    
-                    // ★ チーム分け時の情報（名前・ロール）を真として絶対に上書きしない
-                    const finalName = currentStat.name || matchedName;
-                    const finalRole: Role = currentStat.currentRole || (
-                      (found.role && ROLES.includes(found.role.toUpperCase() as Role))
-                        ? (found.role.toUpperCase() as Role)
-                        : ROLES[playerIdx]
-                    );
-                    
-                    if (currentStat.name) {
-                      preservedBalancerCount++;
-                      resolvedCount++;
-                    } else if (matchedName) {
-                      resolvedCount++;
-                      if (isAliasMatch) aliasHitCount++;
-                    } else {
-                      unresolvedCount++;
-                    }
-                    
-                    return {
-                      ...currentStat,
-                      raw_ocr_name: rawOcr,
-                      currentRole: finalRole, // チーム分け時のロールを維持
-                      name: finalName,        // チーム分け時の名前を維持
-                      champion_name: matchedChamp,
-                      kills: Number(found.kills) || 0,
-                      deaths: Number(found.deaths) || 0,
-                      assists: Number(found.assists) || 0
-                    };
-                  }
-                  return currentStat;
-                });
-              });
-
-              const isSpectator = data.sourceType === 'INGAME_TAB_SPECTATOR';
-              let msgText = isSpectator
-                ? `観戦スコアボード（TAB画面）からスタッツを反映しました。`
-                : `リザルト画面からスタッツを反映しました。`;
-              if (preservedBalancerCount > 0) {
-                msgText += ` 👥 チーム分け時の名前（${preservedBalancerCount}名）をそのまま維持しました。`;
-              } else if (resolvedCount > 0) {
-                msgText += ` （10名中 ${resolvedCount} 名照合完了）`;
-              }
-              if (aliasHitCount > 0 && preservedBalancerCount === 0) {
-                msgText += ` 💡 過去の誤認識学習辞書から ${aliasHitCount} 名を自動補正しました。`;
-              }
-              if (unresolvedCount > 0) {
-                msgText += ` ⚠️ 名前が未設定の枠が ${unresolvedCount} 名あります。ドロップダウンから選択してください。`;
-              }
-              setMessage({ type: unresolvedCount > 0 ? 'error' : 'success', text: msgText });
-            }
-          } catch (innerErr: any) {
-            setMessage({ type: 'error', text: `解析処理エラー: ${innerErr.message}` });
-          } finally {
-            setAnalyzing(false);
-          }
-        };
-        img.onerror = () => {
-          setMessage({ type: 'error', text: '画像のデコードに失敗しました。' });
-          setAnalyzing(false);
-        };
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => {
-        setMessage({ type: 'error', text: 'ファイルの読み込みに失敗しました。' });
-        setAnalyzing(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err: any) {
-      setMessage({ type: 'error', text: `解析エラー: ${err.message}` });
-      setAnalyzing(false);
-    }
-  };
-
-  // ペースト監視 (画面全体のイベント)
-  // 貼り付けの受け口は画面を開いた時に1回だけ登録するため、そこから handleImageUpload を直接呼ぶと
-  // 「開いた瞬間の状態」（空のチャンピオン一覧・空の名簿・空の参加者表）のまま解析結果を照合してしまう。
-  // 2026-10-17: これでチャンピオンが空になっていた。常に最新の処理を ref 経由で呼ぶ
-  const handleImageUploadRef = useRef(handleImageUpload);
-  useEffect(() => { handleImageUploadRef.current = handleImageUpload; });
-
+  // クリップボードからの画像貼り付け (Ctrl+V)
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      let isImage = false;
-      
-      // 1. filesから優先的に画像ファイルを検出
-      const files = e.clipboardData?.files;
-      if (files && files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].type.startsWith('image/')) {
-            handleImageUploadRef.current(files[i]);
-            isImage = true;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            handleImageUpload(file);
             break;
           }
         }
       }
-      
-      // 2. itemsから画像を検出 (フォールバック)
-      if (!isImage) {
-        const items = e.clipboardData?.items;
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-              const file = items[i].getAsFile();
-              if (file) {
-                handleImageUploadRef.current(file);
-                isImage = true;
-                break;
-              }
-            }
-          }
-        }
-      }
-      
-      // クリップボードに画像が含まれるペーストイベントの場合は、ブラウザのデフォルト挙動を止める
-      if (isImage) {
-        e.preventDefault();
-      }
     };
-    
-    document.addEventListener('paste', handlePaste);
-    return () => {
-      document.removeEventListener('paste', handlePaste);
-    };
-  }, []);
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [playersPool, championsList]);
 
-  // ドラッグ＆ドロップハンドラー
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+  // スタッツ値変更ハンドラ
+  const handleStatChangeByIndex = (index: number, field: keyof PlayerStat, value: string) => {
+    setStats((prev) => {
+      const next = [...prev];
+      const target = { ...next[index] };
+
+      if (['kills', 'deaths', 'assists', 'vision', 'damage_dealt', 'damage_taken', 'heal_shield', 'objective_damage', 'cs', 'gold', 'penta_kills'].includes(field)) {
+        (target as any)[field] = Number(value) || 0;
+      } else {
+        (target as any)[field] = value;
+      }
+
+      // OCR修正の自動学習
+      if (field === 'name' && target.raw_ocr_name && value && target.raw_ocr_name !== value) {
+        saveOcrAlias(target.raw_ocr_name, value);
+      }
+
+      next[index] = target;
+      return next;
+    });
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleImageUpload(files[0]);
+  // チャンピオン読み込み
+  const loadChampions = async () => {
+    try {
+      const res = await fetch('/api/riot/champions');
+      const data = await res.json();
+      if (res.ok && data.champions) {
+        setChampionsList(data.champions);
+      } else {
+        throw new Error(data.error || '一覧を取得できませんでした');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: 'error', text: `チャンピオン一覧の読み込み失敗: ${msg}` });
     }
   };
 
   useEffect(() => {
-    async function fetchPlayers() {
-      try {
-        const res = await fetch('/api/players/list');
-        const data = await res.json();
-        if (res.ok && data.players) {
-          setPlayersPool(data.players);
+    loadChampions();
+    fetch('/api/players/list')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.players && Array.isArray(data.players)) {
+          setPlayersPool(data.players.map((p: any) => ({ name: p.name, ign: p.ign })));
         }
-      } catch (err) {
-        console.error(err);
-      }
-      setLoading(false);
-    }
-    fetchPlayers();
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  // チャンピオン一覧の読込。失敗時は静かに空のままにせず、エラー表示＋リトライ可能にする。
-  const loadChampions = async () => {
-    try {
-      const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-      const versions = await vRes.json();
-      const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`);
-      const d = await cRes.json();
-      const list = Object.values(d.data).map((c: any) => ({
-        id: c.id,
-        name: c.name
-      }));
-      list.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-      if (list.length === 0) throw new Error('一覧が空でした');
-      setChampionsList(list);
-    } catch (err: any) {
-      console.error('Failed to load champions from Ddragon:', err);
-      setMessage({ type: 'error', text: `チャンピオン一覧の読み込みに失敗しました（${err.message}）。通信環境を確認して再読み込みしてください。` });
-    }
-  };
-  useEffect(() => { loadChampions(); }, []);
-
-  // バランサー結果を10名のロースターに適用する共通関数
+  // バランサー結果の適用
   const applyBalancerResult = (br: any) => {
     if (!br || (!br.teamBlue && !br.teamRed)) return false;
     setStats(() => {
       const initial: PlayerStat[] = [];
-      
-      ROLES.forEach(role => {
+      ROLES.forEach((role) => {
         const pb = br.teamBlue?.find((p: any) => (p.currentRole || p.role) === role);
         initial.push({
           name: pb ? pb.name : '',
           team: 'BLUE',
           currentRole: role,
-          kills: 0, deaths: 0, assists: 0, vision: 0,
-          champion_name: '', damage_dealt: 0, damage_taken: 0,
-          heal_shield: 0, objective_damage: 0, cs: 0
+          kills: 0,
+          deaths: 0,
+          assists: 0,
+          vision: 0,
+          champion_name: '',
+          damage_dealt: 0,
+          damage_taken: 0,
+          heal_shield: 0,
+          objective_damage: 0,
+          cs: 0,
         });
       });
-      
-      ROLES.forEach(role => {
+      ROLES.forEach((role) => {
         const pr = br.teamRed?.find((p: any) => (p.currentRole || p.role) === role);
         initial.push({
           name: pr ? pr.name : '',
           team: 'RED',
           currentRole: role,
-          kills: 0, deaths: 0, assists: 0, vision: 0,
-          champion_name: '', damage_dealt: 0, damage_taken: 0,
-          heal_shield: 0, objective_damage: 0, cs: 0
+          kills: 0,
+          deaths: 0,
+          assists: 0,
+          vision: 0,
+          champion_name: '',
+          damage_dealt: 0,
+          damage_taken: 0,
+          heal_shield: 0,
+          objective_damage: 0,
+          cs: 0,
         });
       });
-      
       return initial;
     });
     return true;
   };
 
-  const [hasCachedResult, setHasCachedResult] = useState(false);
-
-  // マウント時に pending_id または localStorage の前回結果を自動読み込み
+  // 初期ロード時のチーム分け復元
   useEffect(() => {
     if (pendingId) {
-      async function loadPendingMatch() {
-        try {
-          const res = await fetch(`/api/balancer/pending?id=${pendingId}`);
-          const data = await res.json();
-          if (res.ok && data.balanceResult) {
+      fetch(`/api/balancer/pending?id=${pendingId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.balanceResult) {
             applyBalancerResult(data.balanceResult);
             setMessage({ type: 'success', text: '✅ バランサーのチーム分け編成（10名）を自動ロードしました！' });
           }
-        } catch (err) {
-          console.error('Failed to load pending match:', err);
-        }
-      }
-      loadPendingMatch();
+        })
+        .catch(console.error);
     } else {
-      // pendingId がない場合、localStorage から前回のチーム分け結果を自動反映
       try {
         const cached = localStorage.getItem('balancer_last_result');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed && (parsed.teamBlue || parsed.teamRed)) {
-            setHasCachedResult(true);
             applyBalancerResult(parsed);
             setMessage({ type: 'success', text: '⚡ 直前のチーム分け構成（10名）を自動反映しました！' });
           }
@@ -593,111 +234,72 @@ function CustomRecordPageContent() {
     }
   }, [pendingId]);
 
+  // BLUE ⇄ RED 陣営入替
+  const handleSwapTeams = () => {
+    setStats((prev) => {
+      const next = [...prev];
+      for (let i = 0; i < 5; i++) {
+        const blueIdx = i;
+        const redIdx = i + 5;
+        const blueStat = { ...next[blueIdx], team: 'RED' as const };
+        const redStat = { ...next[redIdx], team: 'BLUE' as const };
+        next[blueIdx] = redStat;
+        next[redIdx] = blueStat;
+      }
+      return next;
+    });
+    setWinningTeam((prev) => (prev === 'BLUE' ? 'RED' : prev === 'RED' ? 'BLUE' : null));
+    setMessage({ type: 'success', text: '🔁 BLUE陣営とRED陣営を反転しました！' });
+  };
+
   const handleRestoreCachedBalancer = () => {
     try {
       const cached = localStorage.getItem('balancer_last_result');
       if (cached) {
         const parsed = JSON.parse(cached);
-        const success = applyBalancerResult(parsed);
-        if (success) {
-          setMessage({ type: 'success', text: '⚡ 直前のチーム分け構成（10名）を再反映しました！' });
-        } else {
-          setMessage({ type: 'error', text: '前回のチーム分けデータ形式が不正です。' });
+        if (applyBalancerResult(parsed)) {
+          setMessage({ type: 'success', text: '⚡ 直前のチーム分け構成（10人）を反映しました！' });
+          return;
         }
-      } else {
-        setMessage({ type: 'error', text: '前回のチーム分け構成が見つかりませんでした。先にバランサーでチーム分けを実行してください。' });
       }
-    } catch (e: any) {
-      setMessage({ type: 'error', text: `復元エラー: ${e.message}` });
+      setMessage({ type: 'error', text: '直前のチーム分け情報が見つかりませんでした。' });
+    } catch {
+      setMessage({ type: 'error', text: 'チーム分け情報の読み込みに失敗しました。' });
     }
   };
 
-  // BLUE(0-4)とRED(5-9)の中身(名前・チャンピオン・スタッツ等)を丸ごと入れ替える。
-  // スクショ解析(handleImageUpload)がBLUE/REDを逆に判定した場合や、単純に手入力を
-  // 間違えた場合に、10人分を選び直さずワンクリックで直せるようにする(2026-08-15)。
-  // ロール(currentRole)はそのスロット位置に紐づいたまま(TOP同士、JG同士…)入れ替え、
-  // 勝利チームが選択済みなら合わせて反転させる(実際に勝ったロースターの所属色が
-  // 変わるため)。
-  const handleSwapTeams = () => {
-    setStats(prev => {
-      const next = [...prev];
-      for (let i = 0; i < 5; i++) {
-        const blueSlot = next[i];
-        const redSlot = next[i + 5];
-        next[i] = { ...redSlot, team: 'BLUE', currentRole: blueSlot.currentRole };
-        next[i + 5] = { ...blueSlot, team: 'RED', currentRole: redSlot.currentRole };
-      }
-      return next;
-    });
-    setWinningTeam(prev => (prev === 'BLUE' ? 'RED' : prev === 'RED' ? 'BLUE' : prev));
-    setMessage({ type: 'success', text: '🔁 BLUE陣営とRED陣営を丸ごと入れ替えました！' });
-  };
-
-  const handleStatChangeByIndex = (index: number, field: string, value: string) => {
-    setStats(prev => prev.map((p, idx) => {
-      if (idx === index) {
-        if (field === 'currentRole') return { ...p, currentRole: value as Role };
-        if (field === 'name') {
-          // ユーザーが手動で名前を修正した場合、OCRの抽出文字列と紐付けて次回以降自動解決できるように学習
-          if (p.raw_ocr_name && value) {
-            saveOcrAlias(p.raw_ocr_name, value);
-          }
-          return { ...p, name: value };
-        }
-        if (field === 'champion_name') return { ...p, champion_name: value };
-        const num = parseInt(value) || 0;
-        return { ...p, [field]: num };
-      }
-      return p;
-    }));
-  };
-
+  // 試合結果の送信・保存
   const handleSubmit = async () => {
-    // ロールの重複・過不足チェック
-    const blueRoles = stats.filter(s => s.team === 'BLUE').map(s => s.currentRole);
-    const redRoles = stats.filter(s => s.team === 'RED').map(s => s.currentRole);
-    const hasDuplicateRoles = (roles: Role[]) => {
-      const unique = new Set(roles);
-      return unique.size !== 5;
-    };
-    if (hasDuplicateRoles(blueRoles) || hasDuplicateRoles(redRoles)) {
-      setMessage({ type: 'error', text: '各チーム内でTOP, JG, MID, ADC, SUPのロールが重複なく1人ずつ設定されている必要があります。' });
-      return;
-    }
-
-    // バリデーション
-    const missingNames = stats.filter(s => !s.name);
-    if (missingNames.length > 0) {
-      setMessage({ type: 'error', text: '全員の名前を選択してください。' });
-      return;
-    }
     if (!winningTeam) {
       setMessage({ type: 'error', text: '勝利チームを選択してください。' });
       return;
     }
 
+    const unselected = stats.find((s) => !s.name);
+    if (unselected) {
+      setMessage({ type: 'error', text: `全員のプレイヤー名を入力してください。（${unselected.team} ${unselected.currentRole} が未選択）` });
+      return;
+    }
+
+    const uniqueNames = new Set(stats.map((s) => s.name));
+    if (uniqueNames.size < 10) {
+      setMessage({ type: 'error', text: '同じプレイヤーが重複して登録されています。10人全員別のプレイヤーを選択してください。' });
+      return;
+    }
+
     setSubmitting(true);
     setMessage({ type: '', text: '' });
-    try {
-      // 確定したプレイヤー名とOCR原文の対応関係を自動学習・定着
-      stats.forEach(s => {
-        if (s.raw_ocr_name && s.name) {
-          saveOcrAlias(s.raw_ocr_name, s.name);
-        }
-      });
 
+    try {
+      const parsedDuration = parseDurationText(durationText);
       const res = await fetch('/api/match/record', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          winningTeam,
-          gameDuration: parseDurationText(durationText), // 秒。未入力・不正なら送らない（緩和なし）
-          isExhibition: false, // 通常カスタムとして記録
-          isFinalMatch, // 🏁 最終戦フラグ（VCステータスクリア）
-          balanceSatisfaction, // チーム分けの満足度（管理者が入力時に記録）
-          riotMatchId: null, // 手動入力のため常にnull
-          adminPassword: 'ktm', // API側で検証を無効化したため、デフォルト値を設定
-          participants: stats.map(s => ({
+          winning_team: winningTeam,
+          match_duration: parsedDuration,
+          isFinalMatch,
+          participants: stats.map((s) => ({
             name: s.name,
             team: s.team,
             role: s.currentRole,
@@ -711,35 +313,39 @@ function CustomRecordPageContent() {
             heal_shield: s.heal_shield,
             objective_damage: s.objective_damage,
             cs: s.cs,
-            penta_kills: s.penta_kills || 0
-          }))
-        })
+            penta_kills: s.penta_kills || 0,
+          })),
+        }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存に失敗しました');
-      
+
       if (pendingId) {
         await fetch(`/api/balancer/pending?id=${pendingId}`, { method: 'DELETE' }).catch(() => {});
       }
 
       toast.success('✅ 試合結果を記録し、MMRを更新しました！');
       setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！（チーム分け画面へ戻ります）' });
-      setDurationText(''); // 次の試合に前の試合時間を持ち越さない
+      setDurationText('');
 
-      // ポップアップを挟まず、即座にバランサー画面へ戻る
       setTimeout(() => {
         router.push('/balancer');
       }, 500);
-    } catch (err: any) {
-      setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: 'error', text: `保存エラー: ${msg}` });
     } finally {
       setSubmitting(false);
     }
   };
 
-
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><RefreshCw className="h-8 w-8 text-primary animate-spin" /></div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -747,6 +353,7 @@ function CustomRecordPageContent() {
       <div className="max-w-6xl mx-auto space-y-6">
         <CustomSubNav />
 
+        {/* ヘッダー */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h1 className="text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-3">
             <Trophy className="h-7 w-7 md:h-8 md:w-8 text-success-600" />
@@ -766,7 +373,7 @@ function CustomRecordPageContent() {
               type="button"
               onClick={handleRestoreCachedBalancer}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-              title="直前にバランサーで決定した10人の編成（BLUE/REDとレーン）をこの入力欄へ一括自動入力します"
+              title="直前にバランサーで決定した10人の編成を一括自動入力します"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               <span>⚡ 直前のチーム分け構成（10人）を反映</span>
@@ -776,11 +383,13 @@ function CustomRecordPageContent() {
 
         <div className="bg-surface border border-border rounded-xl p-6 shadow-2xl">
           {message.text && (
-            <div className={`mb-6 p-4 rounded-lg text-sm font-bold border ${
-              message.type === 'success'
-                ? 'bg-success-100 text-success-700 border-success-edge-soft'
-                : 'bg-primary-100 border-primary-edge-soft text-primary-700'
-            }`}>
+            <div
+              className={`mb-6 p-4 rounded-lg text-sm font-bold border ${
+                message.type === 'success'
+                  ? 'bg-success-100 text-success-700 border-success-edge-soft'
+                  : 'bg-primary-100 border-primary-edge-soft text-primary-700'
+              }`}
+            >
               {message.text}
             </div>
           )}
@@ -818,12 +427,8 @@ function CustomRecordPageContent() {
                 <div className="flex justify-center mb-3">
                   <Target className="h-12 w-12 text-success-500 animate-pulse" />
                 </div>
-                <p className="font-bold text-foreground mb-1 text-base">
-                  スクリーンショット画像を貼り付け (Ctrl+V)
-                </p>
-                <p className="text-xs text-muted-strong mb-1">
-                  または、ここにファイルをドラッグ＆ドロップ / クリックして選択
-                </p>
+                <p className="font-bold text-foreground mb-1 text-base">スクリーンショット画像を貼り付け (Ctrl+V)</p>
+                <p className="text-xs text-muted-strong mb-1">または、ここにファイルをドラッグ＆ドロップ / クリックして選択</p>
                 <p className="text-[11px] text-primary font-semibold">
                   💡 対戦後リザルト画面のほか、インゲーム観戦スコアボード（TAB画面）のスクショもそのまま貼り付け可能です
                 </p>
@@ -831,331 +436,51 @@ function CustomRecordPageContent() {
             )}
           </div>
 
-          <div className="flex justify-end mb-2">
-            <button
-              type="button"
-              onClick={handleSwapTeams}
-              title="BLUE/REDの中身(名前・チャンピオン・スタッツ)を丸ごと入れ替えます"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 border border-border text-foreground-subtle font-bold text-xs transition"
-            >
-              <ArrowLeftRight className="h-3.5 w-3.5" /> BLUE ⇄ RED 入れ替え
-            </button>
-          </div>
+          {/* チーム入力グリッド */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* BLUE TEAM */}
-            <div>
-              <h4 className="font-bold text-secondary-700 mb-4 text-xl tracking-wider">🟦 BLUE TEAM</h4>
-              <div className="space-y-3">
-                {[0, 1, 2, 3, 4].map(index => {
-                  const s = stats[index];
-                  const uid = `BLUE-slot-${index}`;
-                  return (
-                    <div key={uid} className="flex flex-col bg-surface/70 p-3 rounded-lg border border-border gap-2">
-                      <div className="flex flex-wrap items-center gap-2 w-full">
-                        <select
-                          value={s.currentRole}
-                          onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs font-bold"
-                        >
-                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                        <select
-                          value={s.name}
-                          onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-secondary-edge-strong text-sm"
-                        >
-                          <option value="">選択...</option>
-                          {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                        </select>
-                        <button
-                          onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
-                          type="button"
-                          className="w-32 bg-surface border border-border hover:border-secondary-edge-strong rounded px-2 py-1.5 text-muted-strong hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
-                        >
-                          <span className="truncate">
-                            {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
-                          </span>
-                          {s.champion_name && (
-                            <Image
-                              src={getChampIcon(s.champion_name)}
-                              width={20}
-                              height={20}
-                              className="w-5 h-5 rounded-full border border-border shrink-0 object-cover"
-                              alt={s.champion_name}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0 flex flex-wrap gap-1 justify-end items-center">
-                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
-                          <span className="text-muted-strong self-center text-xs">/</span>
-                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
-                          <span className="text-muted-strong self-center text-xs">/</span>
-                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const cur = s.penta_kills || 0;
-                              const next = cur >= 2 ? 0 : cur + 1;
-                              handleStatChangeByIndex(index, 'penta_kills', String(next));
-                            }}
-                            className={`ml-1.5 px-2 py-1 rounded text-xs font-bold transition flex items-center gap-1 ${
-                              (s.penta_kills || 0) > 0
-                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
-                                : 'bg-black/5 text-muted-strong hover:text-foreground border border-border'
-                            }`}
-                            title="ペンタキル達成（ジャックポット総取り対象）"
-                          >
-                            💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* RED TEAM */}
-            <div>
-              <h4 className="font-bold text-danger-700 mb-4 text-xl tracking-wider">🟥 RED TEAM</h4>
-              <div className="space-y-3">
-                {[5, 6, 7, 8, 9].map(index => {
-                  const s = stats[index];
-                  const uid = `RED-slot-${index}`;
-                  return (
-                    <div key={uid} className="flex flex-col bg-surface/70 p-3 rounded-lg border border-border gap-2">
-                      <div className="flex flex-wrap items-center gap-2 w-full">
-                        <select
-                          value={s.currentRole}
-                          onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-danger-edge-strong text-xs font-bold"
-                        >
-                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                        <select
-                          value={s.name}
-                          onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-danger-edge-strong text-sm"
-                        >
-                          <option value="">選択...</option>
-                          {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                        </select>
-                        <button
-                          onClick={() => setActiveChampSelector({ team: 'RED', role: s.currentRole, slotIndex: index })}
-                          type="button"
-                          className="w-32 bg-surface border border-border hover:border-danger-edge-strong rounded px-2 py-1.5 text-muted-strong hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
-                        >
-                          <span className="truncate">
-                            {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
-                          </span>
-                          {s.champion_name && (
-                            <Image
-                              src={getChampIcon(s.champion_name)}
-                              width={20}
-                              height={20}
-                              className="w-5 h-5 rounded-full border border-border shrink-0 object-cover"
-                              alt={s.champion_name}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0 flex flex-wrap gap-1 justify-end items-center">
-                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
-                          <span className="text-muted-strong self-center text-xs">/</span>
-                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
-                          <span className="text-muted-strong self-center text-xs">/</span>
-                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const cur = s.penta_kills || 0;
-                              const next = cur >= 2 ? 0 : cur + 1;
-                              handleStatChangeByIndex(index, 'penta_kills', String(next));
-                            }}
-                            className={`ml-1.5 px-2 py-1 rounded text-xs font-bold transition flex items-center gap-1 ${
-                              (s.penta_kills || 0) > 0
-                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
-                                : 'bg-black/5 text-muted-strong hover:text-foreground border border-border'
-                            }`}
-                            title="ペンタキル達成（ジャックポット総取り対象）"
-                          >
-                            💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <TeamStatsTable
+              team="BLUE"
+              indices={[0, 1, 2, 3, 4]}
+              stats={stats}
+              playersPool={playersPool}
+              championsList={championsList}
+              onStatChange={handleStatChangeByIndex}
+              onOpenChampSelector={(team, role, slotIndex) => setActiveChampSelector({ team, role, slotIndex })}
+            />
+            <TeamStatsTable
+              team="RED"
+              indices={[5, 6, 7, 8, 9]}
+              stats={stats}
+              playersPool={playersPool}
+              championsList={championsList}
+              onStatChange={handleStatChangeByIndex}
+              onOpenChampSelector={(team, role, slotIndex) => setActiveChampSelector({ team, role, slotIndex })}
+            />
           </div>
 
-          {/* チーム分けの満足度（管理者が入力時に記録） */}
-          <div className="border-t border-border pt-6">
-            <div className="flex items-center gap-3 flex-wrap bg-black/3 p-3 rounded-lg border border-border">
-              <span className="font-bold text-muted-strong text-sm">今日のチーム分けは?</span>
-              {([
-                ['good', '👍 良かった', 'bg-success-600'],
-                ['normal', '😐 普通', 'bg-secondary-600'],
-                ['bad', '👎 イマイチ', 'bg-danger-600'],
-              ] as const).map(([val, label, activeCls]) => (
-                <button key={val} type="button"
-                  onClick={() => setBalanceSatisfaction(balanceSatisfaction === val ? null : val)}
-                  className={`px-4 py-2 rounded-lg text-sm font-black transition ${balanceSatisfaction === val ? `${activeCls} text-white` : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}>
-                  {label}
-                </button>
-              ))}
-              <span className="text-[10px] text-muted-strong">任意。バランサーの精度検証に使われます（未選択でも保存できます）</span>
-            </div>
-          </div>
-
-          <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 bg-black/3 p-2 rounded-lg border border-border">
-              <span className="font-bold text-muted-strong px-2">勝利チーム:</span>
-              <button
-                onClick={() => setWinningTeam('BLUE')}
-                className={`px-8 py-3 rounded-lg font-black transition ${winningTeam === 'BLUE' ? 'bg-secondary-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.6)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
-              >
-                BLUE WIN
-              </button>
-              <button
-                onClick={() => setWinningTeam('RED')}
-                className={`px-8 py-3 rounded-lg font-black transition ${winningTeam === 'RED' ? 'bg-danger-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.6)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
-              >
-                RED WIN
-              </button>
-            </div>
-
-            {/* 試合時間（スクショ解析で自動入力。18分未満の敗北は MMR 減少が半分になる） */}
-            <label className="flex items-center gap-2 bg-black/3 p-2 rounded-lg border border-border">
-              <span className="font-bold text-muted-strong px-1 text-sm">試合時間</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={durationText}
-                onChange={(e) => setDurationText(e.target.value)}
-                placeholder="28:14"
-                className="w-20 px-2 py-1.5 rounded-md bg-surface border border-border text-sm font-mono text-foreground"
-              />
-              <div className="flex flex-col gap-0.5 max-w-48 leading-tight">
-                <span className="text-[10px] text-muted-strong">
-                  {durationText && parseDurationText(durationText) === undefined
-                    ? '「分:秒」で入力（例 28:14）'
-                    : '試合時間（18分未満は敗北緩和）'}
-                </span>
-                {durationText && parseDurationText(durationText) !== undefined && parseDurationText(durationText)! < 18 * 60 && (
-                  <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse">
-                    ⚡ 早期投了緩和(-50%)が適用されます
-                  </span>
-                )}
-              </div>
-            </label>
-
-            {/* 🏁 最終戦チェックボックス（解散時にVCステータスを自動クリア） */}
-            <label className="flex items-center gap-2 cursor-pointer select-none bg-black/3 hover:bg-black/5 px-3 py-2 rounded-lg border border-border transition">
-              <input
-                type="checkbox"
-                checked={isFinalMatch}
-                onChange={(e) => setIsFinalMatch(e.target.checked)}
-                className="w-4 h-4 rounded text-secondary-600 focus:ring-secondary-500 cursor-pointer"
-              />
-              <span className="text-xs font-bold text-foreground">
-                🏁 本日の最終戦（解散するためVCステータスをクリア）
-              </span>
-            </label>
-
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !winningTeam}
-              className={`px-8 py-4 rounded-xl font-black text-lg transition flex items-center gap-3 ${
-                submitting || !winningTeam ? 'bg-black/5 text-faint cursor-not-allowed' : 'bg-gradient-to-r from-success-500 to-secondary-600 text-white hover:from-success-400 hover:to-secondary-500 shadow-xl shadow-success-900/30'
-              }`}
-            >
-              {submitting ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Target className="h-6 w-6" />}
-              試合結果を保存してMMR更新
-            </button>
-          </div>
+          {/* 試合結果コントロール（勝敗・時間・最終戦・送信） */}
+          <MatchSummaryControls
+            winningTeam={winningTeam}
+            onSelectWinningTeam={setWinningTeam}
+            durationText={durationText}
+            onChangeDurationText={setDurationText}
+            isFinalMatch={isFinalMatch}
+            onChangeIsFinalMatch={setIsFinalMatch}
+            submitting={submitting}
+            onSubmit={handleSubmit}
+          />
         </div>
       </div>
 
       {/* チャンピオン選択モーダル */}
       {activeChampSelector && (
-        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                <Target className="h-5 w-5 text-success-600" />
-                チャンピオン選択 ({activeChampSelector.team} - {activeChampSelector.role})
-              </h3>
-              <button
-                onClick={() => { setActiveChampSelector(null); setChampSearchQuery(''); }}
-                className="text-muted-strong hover:text-foreground text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
-              >
-                閉じる
-              </button>
-            </div>
-
-            <input
-              type="text"
-              placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..."
-              value={champSearchQuery}
-              onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-success-edge-strong text-sm"
-              autoFocus
-            />
-
-            {/* 一覧が読み込めていない場合のリトライ導線 */}
-            {championsList.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-strong mb-3">チャンピオン一覧が読み込まれていません。</p>
-                <button onClick={loadChampions} type="button"
-                  className="px-4 py-2 rounded-lg bg-success-600 hover:bg-success-500 text-white text-sm font-bold">
-                  🔄 一覧を再読み込み
-                </button>
-              </div>
-            )}
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-              {championsList
-                .filter(c =>
-                  c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) ||
-                  c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
-                )
-                .map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => {
-                      handleStatChangeByIndex(activeChampSelector.slotIndex, 'champion_name', c.id);
-                      setActiveChampSelector(null);
-                      setChampSearchQuery('');
-                    }}
-                    type="button"
-                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 transition group"
-                  >
-                    <Image
-                      src={getChampIcon(c.id)}
-                      width={48}
-                      height={48}
-                      className="w-12 h-12 rounded-xl border border-border group-hover:border-success-edge-strong transition object-cover"
-                      alt={c.name}
-                    />
-                    <span className="text-[10px] text-muted-strong truncate w-14 text-center group-hover:text-foreground transition">
-                      {c.name}
-                    </span>
-                  </button>
-                ))
-              }
-              {championsList.filter(c =>
-                c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) ||
-                c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
-              ).length === 0 && (
-                <div className="col-span-full text-center py-12 text-muted-strong text-sm">
-                  該当するチャンピオンが見つかりません。
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ChampionSelectorModal
+          activeSelector={activeChampSelector}
+          championsList={championsList}
+          onSelect={(slotIndex, championId) => handleStatChangeByIndex(slotIndex, 'champion_name', championId)}
+          onClose={() => setActiveChampSelector(null)}
+          onReloadChampions={loadChampions}
+        />
       )}
     </div>
   );
@@ -1163,7 +488,13 @@ function CustomRecordPageContent() {
 
 export default function CustomRecordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><RefreshCw className="h-8 w-8 text-primary animate-spin" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+        </div>
+      }
+    >
       <CustomRecordPageContent />
     </Suspense>
   );
