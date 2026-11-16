@@ -665,7 +665,7 @@ export async function POST(req: NextRequest) {
       // 1. pending の記事を取得（最大1000件走査）
       const { data: pendingRows, error: fetchErr } = await db
         .from('personal_knowledge')
-        .select('id, title, content, raw_content, champion, tags, source_url, reanalysis_of, is_atomic')
+        .select('id, title, content, raw_content, champion, tags, source_url, reanalysis_of, is_atomic, analysis_meta')
         .eq('review_status', 'pending')
         .order('id', { ascending: false })
         .limit(1000);
@@ -691,16 +691,31 @@ export async function POST(req: NextRequest) {
         const textLen = (row.content || row.raw_content || '').trim().length;
         if (textLen < minLength) continue;
 
-        eligibleRows.push({ ...row, resolvedChampion: resolved });
+        // 安全基準強化: 薄い記事（具体的事実・ノウハウ不足）は除外し、人手レビューに残す
+        const density = assessArticleDensity(row.content || row.raw_content || '', row.analysis_meta);
+        if (density.level === 'thin') continue;
+
+        eligibleRows.push({ ...row, resolvedChampion: resolved, density });
       }
 
       const totalEligible = eligibleRows.length;
+
+      // 対象チャンピオン別の件数サマリー
+      const champBreakdown: Record<string, number> = {};
+      eligibleRows.forEach((r) => {
+        champBreakdown[r.resolvedChampion] = (champBreakdown[r.resolvedChampion] || 0) + 1;
+      });
+      const topEligibleChampions = Object.entries(champBreakdown)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, count]) => `${name} (${count}件)`);
 
       if (isDryRun) {
         return NextResponse.json({
           success: true,
           dryRun: true,
           totalEligible,
+          topEligibleChampions,
           sample: eligibleRows.slice(0, 5).map((r) => ({
             id: r.id,
             title: r.title,

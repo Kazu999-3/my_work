@@ -338,7 +338,8 @@ export default function ReviewPage() {
       }
 
       const sampleNames = (checkJson.sample || []).map((s: any) => `・${s.title} (${s.champion})`).join('\n');
-      const confirmMsg = `安全基準（単一チャンプ特定 & 800文字以上）を満たす良質な記事が【${eligible}件】あります。\n\n【対象サンプル】:\n${sampleNames}\n\nこれらを自動で教本・レーンガイド・対面DBへ一括承認しますか？`;
+      const topChamps = (checkJson.topEligibleChampions || []).join('、');
+      const confirmMsg = `安全基準（単一チャンプ特定 ＆ 800字以上 ＆ 密度チェック合格）を満たす良質記事が【${eligible}件】あります。\n\n【主な対象チャンピオン】:\n${topChamps}\n\n【サンプル記事】:\n${sampleNames}\n\nこれらを自動で教本・レーンガイド・対面DBへ一括承認して統合しますか？`;
 
       if (!confirm(confirmMsg)) {
         return;

@@ -1,6 +1,6 @@
 {
   "patch_version": "26.22",
-  "updated_at": "2026-11-16T21:51:01.595295+00:00",
+  "updated_at": "2026-11-16T23:20:56.558137+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -232,8 +232,8 @@
     },
     "Gangplank": {
       "name": "ガングプランク",
-      "status": "pending",
-      "updated_at": "2026-11-08T01:17:54.401943+00:00",
+      "status": "completed",
+      "updated_at": "2026-11-16T23:20:03.040870+00:00",
       "error": null
     },
     "Garen": {
