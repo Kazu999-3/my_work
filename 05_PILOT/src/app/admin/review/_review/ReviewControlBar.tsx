@@ -128,6 +128,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
               className="pl-8 pr-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 font-medium hover:border-zinc-700 transition appearance-none cursor-pointer"
               aria-label="並び替え"
             >
+              <option value="facts_desc">💡 事実・知見数順（高密度優先）</option>
               <option value="created_asc">⏳ 登録古い順</option>
               <option value="created_desc">📅 登録新しい順</option>
               <option value="channel_asc">📺 チャンネル順</option>
@@ -283,6 +284,52 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
             表示中: <b className="text-amber-300 font-mono">{total}</b>件 / 全体: <span className="font-mono">{totalAll}</span>件
           </span>
         </div>
+      </div>
+
+      {/* 主力チャンプ即時抽出チップバー */}
+      <div className="pt-2 border-t border-zinc-800/40 flex flex-wrap items-center gap-1.5 text-xs">
+        <span className="text-[11px] text-zinc-500 font-bold flex items-center gap-1 mr-1">
+          <span>🎯</span> 主力抽出:
+        </span>
+        {[
+          { key: 'Shyvana', nameJa: 'シヴァーナ', icon: '🐉' },
+          { key: 'Lillia', nameJa: 'リリア', icon: '🦌' },
+          { key: 'Wukong', nameJa: 'ウーコン', icon: '🐒' },
+          { key: 'Graves', nameJa: 'グレイブス', icon: '🔫' },
+          { key: 'MasterYi', nameJa: 'マスター・イー', icon: '⚔️' },
+          { key: 'Belveth', nameJa: 'ベル＝ヴェス', icon: '🪸' },
+          { key: 'Khazix', nameJa: 'カ＝ジックス', icon: '🦗' },
+          { key: 'Elise', nameJa: 'エリス', icon: '🕷️' },
+          { key: 'Zyra', nameJa: 'ザイラ', icon: '🥀' },
+        ].map((c) => {
+          const isSelected = searchQuery.toLowerCase() === c.key.toLowerCase() || searchQuery === c.nameJa;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setSearchQuery(isSelected ? '' : c.key)}
+              className={`px-2 py-0.5 rounded-lg border text-[11px] font-bold cursor-pointer transition flex items-center gap-1 ${
+                isSelected
+                  ? 'bg-amber-500/25 border-amber-500/80 text-amber-200 shadow-sm'
+                  : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+              }`}
+            >
+              <span>{c.icon}</span>
+              <span>{c.nameJa}</span>
+            </button>
+          );
+        })}
+        {['Shyvana', 'Lillia', 'Wukong', 'Graves', 'MasterYi', 'Belveth', 'Khazix', 'Elise', 'Zyra'].some(
+          (k) => searchQuery.toLowerCase() === k.toLowerCase()
+        ) && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="text-[10px] text-zinc-500 hover:text-zinc-300 underline ml-1 cursor-pointer"
+          >
+            解除
+          </button>
+        )}
       </div>
     </div>
   );

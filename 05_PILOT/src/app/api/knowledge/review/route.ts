@@ -431,6 +431,8 @@ export async function GET(req: NextRequest) {
     // 6. ソート適用
     filtered.sort((a, b) => {
       switch (sort) {
+        case 'facts_desc':
+          return (b.density?.factCount || 0) - (a.density?.factCount || 0) || ((b.char_count || 0) - (a.char_count || 0));
         case 'created_desc':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'channel_asc':

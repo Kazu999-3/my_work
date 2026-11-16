@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getChampIcon } from "@/lib/ddragonClient";
-import { Shield, Swords, Coins, Eye, Activity, Clock, Target } from "lucide-react";
+import { Shield, Swords, Coins, Eye, Activity, Clock, Target, Minimize2, Maximize2 } from "lucide-react";
 import type { HabitRadarSummary } from "@/lib/habitRadar";
 
 // 対面の癖は /api/lol/habit-radar（対面の直近試合のタイムライン実測）から、試合ごとに1回だけ取る。
@@ -45,6 +45,23 @@ interface LiveGameData {
 export default function OverlayPage() {
   const [data, setData] = useState<LiveGameData>({ inGame: false });
   const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  const [compact, setCompact] = useState<boolean>(false);
+
+  // M キーでミニモード/通常モードをトグル切替
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        setCompact((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -226,18 +243,79 @@ export default function OverlayPage() {
       </div>
 
       {/* 画面右上: 対面の癖 (Habit Radar) ＆ 戦術タイマー */}
-      <div className="absolute top-4 right-4 space-y-2">
-        <div className="rounded-xl border border-rose-500/40 bg-black/90 p-3 shadow-[0_8px_32px_rgba(0,0,0,0.85)] ring-1 ring-black/90 backdrop-blur-xl w-64 space-y-2.5">
-          <div className="flex items-center justify-between text-[11px] font-bold text-zinc-200 border-b border-white/15 pb-1.5">
-            <span className="flex items-center gap-1.5 text-rose-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-              <Eye className="h-3.5 w-3.5" /> 対面の癖 (Habit Radar)
+      <div className="absolute top-4 right-4 space-y-2 pointer-events-auto">
+        {compact ? (
+          /* 🚀 コンパクト・ミニモード（極小ピル型常駐表示） */
+          <div
+            onClick={() => setCompact(false)}
+            className="cursor-pointer group rounded-full border border-rose-500/50 bg-black/90 px-3 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.85)] ring-1 ring-black/90 backdrop-blur-xl flex items-center gap-2 hover:border-rose-400 transition"
+            title="クリックまたは [M] キーで詳細展開"
+          >
+            <span className="flex items-center gap-1 text-[11px] font-black text-rose-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              <Eye className="h-3.5 w-3.5" />
+              {enemy ? `vs ${enemy.championName}` : '対面癖'}
             </span>
-            {enemy && (
-              <span className="text-[10px] font-mono text-zinc-300 font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                vs {enemy.championName}
-              </span>
+
+            {/* 最優先の直近カウントダウンまたは定石秒数 */}
+            {data.gameTimeSec !== undefined && data.gameTimeSec < 600 ? (
+              habit.status === 'ready' && habit.radar.earlyWard.averageTimeSec > data.gameTimeSec ? (
+                <span className="font-mono text-[10px] font-black text-teal-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] bg-teal-950/80 px-2 py-0.5 rounded-full border border-teal-500/40">
+                  👁️ ワード {formatTime(habit.radar.earlyWard.averageTimeSec - data.gameTimeSec)}
+                </span>
+              ) : habit.status === 'ready' && habit.radar.firstRecall.averageTimeSec > data.gameTimeSec ? (
+                <span className="font-mono text-[10px] font-black text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-500/40">
+                  🛒 リコール {formatTime(habit.radar.firstRecall.averageTimeSec - data.gameTimeSec)}
+                </span>
+              ) : data.gameTimeSec < 165 ? (
+                <span className="font-mono text-[10px] font-black text-teal-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] bg-teal-950/80 px-2 py-0.5 rounded-full border border-teal-500/40">
+                  🛡️ 川ワード {formatTime(165 - data.gameTimeSec)}
+                </span>
+              ) : data.gameTimeSec < 300 ? (
+                <span className="font-mono text-[10px] font-black text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-500/40">
+                  🛒 帰還目安 {formatTime(300 - data.gameTimeSec)}
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-indigo-300">⚔️ Lv6戦術帯</span>
+              )
+            ) : (
+              <span className="font-mono text-[10px] font-bold text-teal-300">👁️ {me?.wardScore || 0}pt</span>
             )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCompact(false);
+              }}
+              className="text-zinc-400 group-hover:text-white p-0.5 cursor-pointer"
+              title="詳細を展開 [M]"
+            >
+              <Maximize2 className="h-3 w-3" />
+            </button>
           </div>
+        ) : (
+          /* 通常モード（詳細パネル） */
+          <div className="rounded-xl border border-rose-500/40 bg-black/90 p-3 shadow-[0_8px_32px_rgba(0,0,0,0.85)] ring-1 ring-black/90 backdrop-blur-xl w-64 space-y-2.5">
+            <div className="flex items-center justify-between text-[11px] font-bold text-zinc-200 border-b border-white/15 pb-1.5">
+              <span className="flex items-center gap-1.5 text-rose-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                <Eye className="h-3.5 w-3.5" /> 対面の癖 (Habit Radar)
+              </span>
+              <div className="flex items-center gap-1.5">
+                {enemy && (
+                  <span className="text-[10px] font-mono text-zinc-300 font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                    vs {enemy.championName}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCompact(true)}
+                  className="text-zinc-400 hover:text-white p-0.5 rounded hover:bg-white/10 transition cursor-pointer"
+                  title="ミニモードに最小化 [M]"
+                >
+                  <Minimize2 className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
 
           {/* リアルタイムカウントダウン（対面の直近試合の実測平均が取れた時だけ） */}
           {data.gameTimeSec !== undefined && data.gameTimeSec < 600 ? (
@@ -361,7 +439,8 @@ export default function OverlayPage() {
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
 }
