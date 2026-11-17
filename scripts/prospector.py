@@ -20,6 +20,22 @@ import subprocess
 import sys
 import time
 import urllib.request, urllib.error
+from pathlib import Path
+
+# .env.local 自動フォールバック読み込み
+_ROOT = Path(__file__).resolve().parent.parent
+for env_file in [_ROOT / "05_PILOT" / ".env.local", _ROOT / "04_PORTAL" / ".env.local", _ROOT / ".env"]:
+    if env_file.exists():
+        try:
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k, v = k.strip(), v.strip().strip('"').strip("'")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+        except Exception:
+            pass
 
 # Windows cp932対策
 try:
@@ -36,25 +52,25 @@ from video_filter import (
     DEFAULT_MAX_SEC,
 )
 
-SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
+SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
 # シークレット名は環境によって揺れるため、候補を順に拾う
 SUPABASE_KEY = (
     os.environ.get("SUPABASE_SERVICE_KEY")
     or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
     or os.environ.get("SUPABASE_KEY")
+    or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     or ""
 ).strip()
-if not SUPABASE_KEY:
-    sys.exit("❌ Supabaseのキーが未設定です。GitHubのSecretsを確認してください。")
+if not SUPABASE_KEY or not SUPABASE_URL:
+    sys.exit("❌ SupabaseのキーまたはURLが未設定です。環境変数または .env.local を確認してください。")
 
 # 1回の実行で扱うチャンピオン数と、1体あたりに登録する動画数
 LIMIT = int(os.environ.get("PROSPECT_LIMIT", "3"))
 PER_CHAMP = int(os.environ.get("PROSPECT_PER_CHAMP", "1"))
 
-# 解析待ちがこの本数を超えていたら、今回の発掘は見送る。
-# youtube ジョブは30分おきに最大3本（=1日最大144本）しか処理できないため、
-# 積みすぎるとGeminiの日次上限に当たる。
-MAX_BACKLOG = int(os.environ.get("PROSPECT_MAX_BACKLOG", "20"))
+# 解析待ち（未解析チャンプ高優先枠）の上限
+# チャンネル巡回動画の滞留に巻き込まれないよう、既定値を拡大（500本）
+MAX_BACKLOG = int(os.environ.get("PROSPECT_MAX_BACKLOG", "500"))
 
 # 短すぎるクリップと長すぎる配信アーカイブを避ける（厳格化: 8分〜40分）
 MIN_SEC = int(os.environ.get("PROSPECT_MIN_SEC", str(DEFAULT_MIN_SEC)))
@@ -234,6 +250,7 @@ def main() -> int:
                     "channel_name": (v["channel"] or "Unknown")[:200],
                     "url": f"https://www.youtube.com/watch?v={v['id']}",
                     "status": "pending",
+                    "priority": "high",
                     "retry_count": 0,
                     "duration_sec": v["duration"],
                     "date_added": int(time.time()),
