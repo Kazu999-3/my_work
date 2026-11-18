@@ -1,64 +1,18 @@
 {
-  "old_patch": "16.21.1",
-  "new_patch": "16.22.1",
-  "detected_at": "2026-11-04T02:23:01.477258+00:00",
+  "old_patch": "16.22.1",
+  "new_patch": "16.23.1",
+  "detected_at": "2026-11-18T03:43:29.010645+00:00",
   "total_champions": 173,
-  "modified_count": 3,
+  "modified_count": 1,
   "champions": [
     {
-      "id": "Mel",
-      "name": "メル",
+      "id": "Azir",
+      "name": "アジール",
       "type": "stats_changed",
       "diffs": {
-        "hp": {
-          "old": 630,
-          "new": 590
-        },
-        "hpperlevel": {
-          "old": 99,
-          "new": 107
-        },
-        "mp": {
-          "old": 480,
-          "new": 455
-        },
-        "mpperlevel": {
-          "old": 28,
-          "new": 38
-        },
-        "armorperlevel": {
-          "old": 5.2,
-          "new": 5.4
-        },
-        "attackdamage": {
-          "old": 54,
-          "new": 52
-        },
-        "attackspeedperlevel": {
-          "old": 2.5,
-          "new": 2.75
-        }
-      }
-    },
-    {
-      "id": "Thresh",
-      "name": "スレッシュ",
-      "type": "stats_changed",
-      "diffs": {
-        "attackdamage": {
-          "old": 56,
-          "new": 54
-        }
-      }
-    },
-    {
-      "id": "Viktor",
-      "name": "ビクター",
-      "type": "stats_changed",
-      "diffs": {
-        "hpperlevel": {
-          "old": 100,
-          "new": 105
+        "attackrange": {
+          "old": 525,
+          "new": 550
         }
       }
     }
