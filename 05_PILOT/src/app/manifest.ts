@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'KTM PILOT - LoL戦術コックピット',
     short_name: 'PILOT',
-    description: '全173体チャンピオン辞典・Lv6キルラインAIコーチ・スタッツ深層分析を統合した個人戦術コックピット',
+    description: '全チャンピオン辞典・Lv6キルラインAIコーチ・スタッツ深層分析を統合した個人戦術コックピット',
     start_url: '/',
     scope: '/',
     display: 'standalone',

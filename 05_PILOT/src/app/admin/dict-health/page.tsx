@@ -227,7 +227,7 @@ function DictHealthDashboardContent() {
         
         <AdminNavHeader
           title="辞典ヘルス監査センター"
-          subtitle="全173体のチャンピオン辞典データの鮮度・人間検証ステータス・AI更新を管理します。"
+          subtitle={`全${data?.totalCount ?? 173}体のチャンピオン辞典データの鮮度・人間検証ステータス・AI更新を管理します。`}
           action={
             <button
               onClick={() => fetchHealth()}
@@ -340,7 +340,7 @@ function DictHealthDashboardContent() {
         {data && data.anomalies && data.anomalies.length > 0 && (
           <div className="p-3 bg-zinc-900/90 border border-amber-800/60 rounded-xl text-xs text-amber-300 flex items-center justify-between flex-wrap gap-2">
             <span>
-              ℹ️ DB内に正本（173体）外の行を {data.anomalies.length} 件検出しました（{data.anomalies.map(a => a.champion).join(', ')}）。総数表示は正本実数173体に揃えて集計しています。
+              ℹ️ DB内に正本（全{data.totalCount}体）外の行を {data.anomalies.length} 件検出しました（{data.anomalies.map(a => a.champion).join(', ')}）。総数表示は正本実数に揃えて集計しています。
             </span>
           </div>
         )}
@@ -398,7 +398,7 @@ function DictHealthDashboardContent() {
         {data && data.anomalies && data.anomalies.length > 0 && (
           <div className="p-3 bg-zinc-900/90 border border-amber-800/60 rounded-xl text-xs text-amber-300 flex items-center justify-between flex-wrap gap-2">
             <span>
-              ℹ️ DB内に正本（173体）外の行を {data.anomalies.length} 件検出しました（{data.anomalies.map(a => a.champion).join(', ')}）。総数表示は正本実数173体に揃えて集計しています。
+              ℹ️ DB内に正本（全{data.totalCount}体）外の行を {data.anomalies.length} 件検出しました（{data.anomalies.map(a => a.champion).join(', ')}）。総数表示は正本実数に揃えて集計しています。
             </span>
           </div>
         )}

@@ -28,6 +28,7 @@ export interface RecruitmentActivity {
 }
 
 interface Stats {
+  totalCanonicalChampions?: number;
   needsAttention: { failedTasks: FailedTask[]; youtubeErrorCount: number };
   tasks24h: { completed: number; failed: number; pending: number; running: number };
   cloudWorkers: Record<string, CloudWorker>;
@@ -623,7 +624,7 @@ export default function OpsDashboardPage() {
             {/* ナレッジ */}
             <Card title="ナレッジ ＆ 辞典" icon={<Database className="w-4 h-4 text-teal-400" />}>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                <Stat label="辞典（本文レコード数/全173体）" value={stats.knowledge.facts} />
+                <Stat label={`辞典（本文レコード数/全${stats.totalCanonicalChampions ?? 173}体）`} value={stats.knowledge.facts} />
                 <Stat label="ライブラリ記事" value={stats.knowledge.library} />
                 <Stat label="レーンガイド" value={stats.knowledge.laneGuides} />
                 <Stat label="対面メモ" value={stats.knowledge.matchupMemos} />
@@ -646,6 +647,9 @@ export default function OpsDashboardPage() {
                     <Link href="/admin/review" className="text-[11px] text-amber-400 hover:underline">
                       未承認記事の審査へ →
                     </Link>
+                  </div>
+                  <div className="text-[10px] text-zinc-500">
+                    ※各ロールの分母は正本全{stats.totalCanonicalChampions ?? 173}体のうち適性を持つチャンピオン延べ数（複数ロール兼任含む）です。
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
                     {(['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const).map((r) => {

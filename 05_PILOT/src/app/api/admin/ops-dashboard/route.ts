@@ -100,13 +100,39 @@ export async function GET() {
     }
 
     const currentPatch = await getCalendarPatch();
-    const dictHealth = { verified: 0, aiGenerated: 0, stale: 0 };
+    
+    // 正本マスター（champions_summary.json）の読み込み
+    const summaryPath = path.resolve(process.cwd(), 'src/data/champions_summary.json');
+    let summaryChampions: any[] = [];
+    if (fs.existsSync(summaryPath)) {
+      try {
+        summaryChampions = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+      } catch (_) {}
+    }
+    const totalCanonicalChampions = summaryChampions.length || 173;
+
+    // 健全性監査（dict-health）と同一の正本基準で dictHealth を集計（DBの重複・不審行による 144 vs 145 ズレを解消）
+    const factsMap = new Map<string, any>();
     for (const row of (dictFacts.data || []) as any[]) {
-      const p = String(row.patch || '').split('.').slice(0, 2).join('.');
-      const conf = row.confidence || 'ai_generated';
-      if (conf === 'verified') dictHealth.verified++;
-      else if (!row.strengths || p !== currentPatch || conf === 'stale') dictHealth.stale++;
-      else dictHealth.aiGenerated++;
+      if (row.champion) factsMap.set(String(row.champion).toLowerCase(), row);
+    }
+
+    const dictHealth = { verified: 0, aiGenerated: 0, stale: 0 };
+    for (const c of summaryChampions) {
+      const champId = String(c.id || '').toLowerCase();
+      const row = factsMap.get(champId);
+      const conf = row?.confidence || 'ai_generated';
+      const p = String(row?.patch || '').split('.').slice(0, 2).join('.');
+      const isLatestPatch = p === currentPatch;
+      const hasContent = !!(row?.strengths && String(row.strengths).trim());
+
+      if (conf === 'verified') {
+        dictHealth.verified++;
+      } else if (!hasContent || !isLatestPatch || conf === 'stale') {
+        dictHealth.stale++; // 🔴 要更新（旧パッチまたは本文なし）
+      } else {
+        dictHealth.aiGenerated++;
+      }
     }
 
     const activePlayers = (players.data || []).filter((p: any) => p.is_active !== false);
@@ -137,14 +163,6 @@ export async function GET() {
         .map((r: any) => String(r.champion || '').trim().toLowerCase())
         .filter(Boolean)
     );
-
-    const summaryPath = path.resolve(process.cwd(), 'src/data/champions_summary.json');
-    let summaryChampions: any[] = [];
-    if (fs.existsSync(summaryPath)) {
-      try {
-        summaryChampions = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
-      } catch (_) {}
-    }
 
     const roleDefs = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
     const roleStats: Record<string, { total: number; covered: number; pct: number }> = {
@@ -182,6 +200,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      totalCanonicalChampions,
       needsAttention: {
         failedTasks,
         youtubeErrorCount: ytErrors.count ?? 0,

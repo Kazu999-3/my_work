@@ -4,7 +4,7 @@ import GlobalNavbar from '@/components/GlobalNavbar';
 
 export const metadata: Metadata = {
   title: 'KTM PILOT | LoL個人戦術コックピット',
-  description: '全173体チャンピオン辞典・Lv6キルラインAIコーチ・スタッツ深層分析を統合した個人戦術コックピット',
+  description: '全チャンピオン辞典・Lv6キルラインAIコーチ・スタッツ深層分析を統合した個人戦術コックピット',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,

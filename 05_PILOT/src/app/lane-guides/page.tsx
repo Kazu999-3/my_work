@@ -20,11 +20,13 @@ interface LaneGuide {
 interface LaneOption {
   key: string;
   label: string;
+  targetChampionsCount?: number;
 }
 
 function LaneGuidesApp() {
   const [guides, setGuides] = useState<LaneGuide[]>([]);
   const [lanes, setLanes] = useState<LaneOption[]>([]);
+  const [totalCanonical, setTotalCanonical] = useState<number>(173);
   const [activeLane, setActiveLane] = useState<string>('JG');
   const [activeSectionFilter, setActiveSectionFilter] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ function LaneGuidesApp() {
       if (data.success) {
         setGuides(data.guides || []);
         setLanes(data.lanes || []);
+        if (data.totalCanonicalChampions) setTotalCanonical(data.totalCanonicalChampions);
         if (selectJgDefault && data.guides && data.guides.length > 0) {
           const hasJg = data.guides.some((g: LaneGuide) => g.lane === 'JG');
           setActiveLane(hasJg ? 'JG' : data.guides[0].lane);
@@ -95,31 +98,43 @@ function LaneGuidesApp() {
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-4">
         {/* レーンセレクターバー */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {lanes.map((l) => (
-              <button
-                key={l.key}
-                onClick={() => {
-                  setActiveLane(l.key);
-                  setActiveSectionFilter('ALL');
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer whitespace-nowrap ${
-                  activeLane === l.key
-                    ? 'bg-amber-500 text-zinc-950 shadow-sm scale-102'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-
-          {currentGuide && (
-            <div className="text-[11px] text-zinc-400 font-bold shrink-0 hidden sm:block">
-              全 <strong className="text-amber-400">{sections.length}</strong> 章構成 ｜ 統合ソース: <strong className="text-zinc-200">{currentGuide.source_count}</strong> 件
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {lanes.map((l) => (
+                <button
+                  key={l.key}
+                  onClick={() => {
+                    setActiveLane(l.key);
+                    setActiveSectionFilter('ALL');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activeLane === l.key
+                      ? 'bg-amber-500 text-zinc-950 shadow-sm scale-102'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                  }`}
+                >
+                  <span>{l.label}</span>
+                  {typeof l.targetChampionsCount === 'number' && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                      activeLane === l.key ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      {l.targetChampionsCount}体
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-          )}
+
+            {currentGuide && (
+              <div className="text-[11px] text-zinc-400 font-bold shrink-0 hidden sm:block">
+                全 <strong className="text-amber-400">{sections.length}</strong> 章構成 ｜ 統合ソース: <strong className="text-zinc-200">{currentGuide.source_count}</strong> 件
+              </div>
+            )}
+          </div>
+          <div className="text-[10px] text-zinc-500 px-1">
+            ※各レーンの対象チャンピオン数は正本（全{totalCanonical}体）のうち適性を持つチャンピオン数です（複数レーン兼任を含むため合算値はユニーク総数と異なります）。
+          </div>
         </div>
 
         {loading ? (

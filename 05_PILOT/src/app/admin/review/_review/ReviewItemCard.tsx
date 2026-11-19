@@ -193,6 +193,11 @@ export default function ReviewItemCard({
               <span>{freshness.label}</span>
               <span className="opacity-75 font-mono text-[9px]">{freshness.estimatedPatch}</span>
             </span>
+            {freshness.isOldPatch && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-800/60 font-bold flex items-center gap-0.5 shadow-sm">
+                <span>⚠️ 旧パッチ</span>
+              </span>
+            )}
             {/* 動画種別バッジ（Shorts短尺か長尺動画かを一目で識別） */}
             {item.is_atomic ? (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-teal-300 border-teal-800/60 bg-teal-950/40">

@@ -218,8 +218,8 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                             >
                               {cardMeta.tier === "OP" ? "OP" : `T${cardMeta.tierNum}`}
                             </span>
-                            <span className="text-[9px] text-zinc-400 font-medium">
-                              {cardMeta.winRate}%
+                            <span className="text-[9px] text-zinc-400 font-medium" title="勝率">
+                              勝率 {cardMeta.winRate}%
                             </span>
                           </div>
                         ) : (
