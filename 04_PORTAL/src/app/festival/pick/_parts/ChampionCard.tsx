@@ -37,9 +37,9 @@ export default function ChampionCard({ meta, isExcluded, onClick }: ChampionCard
         )}
       </div>
 
-      {/* 名前（ダークモード超高視認性） */}
+      {/* 名前（ダークモード超高視認性・2行折り返し表示で文字切れ防止） */}
       <span
-        className={`mt-1 text-[10px] sm:text-[11px] font-black leading-tight truncate w-full px-0.5 tracking-tight ${
+        className={`mt-1 text-[9px] sm:text-[10px] font-black leading-tight break-words line-clamp-2 w-full min-h-[1.75rem] px-0.5 tracking-tight flex items-center justify-center ${
           isExcluded
             ? 'line-through text-faint'
             : 'text-foreground dark:text-zinc-100 group-hover:text-primary-500 dark:group-hover:text-amber-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]'

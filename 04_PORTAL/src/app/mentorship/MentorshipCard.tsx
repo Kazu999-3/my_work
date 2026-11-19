@@ -119,8 +119,9 @@ export function MentorshipCard({
                 🤝 相談ペア結成中
               </span>
             ) : (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-50 dark:bg-success-950/50 text-success-700 dark:text-success-300 border border-success-edge-soft dark:border-success-edge-strong">
-                🟢 募集中
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-success-500 text-stone-950 border border-success-edge-strong shadow-2xs flex items-center gap-1 animate-pulse hover:animate-none">
+                <span>🔥</span>
+                <span>募集中</span>
               </span>
             )}
           </div>
@@ -343,10 +344,10 @@ export function MentorshipCard({
             <span className="font-semibold text-foreground-soft dark:text-stone-100">{displayDuration}</span>
           </div>
           {profile.active_hours && (
-            <div className="flex items-center gap-1">
-              <Clock size={12} className="text-primary-600 dark:text-primary-400" />
-              <span className="font-bold text-muted-strong">活動時間:</span>
-              <span className="font-semibold text-foreground-soft dark:text-stone-100">{profile.active_hours}</span>
+            <div className="flex items-center gap-1 min-w-0" title={`活動時間帯: ${profile.active_hours}`}>
+              <Clock size={12} className="text-primary-600 dark:text-primary-400 shrink-0" />
+              <span className="font-bold text-muted-strong shrink-0">活動時間:</span>
+              <span className="font-semibold text-foreground-soft dark:text-stone-100 break-words">{profile.active_hours}</span>
             </div>
           )}
         </div>

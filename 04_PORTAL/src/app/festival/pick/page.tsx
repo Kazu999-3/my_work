@@ -48,9 +48,12 @@ import {
   Shield,
   Save,
   FolderOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
 import CustomSubNav from "../../../components/CustomSubNav";
+import ScrollToTopButton from "../../../components/ScrollToTopButton";
 import FestivalTournamentDraftModal from "./FestivalTournamentDraftModal";
 import SundayThemeModal from "./SundayThemeModal";
 import type { ViewMode, DraftPlayer } from "./_parts/types";
@@ -81,6 +84,24 @@ export default function FestivalPickPage() {
 
   // 🎲 今日のテーマおまかせダイス演出中フラグ
   const [isThemeRolling, setIsThemeRolling] = useState(false);
+
+  // 🗺️ 地域セクションの折りたたみ状態（初期は全展開、ワンタップで一括開閉可能）
+  const [collapsedRegions, setCollapsedRegions] = useState<Set<string>>(new Set());
+  const toggleCollapseRegion = useCallback((regKey: string) => {
+    setCollapsedRegions((prev) => {
+      const next = new Set(prev);
+      if (next.has(regKey)) next.delete(regKey);
+      else next.add(regKey);
+      return next;
+    });
+  }, []);
+  const toggleAllRegions = useCallback((collapse: boolean) => {
+    if (collapse) {
+      setCollapsedRegions(new Set(Object.keys(REGIONS)));
+    } else {
+      setCollapsedRegions(new Set());
+    }
+  }, []);
 
   // チャンピオンクリックで ❌ のトグル
   const toggleExclude = useCallback((id: string) => {
@@ -262,10 +283,10 @@ export default function FestivalPickPage() {
               type="button"
               onClick={() => setShowSundayThemeModal(true)}
               className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer"
-              title="日曜お祭りカスタムの今週のお題を設定・確認します（Discordリマインドに自動連動）"
+              title={`日曜お祭りカスタムの今週のお題: ${sundayTheme?.title || '未定'}（クリックで設定・確認）`}
             >
               <span className="text-sm">🎪</span>
-              <span className="truncate max-w-[180px]">
+              <span className="truncate max-w-xs sm:max-w-none">
                 今週: {sundayTheme?.title?.replace(/^[^\w\s\u3000-\u30FF\u4E00-\u9FA5]+/, "").trim() || "未定"}
               </span>
             </button>
@@ -351,6 +372,41 @@ export default function FestivalPickPage() {
             )}
           </div>
         </div>
+
+        {/* ── 💡 抽選方式ガイド（折りたたみ） ── */}
+        <details className="bg-surface border border-border rounded-2xl text-xs group shadow-2xs">
+          <summary className="p-3.5 sm:p-4 cursor-pointer flex items-center gap-2 font-bold text-primary-700 list-none select-none">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>💡 抽選方式の違い ＆ 参加人数と対戦形式の関係（クリックで確認）</span>
+            <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-300 group-open:rotate-180 text-muted" />
+          </summary>
+          <div className="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border/50 text-[11px]">
+            <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-1">
+              <span className="font-black text-foreground block">🎲 1体抽選 / 5体抽選（下部ボタン）</span>
+              <p className="text-muted leading-relaxed">
+                除外されていない候補プールから、1体または1チーム分（5体）を即座にランダム選出します。手軽に1体のチャンプを決めたい時に最適です。
+              </p>
+            </div>
+            <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-1">
+              <span className="font-black text-primary-700 block">👥 少人数ドラフト抽選（2〜10人）</span>
+              <p className="text-muted leading-relaxed">
+                参加人数（2〜10名）に1人1〜3択の候補を重複なしで配布。偶数なら「1v1」「2v2」「3v3」「5v5」のチーム対抗（Blue vs Red）に自動連動し、奇数なら個人戦となります。
+              </p>
+            </div>
+            <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-1">
+              <span className="font-black text-rose-600 block">⚔️ 大会式ドラフト (5v5)</span>
+              <p className="text-muted leading-relaxed">
+                プロ大会（LCK/LPL等）の公式ピック順（B1➔R1,R2➔B2,B3...）に従って、5v5のフルドラフトピックをシミュレートします。
+              </p>
+            </div>
+            <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-1">
+              <span className="font-black text-purple-600 block">🎲 テーマおまかせダイス</span>
+              <p className="text-muted leading-relaxed">
+                全19種類の特殊縛りテーマ（地域縛り、AP過多、タンク祭り等）から、今日のお題をランダム決定して一発でプールを絞り込みます。
+              </p>
+            </div>
+          </div>
+        </details>
 
         {/* ── 👥 少人数（10人以下）対応ドラフトルーレット パネル ── */}
         <div className="bg-gradient-to-br from-surface via-surface to-primary-950/20 border-2 border-primary-500/30 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
@@ -651,7 +707,30 @@ export default function FestivalPickPage() {
       <div className="max-w-7xl mx-auto flex flex-col gap-8">
         {/* ① 出身地別モード */}
         {viewMode === "region" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            {/* 地域一括開閉コントロールバー */}
+            <div className="flex items-center justify-between text-xs bg-surface p-3 rounded-2xl border border-border shadow-xs">
+              <span className="font-bold text-muted-strong flex items-center gap-1.5">
+                <span>🗺️</span> 出身地域一覧 ({Object.keys(REGIONS).length}地域)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleAllRegions(false)}
+                  className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground-subtle border border-border font-bold text-xs cursor-pointer"
+                >
+                  すべて開く
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleAllRegions(true)}
+                  className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground-subtle border border-border font-bold text-xs cursor-pointer"
+                >
+                  すべて畳む
+                </button>
+              </div>
+            </div>
+
             {(Object.keys(REGIONS) as RegionKey[]).map((regKey) => {
               const regMeta = REGIONS[regKey];
               const champs = regionGroups[regKey] || [];
@@ -659,25 +738,35 @@ export default function FestivalPickPage() {
               const champIds = champs.map((c) => c.id);
               const allExcluded = champIds.every((id) => excludedIds.has(id));
               const excludedCount = champIds.filter((id) => excludedIds.has(id)).length;
+              const isCollapsed = collapsedRegions.has(regKey);
 
               return (
                 <div
                   key={regKey}
-                  className="bg-surface rounded-2xl border border-border p-4 shadow-xs"
+                  className="bg-surface rounded-2xl border border-border p-4 shadow-xs transition-all"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleCollapseRegion(regKey)}
+                      className="flex items-center gap-2 text-left cursor-pointer group flex-1"
+                    >
                       <span className="text-xl">{regMeta.icon}</span>
-                      <h2 className="text-base font-black text-foreground">
+                      <h2 className="text-base font-black text-foreground group-hover:text-primary-600 transition">
                         {regMeta.name}
                       </h2>
-                      <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border">
+                      <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border font-mono">
                         {champs.length - excludedCount} / {champs.length} 体
                       </span>
                       <span className="text-xs text-muted hidden md:inline">
                         — {regMeta.description}
                       </span>
-                    </div>
+                      <ChevronDown
+                        className={`w-4 h-4 text-muted transition-transform ml-auto sm:ml-2 ${
+                          isCollapsed ? "" : "rotate-180"
+                        }`}
+                      />
+                    </button>
 
                     <div className="flex items-center gap-1 self-end sm:self-center">
                       <button
@@ -697,16 +786,18 @@ export default function FestivalPickPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
-                    {champs.map((champ) => (
-                      <ChampionCard
-                        key={champ.id}
-                        meta={champ}
-                        isExcluded={excludedIds.has(champ.id)}
-                        onClick={() => toggleExclude(champ.id)}
-                      />
-                    ))}
-                  </div>
+                  {!isCollapsed && (
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5 animate-fade-in">
+                      {champs.map((champ) => (
+                        <ChampionCard
+                          key={champ.id}
+                          meta={champ}
+                          isExcluded={excludedIds.has(champ.id)}
+                          onClick={() => toggleExclude(champ.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1363,6 +1454,9 @@ export default function FestivalPickPage() {
         onClose={() => setShowSundayThemeModal(false)}
         onThemeSaved={(t) => setSundayTheme(t)}
       />
+
+      {/* トップへ戻る */}
+      <ScrollToTopButton />
     </div>
   );
 }

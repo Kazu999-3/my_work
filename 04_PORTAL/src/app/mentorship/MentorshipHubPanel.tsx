@@ -11,6 +11,7 @@ import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
 import { SecretMatchmakerModal, formatOfferDate } from './SecretMatchmakerModal';
 import { toast } from '../../components/Toaster';
 import { MENTORSHIP_FIRST_PROFILE_BONUS_COINS, COIN_UNIT } from '../../lib/constants/rewards';
+import ScrollToTopButton from '../../components/ScrollToTopButton';
 import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
 
 
@@ -28,6 +29,7 @@ export default function MentorshipHubPanel() {
   const [laneFilter, setLaneFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeOnly, setActiveOnly] = useState(true);
+  const [recruitingOnly, setRecruitingOnly] = useState(false);
   const [profiles, setProfiles] = useState<MentorshipProfile[]>([]);
   const [matches, setMatches] = useState<MentorshipMatch[]>([]);
   const [pendingReceived, setPendingReceived] = useState<MentorshipMatch[]>([]);
@@ -35,6 +37,7 @@ export default function MentorshipHubPanel() {
   const [myDiscordId, setMyDiscordId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // プロフィール編集・作成モーダル管理
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -165,8 +168,13 @@ export default function MentorshipHubPanel() {
   // プロフィール一覧の取得
   const fetchProfiles = async () => {
     setIsLoading(true);
+    setFetchError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
-      const res = await fetch('/api/mentorship/profiles?status=ALL');
+      const res = await fetch('/api/mentorship/profiles?status=ALL', { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (data.ok) {
         setProfiles(data.profiles || []);
@@ -180,10 +188,18 @@ export default function MentorshipHubPanel() {
         if (data.userTier !== undefined) {
           setUserTier(data.userTier);
         }
+      } else {
+        throw new Error(data.error || '自己紹介カードの取得に失敗しました');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch mentorship profiles:', err);
+      if (err.name === 'AbortError') {
+        setFetchError('データの取得がタイムアウト（10秒）しました。通信状況をご確認のうえ再度お試しください。');
+      } else {
+        setFetchError(err.message || '自己紹介カードの取得に失敗しました');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
@@ -696,6 +712,10 @@ export default function MentorshipHubPanel() {
   const filteredProfiles = profiles.filter((p) => {
     if (activeTab !== 'MATCHES' && p.role_type !== activeTab) return false;
     if (activeOnly && p.is_inactive) return false;
+    if (recruitingOnly) {
+      if (p.role_type === 'PUPIL' && p.status === 'MATCHED') return false;
+      if (p.role_type === 'MENTOR' && (p.active_pupils_count || 0) >= (p.max_pupils || 2)) return false;
+    }
     if (laneFilter !== 'ALL' && !(p.lanes || []).includes(laneFilter)) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -709,6 +729,13 @@ export default function MentorshipHubPanel() {
   });
 
   const sortedFilteredProfiles = [...filteredProfiles].sort((a, b) => {
+    // 1. 募集中（枠あり・未結成）カードを先頭へ
+    const aRecruiting = a.role_type === 'PUPIL' ? a.status !== 'MATCHED' : (a.active_pupils_count || 0) < (a.max_pupils || 2);
+    const bRecruiting = b.role_type === 'PUPIL' ? b.status !== 'MATCHED' : (b.active_pupils_count || 0) < (b.max_pupils || 2);
+    if (aRecruiting !== bRecruiting) {
+      return aRecruiting ? -1 : 1;
+    }
+    // 2. アクティブ順
     if (Boolean(a.is_inactive) !== Boolean(b.is_inactive)) {
       return Number(Boolean(a.is_inactive)) - Number(Boolean(b.is_inactive));
     }
@@ -1010,8 +1037,8 @@ export default function MentorshipHubPanel() {
               }`}
             >
               <span>🙋‍♂️ 教えて！ (後輩)</span>
-              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
-                {profiles.filter((p) => p.role_type === 'PUPIL').length}
+              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full font-mono">
+                {isLoading ? '取得中' : profiles.filter((p) => p.role_type === 'PUPIL').length}
               </span>
             </button>
 
@@ -1026,8 +1053,8 @@ export default function MentorshipHubPanel() {
               }`}
             >
               <span>🧑‍🏫 教えるよ！ (先輩)</span>
-              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
-                {profiles.filter((p) => p.role_type === 'MENTOR').length}
+              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full font-mono">
+                {isLoading ? '取得中' : profiles.filter((p) => p.role_type === 'MENTOR').length}
               </span>
             </button>
 
@@ -1042,8 +1069,8 @@ export default function MentorshipHubPanel() {
               }`}
             >
               <span>🤝 相談ペア・活動状況</span>
-              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
-                {matches.length}
+              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full font-mono">
+                {isLoading ? '取得中' : matches.length}
               </span>
             </button>
           </div>
@@ -1067,6 +1094,21 @@ export default function MentorshipHubPanel() {
         {activeTab !== 'MATCHES' && (
           <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 border-t border-surface-subtle scrollbar-none flex-wrap">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            {/* 🔥 募集中のみトグル */}
+            <button
+              type="button"
+              onClick={() => setRecruitingOnly((v) => !v)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                recruitingOnly
+                  ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-400 shadow-2xs font-extrabold'
+                  : 'bg-surface-subtle text-muted border-border hover:bg-surface-hover'
+              }`}
+              title="相談相手を募集中のカード（結成中・満員を除外）のみを表示します"
+            >
+              <span>{recruitingOnly ? '🔥' : '⚪'}</span>
+              <span>募集中のみ</span>
+            </button>
+
             {/* 🟢 アクティブのみトグル */}
             <button
               type="button"
@@ -1288,9 +1330,60 @@ export default function MentorshipHubPanel() {
       )}
 
       {/* コンテンツ一覧 */}
-      {isLoading ? (
-        <div className="py-12 text-center text-xs font-bold text-muted-strong animate-pulse">
-          自己紹介カードを読み込み中...
+      {fetchError && !isLoading ? (
+        <div className="bg-danger-50 dark:bg-danger-950/20 border-2 border-danger-edge-soft rounded-3xl p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-danger-100 dark:bg-danger-900/40 text-danger-700 dark:text-danger-300 flex items-center justify-center text-2xl mx-auto">
+            ⚠️
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-foreground">
+              自己紹介カードの取得に失敗しました
+            </h3>
+            <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
+              {fetchError}
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                fetchProfiles();
+                fetchMatches();
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-danger-600 hover:bg-danger-700 text-white font-black text-xs transition shadow-sm cursor-pointer"
+            >
+              <RefreshCw size={14} />
+              再読み込み
+            </button>
+          </div>
+        </div>
+      ) : isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((idx) => (
+            <div key={idx} className="bg-surface/90 border border-border/80 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-surface-subtle" />
+                  <div className="space-y-1.5">
+                    <div className="w-24 h-4 bg-surface-subtle rounded" />
+                    <div className="w-16 h-3 bg-surface-subtle rounded" />
+                  </div>
+                </div>
+                <div className="w-16 h-5 bg-surface-subtle rounded-full" />
+              </div>
+              <div className="space-y-2 pt-2">
+                <div className="flex gap-1.5">
+                  <div className="w-12 h-5 bg-surface-subtle rounded-md" />
+                  <div className="w-12 h-5 bg-surface-subtle rounded-md" />
+                </div>
+                <div className="w-full h-12 bg-surface-subtle rounded-lg" />
+              </div>
+              <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+                <div className="w-20 h-3 bg-surface-subtle rounded" />
+                <div className="w-16 h-6 bg-surface-subtle rounded-lg" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : activeTab === 'MATCHES' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1542,8 +1635,39 @@ export default function MentorshipHubPanel() {
           })}
 
           {sortedFilteredProfiles.length === 0 && (
-            <div className="col-span-full py-12 text-center text-faint text-xs font-bold bg-surface rounded-2xl border border-border">
-              該当する自己紹介カードが見つかりませんでした。
+            <div className="col-span-full py-12 px-6 text-center bg-surface/90 rounded-3xl border border-border space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-surface-subtle border border-border flex items-center justify-center text-2xl mx-auto mb-2">
+                {activeTab === 'PUPIL' ? '🎒' : '🧑‍🏫'}
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-foreground">
+                  {searchQuery || laneFilter !== 'ALL'
+                    ? '検索条件に一致するカードが見つかりませんでした'
+                    : activeTab === 'PUPIL'
+                    ? '現在募集中の後輩（弟子）カードはありません'
+                    : '現在登録されている先輩（師匠）カードはありません'}
+                </h3>
+                <p className="text-xs text-muted-strong max-w-md mx-auto leading-relaxed">
+                  {searchQuery || laneFilter !== 'ALL'
+                    ? 'レーン絞り込みを解除するか、別のキーワードで検索してみてください。'
+                    : activeTab === 'PUPIL'
+                    ? '「このチャンプを教えてほしい！」という目標をカードに登録してみましょう（初回+500コイン獲得！）。'
+                    : '得意なチャンピオンやレーンを登録して、教わりたい後輩を募集してみましょう！'}
+                </p>
+              </div>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingProfile(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success-600 hover:bg-success-700 text-white font-black text-xs transition shadow-sm cursor-pointer"
+                >
+                  <Plus size={14} />
+                  {activeTab === 'PUPIL' ? '弟子カードを登録する' : '師匠カードを登録する'}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1599,6 +1723,8 @@ export default function MentorshipHubPanel() {
 
       {/* ⭐ 匿名レビューモーダル */}
 
+      {/* トップへ戻る */}
+      <ScrollToTopButton />
     </div>
   );
 }

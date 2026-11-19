@@ -124,20 +124,28 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   const [expandedMatchIds, setExpandedMatchIds] = useState<Set<string>>(new Set());
 
   const fetchMatches = async () => {
+    setLoading(true);
+    setError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
-      const res = await fetch('/api/match/history?limit=50');
+      const res = await fetch('/api/match/history?limit=50', { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
 
-      setMatches(data.matches);
-      // 直近3試合をデフォルトで展開
-      if (data.matches && data.matches.length > 0) {
-        const top3Ids = data.matches.slice(0, 3).map((m: Match) => m.id);
-        setExpandedMatchIds(new Set(top3Ids));
-      }
+      setMatches(data.matches || []);
+      // 初期表示は全試合折りたたみに統一（SPEC 05: 初期の縦の長さを抑制）
+      setExpandedMatchIds(new Set());
     } catch (err: any) {
-      setError(err.message);
+      if (err.name === 'AbortError') {
+        setError('データの取得がタイムアウト（10秒）しました。通信状況をご確認のうえ再度お試しください。');
+      } else {
+        setError(err.message || '試合履歴の取得に失敗しました');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -390,13 +398,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
     setDraggedParticipantIndex(null);
   };
 
-  if (loading) {
-    return <div className="py-20 flex flex-col items-center justify-center text-faint"><RefreshCw className="h-8 w-8 animate-spin text-primary-500 mb-4" />戦績データを読み込み中...</div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-danger-700 font-bold bg-danger-100 rounded-xl border border-danger-edge-soft">Error: {error}</div>;
-  }  return (
+  return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-success-100 rounded-xl">
@@ -405,7 +407,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         <div>
           <h2 className="text-2xl font-extrabold text-foreground">直近の試合履歴</h2>
           <p className="text-faint font-medium text-sm">
-            {matches.length > 0 ? `最新${matches.length}件の試合結果とMMR変動履歴` : '試合結果とMMR変動履歴'}
+            {loading ? '戦績データを取得中...' : matches.length > 0 ? `最新${matches.length}件の試合結果とMMR変動履歴` : '試合結果とMMR変動履歴'}
           </p>
         </div>
       </div>
@@ -416,6 +418,80 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           <p className="text-sm font-medium whitespace-pre-wrap">{actionMessage.text}</p>
         </div>
       )}
+
+      {/* ⚠️ 取得エラー時の表示 */}
+      {error && !loading && (
+        <div className="bg-danger-50 dark:bg-danger-950/20 border-2 border-danger-edge-soft rounded-3xl p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-danger-100 dark:bg-danger-900/40 text-danger-700 dark:text-danger-300 flex items-center justify-center text-2xl mx-auto">
+            ⚠️
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-foreground">
+              試合履歴の取得に失敗しました
+            </h3>
+            <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
+              {error}
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={fetchMatches}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-danger-600 hover:bg-danger-700 text-white font-black text-xs transition shadow-sm cursor-pointer"
+            >
+              <RefreshCw size={14} />
+              再読み込み
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ⏳ 読み込み中のスケルトン表示 */}
+      {loading && (
+        <div className="space-y-4 animate-pulse">
+          {[1, 2, 3].map((idx) => (
+            <div key={idx} className="bg-surface/90 border border-border/80 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-6 bg-surface-subtle rounded-lg" />
+                  <div className="w-24 h-4 bg-surface-subtle rounded" />
+                  <div className="w-16 h-4 bg-surface-subtle rounded" />
+                </div>
+                <div className="w-28 h-5 bg-surface-subtle rounded-full" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-3 bg-surface-subtle/50 rounded-xl space-y-2">
+                  <div className="w-20 h-4 bg-surface-subtle rounded mb-2" />
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <div key={j} className="flex items-center justify-between py-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-surface-subtle" />
+                        <div className="w-20 h-3 bg-surface-subtle rounded" />
+                      </div>
+                      <div className="w-12 h-3 bg-surface-subtle rounded" />
+                    </div>
+                  ))}
+                </div>
+                <div className="p-3 bg-surface-subtle/50 rounded-xl space-y-2">
+                  <div className="w-20 h-4 bg-surface-subtle rounded mb-2" />
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <div key={j} className="flex items-center justify-between py-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-surface-subtle" />
+                        <div className="w-20 h-3 bg-surface-subtle rounded" />
+                      </div>
+                      <div className="w-12 h-3 bg-surface-subtle rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
 
       {/* 検索・アコーディオン一括開閉コントロールバー */}
       <div className="bg-surface/80 backdrop-blur-md border border-border/80 rounded-2xl p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
@@ -676,7 +752,8 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     </div>
                   </div>
                 ) : (
-                <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border animate-fade-in">
+                  <>
+                    <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border animate-fade-in">
                   {/* BLUE TEAM */}
                   <div className={`flex-1 p-3 sm:p-4 ${match.winning_team === 'BLUE' ? 'bg-secondary-950/5' : 'bg-black/2'}`}>
                     <div className="flex items-center justify-between mb-3 px-1">
@@ -795,13 +872,41 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     </div>
                   </div>
                 </div>
+
+                {/* 💡 KDA計算 ＆ MMR内訳の注記 */}
+                <div className="px-3.5 sm:px-4 py-2 bg-surface-subtle/60 border-t border-border/50 text-[10px] sm:text-[11px] text-faint flex flex-wrap items-center justify-between gap-2">
+                  <span>※デス0の場合は完全勝利ボーナスとして「(K + A) × 1.2」でKDAを算出しています</span>
+                  <span>※MMR変動値にカーソルを合わせると詳細な内訳（勝敗・対面差・格差補正等）を確認できます</span>
+                </div>
+                  </>
                 )
               )}
             </div>
           );
         })}
         {matches.length === 0 && (
-          <div className="text-center p-12 text-muted-strong font-bold border border-border border-dashed rounded-xl">試合履歴がありません</div>
+          <div className="text-center p-10 bg-surface/90 border border-border rounded-3xl space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-surface-subtle border border-border flex items-center justify-center text-2xl mx-auto mb-2">
+              📜
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-foreground">
+                まだ記録された試合データがありません
+              </h3>
+              <p className="text-xs text-muted-strong max-w-md mx-auto leading-relaxed">
+                週末定期カスタムなどの対戦結果が登録されると、ここに詳細な勝敗・KDA・レーン対面結果・MMR変動履歴が自動で表示されます。
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/balancer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-black text-xs transition shadow-sm cursor-pointer"
+              >
+                <Swords size={14} />
+                バランサーでカスタム対戦を組む
+              </Link>
+            </div>
+          </div>
         )}
 
         {/* 過去試合の追加読み込み */}
@@ -818,6 +923,8 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           </div>
         )}
       </div>
+      </>
+    )}
 
       {/* 試合編集モーダル */}
       {editingMatch && (

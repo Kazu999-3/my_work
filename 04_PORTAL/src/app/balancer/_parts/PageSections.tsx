@@ -82,7 +82,8 @@ export function ExperienceSummary({ players }: { players: any[] }) {
   const lightPlayers = byTier('light');
   const returningPlayers = byTier('returning');
   const regularPlayers = byTier('regular');
-  const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length + returningPlayers.length) / totalActive) * 100) : 0;
+  const targetCount = newPlayers.length + lightPlayers.length + returningPlayers.length;
+  const newLightRatio = totalActive > 0 ? Math.round((targetCount / totalActive) * 100) : 0;
 
   return (
     <div className="p-4 rounded-2xl bg-gradient-to-br from-success-500/10 via-secondary-500/5 to-transparent border border-success-edge-strong/30 flex flex-col justify-between gap-2 shadow-xs">
@@ -95,7 +96,7 @@ export function ExperienceSummary({ players }: { players: any[] }) {
           </div>
         </div>
         <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-success-500 text-stone-950">
-          新規・ライト・復帰層 {newLightRatio}%
+          新規・ライト・復帰層: 参加{totalActive}名中 {targetCount}名 ({newLightRatio}%)
         </span>
       </div>
 
@@ -119,34 +120,56 @@ export function ExperienceSummary({ players }: { players: any[] }) {
   );
 }
 
-/** KTM専用マッチング用語（折りたたみ） */
+/** KTM専用マッチング用語 ＆ レーティング解説（折りたたみ） */
 export function MatchingGlossary() {
   return (
-    <details className="bg-surface border border-border rounded-xl text-sm group">
+    <details className="bg-surface border border-border rounded-2xl text-sm group shadow-2xs">
       <summary className="p-4 cursor-pointer flex items-center gap-2 font-bold text-primary-700 list-none select-none">
-        <Info className="h-4 w-4" /> KTM専用マッチング用語
+        <Info className="h-4 w-4" /> 💡 KTMレーティング・チーム分け用語の解説
         <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-300 group-open:rotate-180" />
       </summary>
-      <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-primary-700 mb-1 block">希望レーンの強さ</span>
-          <p className="text-faint">メインレーンをどれくらいやりたいか。「絶対このレーン」「できれば」「どこでもOK」の3段階。</p>
+      <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1 text-xs">
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">SoloQランク vs KTMカスタムMMR</span>
+          <p className="text-muted leading-relaxed">
+            <strong>SoloQランク</strong>はRiot公式のランク戦指標です。一方、<strong>KTMカスタムMMR</strong>は本コミュニティのカスタム対戦結果から算出される独自指標です。チーム分けのバランス調整には「KTMカスタムMMR」が使われます。
+          </p>
         </div>
-        <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-danger-700 mb-1 block">格上との対面（🛡️守ってほしい / ⚔️挑戦したい）</span>
-          <p className="text-faint">MMR差が大きい相手（差200以上、シルバーvsプラチナ等）とレーンで当たってよいか。「🛡️守ってほしい」の人は、チーム分けでなるべくMMRの近い相手と対面させます。</p>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">代表MMR vs レーン別MMR</span>
+          <p className="text-muted leading-relaxed">
+            このバランサーで表示・使用されるのは総合的な「代表MMR」です。リーダーボード（順位表）では、レーンごとの得意・不得意を正確に評価した「レーン別MMR」が表示されます。
+          </p>
         </div>
-        <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-success-700 mb-1 block">🎯 希望優先度（旧Pity）</span>
-          <p className="text-faint">「希望外レーン」に回された人に貯まるポイント。高いほど次回優先的に第1希望レーンへ配分されます。</p>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-amber-700 dark:text-amber-400 block">初参加者のMMR初期値（仮値）</span>
+          <p className="text-muted leading-relaxed">
+            戦績のない初参加プレイヤーには、SoloQランクから推定した初期値（仮値）が割り当てられ、表内に「仮」バッジが付きます。試合出場を重ねることで正確な実力値へと収束していきます。
+          </p>
         </div>
-        <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-primary-700 mb-1 block">🔄 譲り合い度（旧OffPity）</span>
-          <p className="text-faint">「希望レーン」が連続している人に貯まる指標。たまに他の人へ席を譲り合うための目安です。</p>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-danger-700 block">格上との対面（🛡️保護 / ⚔️挑戦）</span>
+          <p className="text-muted leading-relaxed">
+            MMR差が大きい相手（差200以上、シルバーvsプラチナ等）と対面してよいかの設定。「🛡️保護」の人はチーム分けで格差対面を回避します。「⚔️挑戦」の人は格上との直接対決を許可します。
+          </p>
         </div>
-        <div className="bg-surface-subtle p-4 rounded border border-border md:col-span-2">
-          <span className="font-bold text-amber-700 dark:text-amber-400 mb-1 block">🎟️ 試合出場優先度（待機救済）</span>
-          <p className="text-faint">10人以上集まった際に「見学・待機枠」に回った人に貯まるポイント。次回、最優先で10人の出場枠へ選出されます（※初参加の方は0ポイントでも100%最優先で自動選出されます）。</p>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">希望レーンの強さ（管理者設定）</span>
+          <p className="text-muted leading-relaxed">
+            「絶対このレーン」「できれば」「どこでもOK」の3段階。公正な配分調整のため、現在は管理者のみ変更可能になっています。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-success-700 block">🎯 希望優先度 / 🔄 譲り合い度</span>
+          <p className="text-muted leading-relaxed">
+            希望外レーンに回された人に貯まり次回優先される「希望優先度」と、希望レーンが連続した際に席を譲り合うための「譲り合い度」で自動調整されます。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border md:col-span-2 space-y-1">
+          <span className="font-black text-amber-700 dark:text-amber-400 block">🎟️ 試合出場優先度（待機救済）</span>
+          <p className="text-muted leading-relaxed">
+            10人以上集まった際に「見学・待機枠」に回った人に貯まるポイント。次回、最優先で10人の出場枠へ選出されます（※初参加の方は0ポイントでも100%最優先で自動選出されます）。
+          </p>
         </div>
       </div>
     </details>

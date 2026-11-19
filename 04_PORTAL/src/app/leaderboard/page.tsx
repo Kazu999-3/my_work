@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 import RosterPanel from './RosterPanel';
 import SynergyPanel from './SynergyPanel';
-import { Trophy, Activity, Info, Users, HeartHandshake, Sparkles, Sliders, Grid3x3 } from 'lucide-react';
+import { Trophy, Activity, Info, Users, HeartHandshake, Sparkles, Sliders, Grid3x3, ChevronDown } from 'lucide-react';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -170,6 +170,35 @@ function LeaderboardContent() {
             </div>
           </div>
         </div>
+
+        {/* 💡 KTMレーティング・順位表の見方（折りたたみ） */}
+        <details className="bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl text-xs group shadow-2xs">
+          <summary className="p-3.5 sm:p-4 cursor-pointer flex items-center gap-2 font-bold text-primary-700 dark:text-primary-400 list-none select-none">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>💡 KTMレーティング・順位表の仕組みについて（クリックで展開）</span>
+            <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-300 group-open:rotate-180 text-muted" />
+          </summary>
+          <div className="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border/50">
+            <div className="bg-surface-subtle dark:bg-stone-800/40 p-3 rounded-xl border border-border/60 space-y-1">
+              <span className="font-black text-primary-700 dark:text-primary-400 block">SoloQランク vs KTMカスタムMMR</span>
+              <p className="text-muted leading-relaxed">
+                SoloQランクはRiot公式のソロランク指標、KTMカスタムMMRは本サーバーのカスタム戦績から算出される独自レーティングです。チーム分けにはKTMカスタムMMRが使われます。
+              </p>
+            </div>
+            <div className="bg-surface-subtle dark:bg-stone-800/40 p-3 rounded-xl border border-border/60 space-y-1">
+              <span className="font-black text-primary-700 dark:text-primary-400 block">レーン別MMRと延べ人数</span>
+              <p className="text-muted leading-relaxed">
+                この順位表はロールごとの適性を考慮した「レーン別MMR」を表示しています。複数ロールで出場したプレイヤーは各ロールに計上されるため、各列の合計件数（延べ件数）は名簿の実人数（ユニーク人数）とは一致しません。
+              </p>
+            </div>
+            <div className="bg-surface-subtle dark:bg-stone-800/40 p-3 rounded-xl border border-border/60 space-y-1">
+              <span className="font-black text-amber-700 dark:text-amber-400 block">初参加者のMMR初期値（仮値）</span>
+              <p className="text-muted leading-relaxed">
+                初参加プレイヤーはSoloQランクから推定した初期値（仮値）からスタートし、カスタム戦に出場するごとに実力相応の確定MMRへと収束・変動します。
+              </p>
+            </div>
+          </div>
+        </details>
 
         {/* 1段フラット タブナビゲーション */}
         <div className="flex justify-center px-1">
@@ -392,6 +421,14 @@ function LeaderboardContent() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* 注記バー（レーン別MMRと延べ人数について） */}
+            <div className="text-[11px] text-muted font-medium bg-surface-subtle dark:bg-stone-900 px-3.5 py-2 rounded-xl border border-border dark:border-stone-800 flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+              <span>
+                ※この表は「レーン別MMR」順で表示しています。複数レーンで出場したプレイヤーは各レーンに計上されるため、全ロールの合計件数（延べ件数）は名簿の実人数（ユニーク人数）とは一致しません。
+              </span>
             </div>
 
             {/* スマホ用ロール切り替えピル（md以上では非表示） */}

@@ -21,6 +21,7 @@ import TableSplitPanel from "./_parts/TableSplitPanel";
 import PlayerListTable from "./_parts/PlayerListTable";
 import QuickActionBar from "./_parts/QuickActionBar";
 import CustomSubNav from "../../components/CustomSubNav";
+import ScrollToTopButton from "../../components/ScrollToTopButton";
 import type {
   BalancerPlayer,
   BalanceResult,
@@ -413,6 +414,9 @@ export default function BalancerPage() {
         {selectedPlayer && (
           <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
         )}
+
+        {/* トップへ戻る */}
+        <ScrollToTopButton />
       </div>
     </div>
   );

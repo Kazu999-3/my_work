@@ -22,6 +22,34 @@ import {
 export default function GuidePortalTab() {
   return (
     <div className="space-y-8">
+      {/* ページ内クイック目次 */}
+      <div className="p-3 bg-surface rounded-2xl border border-border shadow-xs flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-bold text-muted px-2 py-0.5 text-[11px] flex items-center gap-1">
+          📌 目次:
+        </span>
+        <a href="#portal-mypage" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          👤 マイページ
+        </a>
+        <a href="#portal-balancer" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⚖️ バランサー
+        </a>
+        <a href="#portal-casino" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🪙 ベット＆ショップ
+        </a>
+        <a href="#portal-synergy" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🤝 相性分析
+        </a>
+        <a href="#portal-leaderboard" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🏆 リーダーボード
+        </a>
+        <a href="#portal-mentorship" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🤝 師弟ハブ
+        </a>
+        <a href="#portal-mmr" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          📊 MMRの見方
+        </a>
+      </div>
+
       {/* イントロバナー */}
       <div className="bg-gradient-to-r from-secondary-500/15 via-secondary-500/10 to-secondary-500/15 border border-secondary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="space-y-2">
@@ -42,7 +70,7 @@ export default function GuidePortalTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* 1. マイページ & プレイヤーカルテ */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
+        <div id="portal-mypage" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -78,7 +106,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 2. チーム分けバランサー */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
+        <div id="portal-balancer" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-secondary-50 border border-secondary-edge-soft flex items-center justify-center text-secondary-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -113,7 +141,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 3. カジノ・勝敗予想ベット & ショップ */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
+        <div id="portal-casino" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -149,7 +177,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 4. 相性分析 & デュオ勝率 */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
+        <div id="portal-synergy" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -184,7 +212,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 5. リーダーボード & コイン長者番付 */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
+        <div id="portal-leaderboard" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2 scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-success-50 border border-success-edge-soft flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -246,7 +274,7 @@ export default function GuidePortalTab() {
         {/* 2026-10-16: 「月刊KTMスポーツ速報」はユーザー判断でポータルから外した（Discordの試合結果の号外欄は継続） */}
 
         {/* 7. 師弟マッチングハブ */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
+        <div id="portal-mentorship" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2 scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -314,7 +342,7 @@ export default function GuidePortalTab() {
 
 
         {/* 📊 MMR ＆ KTMカスタムレートの説明（2026-09-23 追加） */}
-        <div className="md:col-span-2 bg-surface rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4">
+        <div id="portal-mmr" className="md:col-span-2 bg-surface rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4 scroll-mt-20">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl">
               📊

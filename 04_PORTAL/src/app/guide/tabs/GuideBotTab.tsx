@@ -33,6 +33,31 @@ export default function GuideBotTab() {
 
   return (
     <div className="space-y-8">
+      {/* ページ内クイック目次 */}
+      <div className="p-3 bg-surface rounded-2xl border border-border shadow-xs flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-bold text-muted px-2 py-0.5 text-[11px] flex items-center gap-1">
+          📌 目次:
+        </span>
+        <a href="#bot-quick-commands" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⌨️ コマンド一覧
+        </a>
+        <a href="#bot-recruit-detail" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          📢 募集(/recruit)
+        </a>
+        <a href="#bot-weekend-detail" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⚔️ 週末定期募集
+        </a>
+        <a href="#bot-lane-detail" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🎯 レーン設定(/lane)
+        </a>
+        <a href="#bot-balancer-detail" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⚖️ チーム分け
+        </a>
+        <a href="#bot-mentorship-detail" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🤝 師弟・相談募集
+        </a>
+      </div>
+
       {/* イントロバナー */}
       <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="space-y-2">
@@ -50,7 +75,7 @@ export default function GuideBotTab() {
       </div>
 
       {/* 🚀 クイックコマンド一覧 */}
-      <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4">
+      <div id="bot-quick-commands" className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4 scroll-mt-20">
         <h3 className="text-base font-black text-foreground flex items-center gap-2">
           <Terminal size={18} className="text-primary-600" />
           よく使うスラッシュコマンド一覧
@@ -154,7 +179,7 @@ export default function GuideBotTab() {
       {/* 📖 各機能の詳細アコーディオン */}
       <div className="space-y-4">
         {/* 1. /recruit 詳細 */}
-        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div id="bot-recruit-detail" className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden scroll-mt-20">
           <button
             type="button"
             onClick={() => toggleSection('recruit')}
@@ -247,7 +272,7 @@ export default function GuideBotTab() {
         </div>
 
         {/* 1.5 週末定期カスタム募集 詳細 */}
-        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div id="bot-weekend-detail" className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden scroll-mt-20">
           <button
             type="button"
             onClick={() => toggleSection('periodic')}
@@ -317,7 +342,7 @@ export default function GuideBotTab() {
         </div>
 
         {/* 2. /lane 詳細 */}
-        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div id="bot-lane-detail" className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden scroll-mt-20">
           <button
             type="button"
             onClick={() => toggleSection('lane')}
@@ -369,7 +394,7 @@ export default function GuideBotTab() {
         </div>
 
         {/* 3. チーム分け実行 & プリセット詳細 */}
-        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div id="bot-balancer-detail" className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden scroll-mt-20">
           <button
             type="button"
             onClick={() => toggleSection('balance')}
@@ -422,7 +447,7 @@ export default function GuideBotTab() {
         </div>
 
         {/* 4. 師弟募集チャンネルボタン & 先輩スカウト */}
-        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div id="bot-mentorship-detail" className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden scroll-mt-20">
           <button
             type="button"
             onClick={() => toggleSection('mentorship')}

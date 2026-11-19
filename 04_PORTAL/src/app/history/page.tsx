@@ -3,6 +3,7 @@
 import React from 'react';
 import MatchHistoryPanel from '../ktm-admin/MatchHistoryPanel';
 import CustomSubNav from '../../components/CustomSubNav';
+import ScrollToTopButton from '../../components/ScrollToTopButton';
 
 export default function HistoryPage() {
   return (
@@ -14,6 +15,9 @@ export default function HistoryPage() {
         {/* 過去試合パネル */}
         <MatchHistoryPanel />
       </div>
+
+      {/* トップへ戻る */}
+      <ScrollToTopButton />
     </div>
   );
 }

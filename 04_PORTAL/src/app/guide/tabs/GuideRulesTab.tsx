@@ -20,6 +20,27 @@ import {
 export default function GuideRulesTab() {
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* ページ内クイック目次 */}
+      <div className="p-3 bg-surface rounded-2xl border border-border shadow-xs flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-bold text-muted px-2 py-0.5 text-[11px] flex items-center gap-1">
+          📌 目次:
+        </span>
+        <a href="#rules-priority" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          👥 開催＆優先度ルール
+        </a>
+        <a href="#rules-weekend" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⚔️ 週末定期（土日）
+        </a>
+        <a href="#rules-styles" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⏰ スタイル別エントリー
+        </a>
+        <a href="#rules-special" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🔥 特殊カスタム企画
+        </a>
+        <a href="#rules-manner" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🛡️ マナー＆心得
+        </a>
+      </div>
       
       {/* イントロダクション */}
       <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm">
@@ -40,7 +61,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 1. 定期カスタム 人数決め ＆ 開催優先度ルール */}
-      <div className="bg-surface/80 dark:bg-surface/80 border border-border/90 dark:border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div id="rules-priority" className="bg-surface/80 dark:bg-surface/80 border border-border/90 dark:border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6 scroll-mt-20">
         <div className="flex items-center gap-3 border-b border-stone-100 dark:border-border pb-4">
           <div className="p-2.5 rounded-xl bg-primary-500/10 text-primary-700 dark:text-primary-400">
             <Users size={22} />
@@ -103,7 +124,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 2. 週末定期カスタムの基本フォーマット */}
-      <div className="bg-surface/80 dark:bg-surface/80 border border-border/90 dark:border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div id="rules-weekend" className="bg-surface/80 dark:bg-surface/80 border border-border/90 dark:border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6 scroll-mt-20">
         <div className="flex items-center gap-3 border-b border-stone-100 dark:border-border pb-4">
           <div className="p-2.5 rounded-xl bg-primary-500/10 text-primary-700 dark:text-primary-400">
             <Swords size={22} />
@@ -166,7 +187,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 2. スタイル別エントリー ＆ 途中参加システム */}
-      <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div id="rules-styles" className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6 scroll-mt-20">
         <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
           <div className="p-2.5 rounded-xl bg-success-500/10 text-success-700">
             <Clock size={22} />
@@ -223,7 +244,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 3. 特殊ルール（アラームカスタム・ハンディキャップ） */}
-      <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div id="rules-special" className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6 scroll-mt-20">
         <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
           <div className="p-2.5 rounded-xl bg-danger-500/10 text-danger-700">
             <Flame size={22} />
@@ -280,7 +301,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 4. マナー ＆ エチケット */}
-      <div className="bg-gradient-to-br from-stone-900 to-stone-800 text-stone-100 rounded-3xl p-6 md:p-8 shadow-md space-y-4">
+      <div id="rules-manner" className="bg-gradient-to-br from-stone-900 to-stone-800 text-stone-100 rounded-3xl p-6 md:p-8 shadow-md space-y-4 scroll-mt-20">
         <div className="flex items-center gap-2 text-primary-400 font-black text-sm">
           <ShieldAlert size={18} />
           <span>KTM カスタムの心得（マナー ＆ エチケット）</span>

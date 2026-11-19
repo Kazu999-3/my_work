@@ -16,6 +16,7 @@ import GuideQuickStartTab from './tabs/GuideQuickStartTab';
 import GuideBotTab from './tabs/GuideBotTab';
 import GuidePortalTab from './tabs/GuidePortalTab';
 import GuideRulesTab from './tabs/GuideRulesTab';
+import ScrollToTopButton from '../../components/ScrollToTopButton';
 
 function GuideContent() {
   const router = useRouter();
@@ -155,6 +156,8 @@ function GuideContent() {
         {activeTab === 'bot' && <GuideBotTab />}
         {activeTab === 'portal' && <GuidePortalTab />}
       </div>
+
+      <ScrollToTopButton />
     </div>
   );
 }

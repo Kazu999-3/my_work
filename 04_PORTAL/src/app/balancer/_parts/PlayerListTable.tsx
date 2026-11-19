@@ -32,7 +32,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
   filteredPlayers: any[];
 }) {
   return (
-        <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-2xl">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-2xl pb-28 md:pb-32">
           <div className="p-3 md:p-4 border-b border-border flex items-center gap-2 bg-surface">
             <Users className="h-4 w-4 md:h-5 md:w-5 text-primary-700" />
             <h2 className="text-base md:text-xl font-bold text-foreground">参加者リスト</h2>
@@ -119,6 +119,12 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
             </div>
           </div>
 
+          {/* 表操作のミニ注記 */}
+          <div className="px-3 md:px-4 py-2 bg-surface-subtle/70 border-b border-border text-[11px] text-muted flex flex-wrap items-center justify-between gap-2">
+            <span>🔒 <strong>希望の強さ:</strong> 公正な配分調整のため管理者のみ変更可能です</span>
+            <span>⚔️ <strong>挑戦:</strong> MMR差200以上の格上相手との対面を許可する設定です</span>
+          </div>
+
           {/* デスクトップ：テーブル。参加者数分の列(参加設定/No./名前/ランク/MMR/希望×2/NG×2/
               こだわり/棚上げ)が多く、768px(mdブレークポイント)ではまだ収まりきらず横スクロール
               が常に発生していた(scrollWidth約1300pxに対しclientWidthは900px幅ですら530px程度)。
@@ -137,8 +143,8 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <th className="px-2 py-3 font-medium text-center">第2希望</th>
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 1</th>
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
-                  <SortableHeader label="希望の強さ" sortKey="weight" className="px-1.5 text-center" />
-                  <SortableHeader label="⚔️挑戦" sortKey="allow_higher" className="px-1.5 text-center" />
+                  <SortableHeader label="希望の強さ🔒(管理者)" sortKey="weight" className="px-1.5 text-center whitespace-nowrap" />
+                  <SortableHeader label="⚔️挑戦(格上対面)" sortKey="allow_higher" className="px-1.5 text-center whitespace-nowrap" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
@@ -207,16 +213,24 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         <td className="px-2 py-1.5 text-center">
                           {(() => {
                             const repMmr = p.mmr || 1200;
+                            const isProvisional = !p.total_games && !p.games;
                             const highestLaneMmr = getHighestLaneMmr(p);
                             const ktmTier = getKtmRank(highestLaneMmr);
                             const badgeStyle = getRankBadgeStyle(ktmTier.name);
                             const hasDiff = highestLaneMmr !== repMmr;
-                            const tooltip = hasDiff
+                            const tooltip = isProvisional
+                              ? `初参加のため初期仮値: ${repMmr} (KTMランク: ${ktmTier.name})。試合出場で変動します`
+                              : hasDiff
                               ? `最高レーン基準: ${ktmTier.name} (${highestLaneMmr}) / 代表MMR: ${repMmr}`
                               : `KTMランク: ${ktmTier.name} (MMR: ${repMmr})`;
                             return (
-                              <div className="flex items-center justify-center gap-1.5" title={tooltip}>
+                              <div className="flex items-center justify-center gap-1" title={tooltip}>
                                 <span className="font-mono text-xs font-black text-primary-800 dark:text-primary-300">{repMmr}</span>
+                                {isProvisional && (
+                                  <span className="text-[9px] font-black px-1 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 shrink-0 cursor-help" title="初参加のため初期仮値です">
+                                    仮
+                                  </span>
+                                )}
                                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                                   {ktmTier.name.split(' ')[0]}
                                 </span>
@@ -357,6 +371,11 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         {/* MMR ＆ KTMランクバッジ */}
                         <div className="ml-auto flex items-center gap-1" title={tooltip}>
                           <span className="font-mono text-primary-700 text-xs font-bold">{repMmr}</span>
+                          {(!p.total_games && !p.games) && (
+                            <span className="text-[9px] font-black px-1 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 shrink-0 cursor-help" title="初参加のため初期仮値です">
+                              仮
+                            </span>
+                          )}
                           <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                             {ktmTier.name.split(' ')[0]}
                           </span>

@@ -37,6 +37,22 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* ページ内クイック目次 */}
+      <div className="p-3 bg-surface rounded-2xl border border-border shadow-xs flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-bold text-muted px-2 py-0.5 text-[11px] flex items-center gap-1">
+          📌 目次:
+        </span>
+        <a href="#qs-steps" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          ⚡ 参加の3ステップ
+        </a>
+        <a href="#qs-buttons" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🔰 募集ボタン早見表
+        </a>
+        <a href="#qs-faq" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🛡️ 安心ガイド＆FAQ
+        </a>
+      </div>
+
       {/* イントロバナー */}
       <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
@@ -64,7 +80,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       </div>
 
       {/* 3ステップ カード一覧 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div id="qs-steps" className="grid grid-cols-1 md:grid-cols-3 gap-5 scroll-mt-20">
         {/* Step 1 */}
         <div className="bg-surface rounded-3xl p-6 border-2 border-primary-edge-soft/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
@@ -197,7 +213,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       </div>
 
       {/* 🔰 初心者必見！募集ボタン「どれ押せばいいの？早見表」 */}
-      <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4">
+      <div id="qs-buttons" className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4 scroll-mt-20">
         <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
           <div className="w-10 h-10 rounded-2xl bg-primary-500/10 text-primary-700 flex items-center justify-center font-bold">
             <HeartHandshake size={20} />
@@ -276,7 +292,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       </div>
 
       {/* カスタム参加のルール＆よくある質問 */}
-      <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-6">
+      <div id="qs-faq" className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-6 scroll-mt-20">
         <h3 className="text-lg font-black text-foreground flex items-center gap-2">
           <ShieldCheck className="text-primary-600" size={20} />
           カスタム参加にあたっての安心ガイド ＆ FAQ
