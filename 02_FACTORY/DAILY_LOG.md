@@ -1,5 +1,47 @@
 ## 📅 2026-11-19（木）
 
+### 🛡️ 【戦術パイロット】SPEC 02「認証まわりのセキュリティ改善」完全準拠実装（署名セッションCookie・レート制限fail-closed化・開発合言葉全削除）
+
+**概要**:
+1. **背景と目的**:
+   - `05_PILOT/docs/specs/02-security-SPEC.md` に基づき、合言葉認証の3大弱点（Cookie内への合言葉直接格納・DB障害時のレート制限無効化fail-open・コード内開発合言葉ハードコード）を抜本改修。
+   - ユーザー選択に従い、全推奨方針（即時セッション移行・30日スライディング有効期限・本番ガード維持）で実装。
+
+2. **実施内容**:
+   - **【セッション方式への完全移行（Cookie合言葉の排除）】**:
+     - `05_PILOT/src/lib/tokenAuth.ts`: 合言葉は照合のみに用い、CookieにはランダムなセッションID・タイムスタンプ・HMAC-SHA256署名（`pilot-sess:{sessionId}:{createdAt}:{expiresAt}`）を格納。
+     - 外部ライブラリ非依存、Node標準 `crypto.timingSafeEqual` による定数時間比較でタイミング攻撃を防止。
+     - スライディングセッション対応: 有効期間30日（`SESSION_MAX_AGE_SEC`）、残り15日未満でアクセス時に自動延長（`slideSessionCookie`）。
+     - 旧形式Cookie（合言葉直入れ）は即時拒否。
+   - **【サーバー側セッション失効（Revocation）】**:
+     - `revokeSession(sessionId)` および `/api/auth/revoke`、`/api/auth/logout` を新設。特定端末・セッションの個別失効を `edge_tasks` およびインメモリキャッシュで実現。
+   - **【レート制限のフェイルクローズ（fail-closed）化】**:
+     - `05_PILOT/src/lib/loginRateLimit.ts`: DB未初期化やクエリエラー時に `{ blocked: true, unavailable: true }` を返却し、`/api/auth/login` が 503 で安全に停止するよう改修（総当たり防御を最優先）。
+     - `clientIp`: Vercel環境で攻撃者偽装を防ぐため、`x-forwarded-for` の最前列IP（`xff.split(',')[0]`）を最優先で取得。
+   - **【開発用合言葉ハードコードの完全削除】**:
+     - `DEFAULT_DEV_TOKEN` をコードベースから完全に削除。ローカルでも `.env.local` 設定を必須化。
+     - 過去の公開値は `KNOWN_INSECURE_DEV_TOKEN` としてブラックリスト化し、設定されていても未設定（全拒否）として防護。
+   - **【単体テストの拡充】**:
+     - `05_PILOT/src/lib/__tests__/tokenAuth.test.ts`（11テスト新設）: 公開値拒否、未設定全拒否、セッション発行・復元、改ざん検知、期限切れ、スライディング判定、セッション失効。
+     - `05_PILOT/src/lib/__tests__/loginRateLimit.test.ts`（5テスト新設）: VercelクライアントIP抽出、フォールバック、上限値境界。
+
+3. **機械的実値検証**:
+   - `05_PILOT`: `npx tsc --noEmit` ➔ **エラー0件（完全パス）**。
+   - `05_PILOT`: `npm run test` ➔ **82 passed, 0 failed（ALL PASS、テスト82件100%成功）**。
+   - リポジトリ内 grep: ハードコードされた合言葉の残存0件確認。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. 単純な合言葉認証でも、Cookieには合言葉そのものではなくランダムUUID＋HMAC-SHA256署名入りのセッションを発行することで、Cookie漏洩時の合言葉漏洩を完全に防げる。
+> 2. セキュリティレート制限は「DBエラー時にフリーパス（fail-open）」にしてはならず、必ず「基盤障害時は503停止（fail-closed）」で攻撃リスクを遮断する。
+> 3. Vercelの `X-Forwarded-For` は左端（`split(',')[0]`）がクライアント接続元IPであり、末尾を取得すると偽装ヘッダーによるレート制限回避のリスクが生じる。
+
+- `[要検証]`: 本番デプロイ後のブラウザCookieインスペクタによる `pilot_session` の値形式とHttpOnly属性確認。
+- `[継続ウォッチ]`: Supabaseプラン変更（2026-11-26）に伴う `edge_tasks` の接続安定性モニタリング。
+
+---
+
+## 📅 2026-11-19（木）
+
 ### ⚡ 【KTMポータル】SPEC 02・04・05「読み込み表示・MMR解説・長大ページ導線改善」完全準拠実装
 
 **概要**:

@@ -7,17 +7,32 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   if (!getExpectedToken()) {
     return NextResponse.json(
-      { error: 'サーバーに PILOT_SECRET_TOKEN が設定されていません。Vercel の環境変数を設定してください。' },
+      { error: 'サーバーに PILOT_SECRET_TOKEN が設定されていないか、安全でない値です。Vercelの環境変数を設定してください。' },
       { status: 503 },
     );
   }
 
-  // 2026-10-19: 以前は失敗時に0.8秒待たせるだけで回数の制限が無く、同時にいくらでも試せた
+  // 1. レート制限チェック（SPEC 02: フェイルクローズ準拠）
   const ip = clientIp(req.headers);
-  if (await isLoginBlocked(ip)) {
-    return NextResponse.json({ error: '試行回数が多すぎます。15分ほど待ってから再試行してください。' }, { status: 429 });
+  const rateLimit = await isLoginBlocked(ip);
+
+  // 制限基盤（DB）に障害がある場合は無制限に通さず 503 で安全に止める
+  if (rateLimit.unavailable) {
+    return NextResponse.json(
+      { error: '認証基盤が一時的に利用できません。時間をおいて再試行してください。' },
+      { status: 503 },
+    );
   }
 
+  // 試行回数上限（15分間に10回）到達時
+  if (rateLimit.blocked) {
+    return NextResponse.json(
+      { error: '試行回数が多すぎます。15分ほど待ってから再試行してください。' },
+      { status: 429 },
+    );
+  }
+
+  // 2. 合言葉の検証
   const body = await req.json().catch(() => ({}));
   const token = String(body?.token || '');
 
@@ -28,7 +43,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '合言葉が違います。' }, { status: 401 });
   }
 
+  // 3. 認証成功: Cookieには合言葉そのものではなくランダムな署名付きセッションIDを発行する
   const res = NextResponse.json({ success: true });
-  setAuthCookie(res, token);
+  const sessionInfo = setAuthCookie(res);
+
+  if (!sessionInfo) {
+    return NextResponse.json(
+      { error: 'セッションCookieの発行に失敗しました。サーバー設定を確認してください。' },
+      { status: 500 },
+    );
+  }
+
   return res;
 }

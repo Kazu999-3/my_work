@@ -5,8 +5,6 @@ import { clientIp, isLoginBlocked, recordLoginFailure } from '@/lib/loginRateLim
 export const dynamic = 'force-dynamic';
 
 // URL に ?token=合言葉 を付けて開く入り方（ブックマーク用）の受け口。proxy.ts がここへ回す。
-// 2026-10-19: 以前は proxy.ts の中で照合しており、回数の制限なしで何度でも試せた。
-// /login と同じ回数制限を通す。
 function safeNext(value: string | null): string {
   if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return '/';
   return value;
@@ -23,13 +21,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(login);
   };
 
-  if (await isLoginBlocked(ip)) return toLogin();
+  const rateLimit = await isLoginBlocked(ip);
+  if (rateLimit.blocked || rateLimit.unavailable) return toLogin();
+
   if (!verifyToken(token)) {
     await recordLoginFailure(ip);
     return toLogin();
   }
 
   const res = NextResponse.redirect(new URL(next, req.url));
-  setAuthCookie(res, token);
+  setAuthCookie(res);
   return res;
 }
