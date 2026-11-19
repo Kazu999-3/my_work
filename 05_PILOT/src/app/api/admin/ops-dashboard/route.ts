@@ -76,7 +76,7 @@ export async function GET() {
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
       supabase.from('recruitments').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('recruitment_activity_logs').select('*').order('created_at', { ascending: false }).limit(40),
-      supabase.from('personal_knowledge').select('id', { count: 'exact', head: true })
+      supabase.from('personal_knowledge').select('id, reanalysis_of, tags')
         .eq('review_status', 'pending').or('tags.is.null,tags.not.cs.{__DELETED__}'),
       supabase.from('personal_knowledge').select('champion')
         .or('tags.is.null,tags.not.cs.{__DELETED__}'),
@@ -112,6 +112,15 @@ export async function GET() {
     const activePlayers = (players.data || []).filter((p: any) => p.is_active !== false);
     const matchList = matches.data || [];
     const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+
+    const pendingRows = pendingReviews.data || [];
+    const reanalysisSet = new Set(pendingRows.filter((r: any) => r.reanalysis_of != null).map((r: any) => r.reanalysis_of));
+    const effectivePendingReviewsCount = pendingRows.filter((r: any) => {
+      if (reanalysisSet.has(r.id)) return false; // 再解析版がある元記事は除外
+      const tags = Array.isArray(r.tags) ? r.tags : [];
+      if (tags.some((t: string) => ['__SUPERSEDED__', '__DISCARDED__'].includes(t))) return false;
+      return true;
+    }).length;
 
     let blueAmount = 0, redAmount = 0, blueCount = 0, redCount = 0;
     for (const b of pendingBets.data || []) {
@@ -205,7 +214,8 @@ export async function GET() {
       },
       dictHealth,
       roleCoverage: roleStats,
-      pendingReviews: pendingReviews.count ?? 0,
+      pendingReviews: effectivePendingReviewsCount,
+      totalPendingReviewsRaw: pendingRows.length,
       recruitmentActivities: (recruitmentLogs.data || []) as any[],
       generatedAt: new Date().toISOString(),
     });

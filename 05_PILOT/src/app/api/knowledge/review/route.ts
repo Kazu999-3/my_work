@@ -384,10 +384,14 @@ export async function GET(req: NextRequest) {
         return b.count - a.count;
       });
 
+    const isMultiItem = (i: any) => Boolean(i.isMultiChampion);
+    const isDeterminedItem = (i: any) => !i.isMultiChampion && (!i.isLaneGeneral || !!i.detectedChampionsJa);
+    const isUnknownItem = (i: any) => !i.isMultiChampion && !(!i.isLaneGeneral || !!i.detectedChampionsJa);
+
     const qualityCounts = {
-      multi: enrichedItems.filter((i) => i.isMultiChampion).length,
-      determined: enrichedItems.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion).length,
-      unknown: enrichedItems.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa).length,
+      multi: enrichedItems.filter(isMultiItem).length,
+      determined: enrichedItems.filter(isDeterminedItem).length,
+      unknown: enrichedItems.filter(isUnknownItem).length,
       thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
       reanalyzed: enrichedItems.filter((i) => i.reanalysisStatus === 'reanalyzed').length,
       reanalyzing: runningTaskArticleIds.size,
@@ -398,9 +402,9 @@ export async function GET(req: NextRequest) {
 
     // 5. フィルタリング適用
     let filtered = enrichedItems;
-    if (quality === 'multi') filtered = filtered.filter((i) => i.isMultiChampion);
-    if (quality === 'determined') filtered = filtered.filter((i) => (!i.isLaneGeneral || !!i.detectedChampionsJa) && !i.isMultiChampion);
-    if (quality === 'unknown') filtered = filtered.filter((i) => i.isLaneGeneral && !i.detectedChampionsJa);
+    if (quality === 'multi') filtered = filtered.filter(isMultiItem);
+    if (quality === 'determined') filtered = filtered.filter(isDeterminedItem);
+    if (quality === 'unknown') filtered = filtered.filter(isUnknownItem);
     if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
     if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysisStatus === 'reanalyzed');
     if (quality === 'reanalyzing') filtered = filtered.filter((i) => i.reanalysisStatus === 'running');

@@ -623,7 +623,7 @@ export default function OpsDashboardPage() {
             {/* ナレッジ */}
             <Card title="ナレッジ ＆ 辞典" icon={<Database className="w-4 h-4 text-teal-400" />}>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                <Stat label="辞典（統合本文あり）" value={stats.knowledge.facts} />
+                <Stat label="辞典（本文レコード数/全173体）" value={stats.knowledge.facts} />
                 <Stat label="ライブラリ記事" value={stats.knowledge.library} />
                 <Stat label="レーンガイド" value={stats.knowledge.laneGuides} />
                 <Stat label="対面メモ" value={stats.knowledge.matchupMemos} />
@@ -667,7 +667,7 @@ export default function OpsDashboardPage() {
                             />
                           </div>
                           <div className="text-[10px] text-zinc-500 font-mono text-right">
-                            {data.covered} / {data.total} 体
+                            カバー {data.covered} / 全 {data.total} 体
                           </div>
                         </div>
                       );

@@ -186,6 +186,9 @@ export default function ChampionScoutPanel() {
           );
         })}
       </div>
+      <div className="text-[10px] text-zinc-500 mt-1.5 px-0.5">
+        ※複数レーンを兼任するチャンピオンが含まれるため、ロール別未開拓の合算値は全体のユニーク未開拓総数と異なります。
+      </div>
 
       {/* メッセージトースト */}
       {message && (

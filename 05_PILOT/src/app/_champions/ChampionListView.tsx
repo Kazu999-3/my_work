@@ -121,8 +121,8 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
             </div>
 
             {/* 一覧カウンター */}
-            <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1">
-              <span>全 <strong className="text-zinc-200">{filteredChampions.length}</strong> 体</span>
+            <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 flex-wrap gap-1">
+              <span>全 <strong className="text-zinc-200">{filteredChampions.length}</strong> 体 {roleFilter !== "ALL" && <span className="text-[10px] text-zinc-500">（複数レーン兼任チャンプ含む）</span>}</span>
               <span>通称エイリアス・お気に入り・レーン所属カスタム対応</span>
             </div>
 
@@ -179,9 +179,13 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                       </div>
 
                       <div className="flex items-center justify-between gap-1 mt-0.5">
-                        <span className="text-[10px] text-zinc-500 font-mono truncate">
-                          {c.id}
-                        </span>
+                        {c.jpName.toLowerCase() !== c.id.toLowerCase() ? (
+                          <span className="text-[10px] text-zinc-500 font-mono truncate">
+                            {c.id}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
                         {/* レーンバッジ（クリックでクイックメンテ可能） */}
                         <button
                           onClick={(e) => {

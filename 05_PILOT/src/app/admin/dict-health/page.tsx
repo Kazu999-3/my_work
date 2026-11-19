@@ -13,7 +13,9 @@ import { getChampIcon } from '../../../lib/ddragonClient';
 
 interface ChampHealth {
   champion: string;
+  jpName?: string;
   patch: string;
+  isOldPatch?: boolean;
   confidence: 'verified' | 'ai_generated' | 'stale';
   status: 'verified' | 'ai_generated' | 'stale';
   lastVerifiedAt: string | null;
@@ -95,6 +97,8 @@ function DictHealthDashboardContent() {
   const [data, setData] = useState<{
     currentPatch: string;
     totalCount: number;
+    dbRawCount?: number;
+    anomalies?: { champion: string; patch: string; hasStrengths: boolean }[];
     summary: { verified: number; aiGenerated: number; stale: number };
     priorityChampions?: ChampHealth[];
     champions: ChampHealth[];
@@ -332,6 +336,15 @@ function DictHealthDashboardContent() {
           </div>
         )}
 
+        {/* ⚠️ DB不整合・重複行の検出通知 */}
+        {data && data.anomalies && data.anomalies.length > 0 && (
+          <div className="p-3 bg-zinc-900/90 border border-amber-800/60 rounded-xl text-xs text-amber-300 flex items-center justify-between flex-wrap gap-2">
+            <span>
+              ℹ️ DB内に正本（173体）外の行を {data.anomalies.length} 件検出しました（{data.anomalies.map(a => a.champion).join(', ')}）。総数表示は正本実数173体に揃えて集計しています。
+            </span>
+          </div>
+        )}
+
         {/* 優先確認ランキング（要対応トップ10） */}
         {data && data.priorityChampions && data.priorityChampions.length > 0 && (
           <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-3">
@@ -357,9 +370,16 @@ function DictHealthDashboardContent() {
                     <ChampAvatar champion={c.champion} size="sm" />
                     <span className="font-bold text-zinc-200 group-hover:text-amber-300">{c.champion}</span>
                   </button>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">
-                    P{c.patch}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">
+                      P{c.patch}
+                    </span>
+                    {c.isOldPatch && (
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800/50 font-bold">
+                        旧パッチ
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => handleVerify(c.champion, 'verify')}
                     disabled={actionLoading === c.champion + '_verify'}
@@ -371,6 +391,15 @@ function DictHealthDashboardContent() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ⚠️ DB不整合・重複行の検出通知 */}
+        {data && data.anomalies && data.anomalies.length > 0 && (
+          <div className="p-3 bg-zinc-900/90 border border-amber-800/60 rounded-xl text-xs text-amber-300 flex items-center justify-between flex-wrap gap-2">
+            <span>
+              ℹ️ DB内に正本（173体）外の行を {data.anomalies.length} 件検出しました（{data.anomalies.map(a => a.champion).join(', ')}）。総数表示は正本実数173体に揃えて集計しています。
+            </span>
           </div>
         )}
 
@@ -486,9 +515,16 @@ function DictHealthDashboardContent() {
                         </td>
 
                         <td className="py-2.5 px-3">
-                          <span className="font-mono text-zinc-300 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800 text-[11px]">
-                            {c.patch}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono text-zinc-300 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800 text-[11px]">
+                              {c.patch}
+                            </span>
+                            {c.isOldPatch && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800/50 font-bold">
+                                旧パッチ
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-2.5 px-3 hidden md:table-cell">

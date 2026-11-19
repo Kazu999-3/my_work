@@ -39,6 +39,7 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setQuality('')}
+            title="全審査対象記事（確定・複数・未定の合計と一致します）"
             className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition ${
               quality === '' && !hasAdvancedFilter
                 ? 'bg-amber-500/15 border-amber-500/60 text-white shadow-sm'
