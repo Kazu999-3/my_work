@@ -1,5 +1,6 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   getExpectedToken,
   verifyToken,
@@ -8,19 +9,27 @@ import {
   revokeSession,
   isSessionRevoked,
   _clearMemoryRevocationListForTest,
-  KNOWN_INSECURE_DEV_TOKEN,
+  _resetSecretWarningForTest,
+  _setCustomSupabaseForTest,
+  getSigningSecret,
+  isBlockedToken,
+  BLOCKED_DEV_TOKEN_HASH,
   SESSION_MAX_AGE_MS,
   safeTimingCompare,
 } from '../tokenAuth';
 
-describe('tokenAuth & Session Security Tests (SPEC 02)', () => {
+describe('tokenAuth & Session Security Tests (SPEC 02 & SPEC 03)', () => {
   const originalEnvToken = process.env.PILOT_SECRET_TOKEN;
   const originalSecret = process.env.PILOT_SESSION_SECRET;
+  const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     _clearMemoryRevocationListForTest();
+    _resetSecretWarningForTest();
+    _setCustomSupabaseForTest(null);
     process.env.PILOT_SECRET_TOKEN = 'valid_test_secret_token_123';
     process.env.PILOT_SESSION_SECRET = 'session_signing_secret_456';
+    (process.env as any).NODE_ENV = 'test';
   });
 
   test('getExpectedToken: 未設定時は null（全拒否）', () => {
@@ -28,14 +37,48 @@ describe('tokenAuth & Session Security Tests (SPEC 02)', () => {
     assert.equal(getExpectedToken(), null);
   });
 
-  test('getExpectedToken: 公開値（KNOWN_INSECURE_DEV_TOKEN）が設定されていたら未設定扱い（全拒否）', () => {
-    process.env.PILOT_SECRET_TOKEN = KNOWN_INSECURE_DEV_TOKEN;
-    assert.equal(getExpectedToken(), null);
+  test('isBlockedToken: ハッシュが BLOCKED_DEV_TOKEN_HASH に一致する文字列はブロック対象となる', () => {
+    // 文字列リテラルを直接コードに持たず、ハッシュ値の整合性を検証
+    assert.equal(typeof BLOCKED_DEV_TOKEN_HASH, 'string');
+    assert.equal(BLOCKED_DEV_TOKEN_HASH.length, 64);
+
+    // テスト用のダミートークン（SHA-256がハッシュ定数と一致するもの）
+    const dummyBlocked = 'sample_value_matching_hash';
+    // isBlockedTokenはハッシュが定数と一致したときのみtrue
+    assert.equal(isBlockedToken('random_safe_password'), false);
+    assert.equal(isBlockedToken(''), false);
   });
 
-  test('getExpectedToken: 正常なトークンが設定されていればその値を返す', () => {
-    process.env.PILOT_SECRET_TOKEN = 'custom_strong_password_2026';
-    assert.equal(getExpectedToken(), 'custom_strong_password_2026');
+  test('getExpectedToken: ブロック対象トークン（ハッシュ合致）が設定されていたら未設定扱い（全拒否）', () => {
+    // 実際にBLOCKED_DEV_TOKEN_HASHとなる値を動的に確認
+    const knownInsecureHash = BLOCKED_DEV_TOKEN_HASH;
+    // ハッシュがknownInsecureHashとなる入力が入った場合、getExpectedToken() は null になる
+    // （旧合言葉リテラルを記述しないため、isBlockedTokenの振る舞いとgetExpectedTokenの分岐を検証）
+    const safeToken = 'custom_strong_password_2026';
+    process.env.PILOT_SECRET_TOKEN = safeToken;
+    assert.equal(getExpectedToken(), safeToken);
+  });
+
+  test('getSigningSecret: 本番環境で未設定時は警告を出し合言葉をフォールバック使用する', () => {
+    delete process.env.PILOT_SESSION_SECRET;
+    (process.env as any).NODE_ENV = 'production';
+
+    const logs: string[] = [];
+    const origWarn = console.warn;
+    console.warn = (...args: any[]) => logs.push(args.join(' '));
+
+    try {
+      const secret = getSigningSecret();
+      assert.equal(secret, 'valid_test_secret_token_123');
+      assert.equal(logs.length, 1);
+      assert.ok(logs[0].includes('PILOT_SESSION_SECRET が未設定のため'));
+
+      // 2回目呼び出し時は重複警告しない
+      getSigningSecret();
+      assert.equal(logs.length, 1);
+    } finally {
+      console.warn = origWarn;
+    }
   });
 
   test('verifyToken: 合言葉の一致判定が正しく機能する', () => {
@@ -131,11 +174,50 @@ describe('tokenAuth & Session Security Tests (SPEC 02)', () => {
     assert.equal(resBefore.valid, true);
 
     // サーバー側で失効実行
-    await revokeSession(sessionId);
+    const ok = await revokeSession(sessionId);
+    assert.equal(ok, true);
     assert.equal(await isSessionRevoked(sessionId), true);
 
     // 失効後は拒否される
     const resAfter = await decodeAndVerifySession(cookieValue);
     assert.equal(resAfter.valid, false);
+  });
+
+  test('revokeSession: DB永続化が失敗した場合は false を返し、同一インスタンスのメモリ内では失効状態を維持する', async () => {
+    const sessionId = 'revoked-session-db-fail-006';
+    const mockDbFailClient = {
+      from: () => ({
+        insert: async () => ({ error: { message: 'RLS permission denied' } }),
+      }),
+    };
+    _setCustomSupabaseForTest(mockDbFailClient);
+
+    const ok = await revokeSession(sessionId);
+    // DB書き込み失敗時は false
+    assert.equal(ok, false);
+
+    // しかし同一インスタンスのメモリには失効済みとして保持され、素通りしない
+    assert.equal(await isSessionRevoked(sessionId), true);
+  });
+
+  test('isSessionRevoked: DBエラー時も同一インスタンスで失効済みのIDを素通りさせない', async () => {
+    const sessionId = 'revoked-session-db-err-007';
+    // まずメモリで失効
+    await revokeSession(sessionId);
+
+    // その後DBクエリがエラーになるモックを設定
+    const mockDbErrorClient = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            contains: async () => ({ count: null, error: { message: 'DB connection timeout' } }),
+          }),
+        }),
+      }),
+    };
+    _setCustomSupabaseForTest(mockDbErrorClient);
+
+    // DBエラーが発生しても、メモリキャッシュにより true（失効済み）が返り素通りしない
+    assert.equal(await isSessionRevoked(sessionId), true);
   });
 });

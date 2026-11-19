@@ -6,6 +6,17 @@ import { supabase } from '@/lib/supabaseClient';
 export const MAX_LOGIN_ATTEMPTS = 10;
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15分
 
+/** テスト用: Supabaseクライアントのモック注入 */
+let customSupabaseClient: any = null;
+
+export function _setSupabaseForTest(client: any) {
+  customSupabaseClient = client;
+}
+
+function getSupabase() {
+  return customSupabaseClient !== null ? customSupabaseClient : supabase;
+}
+
 /**
  * クライアントの送信元IPアドレスを取得する。
  * Vercel環境ではプロキシチェーンの最前列（一番左）が本来の接続元クライアントIPとなる。
@@ -43,15 +54,16 @@ export interface RateLimitCheckResult {
  * ⚠️ 重要: DBアクセス不可またはエラー時は fail-closed（blocked: true, unavailable: true）を返す。
  */
 export async function isLoginBlocked(ip: string): Promise<RateLimitCheckResult> {
+  const sb = getSupabase();
   // 基盤が未初期化ならフェイルクローズ（503対象）
-  if (!supabase) {
+  if (!sb) {
     console.error('[loginRateLimit] ⚠️ Supabaseクライアントが未初期化のためログインをフェイルクローズ停止します');
     return { blocked: true, unavailable: true };
   }
 
   try {
     const since = new Date(Date.now() - LOGIN_WINDOW_MS).toISOString();
-    const { count, error } = await supabase
+    const { count, error } = await sb
       .from('edge_tasks')
       .select('id', { count: 'exact', head: true })
       .eq('task_type', 'login_failure')
@@ -79,12 +91,13 @@ export async function isLoginBlocked(ip: string): Promise<RateLimitCheckResult> 
  * 記録基盤が利用できない場合もエラーを検知できるよう真偽値を返す。
  */
 export async function recordLoginFailure(ip: string): Promise<{ ok: boolean; error?: string }> {
-  if (!supabase) {
+  const sb = getSupabase();
+  if (!sb) {
     return { ok: false, error: 'DATABASE_CLIENT_UNAVAILABLE' };
   }
 
   try {
-    const { error } = await supabase.from('edge_tasks').insert({
+    const { error } = await sb.from('edge_tasks').insert({
       task_type: 'login_failure',
       status: 'completed',
       payload: { ip, app: '05', timestamp: Date.now() },

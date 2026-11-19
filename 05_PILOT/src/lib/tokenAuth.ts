@@ -1,5 +1,5 @@
 import type { NextResponse } from 'next/server';
-import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { supabase } from './supabaseClient';
 
 // 秘密トークン ＆ 署名付きセッション認証ヘルパー（proxy.ts と /api/auth/* から使う）
@@ -7,9 +7,9 @@ export const PILOT_SESSION_COOKIE = 'pilot_session';
 /** @deprecated 旧形式Cookie名。SPEC 02移行により全無効化 */
 export const PILOT_COOKIE_NAME = 'pilot_auth_token';
 
-// 過去にコード上に公開されていた開発用合言葉（ブラックリスト）。
+// 過去にコード上に公開されていた開発用合言葉の SHA-256 ハッシュ（SPEC 03準拠: 文字列リテラルは残さない）
 // 環境変数にこの値が設定されていた場合は未設定扱い（全拒否）にする。
-export const KNOWN_INSECURE_DEV_TOKEN = 'pilot_dev_secret_2026';
+export const BLOCKED_DEV_TOKEN_HASH = '0723e3bfc8a4e573c663d89d0514e73b5520e0b7d4f4086c7d3451ac5e63c331';
 
 // セッション有効期限: 30日間（スライディング更新対応）
 export const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30日 (秒)
@@ -22,23 +22,49 @@ export interface SessionPayload {
   expiresAt: number;
 }
 
-/** インメモリ失効キャッシュ（DBアクセス削減およびテスト用） */
+/** インメモリ失効キャッシュ（DBアクセス削減および同一インスタンス即時反映用） */
 const memoryRevokedSessions = new Set<string>();
+
+/** トークンが過去の公開ブロック対象値か判定 */
+export function isBlockedToken(token: string): boolean {
+  if (!token) return false;
+  const hash = createHash('sha256').update(token).digest('hex');
+  return hash === BLOCKED_DEV_TOKEN_HASH;
+}
 
 /** 期待する合言葉。未設定または公開ブラックリスト値なら null（＝全リクエスト拒否） */
 export function getExpectedToken(): string | null {
   const configured = process.env.PILOT_SECRET_TOKEN?.trim();
   if (!configured) return null;
-  if (configured === KNOWN_INSECURE_DEV_TOKEN) {
+  if (isBlockedToken(configured)) {
     console.error('[tokenAuth] ⚠️ PILOT_SECRET_TOKEN に過去の公開値が設定されています。安全のため全リクエストを拒否します。');
     return null;
   }
   return configured;
 }
 
-/** 署名用シークレット。専用シークレットまたは合言葉を使用 */
-function getSigningSecret(): string | null {
-  return process.env.PILOT_SESSION_SECRET?.trim() || getExpectedToken();
+/** 警告ログの重複出力を防ぐフラグ */
+let hasLoggedSecretWarning = false;
+
+/** テスト用: 警告フラグのリセット */
+export function _resetSecretWarningForTest() {
+  hasLoggedSecretWarning = false;
+}
+
+/** 署名用シークレット。専用シークレットまたは合言葉を使用（本番未設定時は警告） */
+export function getSigningSecret(): string | null {
+  const dedicated = process.env.PILOT_SESSION_SECRET?.trim();
+  if (dedicated) {
+    return dedicated;
+  }
+
+  // 本番環境で専用シークレット未設定時は明確な警告ログを出力（ログイン自体は継続）
+  if (process.env.NODE_ENV === 'production' && !hasLoggedSecretWarning) {
+    console.warn('[tokenAuth] ⚠️ 本番環境で PILOT_SESSION_SECRET が未設定のため、合言葉をセッション署名鍵としてフォールバック使用しています。Vercel等の環境変数で専用の PILOT_SESSION_SECRET を設定することを強く推奨します。');
+    hasLoggedSecretWarning = true;
+  }
+
+  return getExpectedToken();
 }
 
 /** 文字列比較の所要時間から文字数を推測されない安全な比較 */
@@ -120,45 +146,70 @@ export async function decodeAndVerifySession(
   };
 }
 
-/** サーバー側で特定セッションを失効させる */
+let customSupabaseClient: any = null;
+
+/** テスト用: Supabaseクライアントのモック注入 */
+export function _setCustomSupabaseForTest(client: any) {
+  customSupabaseClient = client;
+}
+
+function getSupabase() {
+  return customSupabaseClient !== null ? customSupabaseClient : supabase;
+}
+
+/** サーバー側で特定セッションを失効させる（SPEC 03: DB失敗時は false を返しログ記録） */
 export async function revokeSession(sessionId: string): Promise<boolean> {
   if (!sessionId) return false;
+  // 同一インスタンス内では直ちに失効として扱う
   memoryRevokedSessions.add(sessionId);
 
-  if (supabase) {
+  const sb = getSupabase();
+  if (sb) {
     try {
-      await supabase.from('edge_tasks').insert({
+      const { error } = await sb.from('edge_tasks').insert({
         task_type: 'pilot_session_revocation',
         status: 'completed',
         payload: { sessionId, revokedAt: new Date().toISOString() },
       });
+      if (error) {
+        console.error('[tokenAuth] ⚠️ セッション失効のDB永続化に失敗:', error);
+        return false;
+      }
       return true;
     } catch (e) {
-      console.error('[tokenAuth] セッション失効のDB永続化に失敗:', e);
-      // メモリ側には入っているのでそのまま進む
+      console.error('[tokenAuth] ⚠️ セッション失効のDB永続化例外:', e);
+      return false;
     }
   }
+  // クライアント未初期化（DBが無い単体テスト等）の場合はメモリ登録のみで true
   return true;
 }
 
-/** セッションが失効しているか確認 */
+/** セッションが失効しているか確認（SPEC 03: DBエラー時もメモリ失効IDは素通りさせない） */
 export async function isSessionRevoked(sessionId: string): Promise<boolean> {
   if (!sessionId) return true;
+  // 同一インスタンスで失効済みのIDはメモリキャッシュで素通りさせない
   if (memoryRevokedSessions.has(sessionId)) return true;
 
-  if (supabase) {
+  const sb = getSupabase();
+  if (sb) {
     try {
-      const { count } = await supabase
+      const { count, error } = await sb
         .from('edge_tasks')
         .select('id', { count: 'exact', head: true })
         .eq('task_type', 'pilot_session_revocation')
         .contains('payload', { sessionId });
+      if (error) {
+        console.error('[tokenAuth] ⚠️ セッション失効チェックDBエラー:', error);
+        // DBエラー時もメモリチェック（上記）は通過済み
+        return false;
+      }
       if ((count || 0) > 0) {
         memoryRevokedSessions.add(sessionId);
         return true;
       }
-    } catch {
-      // DBアクセスエラー時は安全側に倒さず署名検証結果を優先（またはフェイル）
+    } catch (err) {
+      console.error('[tokenAuth] ⚠️ セッション失効チェック例外:', err);
     }
   }
   return false;
