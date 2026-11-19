@@ -41,7 +41,7 @@ async function main() {
   const factsRes = await supabase
     .from('champion_facts')
     .select('champion, patch, confidence, updated_at')
-    .in('champion', ['template', 'Lee Sin', 'LeeSin', 'ヴァイ', 'Vi']);
+    .in('champion', ['template', 'Lee Sin', 'LeeSin', 'ヴァイ', 'Vi', "Cho'Gath", 'Chogath']);
   console.log(`[champion_facts] 検出: ${factsRes.data?.length || 0} 件`);
   for (const r of factsRes.data || []) {
     console.log(`  - champion: "${r.champion}", patch: "${r.patch}", updated: "${r.updated_at}"`);
@@ -50,8 +50,8 @@ async function main() {
   // matchup_sentinel (champion)
   const sentinelChampRes = await supabase
     .from('matchup_sentinel')
-    .select('matchup_id, champion, enemy')
-    .in('champion', ['template', 'Lee Sin', 'ヴァイ']);
+    .select('matchup_id, champion, enemy, strategy')
+    .in('champion', ['template', 'Lee Sin', 'ヴァイ', "Cho'Gath"]);
   console.log(`\n[matchup_sentinel (champion)] 検出: ${sentinelChampRes.data?.length || 0} 件`);
   for (const r of sentinelChampRes.data || []) {
     console.log(`  - matchup_id: "${r.matchup_id}", champion: "${r.champion}", enemy: "${r.enemy}"`);
@@ -61,7 +61,7 @@ async function main() {
   const sentinelEnemyRes = await supabase
     .from('matchup_sentinel')
     .select('matchup_id, champion, enemy')
-    .in('enemy', ['template', 'Lee Sin', 'ヴァイ']);
+    .in('enemy', ['template', 'Lee Sin', 'ヴァイ', "Cho'Gath"]);
   console.log(`\n[matchup_sentinel (enemy)] 検出: ${sentinelEnemyRes.data?.length || 0} 件`);
   for (const r of sentinelEnemyRes.data || []) {
     console.log(`  - matchup_id: "${r.matchup_id}", champion: "${r.champion}", enemy: "${r.enemy}"`);
@@ -71,7 +71,7 @@ async function main() {
   const pkRes = await supabase
     .from('personal_knowledge')
     .select('id, champion, title')
-    .in('champion', ['template', 'Lee Sin', 'ヴァイ']);
+    .in('champion', ['template', 'Lee Sin', 'ヴァイ', "Cho'Gath"]);
   console.log(`\n[personal_knowledge] 検出: ${pkRes.data?.length || 0} 件`);
   for (const r of pkRes.data || []) {
     console.log(`  - id: "${r.id}", champion: "${r.champion}", title: "${r.title}"`);
@@ -184,6 +184,58 @@ async function main() {
   // personal_knowledge
   const upPkVi = await supabase.from('personal_knowledge').update({ champion: 'Vi' }).eq('champion', 'ヴァイ');
   console.log(`  ✓ personal_knowledge: ヴァイ を Vi に更新: ${upPkVi.error ? upPkVi.error.message : '成功'}`);
+
+  // D. "Cho'Gath" の Chogath への統合と削除
+  console.log(`\n[D] Cho'Gath -> Chogath のマージ＆削除処理:`);
+  const choFact = (factsRes.data || []).find((r: any) => r.champion === "Cho'Gath");
+  const choCanonFact = (factsRes.data || []).find((r: any) => r.champion === 'Chogath');
+  if (choFact && !choCanonFact) {
+    const renCho = await supabase.from('champion_facts').update({ champion: 'Chogath' }).eq('champion', "Cho'Gath");
+    console.log(`  ✓ champion_facts: Cho'Gath を Chogath に更新: ${renCho.error ? renCho.error.message : '成功'}`);
+  } else if (choFact && choCanonFact) {
+    const delCho = await supabase.from('champion_facts').delete().eq('champion', "Cho'Gath");
+    console.log(`  ✓ champion_facts: 重複する Cho'Gath 行を削除: ${delCho.error ? delCho.error.message : '成功'}`);
+  }
+
+  // matchup_sentinel (champion)
+  for (const s of sentinelChampRes.data || []) {
+    if (s.champion === "Cho'Gath") {
+      const newMatchupId = s.matchup_id.replace("Cho'Gath", 'Chogath');
+      const { data: exist } = await supabase.from('matchup_sentinel').select('matchup_id, strategy').eq('matchup_id', newMatchupId).maybeSingle();
+      if (exist) {
+        // strategy の追記マージ確認
+        if (s.strategy && exist.strategy && !exist.strategy.includes(s.strategy.trim())) {
+          const mergedStrategy = `${exist.strategy.trim()}\n\n---\n\n${s.strategy.trim()}\n`;
+          await supabase.from('matchup_sentinel').update({ strategy: mergedStrategy }).eq('matchup_id', newMatchupId);
+          console.log(`  ✓ matchup_sentinel: ${s.matchup_id} の strategy を ${newMatchupId} へ追記マージしました`);
+        }
+        const delRes = await supabase.from('matchup_sentinel').delete().eq('matchup_id', s.matchup_id);
+        console.log(`  ✓ matchup_sentinel: 旧行 ${s.matchup_id} を削除: ${delRes.error ? delRes.error.message : '成功'}`);
+      } else {
+        const upRes = await supabase.from('matchup_sentinel').update({ champion: 'Chogath', matchup_id: newMatchupId }).eq('matchup_id', s.matchup_id);
+        console.log(`  ✓ matchup_sentinel: ${s.matchup_id} を ${newMatchupId} (Chogath) に更新: ${upRes.error ? upRes.error.message : '成功'}`);
+      }
+    }
+  }
+
+  // matchup_sentinel (enemy)
+  for (const s of sentinelEnemyRes.data || []) {
+    if (s.enemy === "Cho'Gath") {
+      const newMatchupId = s.matchup_id.replace("Cho'Gath", 'Chogath');
+      const { data: exist } = await supabase.from('matchup_sentinel').select('matchup_id').eq('matchup_id', newMatchupId).maybeSingle();
+      if (exist) {
+        const delRes = await supabase.from('matchup_sentinel').delete().eq('matchup_id', s.matchup_id);
+        console.log(`  ✓ matchup_sentinel: 敵側の重複行 ${s.matchup_id} を削除: ${delRes.error ? delRes.error.message : '成功'}`);
+      } else {
+        const upRes = await supabase.from('matchup_sentinel').update({ enemy: 'Chogath', matchup_id: newMatchupId }).eq('matchup_id', s.matchup_id);
+        console.log(`  ✓ matchup_sentinel: 敵側 ${s.matchup_id} を ${newMatchupId} に更新: ${upRes.error ? upRes.error.message : '成功'}`);
+      }
+    }
+  }
+
+  // personal_knowledge
+  const upPkCho = await supabase.from('personal_knowledge').update({ champion: 'Chogath' }).eq('champion', "Cho'Gath");
+  console.log(`  ✓ personal_knowledge: Cho'Gath を Chogath に更新: ${upPkCho.error ? upPkCho.error.message : '成功'}`);
 
   console.log('\n=== すべてのクリーンアップが正常に完了しました ===');
 }
