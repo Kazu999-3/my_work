@@ -6,6 +6,11 @@ import { getAdminDiscordIds, markRecruitmentStatus } from '../../utils/recruitPe
 import { getPlayerActiveMark } from '../../utils/ktmRank.js';
 import { notifyAdminError } from '../../utils/alert.js';
 import { recordRecruitmentActivity } from '../../utils/recruitmentAudit.js';
+import { cleanupOldReminderMessages } from '../scheduled.js';
+
+// 連打・並行アクセスによる二重通知防止用キャッシュ (messageId -> timestamp)
+const lastOneNotifyLock = new Map();
+
 
 // 募集カードの操作（参加・ロール参加・観戦・離脱・締切・削除・編集・代理追加・10人化）。どのボタンにも該当しなかった場合の最後の処理
 // 2026-10-07: handlers/components.js（1,486行）のボタン処理から分割。処理は分割前と同じ（元の判定順のまま）。
@@ -75,6 +80,7 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
   // join_any/join_role は同時押しされやすく、interaction.message は「押した瞬間」の
   // スナップショットで古くなりがちなので、直前にメッセージを取り直して競合の窓を狭める
   // （完全な排他制御ではないが、join_periodicと同じ緩和策）。
+  let prevJoinedCount = (metadata.joined || []).length;
   const refreshJoinMetadata = async () => {
     try {
       const freshRes = await fetch(`https://discord.com/api/v10/channels/${interaction.channel_id}/messages/${interaction.message.id}`, {
@@ -86,6 +92,7 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     } catch (e) {
       console.warn("join: 最新状態の再取得に失敗、インタラクションのスナップショットで続行:", e);
     }
+    prevJoinedCount = (metadata.joined || []).length;
   };
 
   let auditAction = null;
@@ -359,26 +366,56 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
   }
 
   // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿（ノーマル/カスタム共用）
-  if (metadata.joined.length === metadata.maxCount - 1 && (customId.startsWith('join_any') || customId.startsWith('join_role:'))) {
-    ctx.waitUntil((async () => {
-      try {
-        const channelId = interaction.channel_id || interaction.channel?.id;
-        if (!channelId || !botToken) return;
-        const targetPrompt = metadata.mode === 'ノーマル'
-          ? `🔥 **【あと1名で出発できます！】** どなたか最後の1枠で合流しませんか？🎮`
-          : `🔥 **【あと1名で確定！】** どなたか最後の1枠で参加しませんか？✨`;
-        await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
-          content: targetPrompt,
-          message_reference: { message_id: interaction.message.id, fail_if_not_exists: false }
-        }).catch(() => {});
-      } catch (e) {
-        // ⚠️ ここは定期カスタム側(join_periodic)と同じ「あと1名」促進処理。
-        // そちらは同型のcatchで ReferenceError を3日間隠していた(2026-09-26〜29)ため、
-        // 空catchのままにせず通知する。残り1枠のときだけ走るので乱発しない。
-        console.error("あと1名促進(ノーマル)の処理エラー:", e);
-        await notifyAdminError(env, e, { action: 'あと1名促進(ノーマル募集)', customId });
+  // 連投防止ガード:
+  // 1. 操作前の人数が残り1名未満（例: 3人以下）から、新規参加によって【初めて残り1名（4人）に達した瞬間】のみ発火。
+  //    （すでに4人いる状態でのロール変更や選び直しでは絶対に発火しない）
+  // 2. 1募集カードにつき最大1回のみ（metadata.lastOneNotified でピクセルメタデータに永続化）。
+  // 3. 同一募集カードへの連打・並行リクエストはメモリキャッシュ（15分ロック）で完全ブロック。
+  const isJustReachedLastOne =
+    prevJoinedCount < (metadata.maxCount - 1) &&
+    metadata.joined.length === (metadata.maxCount - 1) &&
+    !metadata.lastOneNotified &&
+    (customId.startsWith('join_any') || customId.startsWith('join_role:'));
+
+  if (isJustReachedLastOne) {
+    const msgId = interaction.message.id;
+    const now = Date.now();
+    const lastSentAt = lastOneNotifyLock.get(msgId) || 0;
+
+    // 15分以内の同一カードへの再送は絶対にブロック
+    if (now - lastSentAt >= 15 * 60 * 1000) {
+      lastOneNotifyLock.set(msgId, now);
+      if (lastOneNotifyLock.size > 200) {
+        // キャッシュ肥大化防止（最古のエントリを削除）
+        const oldestKey = lastOneNotifyLock.keys().next().value;
+        if (oldestKey) lastOneNotifyLock.delete(oldestKey);
       }
-    })());
+      metadata.lastOneNotified = true;
+
+      ctx.waitUntil((async () => {
+        try {
+          const channelId = interaction.channel_id || interaction.channel?.id;
+          if (!channelId || !botToken) return;
+
+          // チャンネル内の古いBotリマインド・催促メッセージを事前に削除
+          await cleanupOldReminderMessages(env, channelId).catch(() => {});
+
+          const targetPrompt = metadata.mode === 'ノーマル'
+            ? `🔥 **【あと1名で出発できます！】** どなたか最後の1枠で合流しませんか？🎮`
+            : `🔥 **【あと1名で確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+            content: targetPrompt,
+            message_reference: { message_id: msgId, fail_if_not_exists: false }
+          }).catch(() => {});
+        } catch (e) {
+          // ⚠️ ここは定期カスタム側(join_periodic)と同じ「あと1名」促進処理。
+          // そちらは同型のcatchで ReferenceError を3日間隠していた(2026-09-26〜29)ため、
+          // 空catchのままにせず通知する。残り1枠のときだけ走るので乱発しない。
+          console.error("あと1名促進(ノーマル)の処理エラー:", e);
+          await notifyAdminError(env, e, { action: 'あと1名促進(ノーマル募集)', customId });
+        }
+      })());
+    }
   }
 
   // ランク帯の内訳表示は定期募集のみに限定するため、都度募集のここでは付与しない(#③)

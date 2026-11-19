@@ -592,6 +592,8 @@ export async function cleanupOldReminderMessages(env, channelId) {
       const isReminderEmbed = embedTitle.includes('週末カスタム 残り枠のお知らせ');
       const isShortfallContent = m.content && (
         m.content.includes('あと1名で開催確定！') ||
+        m.content.includes('あと1名で出発できます！') ||
+        m.content.includes('あと1名で確定！') ||
         m.content.includes('助っ人をピンポイント募集中') ||
         m.content.includes('状況案内:') ||
         m.content.includes('判定結果:') ||
