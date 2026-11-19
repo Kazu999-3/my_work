@@ -33,14 +33,28 @@ def call_ollama_json(prompt: str, model: Optional[str] = None, temperature: floa
     """Ollama の OpenAI 互換エンドポイントを叩いて JSON を取得"""
     target_model = model or OLLAMA_MODEL
     url = f"{OLLAMA_BASE_URL}/v1/chat/completions"
+    
+    # 長尺字幕による指示埋没（Lost in the middle）を防ぐサンドイッチガード
+    suffix = (
+        "\n\n------------------------\n"
+        "【最重要: 出力指示】\n"
+        "上の字幕から抽出した事実を、必ず以下のJSON形式のみで出力してください。\n"
+        "挨拶、解説、考察文などの前置き・後書きは一切禁止です。直ちに { から始まる純粋なJSONのみを出力してください。\n"
+        "{\"video_type\": \"...\", \"champion\": \"...\", \"role\": \"...\", \"is_multi_champion\": false, "
+        "\"enemy\": null, \"combos\": [], \"first_timing\": null, \"behind_recovery\": null, "
+        "\"facts\": [{\"category\": \"...\", \"claim\": \"...\", \"condition\": null, \"reason\": null, \"numbers\": null, \"ts\": null, \"uncertain\": false}], "
+        "\"not_covered\": []}"
+    )
+    user_prompt = prompt if "【最重要: 出力指示】" in prompt else (prompt + suffix)
+
     payload = {
         "model": target_model,
         "messages": [
             {
                 "role": "system",
-                "content": "You are a specialized game analyst. Output only pure, valid JSON with no markdown formatting or commentary."
+                "content": "You are a professional League of Legends tactical analyst. Output only a pure, valid JSON object strictly matching the schema requested. Every string in 'facts' must be in natural Japanese even if transcript is English. Do not output any conversational talk, intro, or markdown fences."
             },
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": user_prompt}
         ],
         "response_format": {"type": "json_object"},
         "temperature": temperature
