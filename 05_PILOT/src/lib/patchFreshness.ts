@@ -28,7 +28,7 @@ export function calculateFreshness(
   title: string = '',
   content: string = '',
   rawPublishedAt: string | null | undefined,
-  currentCalendarPatch: string = '26.19'
+  currentCalendarPatch: string = '26.23'
 ): FreshnessInfo {
   const textToScan = `${title} ${content.slice(0, 800)}`.toLowerCase();
   
@@ -81,20 +81,47 @@ export function calculateFreshness(
     }
   }
 
-  // 4. 鮮度ステータスの判定
-  // - fresh: 30日以内（現行または直前パッチ）
-  // - moderate: 31〜60日前（1〜2パッチ前、基本ロジックは生きているが微調整あり）
-  // - stale: 61日以上前、または別シーズン（アイテムやルーン変更のリスク大）
+  // 4. パッチ番号ベースの厳格なバージョン比較（SPEC 05 刷新）
+  // 26.16（2026-11-04）や 26.20 などの過去パッチ記事が「日数30日以内」だけで現行扱いになるバグを解消
+  const parsePatch = (str: string) => {
+    const m = str.match(/(\d+)\.(\d+)/);
+    if (!m) return null;
+    return { major: parseInt(m[1], 10), minor: parseInt(m[2], 10) };
+  };
+
+  const curr = parsePatch(currentCalendarPatch);
+  const target = parsePatch(estimatedPatch);
+
   let freshness: 'fresh' | 'moderate' | 'stale';
-  if (daysAgo <= 30) {
-    freshness = 'fresh';
-  } else if (daysAgo <= 60) {
-    freshness = 'moderate';
+
+  if (curr && target) {
+    if (target.major < curr.major) {
+      freshness = 'stale'; // 旧シーズンは無条件で旧パッチ
+    } else if (target.major === curr.major) {
+      const diff = curr.minor - target.minor;
+      if (diff >= 3) {
+        freshness = 'stale'; // 3パッチ以上前は旧パッチ
+      } else if (diff === 1 || diff === 2) {
+        freshness = 'moderate'; // 1〜2パッチ前
+      } else {
+        // 同パッチ（diff === 0）または未来パッチ
+        freshness = daysAgo > 45 ? 'moderate' : 'fresh';
+      }
+    } else {
+      freshness = 'fresh';
+    }
   } else {
-    freshness = 'stale';
+    // パッチ番号がパースできない場合は経過日数でフォールバック
+    if (daysAgo <= 14) {
+      freshness = 'fresh';
+    } else if (daysAgo <= 35) {
+      freshness = 'moderate';
+    } else {
+      freshness = 'stale';
+    }
   }
 
-  // もし明示的に古いシーズン（14.xや15.x）と書かれている場合は強制的に stale
+  // 明示的な過去シーズン（14.xや15.x等）の強制stale保護
   if (explicitPatch && !explicitPatch.startsWith('26.')) {
     freshness = 'stale';
   }

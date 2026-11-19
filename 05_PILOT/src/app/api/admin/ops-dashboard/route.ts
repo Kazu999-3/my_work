@@ -61,17 +61,17 @@ export async function GET() {
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true })
         .in('status', ['error_generation', 'error_no_transcript', 'failed']),
       supabase.from('matchup_sentinel').select('raw_data').eq('matchup_id', 'SYSTEM_METRICS').maybeSingle(),
-      supabase.from('champion_facts').select('confidence, patch, strengths'),
+      supabase.from('champion_facts').select('champion, confidence, patch, strengths'),
       supabase.from('ktm_players').select('id, name, highest_rank, coins, role_preferences, metadata, is_active'),
       supabase.from('ktm_matches').select('id, created_at').order('created_at', { ascending: false }).limit(200),
       supabase.from('edge_tasks').select('payload').eq('task_type', 'bet_record').eq('status', 'pending'),
       supabase.from('edge_tasks').select('status').gte('created_at', since24h)
         .not('id', 'in', `(${HEARTBEAT_IDS.join(',')})`),
-      supabase.from('matchup_sentinel').select('champion', { count: 'exact', head: true })
+      supabase.from('matchup_sentinel').select('champion')
         .eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', ''),
       supabase.from('personal_knowledge').select('id', { count: 'exact', head: true })
         .or('tags.is.null,tags.not.cs.{__DELETED__}'),
-      supabase.from('lane_guides').select('id', { count: 'exact', head: true }),
+      supabase.from('lane_guides').select('lane', { count: 'exact', head: true }),
       supabase.from('matchup_sentinel').select('matchup_id', { count: 'exact', head: true }).neq('enemy', 'GLOBAL'),
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
       supabase.from('recruitments').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -110,6 +110,24 @@ export async function GET() {
       } catch (_) {}
     }
     const totalCanonicalChampions = summaryChampions.length || 173;
+    const summaryMap = new Map<string, any>(summaryChampions.map((c: any) => [String(c.id || '').toLowerCase(), c]));
+
+    // 辞典本文（matchup_sentinel: enemy=GLOBAL）の正本基準集計（異常行の分離）
+    const sentinelChampions = (factsCount.data || []).map((r: any) => String(r.champion || '').trim().toLowerCase());
+    let canonicalFactsCount = 0;
+    let anomalyFactsCount = 0;
+    const seenSentinel = new Set<string>();
+    for (const c of sentinelChampions) {
+      if (!c) continue;
+      if (summaryMap.has(c)) {
+        if (!seenSentinel.has(c)) {
+          canonicalFactsCount++;
+          seenSentinel.add(c);
+        }
+      } else {
+        anomalyFactsCount++;
+      }
+    }
 
     // 健全性監査（dict-health）と同一の正本基準で dictHealth を集計（DBの重複・不審行による 144 vs 145 ズレを解消）
     const factsMap = new Map<string, any>();
@@ -225,7 +243,9 @@ export async function GET() {
         pendingBet: { blueAmount, redAmount, blueCount, redCount },
       },
       knowledge: {
-        facts: factsCount.count ?? 0,
+        facts: canonicalFactsCount,
+        rawFactsCount: sentinelChampions.length,
+        anomalyFactsCount,
         library: libraryCount.count ?? 0,
         laneGuides: laneGuidesCount.count ?? 0,
         matchupMemos: memosCount.count ?? 0,
