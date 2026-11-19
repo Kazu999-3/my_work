@@ -4,7 +4,7 @@ import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, Ale
 import Image from 'next/image';
 import Link from 'next/link';
 import { getItemIcon, getSummonerSpellIcon } from '../../lib/ddragonClient';
-import type { MmrBreakdown } from '../../lib/mmr';
+import { calculateKdaScore, type MmrBreakdown } from '../../lib/mmr';
 import { isEventMatch, isNormalMatch, getMatchType } from '../../lib/matchType';
 import ChampionIcon from '../../components/ChampionIcon';
 import MatchItemSlots from './_parts/MatchItemSlots';
@@ -798,7 +798,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                               {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
                             </div>
                             <div className="text-[10px] font-mono text-faint">
-                              KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
+                              KDA {p.kda_score ? p.kda_score.toFixed(2) : calculateKdaScore(p.kills, p.deaths, p.assists).toFixed(2)}
                             </div>
                           </div>
 
@@ -857,7 +857,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                               {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
                             </div>
                             <div className="text-[10px] font-mono text-faint">
-                              KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
+                              KDA {p.kda_score ? p.kda_score.toFixed(2) : calculateKdaScore(p.kills, p.deaths, p.assists).toFixed(2)}
                             </div>
                           </div>
 

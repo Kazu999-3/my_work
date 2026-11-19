@@ -13,7 +13,7 @@ import { usePlayerRoster } from "./_parts/usePlayerRoster";
 import { useBo3Series } from "./_parts/useBo3Series";
 import { useResultSwap } from "./_parts/useResultSwap";
 import { useResultActions } from "./_parts/useResultActions";
-import { ExperienceSummary, makeSortableHeader, getPlayerExperienceBadge } from "./_parts/PageSections";
+import { ExperienceSummary, makeSortableHeader, getPlayerExperienceBadge, MatchingGlossary } from "./_parts/PageSections";
 import BalanceResultModal from "./_parts/BalanceResultModal";
 import BalancerHeader from "./_parts/BalancerHeader";
 import GapDiagnosisPanel from "./_parts/GapDiagnosisPanel";
@@ -312,6 +312,11 @@ export default function BalancerPage() {
       {/* 👥 参加者層サマリー */}
       <div>
         <ExperienceSummary players={players} />
+      </div>
+
+      {/* 💡 KTMレーティング・チーム分け用語の解説 */}
+      <div>
+        <MatchingGlossary />
       </div>
 
       {/* ★ チーム分け結果モーダル */}

@@ -103,7 +103,7 @@ export default function HomePage() {
                 </div>
                 <span className="text-[11px] font-black text-success-800 dark:text-success-300 bg-success-100 dark:bg-success-500/20 border border-success-edge dark:border-success-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <HeartHandshake className="w-3 h-3 text-success-600 dark:text-success-400" />
-                  初回+{MENTORSHIP_FIRST_PROFILE_BONUS_COINS}{COIN_UNIT}進呈中
+                  先輩登録で+{MENTORSHIP_FIRST_PROFILE_BONUS_COINS}{COIN_UNIT}進呈中
                 </span>
               </div>
               <div>

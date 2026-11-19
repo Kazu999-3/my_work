@@ -1,11 +1,11 @@
 "use client";
 
-import React, { Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Copy, Check, Shuffle } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, ChevronUp, Trees, Zap, Target, Heart, Settings, Sparkles, Copy, Check, Shuffle } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../../lib/mmr";
 import { getPlayerTier } from "../../../lib/playerTier";
 import { BalancerVcManager, updateVcStatus } from "../components/BalancerVcManager";
@@ -31,6 +31,16 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
   SortableHeader: React.FC<{ label: string; sortKey: string; className?: string }>;
   filteredPlayers: any[];
 }) {
+  const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string | number>>(new Set());
+  const toggleRowExpand = (id: string | number) => {
+    setExpandedPlayerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
         <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-2xl pb-28 md:pb-32">
           <div className="p-3 md:p-4 border-b border-border flex items-center gap-2 bg-surface">
@@ -121,8 +131,11 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
 
           {/* 表操作のミニ注記 */}
           <div className="px-3 md:px-4 py-2 bg-surface-subtle/70 border-b border-border text-[11px] text-muted flex flex-wrap items-center justify-between gap-2">
-            <span>🔒 <strong>希望の強さ:</strong> 公正な配分調整のため管理者のみ変更可能です</span>
-            <span>⚔️ <strong>挑戦:</strong> MMR差200以上の格上相手との対面を許可する設定です</span>
+            <span className="font-bold text-foreground-soft">💡 各行の「設定 ▼」で第2希望・NG・格上挑戦・全レーンMMRを展開できます</span>
+            <div className="flex items-center gap-3">
+              <span>🔒 <strong>希望の強さ:</strong> 管理者のみ変更可</span>
+              <span>⚔️ <strong>格上挑戦:</strong> MMR差200以上対面許可</span>
+            </div>
           </div>
 
           {/* デスクトップ：テーブル。参加者数分の列(参加設定/No./名前/ランク/MMR/希望×2/NG×2/
@@ -138,18 +151,15 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
                   <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
                   <SortableHeader label="SoloQランク" sortKey="highest_rank" className="px-2" />
-                  <SortableHeader label="KTMカスタムMMR" sortKey="mmr" className="px-2" />
-                  <SortableHeader label="第1希望" sortKey="primary_lane" className="px-2 text-center" />
-                  <th className="px-2 py-3 font-medium text-center">第2希望</th>
-                  <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 1</th>
-                  <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
-                  <SortableHeader label="希望の強さ🔒(管理者)" sortKey="weight" className="px-1.5 text-center whitespace-nowrap" />
-                  <SortableHeader label="⚔️挑戦(格上対面)" sortKey="allow_higher" className="px-1.5 text-center whitespace-nowrap" />
+                  <SortableHeader label="KTMカスタムMMR" sortKey="mmr" className="px-2 text-center" />
+                  <SortableHeader label="第1希望" sortKey="primary_lane" className="px-2 text-center w-24" />
+                  <th className="px-2 py-3 font-medium text-center w-28">詳細設定</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
                 {filteredPlayers.map((p, idx) => {
                   const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
+                  const isExpanded = expandedPlayerIds.has(p.id);
                   const curGroup = getGroup(p);
                   const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
                   const isBoundary = idx > 0 && curGroup !== prevGroup;
@@ -159,13 +169,13 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                     <Fragment key={`balancer-row-${p.id}`}>
                       {isBoundary && groupLabelMap[curGroup] && (
                         <tr key={`div-${idx}`}>
-                          <td colSpan={11} className={`px-4 py-1.5 text-[11px] font-bold border-t border-black/5 ${groupColorMap[curGroup]}`}>
+                          <td colSpan={7} className={`px-4 py-1.5 text-[11px] font-bold border-t border-black/5 ${groupColorMap[curGroup]}`}>
                             {groupLabelMap[curGroup]}
                           </td>
                         </tr>
                       )}
                       <tr key={p.id}
-                        className={`hover:bg-black/[0.04] transition-all duration-500 ${
+                        className={`hover:bg-black/[0.04] transition-all duration-300 ${
                           flashingPlayerIds.includes(p.id) ? 'bg-success-100 border-y border-success-edge-strong/50' :
                           p.is_fixed ? 'bg-primary-100 border-l-2 border-primary-edge-strong/70' :
                           p.is_spectator_fixed ? 'bg-primary-100 border-l-2 border-primary-edge-strong/60 opacity-70' :
@@ -221,72 +231,177 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             const tooltip = isProvisional
                               ? `初参加のため初期仮値: ${repMmr} (KTMランク: ${ktmTier.name})。試合出場で変動します`
                               : hasDiff
-                              ? `最高レーン基準: ${ktmTier.name} (${highestLaneMmr}) / 代表MMR: ${repMmr}`
+                              ? `代表MMR: ${repMmr} / 最高レーン基準: ${ktmTier.name} (${highestLaneMmr})`
                               : `KTMランク: ${ktmTier.name} (MMR: ${repMmr})`;
                             return (
-                              <div className="flex items-center justify-center gap-1" title={tooltip}>
-                                <span className="font-mono text-xs font-black text-primary-800 dark:text-primary-300">{repMmr}</span>
-                                {isProvisional && (
-                                  <span className="text-[9px] font-black px-1 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 shrink-0 cursor-help" title="初参加のため初期仮値です">
-                                    仮
+                              <div className="flex items-center justify-center gap-1.5 flex-wrap" title={tooltip}>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-mono text-xs font-black text-primary-800 dark:text-primary-300">{repMmr}</span>
+                                  {isProvisional && (
+                                    <span className="text-[9px] font-black px-1 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 shrink-0 cursor-help" title="初参加のため初期仮値です">
+                                      仮
+                                    </span>
+                                  )}
+                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
+                                    {ktmTier.name.split(' ')[0]}
+                                  </span>
+                                </div>
+                                {hasDiff && !isProvisional && (
+                                  <span className="text-[10px] text-muted-strong font-mono" title={`最高レーンMMR: ${highestLaneMmr}`}>
+                                    (最高 {highestLaneMmr})
                                   </span>
                                 )}
-                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
-                                  {ktmTier.name.split(' ')[0]}
-                                </span>
                               </div>
                             );
                           })()}
                         </td>
-                        <td className="px-2 py-1.5">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-20">
+                        <td className="px-2 py-1.5 text-center">
+                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1.5 py-0.5 w-24 mx-auto">
                             <RoleIcon role={prefs.primary || 'ALL'} className="w-3 h-3 flex-shrink-0" />
                             <select value={prefs.primary || 'ALL'} onChange={e => handleInputChange(p.id,'primary_role',e.target.value)} className="bg-transparent text-foreground outline-none cursor-pointer w-full text-[11px] font-bold">
                               {['ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-foreground-soft">{r}</option>)}
                             </select>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-20">
-                            <RoleIcon role={prefs.secondary || '-'} className="w-3 h-3 flex-shrink-0" />
-                            <select value={prefs.secondary || '-'} disabled={prefs.primary === 'ALL'} onChange={e => handleInputChange(p.id,'secondary_role',e.target.value)} className="bg-transparent text-foreground-subtle outline-none cursor-pointer w-full text-[11px] disabled:cursor-not-allowed">
-                              {['-','ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-foreground-soft">{r}</option>)}
-                            </select>
+                        <td className="px-2 py-1.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {/* 設定済みの小型インジケーター */}
+                            <div className="flex items-center gap-1">
+                              {prefs.secondary && prefs.secondary !== '-' && prefs.secondary !== 'ALL' && (
+                                <span className="px-1 py-0.5 rounded bg-surface-subtle border border-border text-foreground-soft font-mono text-[9px] font-bold" title={`第2希望: ${prefs.secondary}`}>
+                                  2:{prefs.secondary}
+                                </span>
+                              )}
+                              {(p.ng_lane_1 || p.ng_lane_2) && (
+                                <span className="px-1 py-0.5 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[9px]" title={`NG: ${[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join(', ')}`}>
+                                  NG
+                                </span>
+                              )}
+                              {p.allow_higher && (
+                                <span className="text-xs" title="格上挑戦: 許可">⚔️</span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleRowExpand(p.id)}
+                              className={`px-1.5 py-0.5 rounded-md border text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer ${
+                                isExpanded
+                                  ? 'bg-primary-100 border-primary-edge text-primary-800'
+                                  : 'bg-surface-subtle hover:bg-surface-hover border-border text-muted-strong hover:text-foreground'
+                              }`}
+                              title={isExpanded ? '詳細設定を閉じる' : '詳細設定（第2希望・NG・格上挑戦など）を開く'}
+                            >
+                              <span>設定</span>
+                              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            </button>
                           </div>
-                        </td>
-                        <td className="px-1.5 py-1.5 text-center">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-20 mx-auto">
-                            <RoleIcon role={p.ng_lane_1 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
-                            <select value={p.ng_lane_1 || ''} onChange={e => handleInputChange(p.id,'ng_lane_1',e.target.value)} className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer w-full text-[10px]">
-                              <option value="" className="bg-surface-subtle text-faint">なし</option>
-                              {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-danger-700">{r}</option>)}
-                            </select>
-                          </div>
-                        </td>
-                        <td className="px-1.5 py-1.5 text-center">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-20 mx-auto">
-                            <RoleIcon role={p.ng_lane_2 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
-                            <select value={p.ng_lane_2 || ''} onChange={e => handleInputChange(p.id,'ng_lane_2',e.target.value)} className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer w-full text-[10px]">
-                              <option value="" className="bg-surface-subtle text-faint">なし</option>
-                              {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-danger-700">{r}</option>)}
-                            </select>
-                          </div>
-                        </td>
-                        <td className="px-1.5 py-1.5 text-center">
-                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '希望レーンの強さ（絶対このレーン / できれば / どこでもOK）' : '希望レーンの強さの変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-primary-700 font-bold outline-none focus:border-primary-edge-strong w-24 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
-                            {([[1, '絶対'], [2, 'できれば'], [3, 'どこでも']] as const).map(([n, l]) => <option key={n} value={n}>{l}</option>)}
-                          </select>
-                        </td>
-                        <td className="px-1.5 py-1.5 text-center" title="格上との対面: チェックあり=⚔️挑戦したい（MMR差200以上の相手ともレーンで当たってよい）/ なし=🛡️守ってほしい">
-                          <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-danger-700 focus:ring-danger-500/50 cursor-pointer transition-transform hover:scale-110" />
                         </td>
                       </tr>
+                      {/* 案A: アコーディオン展開行（詳細設定・レーン別MMR） */}
+                      {isExpanded && (
+                        <tr className="bg-surface-subtle/80 border-b border-border/70 animate-fade-in">
+                          <td colSpan={7} className="px-4 py-2.5">
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                              {/* レーン設定グループ */}
+                              <div className="flex flex-wrap items-center gap-2.5">
+                                {/* 第2希望 */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-muted-strong font-bold">第2希望:</span>
+                                  <RoleIcon role={prefs.secondary || '-'} className="w-3 h-3 flex-shrink-0" />
+                                  <select
+                                    value={prefs.secondary || '-'}
+                                    disabled={prefs.primary === 'ALL'}
+                                    onChange={e => handleInputChange(p.id, 'secondary_role', e.target.value)}
+                                    className="bg-transparent text-foreground-subtle outline-none cursor-pointer text-[11px] disabled:cursor-not-allowed font-medium"
+                                  >
+                                    {['-','ALL','TOP','JG','MID','ADC','SUP'].map(r => (
+                                      <option key={r} value={r} className="bg-surface text-foreground-soft">{r}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* NG 1 */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-danger-700 font-bold">NG 1:</span>
+                                  <RoleIcon role={p.ng_lane_1 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <select
+                                    value={p.ng_lane_1 || ''}
+                                    onChange={e => handleInputChange(p.id, 'ng_lane_1', e.target.value)}
+                                    className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer text-[11px]"
+                                  >
+                                    <option value="" className="bg-surface text-faint">なし</option>
+                                    {['TOP','JG','MID','ADC','SUP'].map(r => (
+                                      <option key={r} value={r} className="bg-surface text-danger-700">{r}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* NG 2 */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-danger-700 font-bold">NG 2:</span>
+                                  <RoleIcon role={p.ng_lane_2 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <select
+                                    value={p.ng_lane_2 || ''}
+                                    onChange={e => handleInputChange(p.id, 'ng_lane_2', e.target.value)}
+                                    className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer text-[11px]"
+                                  >
+                                    <option value="" className="bg-surface text-faint">なし</option>
+                                    {['TOP','JG','MID','ADC','SUP'].map(r => (
+                                      <option key={r} value={r} className="bg-surface text-danger-700">{r}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* 希望の強さ */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-muted-strong font-bold">強さ{isAdmin ? '' : '🔒'}:</span>
+                                  <select
+                                    value={p.weight || 2}
+                                    disabled={!isAdmin}
+                                    onChange={e => handleInputChange(p.id, 'weight', parseInt(e.target.value))}
+                                    title={isAdmin ? '希望レーンの強さ（絶対このレーン / できれば / どこでもOK）' : '希望レーンの強さの変更は管理者のみ可能です'}
+                                    className="bg-transparent text-primary-700 font-bold outline-none cursor-pointer text-[11px] disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    {([[1, '絶対'], [2, 'できれば'], [3, 'どこでも']] as const).map(([n, l]) => (
+                                      <option key={n} value={n} className="bg-surface text-foreground-soft">{l}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* 格上対面挑戦 */}
+                                <label className="flex items-center gap-1.5 bg-surface border border-border rounded px-2.5 py-1 cursor-pointer hover:bg-surface-hover transition shadow-2xs" title="格上との対面: チェックあり=⚔️挑戦したい（MMR差200以上の相手ともレーンで当たってよい）/ なし=🛡️守ってほしい">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!p.allow_higher}
+                                    onChange={e => handleInputChange(p.id, 'allow_higher', e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded border-border bg-surface text-danger-700 focus:ring-danger-500/50 cursor-pointer"
+                                  />
+                                  <span className="text-[11px] font-bold text-foreground-soft">⚔️ 格上挑戦</span>
+                                </label>
+                              </div>
+
+                              {/* レーン別MMR要約（SPEC 05の主要情報要件） */}
+                              {p.rates && typeof p.rates === 'object' && (
+                                <div className="flex items-center gap-2 text-[10px] bg-surface px-2.5 py-1 rounded border border-border font-mono text-muted-strong shadow-2xs">
+                                  <span className="font-bold text-foreground-soft text-[11px]">レーン別MMR:</span>
+                                  {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => (
+                                    <span key={role} className="flex items-center gap-0.5">
+                                      <span className="font-semibold text-muted">{role}:</span>
+                                      <span className="font-bold text-foreground">{p.rates[role] ?? '-'}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </Fragment>
                   );
                 })}
                 {filteredPlayers.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="p-8 text-center text-muted-strong">
+                    <td colSpan={7} className="p-8 text-center text-muted-strong">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <span className="text-2xl">🔍</span>
                         <span className="text-sm font-bold text-foreground-subtle">条件に一致するプレイヤーが見つかりません</span>
