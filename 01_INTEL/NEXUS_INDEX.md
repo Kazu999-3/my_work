@@ -68,7 +68,7 @@
   - YouTube動画の文字起こしからAIが自動生成した、43チャンピオン・174本の実戦動画解析マスターインデックス。
   - 旧サブ書庫 `02_FACTORY/bible/kirei_bible/` は2026-09-24に本書庫へ統合済み（字幕取得失敗の24本はファイルのみ移動し、INDEXには未掲載）。
 - **[LoL 戦略・環境分析インデックス (_LOL/INDEX.md)](file:///d:/my_work/01_INTEL/_LOL/INDEX.md)**: DNA（思考哲学）・PULSE（リアルタイム環境・Lolalytics）の総合書庫。
-- **[全チャンピオン戦術バイブル総合索引 (tactics/INDEX.md)](file:///d:/my_work/01_INTEL/tactics/INDEX.md)**: 全175体の対面データ・パワースパイク完全網羅マスター索引。
+- **[全チャンピオン戦術バイブル総合索引 (tactics/INDEX.md)](file:///d:/my_work/01_INTEL/tactics/INDEX.md)**: 全173体（公式DataDragon完全準拠）の対面データ・パワースパイク完全網羅マスター索引。
 - **[戦術インテルライブラリ](file:///d:/my_work/01_INTEL/tactics/)**:
   - **実戦バイブル (主力プール・全18体配備完了 / 全体Blueprint完備)**:
     - **🌲 JG/TOP主力 (プロ実演クリップ搭載 - 13体)**:

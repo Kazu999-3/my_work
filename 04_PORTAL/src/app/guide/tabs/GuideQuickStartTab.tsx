@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { NEW_PLAYER_INITIAL_COINS, COIN_UNIT } from '../../../lib/constants/rewards';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -106,7 +107,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
                 登録完了のメリット
               </div>
               <p>・過去ランク自動取得＆初期MMR算出</p>
-              <p>・初期 <strong className="text-primary-700 font-bold">1,000コイン</strong> の自動付与</p>
+              <p>・初期 <strong className="text-primary-700 font-bold">{NEW_PLAYER_INITIAL_COINS.toLocaleString()}{COIN_UNIT}</strong> の自動付与</p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-surface-subtle">

@@ -10,6 +10,7 @@ import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
 import { SecretMatchmakerModal, formatOfferDate } from './SecretMatchmakerModal';
 import { toast } from '../../components/Toaster';
+import { MENTORSHIP_FIRST_PROFILE_BONUS_COINS, COIN_UNIT } from '../../lib/constants/rewards';
 import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
 
 
@@ -1250,7 +1251,7 @@ export default function MentorshipHubPanel() {
                     : '師匠としての自己紹介カードを登録して、教えたい弟子を募集しよう！'}
                 </h4>
                 <p className="text-[11px] text-muted font-medium">
-                  得意チャンプや目標を登録すると、あなたにぴったりのバディが自動表示されます（初回ボーナス +500コイン🎁）。
+                  得意チャンプや目標を登録すると、あなたにぴったりのバディが自動表示されます（初回ボーナス +{MENTORSHIP_FIRST_PROFILE_BONUS_COINS}{COIN_UNIT}🎁）。
                 </p>
               </div>
             </div>

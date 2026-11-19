@@ -404,7 +404,9 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         </div>
         <div>
           <h2 className="text-2xl font-extrabold text-foreground">直近の試合履歴</h2>
-          <p className="text-faint font-medium text-sm">最新30件の試合結果とMMR変動履歴</p>
+          <p className="text-faint font-medium text-sm">
+            {matches.length > 0 ? `最新${matches.length}件の試合結果とMMR変動履歴` : '試合結果とMMR変動履歴'}
+          </p>
         </div>
       </div>
 
@@ -811,7 +813,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               onClick={handleLoadMore}
               className="px-6 py-2.5 rounded-xl bg-surface hover:bg-surface-hover border border-border text-xs font-black text-foreground shadow-xs transition cursor-pointer disabled:opacity-50"
             >
-              {loadingMore ? '読み込み中...' : 'さらに過去の試合を読み込む (+30件) ➔'}
+              {loadingMore ? '読み込み中...' : 'さらに過去の試合を読み込む (+50件) ➔'}
             </button>
           </div>
         )}

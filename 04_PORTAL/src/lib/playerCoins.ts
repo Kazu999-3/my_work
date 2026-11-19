@@ -1,4 +1,5 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
+import { NEW_PLAYER_INITIAL_COINS } from './constants/rewards';
 
 export interface PlayerRecord {
   id?: number;
@@ -24,18 +25,18 @@ export interface PlayerRecord {
  * プレイヤーレコードから所持コイン数を安全に取得
  */
 export function getPlayerCoins(player: any): number {
-  if (!player) return 1000;
+  if (!player) return NEW_PLAYER_INITIAL_COINS;
   const colCoins = typeof player.coins === 'number' ? player.coins : null;
   const prefCoins = typeof player.role_preferences?.coins === 'number' ? player.role_preferences.coins : null;
   const metaCoins = typeof player.metadata?.coins === 'number' ? player.metadata.coins : null;
 
-  // colCoins が 1000 以外で存在する場合はカラムの最新値を優先
-  if (colCoins !== null && colCoins !== 1000) return colCoins;
+  // colCoins が初期値以外で存在する場合はカラムの最新値を優先
+  if (colCoins !== null && colCoins !== NEW_PLAYER_INITIAL_COINS) return colCoins;
   // 過去のJSONにコイン記録（デイリー報酬やベット等）がある場合はそれを優先
   if (prefCoins !== null) return prefCoins;
   if (metaCoins !== null) return metaCoins;
   if (colCoins !== null) return colCoins;
-  return 1000;
+  return NEW_PLAYER_INITIAL_COINS;
 }
 
 /**
@@ -72,7 +73,7 @@ export async function findOrCreatePlayer(params: {
     return {
       name: cleanName || 'Player',
       discord_id: cleanDiscordId,
-      coins: 1000,
+      coins: NEW_PLAYER_INITIAL_COINS,
       inventory: [],
       highest_rank: defaultRank,
     };
@@ -168,10 +169,10 @@ export async function findOrCreatePlayer(params: {
     return null;
   }
 
-  // 4. 見つからない場合は新規プレイヤーとして初期化 (1000コイン付与)
+  // 4. 見つからない場合は新規プレイヤーとして初期化 (初期コイン付与)
   const newPlayerName = cleanName || `Player_${cleanDiscordId?.slice(-4) || Math.floor(Math.random() * 10000)}`;
   const initialPrefs = {
-    coins: 1000,
+    coins: NEW_PLAYER_INITIAL_COINS,
     inventory: [],
     createdVia: 'auto_provision_casino',
   };
@@ -179,7 +180,7 @@ export async function findOrCreatePlayer(params: {
   const newPlayerData: any = {
     name: newPlayerName,
     discord_id: cleanDiscordId,
-    coins: 1000,
+    coins: NEW_PLAYER_INITIAL_COINS,
     inventory: [],
     highest_rank: defaultRank,
     mmr: 1200,
@@ -251,14 +252,14 @@ export async function findOrCreatePlayer(params: {
       if (fbInserted) {
         return {
           ...fbInserted,
-          coins: 1000,
+          coins: NEW_PLAYER_INITIAL_COINS,
           inventory: [],
         };
       }
     } else if (inserted) {
       return {
         ...inserted,
-        coins: 1000,
+        coins: NEW_PLAYER_INITIAL_COINS,
         inventory: [],
       };
     }

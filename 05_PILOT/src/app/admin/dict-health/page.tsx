@@ -223,7 +223,7 @@ function DictHealthDashboardContent() {
         
         <AdminNavHeader
           title="辞典ヘルス監査センター"
-          subtitle="全175体のチャンピオン辞典データの鮮度・人間検証ステータス・AI更新を管理します。"
+          subtitle="全173体のチャンピオン辞典データの鮮度・人間検証ステータス・AI更新を管理します。"
           action={
             <button
               onClick={() => fetchHealth()}

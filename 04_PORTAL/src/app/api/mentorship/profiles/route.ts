@@ -7,6 +7,7 @@ import { sendErrorNotification } from '../../../../lib/discordNotify';
 import { notifyNewMentorshipProfile, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
 
 import { getPlayerTier, ExperienceTier } from '../../../../lib/playerTier';
+import { MENTORSHIP_FIRST_PROFILE_BONUS_COINS } from '../../../../lib/constants/rewards';
 
 export const dynamic = 'force-dynamic';
 
@@ -463,7 +464,7 @@ export async function POST(request: Request) {
       if (!isAdminProxyEdit && isFirstCreationEver && player && bonusClaimed === true) {
         const { getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
         const currentCoins = getPlayerCoins(player);
-        const newCoins = currentCoins + 500;
+        const newCoins = currentCoins + MENTORSHIP_FIRST_PROFILE_BONUS_COINS;
         await updatePlayerCoinsAndInventory({
           player,
           newCoins,

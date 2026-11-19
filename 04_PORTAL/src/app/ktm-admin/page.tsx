@@ -22,6 +22,7 @@ import AdminExperienceSummary from "./_admin/AdminExperienceSummary";
 import RosterFilters from "./_admin/RosterFilters";
 import PlayerCardsMobile from "./_admin/PlayerCardsMobile";
 import PlayerTableDesktop from "./_admin/PlayerTableDesktop";
+import { normalizeRole } from "../../lib/roleUtils";
 
 // KTM管理ダッシュボード（名簿・MMR編集 / 戦績履歴）。状態は _admin/ のフック（名簿・同期）が持ち、ここは画面の組み立てだけ。
 // 2026-10-07: 1,885行から分割。あわせて以下を修正:
@@ -133,7 +134,8 @@ export default function KtmAdminPage() {
         if (!nameMatch && !ignMatch && !discordMatch) return false;
       }
       const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
-      if (roleFilter && prefs.primary !== roleFilter) return false;
+      const normPrimary = normalizeRole(prefs.primary) || prefs.primary;
+      if (roleFilter && normPrimary !== roleFilter) return false;
       if (statusFilter) {
         if (statusFilter === 'active' && (!p.is_active || p.is_spectator_fixed)) return false;
         if (statusFilter === 'spectator' && !p.is_spectator_fixed) return false;

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, User, Trophy, Activity, Shield, Trees, Zap, Target, Heart, Sparkles, SlidersHorizontal } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { normalizeRole } from "../../lib/roleUtils";
 
 const ROLE_ICONS: Record<string, any> = {
   TOP: Shield,
@@ -54,8 +55,10 @@ export default function RosterPanel() {
         (statusFilter === "INACTIVE" && !isActive);
 
       const prefs = p.role_preferences || {};
-      const primary = (prefs.primary || "").toUpperCase();
-      const secondary = (prefs.secondary || "").toUpperCase();
+      const primaryNorm = normalizeRole(prefs.primary);
+      const secondaryNorm = normalizeRole(prefs.secondary);
+      const primary = (primaryNorm || prefs.primary || "").toUpperCase();
+      const secondary = (secondaryNorm || prefs.secondary || "").toUpperCase();
       
       const matchRole =
         roleFilter === "ALL" ||
@@ -151,8 +154,8 @@ export default function RosterPanel() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredPlayers.map((player) => {
           const prefs = player.role_preferences || {};
-          const primaryRole = prefs.primary || "FILL";
-          const secondaryRole = prefs.secondary || "FILL";
+          const primaryRole = normalizeRole(prefs.primary) || prefs.primary || "FILL";
+          const secondaryRole = normalizeRole(prefs.secondary) || prefs.secondary || "FILL";
           const RoleIcon = ROLE_ICONS[primaryRole] || User;
           const isActive = player.is_active !== false;
 
