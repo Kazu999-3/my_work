@@ -12,6 +12,10 @@ const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd
 
 const DASHBOARD_TITLE = '🎒 KTM 教えて先輩！リアルタイム相談掲示板';
 
+// 同一ペアへの並行送信防止用インメモリロック (mentorId:pupilId -> timestamp)
+const recentMatchIntroLocks = new Map<string, number>();
+
+
 /**
  * 師弟募集用チャンネルを取得、存在しなければ自動作成
  */
@@ -276,7 +280,12 @@ export async function notifyNewMentorshipProfile(params: {
   profile: any;
   isUpdate?: boolean;
 }): Promise<boolean> {
-  const { profile } = params;
+  const { profile, isUpdate } = params;
+
+  // 🛡️ プロフィール更新時（isUpdate === true）は、AI仲人推薦をトリガーしない（連投防止）
+  if (isUpdate) {
+    return true;
+  }
 
   try {
     // 🤖 AI仲人チェック: 登録されたプロフィールと相性の良い相手（70%以上）がいれば自動推薦（お見合い提案）
@@ -317,6 +326,41 @@ export async function notifyAiMentorshipMatch(params: {
   try {
     const mentor = profileA.role_type === 'MENTOR' ? profileA : profileB;
     const pupil = profileA.role_type === 'PUPIL' ? profileA : profileB;
+
+    if (!mentor?.discord_id || !pupil?.discord_id) return false;
+
+    // 🛡️ 1. 並行実行・即時重複送信防止（インメモリロック: 15分間）
+    const pairKey = `${mentor.discord_id}:${pupil.discord_id}`;
+    const now = Date.now();
+    const lastLockTime = recentMatchIntroLocks.get(pairKey) || 0;
+    if (now - lastLockTime < 15 * 60 * 1000) {
+      console.log(`[discordMentorship] AI仲人通知スキップ(メモリロック中): ${pairKey}`);
+      return false;
+    }
+
+    // 🛡️ 2. DB履歴チェック（過去30日以内に同一ペアへの紹介・マッチ履歴があれば再推薦しない）
+    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: existingMatch } = await supabase
+      .from('mentorship_matches')
+      .select('id, started_at, status')
+      .or(`and(mentor_discord_id.eq.${mentor.discord_id},pupil_discord_id.eq.${pupil.discord_id}),and(mentor_discord_id.eq.${pupil.discord_id},pupil_discord_id.eq.${mentor.discord_id})`)
+      .gte('started_at', thirtyDaysAgo)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingMatch) {
+      console.log(
+        `[discordMentorship] AI仲人通知スキップ: 過去30日以内に推薦・マッチ履歴が存在します (${mentor.player_name} ✕ ${pupil.player_name})`
+      );
+      return false;
+    }
+
+    // ロックをセット
+    recentMatchIntroLocks.set(pairKey, now);
+    if (recentMatchIntroLocks.size > 200) {
+      const oldestKey = recentMatchIntroLocks.keys().next().value;
+      if (oldestKey) recentMatchIntroLocks.delete(oldestKey);
+    }
 
     const mentorMention = mentor.discord_id ? `<@${mentor.discord_id}>` : `**${mentor.player_name}**`;
     const pupilMention = pupil.discord_id ? `<@${pupil.discord_id}>` : `**${pupil.player_name}**`;
@@ -385,6 +429,28 @@ export async function notifyAiMentorshipMatch(params: {
         ],
       }),
     });
+
+    if (res.ok) {
+      // 🛡️ 3. 推薦履歴を mentorship_matches に記録（ステータス: PENDING, ノートに isAiMatchmakerIntro）
+      // これにより、以降30日間は同一ペアへのAI仲人連投が完全にブロックされる
+      await supabase
+        .from('mentorship_matches')
+        .insert({
+          mentor_profile_id: mentor.id || null,
+          pupil_profile_id: pupil.id || null,
+          mentor_discord_id: mentor.discord_id,
+          pupil_discord_id: pupil.discord_id,
+          status: 'PENDING',
+          notes: JSON.stringify({
+            isAiMatchmakerIntro: true,
+            matchScore: matchResult.score,
+            reasons: matchResult.reasons,
+            recommendedAt: new Date().toISOString(),
+          }),
+          started_at: new Date().toISOString(),
+        })
+        .catch((e: any) => console.warn('[discordMentorship] 推薦履歴の記録に失敗（通知は送信済み）:', e));
+    }
 
     return res.ok;
   } catch (err) {
