@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { LaneKey, LANE_CONFIG } from './laneDetector';
 import { getChampionNameJa } from './championRoster';
 import { callGeminiWithRetry } from './geminiClient';
+import { callHybridLlm } from './ollamaClient';
 
 export interface LaneGuideMergeArticle {
   id: number;
@@ -50,7 +51,7 @@ ${rawBody.slice(0, 15000)}
 
   // ★ 2026-10-06: 以前は失敗時に記事本文をそのまま返し、レーンガイドへ全文（1万字超・記事の大見出し込み）が
   // 「成功」として貼り付けられていた（Gemini の 503 混雑時に COMMON/JG で実際に発生）。失敗は呼び出し元へ伝える。
-  const res = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 3500 });
+  const res = await callHybridLlm(prompt, { temperature: 0.2, maxOutputTokens: 3500 });
   const cleaned = (res || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
   if (!cleaned) throw new Error('AIの応答が空でした');
   return demoteHeadings(cleaned);

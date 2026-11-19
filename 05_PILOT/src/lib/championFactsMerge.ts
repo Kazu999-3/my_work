@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { callGeminiWithRetry } from './geminiClient';
+import { callHybridLlm } from './ollamaClient';
 import { getChampionNameJa } from './championRoster';
 import { recordLibraryClaim } from './championFactClaims';
 
@@ -94,7 +95,11 @@ ${String(body).slice(0, 15000)}
   "added": ["今回追記した具体的な重要知見の要点を箇条書きで1〜5項目"]
 }`;
 
-  const raw = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 6000 });
+  const raw = await callHybridLlm(prompt, {
+    temperature: 0.2,
+    maxOutputTokens: 6000,
+    responseMimeType: 'application/json',
+  });
   let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
   const s = cleaned.indexOf('{');
   const e = cleaned.lastIndexOf('}');

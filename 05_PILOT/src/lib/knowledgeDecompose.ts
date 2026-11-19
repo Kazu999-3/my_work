@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { callGemini } from './geminiClient';
+import { callHybridLlm } from './ollamaClient';
 import { resolveRosterChampion, resolveRosterChampions, getChampionNameJa } from './championRoster';
 import { LaneKey, LANE_CONFIG } from './laneDetector';
 import { integrateArticles, IntegrateArticle } from './knowledgeIntegrate';
@@ -94,7 +95,7 @@ ${parentChampNameJa ? `【記事の主役チャンピオン: ${parentChampNameJa
   ]
 }`;
 
-  const resText = await callGemini(prompt, {
+  const resText = await callHybridLlm(prompt, {
     temperature: 0.2,
     maxOutputTokens: 6000,
     responseMimeType: 'application/json',
