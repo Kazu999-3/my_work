@@ -336,15 +336,13 @@ def check_integration_backlog(r: Report, cur):
 
 
 def check_soloq_coach(r: Report, cur):
+    # 2026-11-02: poll-soloq-coach は Vercel無料枠保護のため停止（migration 124適用済）。
+    # 定期自動ポーリングではなくオンデマンド運用のため、最新試合との日数差によるWARNを廃止。
     newest_game, newest_analysis = q1(cur, """
         select (select max(game_start_timestamp) from soloq_match_history),
                (select max(created_at) from coach_analyses)
     """)
-    if newest_game and newest_analysis and newest_game - newest_analysis > timedelta(days=1):
-        r.add(WARN, "ソロQ自動振り返り",
-              f"最新の試合({fmt_age(newest_game)})より自動振り返り({fmt_age(newest_analysis)})が1日以上古い")
-    else:
-        r.add(OK, "ソロQ自動振り返り", f"最新の試合 {fmt_age(newest_game)}・最新の振り返り {fmt_age(newest_analysis)}")
+    r.add(OK, "ソロQ振り返り", f"最新試合 {fmt_age(newest_game)}・最新分析 {fmt_age(newest_analysis)} (定期実行は停止中・オンデマンド運用)")
 
 
 # pg_cron（migration 93）で動かしている定期呼び出し。消えた・止まった・呼び出し先がエラーを返す、を検知する。
