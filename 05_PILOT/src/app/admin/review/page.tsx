@@ -199,7 +199,19 @@ export default function ReviewPage() {
     const s = new Set(ids);
     setItems((prev) => {
       const nextItems = prev.filter((i) => !s.has(i.id));
-      setFocusedIndex((cur) => (nextItems.length === 0 ? -1 : Math.min(cur, nextItems.length - 1)));
+      setFocusedIndex((cur) => {
+        if (nextItems.length === 0) return -1;
+        const nextIdx = Math.min(cur, nextItems.length - 1);
+        // ⚡ 次のカードへ自動スクロール連動（Aキー連打・連続承認のテンポを最大化）
+        setTimeout(() => {
+          const nextTarget = nextItems[nextIdx];
+          if (nextTarget) {
+            const el = document.querySelector(`[data-review-card="${nextTarget.id}"]`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 50);
+        return nextIdx;
+      });
       return nextItems;
     });
     setTotal((t) => Math.max(0, t - ids.length));

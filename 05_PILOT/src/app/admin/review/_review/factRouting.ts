@@ -3,6 +3,31 @@ import type { ChampionFactPreview, FactFieldDiff, LineDestination, PreviewResult
 // 項目マージ（強み・弱み等）の新規追記行の判定と、承認時に送る内容の組み立て。画面に依存しない処理だけを置く。
 // 2026-10-07: page.tsx から分割（処理は分割前と同じ）。
 
+export const ESTIMATED_FACT_SECTIONS = [
+  { key: 'power_spikes', label: '⚡ パワースパイク', icon: '⚡', keywords: ['lv', 'レベル', '分', 'スパイク', 'パワースパイク', '時間帯', '序盤', '中盤', '終盤', 'コア'] },
+  { key: 'build_runes', label: '🛡️ ビルド/ルーン', icon: '🛡️', keywords: ['ルーン', 'ビルド', '靴', 'アイテム', '初手', 'ソーサラー', 'ヘクステック', 'ロケットベルト', '購入', '積む'] },
+  { key: 'strengths', label: '💪 強み/立ち回り', icon: '💪', keywords: ['強み', '長所', '得意', 'バースト', 'ダメージ', '一方的', 'トレード', 'キルライン', 'キャリー'] },
+  { key: 'weaknesses', label: '⚠️ 弱み/注意点', icon: '⚠️', keywords: ['弱み', '短所', '苦手', '脆い', 'ガンク', '警戒', '注意', '失速', 'リスク', '罠'] },
+  { key: 'pick_recommendation', label: '🎯 先出し/判断', icon: '🎯', keywords: ['先出し', '後出し', 'カウンター', 'ピック', '構成', 'マッチアップ', '相性'] },
+] as const;
+
+export interface EstimatedCategory {
+  key: string;
+  label: string;
+  icon: string;
+}
+
+/** 記事テキストから、辞典(champion_facts)のどの項目にマージされるかを事前推定（プレビュー不要化） */
+export function estimateFactCategories(text: string): EstimatedCategory[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  return ESTIMATED_FACT_SECTIONS.filter((sec) => sec.keywords.some((kw) => lower.includes(kw))).map((s) => ({
+    key: s.key,
+    label: s.label,
+    icon: s.icon,
+  }));
+}
+
 /** 項目マージ差分で行が新規追加されたかを判定 */
 export function isLineNewlyAdded(line: string, before: string, beforeSet: Set<string>): boolean {
   const trimmed = line.trim();

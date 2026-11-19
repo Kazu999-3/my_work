@@ -21,8 +21,10 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
+  Crown,
 } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
+import { estimateFactCategories } from './factRouting';
 import { extractArticleSummary, stripArticleChrome } from '@/lib/articleDensity';
 import { detectChampionsFromText } from '@/lib/championDetector';
 import { calculateFreshness } from '@/lib/patchFreshness';
@@ -88,6 +90,9 @@ export default function ReviewItemCard({
   const cleanBody = useMemo(() => stripArticleChrome(item.content), [item.content]);
   const detected = useMemo(() => detectChampionsFromText(item.title, summary), [item.title, summary]);
   const freshness = useMemo(() => calculateFreshness(item.title, item.content, item.created_at), [item.title, item.content, item.created_at]);
+  const estimatedFactCategories = useMemo(() => {
+    return estimateFactCategories(`${item.title} ${item.content || ''}`);
+  }, [item.title, item.content]);
 
   // 📺 YouTube動画ID抽出 ＆ プレイリスト（PLPiEXmmDzgcs）連携
   const targetPlaylistId = 'PLPiEXmmDzgcs';
@@ -178,6 +183,25 @@ export default function ReviewItemCard({
                 <span className="opacity-75">[A:承認 X:却下 E:詳細]</span>
               </span>
             )}
+
+            {/* 👑 AI太鼓判バッジ（即承認推奨 / 要確認 / 見送り候補） */}
+            {item.density?.triage === 'approve' && (
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-500/80 bg-emerald-950/80 text-emerald-300 flex items-center gap-1 shadow-sm">
+                <Crown className="w-3 h-3 text-emerald-400" />
+                <span>👑 即承認推奨</span>
+              </span>
+            )}
+            {item.density?.triage === 'check' && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-600/70 bg-amber-950/70 text-amber-300 flex items-center gap-1">
+                <span>👀 要確認</span>
+              </span>
+            )}
+            {item.density?.triage === 'skip' && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-600/70 bg-rose-950/70 text-rose-300 flex items-center gap-1">
+                <span>⚠️ 見送り候補</span>
+              </span>
+            )}
+
             {/* 🕒 パッチ鮮度バッジ（ジョージぱぱ原則） */}
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shadow-sm flex items-center gap-1 ${
@@ -280,41 +304,61 @@ export default function ReviewItemCard({
                 ✂️ 複数チャンプ ({item.multiReason || '要分解'})
               </span>
             )}
+          </div>
 
-            {/* 🎯 統合先＆対面バッジ */}
-            {(() => {
-              if (item.isMultiChampion) {
-                return (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-teal-300 border-teal-700/60 bg-teal-950/40 flex items-center gap-1">
-                    ✂️ 自動分解推奨
+          {/* 🧭 インライン統合ルーティング（プレビュー不要で即決できるゼロクリック可視化） */}
+          {(() => {
+            const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
+            return (
+              <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-zinc-950/80 border border-zinc-800/90 text-xs mt-1.5 shadow-xs">
+                <span className="font-bold text-zinc-400 text-[11px] flex items-center gap-1">
+                  <Compass className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">教本統合ルート:</span>
+                </span>
+
+                {/* 1. チャンピオン教本 */}
+                {item.isMultiChampion ? (
+                  <span className="px-2 py-0.5 rounded-md font-bold bg-teal-950/70 border border-teal-500/50 text-teal-300 flex items-center gap-1 text-[11px]">
+                    ✂️ 各チャンピオンへ自動分解
                   </span>
-                );
-              }
-              const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
-              if (targetChamp) {
-                return (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-700/60 bg-emerald-950/40 flex items-center gap-1 shadow-sm">
+                ) : targetChamp ? (
+                  <span className="px-2 py-0.5 rounded-md font-bold bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 flex items-center gap-1 text-[11px]">
                     🎯 {targetChamp}教本
                   </span>
-                );
-              }
-              return (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-700/60 bg-amber-950/40 flex items-center gap-1">
-                  ❓ 未定（レーン一般）
-                </span>
-              );
-            })()}
-            {(edit.enemyChampion || item.enemyChampionJa) && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-rose-300 border-rose-700/60 bg-rose-950/40 flex items-center gap-1 shadow-sm">
-                ⚔️ vs {edit.enemyChampion || item.enemyChampionJa}
-              </span>
-            )}
-            {edit.includeLaneGuide && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-blue-300 border-blue-800/60 bg-blue-950/40 flex items-center gap-1">
-                🗺️ {edit.lane}
-              </span>
-            )}
-          </div>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-md font-bold bg-amber-950/60 border border-amber-600/50 text-amber-300 text-[11px]">
+                    ❓ レーン共通マクロ
+                  </span>
+                )}
+
+                {/* 2. 対面DB */}
+                {(edit.enemyChampion || item.enemyChampionJa) && (
+                  <span className="px-2 py-0.5 rounded-md font-bold bg-rose-950/70 border border-rose-500/50 text-rose-300 flex items-center gap-1 text-[11px]">
+                    ⚔️ vs {edit.enemyChampion || item.enemyChampionJa}
+                  </span>
+                )}
+
+                {/* 3. レーン攻略バイブル */}
+                {edit.includeLaneGuide ? (
+                  <span className="px-2 py-0.5 rounded-md font-bold bg-blue-950/70 border border-blue-500/50 text-blue-300 flex items-center gap-1 text-[11px]">
+                    🗺️ {edit.lane} 攻略バイブル
+                  </span>
+                ) : null}
+
+                {/* 4. 辞典(facts)マージ推定カテゴリ */}
+                {estimatedFactCategories.length > 0 && (
+                  <div className="flex items-center gap-1 ml-auto flex-wrap">
+                    <span className="text-[10px] text-zinc-500 font-mono hidden md:inline">辞典マージ:</span>
+                    {estimatedFactCategories.map((cat) => (
+                      <span key={cat.key} className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-zinc-900 text-amber-300 border border-zinc-700/80">
+                        {cat.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* メタ情報行 */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-400">
@@ -420,16 +464,41 @@ export default function ReviewItemCard({
         </div>
       )}
 
-      {/* 3. 💡 核心要約（実戦ポイント直出し・目視判断を爆速化） */}
-      {summary && (
-        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-0.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-300">
-            <Lightbulb className="w-3 h-3 text-amber-400 shrink-0" />
-            <span>💡 核心要約（実戦ポイント）</span>
+      {/* 3. 💡 核心エッセンス要約 ＆ 上位事実箇条書き（1秒スキャン直出し） */}
+      {(summary || (item.analysis_meta?.facts && item.analysis_meta.facts.length > 0)) && (
+        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
+          <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
+            <span className="flex items-center gap-1.5">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>💡 実戦エッセンス（1秒スキャン）</span>
+            </span>
+            {item.analysis_meta?.facts && item.analysis_meta.facts.length > 0 && (
+              <span className="text-[9px] font-mono text-amber-400/80">
+                字幕事実 {item.analysis_meta.facts.length}件抽出済
+              </span>
+            )}
           </div>
-          <p className="text-xs text-amber-100/95 leading-relaxed font-medium line-clamp-2">
-            {summary}
-          </p>
+
+          {/* 字幕から取れた具体的事実（上位2〜3件）をダイレクト箇条書き表示 */}
+          {item.analysis_meta?.facts && item.analysis_meta.facts.length > 0 ? (
+            <ul className="space-y-1 text-xs text-amber-100/95 font-medium">
+              {item.analysis_meta.facts.slice(0, 3).map((f, idx) => (
+                <li key={idx} className="flex items-start gap-1.5 leading-snug">
+                  <span className="text-amber-400 font-mono text-[10px] shrink-0 mt-0.5 bg-amber-950/60 px-1 rounded border border-amber-600/40">
+                    {f.ts || '•'}
+                  </span>
+                  <span className="line-clamp-2">
+                    {f.claim}
+                    {f.numbers && <span className="text-emerald-300 ml-1 font-mono">[{f.numbers}]</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-amber-100/95 leading-relaxed font-medium line-clamp-2">
+              {summary}
+            </p>
+          )}
         </div>
       )}
 
@@ -736,12 +805,16 @@ export default function ReviewItemCard({
                   type="button"
                   onClick={() => onApprove()}
                   disabled={busy}
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-emerald-950/40 transition"
-                  title="現在の設定で即座に承認して教本へ統合 (A)"
+                  className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-md transition active:scale-95 ${
+                    item.density?.triage === 'approve'
+                      ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-950/60 ring-1 ring-emerald-400/50'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40'
+                  }`}
+                  title="プレビューなしで現在の統合ルートへ即座に教本マージ (A)"
                 >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>⚡ 即時承認（統合）</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-emerald-400 text-zinc-950 text-[10px] font-mono font-black shadow-xs">A</kbd>
+                  <Zap className="w-4 h-4 text-amber-300" />
+                  <span className="tracking-wide">⚡ 即時承認（教本統合）</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-950/80 border border-emerald-400/50 text-emerald-300 text-[10px] font-mono font-black shadow-xs">A</kbd>
                 </button>
               )}
             </>
