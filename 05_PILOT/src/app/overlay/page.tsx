@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getChampIcon } from "@/lib/ddragonClient";
-import { Shield, Swords, Coins, Eye, Activity, Clock, Target, Minimize2, Maximize2 } from "lucide-react";
+import { Shield, Swords, Coins, Eye, Activity, Clock, Target, Minimize2, Maximize2, Compass, Zap } from "lucide-react";
 import type { HabitRadarSummary } from "@/lib/habitRadar";
+import { calculateLanePriority, MacroPriorityReport } from "@/lib/lanePriorityCalculator";
 
 // 対面の癖は /api/lol/habit-radar（対面の直近試合のタイムライン実測）から、試合ごとに1回だけ取る。
 // 2026-10-16: 以前は全対面に同じ固定時刻（2:48・5:15）を出していた。実測が無い時は何も推測しない。
@@ -30,6 +31,8 @@ interface LiveGameData {
     championName: string;
     team: string;
     position: string;
+    level?: number;
+    isDead?: boolean;
     kills: number;
     deaths: number;
     assists: number;
@@ -159,7 +162,7 @@ export default function OverlayPage() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
           </span>
-          <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">Sovereign HUD: LoL試合待機中 (127.0.0.1:2999)</span>
+          <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">KTM HUD: LoL試合待機中 (127.0.0.1:2999)</span>
         </div>
       </div>
     );
@@ -170,10 +173,16 @@ export default function OverlayPage() {
   const csPerMin = me ? (me.cs / gameMin).toFixed(1) : '0.0';
 
   // 対面の特定（同じpositionの敵チームプレイヤー）
-  const myTeam = data.allPlayers?.find((p) => p.championName === me?.championName)?.team;
+  const myTeam = data.allPlayers?.find((p) => p.championName === me?.championName)?.team || 'ORDER';
   const myPos = data.allPlayers?.find((p) => p.championName === me?.championName)?.position;
   const enemy = data.allPlayers?.find((p) => p.team !== myTeam && p.position === myPos && myPos !== 'NONE');
   const csDiff = enemy && me ? me.cs - enemy.cs : null;
+
+  // 🌲 JG向け: 全レーン主導権 (Lane Prio) ＆ パワースパイク計算
+  const prioReport: MacroPriorityReport | null =
+    data.inGame && data.allPlayers && data.allPlayers.length > 0
+      ? calculateLanePriority(data.allPlayers as any, myTeam, data.gameTimeSec || 0)
+      : null;
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-transparent select-none font-sans p-4 pointer-events-none">
@@ -241,6 +250,60 @@ export default function OverlayPage() {
           </div>
         )}
       </div>
+
+      {/* 画面左上: 全レーン主導権 (Prio) ＆ パワースパイク HUD */}
+      {prioReport && (
+        <div className="absolute top-4 left-4 space-y-2 pointer-events-auto w-64">
+          <div className="rounded-2xl border border-white/20 bg-black/90 p-3 shadow-[0_8px_32px_rgba(0,0,0,0.85)] ring-1 ring-black/90 backdrop-blur-xl space-y-2">
+            <div className="flex items-center justify-between border-b border-white/15 pb-1.5 text-xs font-black text-zinc-200">
+              <span className="flex items-center gap-1.5 text-cyan-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                <Compass className="h-3.5 w-3.5" /> レーン主導権 (Prio)
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">JGレーダー</span>
+            </div>
+
+            <div className="space-y-1.5">
+              {prioReport.lanes.map((l) => {
+                const isAlly = l.prio === 'ally_prio';
+                const isEnemy = l.prio === 'enemy_prio';
+                const prioColor = isAlly
+                  ? 'text-emerald-400 bg-emerald-950/60 border-emerald-500/40'
+                  : isEnemy
+                  ? 'text-rose-400 bg-rose-950/60 border-rose-500/40'
+                  : 'text-zinc-300 bg-zinc-900/60 border-white/10';
+                const prioText = isAlly ? '味方Prio' : isEnemy ? '敵プッシュ' : '互角';
+
+                return (
+                  <div key={l.lane} className="flex items-center justify-between p-1.5 rounded-lg border border-white/10 bg-white/5 text-[11px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-mono font-black text-[10px] text-zinc-400 w-7">{l.laneLabel}</span>
+                      <span className="font-bold text-white truncate max-w-[70px]" title={l.allyChamp}>{l.allyChamp}</span>
+                      {l.spike && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/30 text-amber-300 border border-amber-500/40 font-mono font-bold flex items-center gap-0.5 animate-pulse">
+                          <Zap className="h-2.5 w-2.5" /> {l.spike}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] font-mono text-zinc-300">
+                        {l.csDiff >= 0 ? `+${l.csDiff}` : l.csDiff} CS
+                      </span>
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${prioColor}`}>
+                        {prioText}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="rounded-lg bg-cyan-950/40 border border-cyan-500/30 p-2 text-[10px] text-cyan-200 shadow-md">
+              <span className="font-bold text-cyan-300">🧭 JG方針:</span> {prioReport.overallAdvice}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 画面右上: 対面の癖 (Habit Radar) ＆ 戦術タイマー */}
       <div className="absolute top-4 right-4 space-y-2 pointer-events-auto">

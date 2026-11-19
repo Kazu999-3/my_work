@@ -6,12 +6,12 @@ import { supabase } from '@/lib/supabaseClient';
 export const dynamic = 'force-dynamic';
 
 const BASE_LANES = [
-  { key: 'COMMON', label: '🌐 全レーン共通マクロ', roleKey: 'COMMON' },
-  { key: 'TOP', label: '⚔️ TOP レーン攻略', roleKey: 'TOP' },
-  { key: 'JG', label: '🌲 JG ジャングル攻略', roleKey: 'JG' },
-  { key: 'MID', label: '⚡ MID レーン攻略', roleKey: 'MID' },
-  { key: 'ADC', label: '🏹 BOT/ADC レーン攻略', roleKey: 'BOT' },
-  { key: 'SUP', label: '🛡️ SUP サポート攻略', roleKey: 'SUP' },
+  { key: 'COMMON', label: '🌐 全レーン共通マクロバイブル', roleKey: 'COMMON' },
+  { key: 'TOP', label: '⚔️ TOP レーン攻略バイブル', roleKey: 'TOP' },
+  { key: 'JG', label: '🌲 JG ジャングル攻略バイブル', roleKey: 'JG' },
+  { key: 'MID', label: '⚡ MID レーン攻略バイブル', roleKey: 'MID' },
+  { key: 'ADC', label: '🏹 BOT (ADC) レーン攻略バイブル', roleKey: 'BOT' },
+  { key: 'SUP', label: '🛡️ SUP サポート攻略バイブル', roleKey: 'SUP' },
 ];
 
 export async function GET() {

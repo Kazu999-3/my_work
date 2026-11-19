@@ -23,7 +23,7 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
   { name: 'チャンピオン辞典', href: '/', icon: Crown },
   { name: 'note下書き', href: '/note', icon: FileText, badge: 'NEW' },
   { name: '記事の承認', href: '/admin/review', icon: ClipboardCheck },
-  { name: 'レーン攻略', href: '/lane-guides', icon: BookOpen },
+  { name: 'レーン攻略バイブル', href: '/lane-guides', icon: BookOpen },
   { name: 'AI戦術コーチ', href: '/coach', icon: Bot },
 ];
 
@@ -68,7 +68,7 @@ export default function GlobalNavbar() {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-sm tracking-wide text-white">
-                  SOVEREIGN PILOT
+                  KTM PILOT
                 </span>
                 <span className="px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 text-[10px] font-bold border border-amber-800/60 hidden sm:inline-block">
                   v2.0

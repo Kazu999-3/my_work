@@ -32,7 +32,7 @@ export default function LaneTempoHud({ currentRole, spikeValues, measuredSpikes,
                           currentRole === "SUP" ? "🛡️ SUP視界・初動指標" :
                           currentRole === "TOP" ? "⚔️ TOPウェーブ管理指標" :
                           currentRole === "MID" ? "⚡ MIDローム・テンポ指標" :
-                          "🏹 BOT/ADC指標"
+                          "🏹 BOT (ADC) 指標"
                         )}
                       </span>
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-bold border border-zinc-700">

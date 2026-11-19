@@ -21,7 +21,7 @@ export default function LiveTab({ onLiveMatchDetected }: {
   return (
     <div className="space-y-4">
       <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
-        <div className="text-xs font-black text-amber-400">Sovereign HUD（デスクトップ版）の使い方</div>
+        <div className="text-xs font-black text-amber-400">KTM HUD（デスクトップ版）の使い方</div>
         <p className="text-[11px] text-zinc-400 mt-0.5">
           HUDを起動していると、<span className="text-amber-300 font-bold">TABキー</span>で対面キルラインが表示され、チャットから敵スペル・Ultを自動検知します。
         </p>

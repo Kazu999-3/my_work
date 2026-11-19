@@ -170,7 +170,7 @@ export const LANE_OPTIONS: { key: LaneKey; label: string; icon: string }[] = [
   { key: 'TOP', label: '⚔️ TOP', icon: '⚔️' },
   { key: 'JG', label: '🌲 JG', icon: '🌲' },
   { key: 'MID', label: '⚡ MID', icon: '⚡' },
-  { key: 'ADC', label: '🏹 ADC/BOT', icon: '🏹' },
+  { key: 'ADC', label: '🏹 BOT (ADC)', icon: '🏹' },
   { key: 'SUP', label: '🛡️ SUP', icon: '🛡️' },
 ];
 

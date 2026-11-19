@@ -83,7 +83,7 @@ export function filterAndSortChampions(
       c.id.toLowerCase().includes(q) ||
       matchAlias;
 
-    const targetRoles = roleFilter === "ADC" ? ["ADC", "BOT"] : [roleFilter];
+    const targetRoles = (roleFilter === "ADC" || roleFilter === "BOT") ? ["ADC", "BOT"] : [roleFilter];
     const matchRole =
       roleFilter === "ALL" ||
       c.roles.some((r) => targetRoles.includes(r));

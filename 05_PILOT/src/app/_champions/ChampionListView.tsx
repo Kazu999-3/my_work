@@ -88,7 +88,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
               {/* ロールタブ ＆ ソートセレクター */}
               <div className="flex items-center justify-between gap-2 overflow-x-auto w-full xl:w-auto">
                 <div className="flex items-center gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800">
-                  {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map((r) => (
+                  {["ALL", "TOP", "JG", "MID", "BOT", "SUP"].map((r) => (
                     <button
                       key={r}
                       onClick={() => setRoleFilter(r)}
@@ -98,7 +98,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                           : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80"
                       }`}
                     >
-                      {r}
+                      {r === "BOT" ? "BOT (ADC)" : r}
                     </button>
                   ))}
                 </div>

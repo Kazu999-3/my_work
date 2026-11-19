@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: action === 'demo' ? '🎮 オーバーレイ（デモモード）を起動しました！' : '🎮 Sovereign HUD オーバーレイを起動しました！(LoL待機中)',
+        message: action === 'demo' ? '🎮 オーバーレイ（デモモード）を起動しました！' : '🎮 KTM HUD オーバーレイを起動しました！(LoL待機中)',
         running: true,
         pid: overlayProcess ? overlayProcess.pid : null
       });

@@ -41,7 +41,7 @@ function LoginForm() {
     <form onSubmit={submit} className="w-full max-w-sm bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-lg">
       <div className="space-y-1">
         <h1 className="text-lg font-black text-white flex items-center gap-2">
-          <Lock className="w-5 h-5 text-amber-400" /> Sovereign Pilot
+          <Lock className="w-5 h-5 text-amber-400" /> KTM PILOT
         </h1>
         <p className="text-xs text-zinc-400">合言葉を入力してください。この端末では1年間ログイン状態が保持されます。</p>
       </div>

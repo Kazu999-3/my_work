@@ -626,7 +626,7 @@ export default function OpsDashboardPage() {
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <Stat label={`辞典（本文レコード数/全${stats.totalCanonicalChampions ?? 173}体）`} value={stats.knowledge.facts} />
                 <Stat label="ライブラリ記事" value={stats.knowledge.library} />
-                <Stat label="レーンガイド" value={stats.knowledge.laneGuides} />
+                <Stat label="レーン攻略バイブル" value={stats.knowledge.laneGuides} />
                 <Stat label="対面メモ" value={stats.knowledge.matchupMemos} />
                 <Stat label="対面ログ" value={stats.knowledge.matchupLog} />
               </div>
