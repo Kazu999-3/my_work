@@ -3,6 +3,9 @@ import path from 'node:path';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    agentUpgrade: 'security',
+  },
   // 2026-10-19: 他サイトの iframe に埋め込めないようにする（クリックジャッキング対策）。
   // /overlay は OBS のブラウザソース・HUD が直接開く（iframe ではない）ので影響しない
   async headers() {
