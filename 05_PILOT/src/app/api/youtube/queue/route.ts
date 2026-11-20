@@ -235,11 +235,17 @@ export async function POST(req: NextRequest) {
 
     // プレイリストのまとめて登録（ブックマークレットがページ上の動画IDを集めて渡す）
     if (Array.isArray(body.videoIds)) {
-      return await addMany(body.videoIds, PRIORITIES.includes(body.priority) ? body.priority : 'medium', String(body.source || ''));
+      // SPEC 09: プレイリスト由来は最優先 high を既定とする
+      const defaultPriority = 'high';
+      const pri = PRIORITIES.includes(body.priority) ? body.priority : defaultPriority;
+      return await addMany(body.videoIds, pri, String(body.source || ''));
     }
 
     const { url, title } = body;
-    const priority = PRIORITIES.includes(body.priority) ? body.priority : 'medium';
+    // SPEC 09: プレイリストURLやPLソース指定時は high、通常URLは medium を既定とする（手動指定時は尊重）
+    const isPlaylistSource = url && (url.includes('list=') || String(body.source || '').includes('PL'));
+    const defaultPriority = isPlaylistSource ? 'high' : 'medium';
+    const priority = PRIORITIES.includes(body.priority) ? body.priority : defaultPriority;
 
     if (!url) {
       return NextResponse.json({ error: 'URLが必要です' }, { status: 400 });

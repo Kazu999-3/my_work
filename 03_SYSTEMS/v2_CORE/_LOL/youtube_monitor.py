@@ -362,6 +362,7 @@ def monitor_channels():
                     "title": title,
                     "url": url,
                     "status": "pending",
+                    "priority": "medium",  # SPEC 09: 特定チャンネル由来は medium を明示
                     "channel_name": ch_name,
                     "retry_count": 0,
                     "created_at": datetime.now(timezone.utc).isoformat(),
@@ -481,6 +482,7 @@ def monitor_playlists():
                     "title": title,
                     "url": url,
                     "status": "pending",
+                    "priority": "high",  # SPEC 09: プレイリスト由来は最優先 high
                     "channel_name": f"[PL] {pl_name}",
                     "retry_count": 0,
                     "created_at": datetime.now(timezone.utc).isoformat(),

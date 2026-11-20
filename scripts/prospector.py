@@ -250,7 +250,7 @@ def main() -> int:
                     "channel_name": (v["channel"] or "Unknown")[:200],
                     "url": f"https://www.youtube.com/watch?v={v['id']}",
                     "status": "pending",
-                    "priority": "high",
+                    "priority": "low",  # SPEC 09: 自動チャンプ調査は low
                     "retry_count": 0,
                     "duration_sec": v["duration"],
                     "date_added": int(time.time()),

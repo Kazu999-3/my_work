@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { championId, limit = 2, action, role, priority = 'high' } = body;
+    const { championId, limit = 2, action, role, priority = 'low' } = body; // SPEC 09: 自動チャンプ調査の既定は low (手動指定時は尊重)
 
     // ─────────────────────────────────────────────────────────
     // 一括補給アクション (action === 'batch')

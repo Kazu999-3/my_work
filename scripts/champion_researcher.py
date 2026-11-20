@@ -89,7 +89,7 @@ def enqueue_videos(champion):
                     "title": f"[ディープリサーチ] {champion} 解説動画 ({vid})",
                     "channel_name": "Unknown",
                     "status": "pending",
-                    "priority": "high",
+                    "priority": "low",  # SPEC 09: 自動チャンプ調査は low
                     "date_added": int(time.time())
                 }], prefer="return=minimal")
             except Exception as e:
