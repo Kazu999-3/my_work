@@ -24600,3 +24600,30 @@
 - `[要検証]`: YouTube Data API の OAuth 認証情報（`YOUTUBE_OAUTH_REFRESH_TOKEN` 等）を Vercel / `.env` に設定した際、114件の終端エラーがプレイリストへ退避され、`manually_closed` へ自動遷移することの実機検証。
 - `[継続ウォッチ]`: 常駐ワーカー（`run_batch_worker.py`）の自動実行サイクルにおいて、新規追加動画が解析完了するか、字幕なし動画が安全にスキップ・再試行されるかの監視。
 - `[発信候補]`: 「AIエージェントによるYouTube動画自動解析システムの障害設計：字幕なし・Shorts・非公開動画を破棄せず安全に退避・クローズするフェイルセーフアーキテクチャ」
+
+
+## 2026-11-20 (追加分: 死リンク修正 ＆ 師弟スレッド遡及ドライラン)
+
+- **【死リンク修正（恒久対策）】(`04_PORTAL/src/lib/discordMentorship.ts`, `04_PORTAL/src/components/NotificationBell.tsx`, `03_SYSTEMS/ktm_bot/src/config.js`, `03_SYSTEMS/ktm_bot/src/handlers/buttons/portalBasics.js`, `scripts/youtube_worker.py`)**:
+  - #1: 師弟ペア成立時のDiscordスレッド歓迎メッセージ内のリンク先を `https://ktm-pilot.vercel.app/coach` へ修正（`PILOT_BASE_URL` 定数を分離）。
+  - #2: KTM Bot の記事承認ボタン「ポータルで確認」の飛び先を、実在する新鋭承認画面 `https://ktm-pilot.vercel.app/admin/review`（ボタン名:「記事承認画面で確認」）へ修正。
+  - #3: ポータル側 NotificationBell に `resolveNotificationUrl` を導入し、Pilot 専用ページ（`/coach`, `/admin/dict-health` 等）は Pilot の絶対URL（`https://ktm-pilot.vercel.app`）へ自動振り替えするよう改修。
+  - 要確認: `scripts/youtube_worker.py` の `PORTAL_URL` デフォルト値を現行ポータル（`https://my-work-8jbd.vercel.app`）に是正し、記事承認ボタンは Pilot の `/admin/review` へ接続。
+  - ビルド検証: `04_PORTAL` のローカルビルド（TypeScript、全64ページの静的生成）が exit code 0 で完全成功。リモートへプッシュ完了。
+
+- **【師弟スレッド死リンク遡及修正のドライラン】(`scripts/dry_run_fix_dead_links.py`)**:
+  - フォーラムチャンネル（1524740558550073496）のスレッドを実測探索。
+  - 対象スレッド総数: **2件**（全てアクティブスレッド、アーカイブ済みスレッドは0件）。
+    1. `【相談・交流】とんぺい(先輩) × kira(後輩)` (ID: `1573204662771912808`)
+    2. `【相談・交流】show(先輩) × Akitan.(後輩)` (ID: `1562662281970589779`)
+  - 変更前後の差分確認: 埋め込み内の `https://my-work-8jbd.vercel.app/coach` ➔ `https://ktm-pilot.vercel.app/coach` のみ置換対象として正常抽出。
+  - 指示書およびユーザー指示に従い、本適用（書き換え）を行わずドライラン結果の報告にて待機。
+
+**再利用可能な3行ナレッジ**:
+1. **「Discord API v10 でアクティブスレッドを列挙する際は、チャンネルエンドポイントではなく `GET /guilds/{guild.id}/threads/active` を叩いて親チャンネルID（`parent_id`）で絞り込む必要がある（チャンネル単位エンドポイントは404となる）。」**
+2. **「Discord API は標準の `Python-urllib` User-Agent を Cloudflare/ボット保護により 403 遮断するため、`DiscordBot (https://..., 1.0)` のように正規フォーマットの UA ヘッダーを常に付与する。」**
+3. **「Next.js (Turbopack) のクライアントコンポーネントがサーバー専用モジュール（`net`/`tls`等を含むライブラリ）に巻き込まれないよう、共用アルゴリズムから型情報のみ（`import type`）を取り出すことでバンドル肥大化とビルド破壊を防止できる。」**
+
+- `[要検証]`: ユーザー承認後の師弟スレッド2件の本適用（PATCH）実行と、Discord上でのリンク着地確認。
+- `[継続ウォッチ]`: 新規ペア成立時のスレッド投稿で、正常に `ktm-pilot.vercel.app/coach` が入ること。
+- `[発信候補]`: 「複数アプリ（旧ポータル・新鋭パイロット・Discord Bot）間での画面移行に伴う死リンク連鎖の検知と、Discordスレッドの安全な遡及置換アーキテクチャ」
