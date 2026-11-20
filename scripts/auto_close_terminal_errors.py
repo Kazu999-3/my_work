@@ -119,7 +119,7 @@ def add_video_to_playlist(video_id: str, playlist_id: str, access_token: str) ->
 def add_via_portal_api(video_id: str, playlist_id: str) -> Tuple[bool, str]:
     """ポータルの既存 API (/api/youtube/playlist/add) を経由して追加を試みる"""
     portal_url = (
-        os.environ.get("PORTAL_URL")
+        os.environ.get("PILOT_URL")
         or os.environ.get("NEXT_PUBLIC_SITE_URL")
         or "https://ktm-pilot.vercel.app"
     ).rstrip("/")
@@ -134,9 +134,10 @@ def add_via_portal_api(video_id: str, playlist_id: str) -> Tuple[bool, str]:
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
-    pilot_token = os.environ.get("PILOT_SECRET_TOKEN")
-    if pilot_token:
-        headers["Authorization"] = f"Bearer {pilot_token}"
+    _, sb_key = get_supabase_client()
+    auth_token = os.environ.get("PILOT_SECRET_TOKEN") or sb_key
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
 
     req = urllib.request.Request(
         api_url,

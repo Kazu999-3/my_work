@@ -5,6 +5,7 @@ import {
   decodeAndVerifySession,
   slideSessionCookie,
   verifyToken,
+  safeTimingCompare,
 } from './lib/tokenAuth';
 
 // 05_PILOT は個人用コクピットだが本番URLが公開されており、API は service role キーで
@@ -38,8 +39,15 @@ export async function proxy(request: NextRequest) {
     nextUrl.pathname === '/api/youtube/playlist/add'
   ) {
     const auth = request.headers.get('authorization') || '';
-    if (auth.startsWith('Bearer ') && verifyToken(auth.slice(7))) {
-      return NextResponse.next();
+    if (auth.startsWith('Bearer ')) {
+      const token = auth.slice(7).trim();
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+      if (
+        verifyToken(token) ||
+        (serviceKey && safeTimingCompare(token, serviceKey.trim()))
+      ) {
+        return NextResponse.next();
+      }
     }
   }
 
