@@ -91,8 +91,13 @@ async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
     if (facts) {
       const isUsable = (v: any) =>
         typeof v === 'string' && v.trim() && !v.includes('情報不足') && !v.includes('判断できません');
-      // 2026-11-20: 見出しで後続文をバッサリ切り落とさず、全文を綺麗にトリムして返す（途切れ解消）
-      const cleanText = (v: string) => v.trim();
+      // SPEC 10: 見出しで後続文を切り落とさず、文頭の「また、」「さらに、」などの断片化接続詞を自然に除去
+      const cleanText = (v: string) => {
+        let t = v.trim();
+        // 文頭の接続詞（また、/さらに、/そして、/なお、/・等）を整形
+        t = t.replace(/^(?:また[、,\s]|さらに[、,\s]|そして[、,\s]|なお[、,\s]|・\s*)+/g, '');
+        return t.trim();
+      };
 
       if (isUsable(facts.weaknesses)) result.weaknesses = cleanText(facts.weaknesses);
       if (isUsable(facts.counter_champions)) {
@@ -130,47 +135,146 @@ async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
 async function fetchClearTimes(myChamp: string, enemyChamp: string): Promise<{ my: number | null; enemy: number | null }> {
   if (!supabase) return { my: null, enemy: null };
   try {
+    const normMy = normalizeChampionName(myChamp) || myChamp;
+    const normEnemy = normalizeChampionName(enemyChamp) || enemyChamp;
     const { data } = await supabase
       .from('champion_jungle_timing_agg')
       .select('champion, external_fastest_clear_sec')
-      .in('champion', [myChamp, enemyChamp]);
-    const find = (c: string) => (data || []).find((r: any) => String(r.champion).toLowerCase() === c.toLowerCase())?.external_fastest_clear_sec ?? null;
+      .in('champion', [myChamp, enemyChamp, normMy, normEnemy])
+      .order('champion', { ascending: true });
+
+    const find = (c: string) => {
+      const target = c.toLowerCase();
+      const norm = (normalizeChampionName(c) || c).toLowerCase();
+      const row = (data || []).find((r: any) => {
+        const rc = String(r.champion || '').toLowerCase();
+        return rc === target || rc === norm;
+      });
+      // 厳格な数値検証: 実データのないものや異常値は null を返し推測値は捏造しない
+      const sec = row?.external_fastest_clear_sec;
+      return typeof sec === 'number' && sec > 60 && sec < 300 ? sec : null;
+    };
     return { my: find(myChamp), enemy: find(enemyChamp) };
   } catch {
     return { my: null, enemy: null };
   }
 }
 
+function getGenericPhasesByLane(lane: string) {
+  const currentLane = (lane || 'JUNGLE').toUpperCase();
+  if (currentLane === 'JUNGLE') {
+    return [
+      {
+        phase: "Phase 1 (Lv1〜2)",
+        title: "安全なキャンプ巡回と最速Lv3ルート確立",
+        action: "味方ボットのリーシュを受けて効率的なフルクリアを開始。逆サイドからのインベードを警戒しながらHPを8割以上維持。",
+        win_trigger: "無駄な被弾なく02:30までにLv3到達",
+        badge: "周回 🌲"
+      },
+      {
+        phase: "Phase 2 (Lv3〜5)",
+        title: "2:55スカトル争奪 ＆ 視界先行・カウンターガンク",
+        action: "敵JGのスタート位置から逆算し、衝突を避けるか仕掛けるかを判断。敵主要スキルのCDに合わせてサイドレーンに介入。",
+        win_trigger: "スカトル確保または敵JGの位置特定で第2段階クリア",
+        badge: "制圧 ⚡"
+      },
+      {
+        phase: "Phase 3 (Lv6〜)",
+        title: "パワースパイクを活かしてドラゴン/グラブ完全掌握",
+        action: "Ult習得のタイミングで主導権のあるレーンへダイブ/ガンクし、人数有利を作って重要オブジェクトへ直行。",
+        win_trigger: "1stドラゴンまたはヴォイドグラブ確保で試合テンポ掌握",
+        badge: "掌握 👑"
+      }
+    ];
+  }
+
+  if (currentLane === 'TOP') {
+    return [
+      {
+        phase: "Phase 1 (Lv1〜2)",
+        title: "無理なトレードを避けウェーブを手前に引く",
+        action: "敵の序盤スキル威力を警戒し、CSを数体捨ててでもウェーブを手前にフリーズ。Lv2先行を冷静に見極める。",
+        win_trigger: "自タワー手前にウェーブがフリーズできればクリア",
+        badge: "忍耐 🛡️"
+      },
+      {
+        phase: "Phase 2 (Lv3〜5)",
+        title: "敵主要スキルのCD中にショートトレード",
+        action: "敵が重要スキルを外した瞬間を見逃さず、スキル1セットを叩き込んで即座に離脱。",
+        win_trigger: "敵のHPを削りリコールまたはFlashを強要",
+        badge: "好機 ⚔️"
+      },
+      {
+        phase: "Phase 3 (Lv6〜)",
+        title: "パワースパイクからオールイン ＆ プレート奪取",
+        action: "Ult習得に合わせてオールインでソロキルを狙い、ミニオンを押し込んでタワープレートを獲得。",
+        win_trigger: "タワー主導権の確立またはキル獲得でレーン完全勝利",
+        badge: "破壊 👑"
+      }
+    ];
+  }
+
+  if (currentLane === 'MID') {
+    return [
+      {
+        phase: "Phase 1 (Lv1〜2)",
+        title: "スキル射程を活かしてLv2先行プッシュ",
+        action: "ミニオンと敵チャンプを巻き込むスキル配置でウェーブ主導権を奪取。横ステップで敵のハラスを回避。",
+        win_trigger: "敵にCSを取らせずタワー下に押し込めればクリア",
+        badge: "主導権 ⚡"
+      },
+      {
+        phase: "Phase 2 (Lv3〜5)",
+        title: "F6・リバー視界確保 ＆ カウンターハラス",
+        action: "敵JGの奇襲をケアするワードを置き、敵MIDがスキルを使った直後の無防備な時間を狙ってHPを削る。",
+        win_trigger: "敵のポーションを削り切り味方JGのスカトル寄り支援",
+        badge: "制圧 🎯"
+      },
+      {
+        phase: "Phase 3 (Lv6〜)",
+        title: "バーストコンボでソロキル ＆ オブジェクト合流",
+        action: "Ultを絡めたフルコンボでキルラインを形成。レーンを押し込んでドラゴン・ヴォイドグラブの集団戦に一番槍で合流。",
+        win_trigger: "サイドローム成功またはオブジェクト集団戦勝利",
+        badge: "勝利 👑"
+      }
+    ];
+  }
+
+  // BOT (ADC / SUPPORT)
+  return [
+    {
+      phase: "Phase 1 (Lv1〜2)",
+      title: "第2ウェーブ前衛3体でのLv2先行エンゲージ争い",
+      action: "第1ウェーブを素早く削り、第2ウェーブの前衛3体を最速で倒してLv2になった瞬間に前進トレードを仕掛ける。",
+      win_trigger: "敵デュオの体力を削りサモナースペルを吐かせればクリア",
+      badge: "先制 ⚡"
+    },
+    {
+      phase: "Phase 2 (Lv3〜5)",
+      title: "リバー視界管理 ＆ 敵JGボットガンクの徹底回避",
+      action: "02:45〜03:15の敵JG初期ガンクを警戒し、リバー・トライブッシュの視界を維持。無理なタワー下深追いは厳禁。",
+      win_trigger: "被ガンク死ゼロで安定したファームとアイテム素材獲得",
+      badge: "警戒 🛡️"
+    },
+    {
+      phase: "Phase 3 (Lv6〜)",
+      title: "ボットタワー破壊からMIDスワップで主導権拡大",
+      action: "Ult習得のオールインまたは味方JGのガンクに合わせて敵デュオを撃破。1stタワー破壊後にMIDへスワップ。",
+      win_trigger: "ドラゴン確保 ＋ 1stタワー破壊でボット完全勝利",
+      badge: "制圧 👑"
+    }
+  ];
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const myChamp = searchParams.get('my') || 'JarvanIV';
   const enemyChamp = searchParams.get('enemy') || 'LeeSin';
+  const lane = searchParams.get('lane') || 'JUNGLE';
 
-  // 1. 3段階手順書（個別に書いてあるのは BLUEPRINTS の数体だけ。それ以外は全員共通の一般的な流れ）
+  // 1. 3段階手順書（個別に書いてあるのは BLUEPRINTS の数体だけ。それ以外はレーン適合した共通手順）
   const phasesAreGeneric = !BLUEPRINTS[enemyChamp];
-  const phases = BLUEPRINTS[enemyChamp] || [
-    {
-      phase: "Phase 1 (Lv1〜2)",
-      title: "無理なトレードを避けウェーブ・ルート管理",
-      action: "敵の序盤スキル威力を警戒し、有利なタイミングでファーム・クリアを先行。",
-      win_trigger: "HPを8割以上維持して安定してLv3到達",
-      badge: "安定 🛡️"
-    },
-    {
-      phase: "Phase 2 (Lv3〜5)",
-      title: "敵主要スキルのCD中にショートトレード / ガンク展開",
-      action: "敵がスキルを空振りした瞬間や、視界の取れたサイドでアクションを仕掛ける。",
-      win_trigger: "敵のHPまたはFlashを削り主導権を奪う",
-      badge: "好機 ⚔️"
-    },
-    {
-      phase: "Phase 3 (Lv6〜)",
-      title: "パワースパイクを活かしてオブジェクト制覇",
-      action: "Ult習得・1stコア完成のタイミングで集団戦またはオブジェクト（ヴォイドグラブ/ドラゴン）を完全制圧。",
-      win_trigger: "オブジェクト確保またはキル獲得で試合テンポを掌握",
-      badge: "勝利 👑"
-    }
-  ];
+  const phases = BLUEPRINTS[enemyChamp] || getGenericPhasesByLane(lane);
 
   // 3. 実戦の罠・NG行動
   const rejectedIntel = await buildRejectedIntel(myChamp, enemyChamp);
@@ -179,12 +283,12 @@ export async function GET(request: NextRequest) {
     success: true,
     my_champion: myChamp,
     enemy_champion: enemyChamp,
+    lane,
     blueprint: {
       phases,
       phases_are_generic: phasesAreGeneric,
     },
-    // 初動ルート用の最速フルクリア時間（champion_jungle_timing_agg、junglepedia 由来の実測。無ければ null）
-    // 2026-10-08: 以前はどこからも渡しておらず、画面は誰でも「約3分15秒（目安推測）」だった
+    // 初動ルート用の最速フルクリア時間（champion_jungle_timing_agg 由来の実測。無ければ null）
     jungle_clear: await fetchClearTimes(myChamp, enemyChamp),
     rejected_intel: rejectedIntel
   });

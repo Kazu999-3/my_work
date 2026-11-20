@@ -113,7 +113,7 @@ export default function CoachFreeQuestionCard({
   ];
 
   return (
-    <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-4">
+    <div id="coach-free-question" className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-4 scroll-mt-24">
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
         <div className="flex items-center gap-2">

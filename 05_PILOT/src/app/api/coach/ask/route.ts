@@ -3,6 +3,40 @@ import { supabase } from '@/lib/supabaseClient';
 import { callHybridLlm } from '@/lib/ollamaClient';
 import { normalizeChampionName } from '@/lib/championNames';
 
+/**
+ * SPEC 10: AIコーチ回答のバリデーションとサニタイズ
+ * - 未記入プレースホルダー（「約何秒」「○○」「XX」等）の自動補正・除去
+ * - 中国語誤訳スキル名の Riot 公式日本語名への自動補正（例: 「突っ向勝負」➔「真っ向勝負」）
+ * - 意味不明語（「信長値」➔「射程」等）のサニタイズ
+ */
+function validateAndSanitizeCoachAnswer(text: string): string {
+  if (!text) return text;
+  let s = text;
+
+  // 1. スキル名・用語の既知の誤訳・文字化け辞書補正
+  const TERM_FIXES: [RegExp, string][] = [
+    [/突っ?向勝負/g, '真っ向勝負'], // Vi Q (Vault Breaker)
+    [/突進パンチ/g, '真っ向勝負(Q)'],
+    [/通常攻撃の信長値/g, '通常攻撃の射程・リーチ'],
+    [/信長値/g, '射程・リーチ'],
+    [/闪く/g, '光る'],
+    [/チーク/g, 'トレード'],
+  ];
+  for (const [pattern, replacement] of TERM_FIXES) {
+    s = s.replace(pattern, replacement);
+  }
+
+  // 2. 未記入プレースホルダーの除去・補正（長いパターンを先行置換）
+  s = s.replace(/【約何秒】/g, '【数秒間】');
+  s = s.replace(/約何秒/g, '状況に応じた秒数');
+  s = s.replace(/[○◯]{2,}/g, '主要スキル');
+  s = s.replace(/X{2,}/g, '敵スキル');
+  s = s.replace(/△{2,}/g, '状況');
+  s = s.replace(/\[未定\]/g, '適宜判断');
+
+  return s.trim();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -106,13 +140,20 @@ ${trimmedQuestion}
 2. 今回参照した正本データや対面メモがある場合は、「${sources.join(' / ')}」に基づいた根拠を一言添えること。
 3. 文体は親しみやすく頼れるコーチ口調（「〜しよう」「〜がポイントだ」等）にすること。
 4. 長すぎず、試合前に30秒で読める簡潔な構成（箇条書き2〜3点＋要約）にすること。
+5. 【厳格】スキル名はRiot公式の正式日本語名（例: ViのQは「真っ向勝負」、Rは「強行突入」）を用い、中国語や不正確な訳語を使用しないこと。
+6. 【厳格】「約何秒」「○○」などの未記入プレースホルダーは絶対に出力せず、具体的な秒数（例: 約8秒）または「スキルの空振り直後」などの具体的な状況を明記すること。
+7. 【論理検証】Q（チャージ突進）とR（確定突入）など、異なるスキルの効果や仕様を混同・混線させないこと。
 `.trim();
 
     // 3. ハイブリッドLLM（ローカルOllama優先・Geminiフォールバック）で回答生成
-    const answer = await callHybridLlm(prompt, {
+    // 試合前チャットのためタイムアウトは15秒とし、ローカルOllamaがバッチ処理等で塞がっている場合は即座にGemini（約2.9秒）へフォールバック
+    const rawAnswer = await callHybridLlm(prompt, {
       temperature: 0.3,
-      timeoutMs: 60000,
+      timeoutMs: 15000,
     });
+
+    // 4. SPEC 10: 回答文のノイズ除去・サニタイズ検証
+    const answer = validateAndSanitizeCoachAnswer(rawAnswer);
 
     return NextResponse.json({
       success: true,

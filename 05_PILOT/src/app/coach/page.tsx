@@ -42,24 +42,25 @@ function CoachPageContent() {
     router.push(qs ? `/coach?${qs}` : '/coach', { scroll: false });
   };
 
-  // 対面設計図用ステート
-  const [myChamp, setMyChamp] = useState('Darius');
-  const [enemyChamp, setEnemyChamp] = useState('Aatrox');
-  const [lane, setLane] = useState('TOP');
-
-  // URLのチャンピオン指定は、その値が変わった時だけ反映する
-  // （タブ切替でURLが変わるたびに、画面で選び直したチャンピオンが戻されないように）
+  // URLクエリパラメータの取得
   const qMy = searchParams.get('my') || searchParams.get('champion');
   const qEnemy = searchParams.get('enemy');
   const qLane = searchParams.get('lane');
+
+  // 対面設計図用ステート（URLパラメータを最優先で初期値に採用し、初期描画時のチラつき・余計なフェッチを完全防止）
+  const [myChamp, setMyChamp] = useState(() => qMy || 'Darius');
+  const [enemyChamp, setEnemyChamp] = useState(() => qEnemy || 'Aatrox');
+  const [lane, setLane] = useState(() => (qLane ? qLane.toUpperCase() : 'TOP'));
+
+  // URLのチャンピオン指定が後から変わった時だけ反映
   useEffect(() => {
-    if (qMy) setMyChamp(qMy);
+    if (qMy && qMy !== myChamp) setMyChamp(qMy);
   }, [qMy]);
   useEffect(() => {
-    if (qEnemy) setEnemyChamp(qEnemy);
+    if (qEnemy && qEnemy !== enemyChamp) setEnemyChamp(qEnemy);
   }, [qEnemy]);
   useEffect(() => {
-    if (qLane) setLane(qLane.toUpperCase());
+    if (qLane && qLane.toUpperCase() !== lane) setLane(qLane.toUpperCase());
   }, [qLane]);
 
   return (
@@ -110,6 +111,16 @@ function CoachPageContent() {
               <span className="text-[11px] font-bold text-zinc-400 shrink-0 flex items-center gap-1">
                 <Zap className="w-3.5 h-3.5 text-amber-400" /> 定番マッチアップ例:
               </span>
+              <button
+                onClick={() => { setMyChamp('Zyra'); setEnemyChamp('Vi'); setLane('JUNGLE'); }}
+                className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-colors ${
+                  myChamp === 'Zyra' && enemyChamp === 'Vi' && lane === 'JUNGLE'
+                    ? 'bg-amber-500/20 border-amber-500/70 text-amber-300'
+                    : 'bg-zinc-950 border-zinc-800 hover:border-amber-500 text-zinc-300'
+                }`}
+              >
+                Zyra vs Vi (JG)
+              </button>
               <button
                 onClick={() => { setMyChamp('Darius'); setEnemyChamp('Aatrox'); setLane('TOP'); }}
                 className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-colors ${

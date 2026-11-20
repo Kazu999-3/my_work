@@ -99,17 +99,26 @@ export default function MatchupBlueprintCard({
   useEffect(() => {
     if (!enemyChamp) return;
     setLoading(true);
-    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChamp)}&enemy=${encodeURIComponent(enemyChamp)}`)
+    let cancelled = false;
+    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChamp)}&enemy=${encodeURIComponent(enemyChamp)}&lane=${encodeURIComponent(currentLane)}`)
       .then((res) => res.json())
       .then((d) => {
-        setData(d);
-        setLoading(false);
+        if (!cancelled) {
+          // レースコンディション防止: 現在の選択チャンプと一致する場合のみ反映
+          if (d.my_champion === myChamp && d.enemy_champion === enemyChamp) {
+            setData(d);
+          }
+          setLoading(false);
+        }
       })
       .catch((err) => {
-        console.error(err);
-        setLoading(false);
+        if (!cancelled) {
+          console.error(err);
+          setLoading(false);
+        }
       });
-  }, [myChamp, enemyChamp]);
+    return () => { cancelled = true; };
+  }, [myChamp, enemyChamp, currentLane]);
 
   if (loading && !data) {
     return (
@@ -232,16 +241,27 @@ export default function MatchupBlueprintCard({
 
       {/* 2. 3段階フェーズ別 戦術手順書 */}
       <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-4">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Swords className="w-5 h-5 text-amber-400" />
             <h3 className="text-sm font-black text-white uppercase tracking-wider">
-              ⚔️ 3段階レーン戦術手順書（{currentLane}: {enemyChamp} 対策）
+              ⚔️ 3段階{currentLane === 'JUNGLE' ? '周回・戦術' : 'レーン戦術'}手順書（{currentLane}: {enemyChamp} 対策）
             </h3>
           </div>
-          <span className="text-[11px] text-zinc-400">
-            {blueprint.phases_are_generic ? '一般的な流れ（この対面専用の手順は未登録）' : '時系列アクション'}
-          </span>
+          <div className="flex items-center gap-2">
+            {blueprint.phases_are_generic ? (
+              <span className="text-[10px] text-zinc-400 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 flex items-center gap-1.5">
+                <span>📋 {currentLane}共通フロー</span>
+                <a href="#coach-free-question" className="text-amber-400 underline font-bold hover:text-amber-300">
+                  対面特化は質問で聞く ↓
+                </a>
+              </span>
+            ) : (
+              <span className="text-[11px] text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60">
+                ⭐ {enemyChamp} 専用対策
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
