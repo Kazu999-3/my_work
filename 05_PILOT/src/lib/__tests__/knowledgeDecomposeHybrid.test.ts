@@ -28,7 +28,15 @@ test('isOllamaAvailable returns boolean', async () => {
   console.log('isOllamaAvailable:', available);
 });
 
-test('decomposeArticle works with hybrid LLM', async () => {
+test('decomposeArticle works with hybrid LLM', async (t) => {
+  const ollama = await isOllamaAvailable();
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+
+  if (!ollama && !hasGemini) {
+    t.skip('Ollamaデーモンが未起動かつGEMINI_API_KEYが未設定のためスキップします（CI環境等）');
+    return;
+  }
+
   const sampleArticle = {
     title: 'パッチ26.22 トップ＆ジャングル解説：ダリウスとジャーヴァンIVの立ち回り',
     content: `
