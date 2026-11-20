@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import {
   XCircle,
   ExternalLink,
@@ -22,6 +22,8 @@ import {
   ChevronUp,
   SlidersHorizontal,
   Crown,
+  MoreHorizontal,
+  HelpCircle,
 } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 import { estimateFactCategories } from './factRouting';
@@ -104,6 +106,22 @@ export default function ReviewItemCard({
 
   const [isPlaylistAdded, setIsPlaylistAdded] = useState(false);
   const [isPlaylistLoading, setIsPlaylistLoading] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    if (showMoreMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMoreMenu]);
 
   useEffect(() => {
     if (!youtubeVideoId) return;
@@ -222,21 +240,21 @@ export default function ReviewItemCard({
                 <span>⚠️ 旧パッチ</span>
               </span>
             )}
-            {/* 動画種別バッジ（Shorts短尺か長尺動画かを一目で識別） */}
+            {/* 動画種別バッジ（控えめなタグ表示） */}
             {item.is_atomic ? (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-teal-300 border-teal-800/60 bg-teal-950/40">
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded border text-zinc-400 border-zinc-800 bg-zinc-950/40">
                 ✂️ 分割知見
               </span>
             ) : item.isShortVideo ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-pink-300 border-pink-700/70 bg-pink-950/50 shadow-sm flex items-center gap-1">
-                ⚡ Shorts（1分短尺）
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded border text-pink-300/80 border-pink-900/40 bg-pink-950/20">
+                ⚡ Shorts
               </span>
             ) : (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-300 border-amber-800/60 bg-amber-950/40">
-                🎬 通常動画（長尺）
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded border text-zinc-400 border-zinc-800 bg-zinc-950/40">
+                🎬 通常動画
               </span>
             )}
-            {/* 🚀 再解析ステータス ＆ 薄い可能性の完全識別バッジ（2026-11-02改修） */}
+            {/* 🚀 再解析ステータス（控えめ表示） */}
             {(() => {
               const status = item.reanalysisStatus || (isDraft ? 'reanalyzed' : taskActive ? 'running' : 'unreanalyzed');
               const isShort = item.isShortVideo;
@@ -245,49 +263,36 @@ export default function ReviewItemCard({
                 if (thin) {
                   return (
                     <span
-                      className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-rose-300 border-rose-800/70 bg-rose-950/50 shadow-sm flex items-center gap-1"
+                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded border text-rose-300/90 border-rose-900/50 bg-rose-950/30 flex items-center gap-1"
                       title={isShort
                         ? `【Shorts再解析済】ショート動画ですが事実が抽出できませんでした。\n${item.density?.reasons.join('\n') || ''}`
                         : `【長尺動画・再解析済だが事実少】長尺動画に対して字幕から取れた事実が少なめです。\n${item.density?.reasons.join('\n') || ''}`}
                     >
-                      ⚠️ 再解析済（{isShort ? 'Shorts' : '長尺'}: 事実{factCount ?? 0}件）
+                      ⚠️ 再解析済({factCount ?? 0}件)
                     </span>
                   );
                 }
                 return (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-800/60 bg-emerald-950/40">
-                    🔁 再解析版{typeof factCount === 'number' ? `（事実 ${factCount}件）` : ''}
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border text-emerald-300/90 border-emerald-900/50 bg-emerald-950/30">
+                    🔁 再解析済
                   </span>
                 );
               }
               if (status === 'running') {
                 return (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-sky-300 border-sky-800/60 bg-sky-950/40 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    🔄 再解析中（キュー処理中）
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border text-sky-300/90 border-sky-900/50 bg-sky-950/30 flex items-center gap-1">
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                    再解析中
                   </span>
                 );
               }
               if (status === 'failed') {
                 return (
                   <span
-                    className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-zinc-400 border-zinc-700 bg-zinc-800/60"
+                    className="text-[9px] font-medium px-1.5 py-0.5 rounded border text-zinc-400 border-zinc-800 bg-zinc-900/50"
                     title={item.reanalysisTask?.error || '実況音声なし等の理由で再解析が失敗しました'}
                   >
-                    ❌ 再解析不可（実況なし等）
-                  </span>
-                );
-              }
-              // unreanalyzed
-              if (thin) {
-                return (
-                  <span
-                    className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-600/80 bg-amber-950/60 shadow-sm"
-                    title={isShort
-                      ? `【未再解析のShorts】ショート動画のため要約が短めです。必要に応じて再解析可能です。\n${item.density?.reasons.join('\n') || ''}`
-                      : `【未再解析・長尺の解析不足の可能性】長尺動画ですが具体的な記述が少ない状態です。再解析で改善できます。\n${item.density?.reasons.join('\n') || ''}`}
-                  >
-                    ⏳ {isShort ? 'Shorts短文（未再解析）' : '長尺・解析不足の可能性（未再解析）'}
+                    ❌ 再解析不可
                   </span>
                 );
               }
@@ -306,14 +311,14 @@ export default function ReviewItemCard({
             )}
           </div>
 
-          {/* 🧭 インライン統合ルーティング（プレビュー不要で即決できるゼロクリック可視化） */}
+          {/* 🧭 インライン統合ルーティング（教本統合先のみスリム表示） */}
           {(() => {
             const targetChamp = edit.champion || item.currentChampNamesJa || item.detectedChampionsJa;
             return (
-              <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-zinc-950/80 border border-zinc-800/90 text-xs mt-1.5 shadow-xs">
-                <span className="font-bold text-zinc-400 text-[11px] flex items-center gap-1">
-                  <Compass className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">教本統合ルート:</span>
+              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-lg bg-zinc-950/60 border border-zinc-850 text-xs mt-1">
+                <span className="font-bold text-zinc-500 text-[10px] flex items-center gap-1">
+                  <Compass className="w-3 h-3 text-amber-400" />
+                  <span>統合先:</span>
                 </span>
 
                 {/* 1. チャンピオン教本 */}
@@ -344,65 +349,22 @@ export default function ReviewItemCard({
                     🗺️ {edit.lane} 攻略バイブル
                   </span>
                 ) : null}
-
-                {/* 4. 辞典(facts)マージ推定カテゴリ */}
-                {estimatedFactCategories.length > 0 && (
-                  <div className="flex items-center gap-1 ml-auto flex-wrap">
-                    <span className="text-[10px] text-zinc-500 font-mono hidden md:inline">辞典マージ:</span>
-                    {estimatedFactCategories.map((cat) => (
-                      <span key={cat.key} className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-zinc-900 text-amber-300 border border-zinc-700/80">
-                        {cat.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             );
           })()}
 
-          {/* メタ情報行 */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-400">
-            {item.channel && (
-              <button
-                type="button"
-                onClick={() => setChannel(channel === item.channel ? '' : item.channel)}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition cursor-pointer ${
-                  channel === item.channel
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
-                    : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/80 hover:bg-zinc-700 hover:text-white'
-                }`}
-                title={channel === item.channel ? 'チャンネル絞り込みを解除' : `「${item.channel}」で絞り込む`}
-              >
-                <Tv className="w-2.5 h-2.5 text-red-400" />
-                {item.channel}
-              </button>
-            )}
-
-            <span className="text-[11px] text-zinc-400 font-mono">
+          {/* メタ情報行（文字数・日付のみ常時表示） */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500 pt-0.5">
+            <span className="font-mono text-zinc-400">
               📚 {(item.char_count || item.content?.length || 0).toLocaleString()}文字
             </span>
-
-            <span>{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
-            {item.parentTitle && <span>元: {item.parentTitle}</span>}
-
-            {item.source_url && (
-              <div className="inline-flex items-center gap-2">
-                <a
-                  href={item.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 font-medium text-[11px]"
-                >
-                  <ExternalLink className="w-2.5 h-2.5" /> 元動画
-                </a>
-              </div>
-            )}
+            <span>登録: {new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
           </div>
         </div>
       </div>
 
-      {/* 2. 再解析の状態 */}
-      {(taskActive || task?.status === 'failed' || (thin && !isDraft) || isDraft) && (
+      {/* 2. 再解析の処理中／エラー表示（進行中のみ表示） */}
+      {(taskActive || task?.status === 'failed') && (
         <div className="space-y-1">
           {taskActive && (
             <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-800/50 text-[11px] text-amber-200 flex flex-wrap items-center gap-2">
@@ -441,16 +403,39 @@ export default function ReviewItemCard({
               );
             })()
           )}
-          {thin && item.density && item.density.reasons.length > 0 && (
-            <div className="p-2 rounded-lg bg-amber-950/25 border border-amber-800/40 text-[11px] text-amber-200/90 flex items-start gap-1.5">
-              <span className="shrink-0">{item.isShortVideo ? '⚡' : '⚠️'}</span>
-              <span>{item.density.reasons.join(' ／ ')}</span>
+        </div>
+      )}
+
+      {/* 3. 詳細・修正アコーディオン展開部（実戦エッセンス・辞典マージ・元動画リンク・本文・編集フォーム） */}
+      {isDetailsOpen && (
+        <div className="pt-2.5 pb-1 border-t border-zinc-800 space-y-3 animate-in fade-in duration-150">
+          {/* ソース・チャンネル・元動画・元記事メタ情報バー */}
+          <div className="p-2 rounded-xl bg-zinc-950/70 border border-zinc-850 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              {item.channel && (
+                <button
+                  type="button"
+                  onClick={() => setChannel(channel === item.channel ? '' : item.channel)}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition cursor-pointer ${
+                    channel === item.channel
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
+                      : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/80 hover:bg-zinc-700 hover:text-white'
+                  }`}
+                  title={channel === item.channel ? 'チャンネル絞り込みを解除' : `「${item.channel}」で絞り込む`}
+                >
+                  <Tv className="w-2.5 h-2.5 text-red-400" />
+                  {item.channel}
+                </button>
+              )}
+              {item.parentTitle && <span className="text-[11px] text-zinc-400">元: {item.parentTitle}</span>}
+              {isDraft && (
+                <span className="text-[11px] text-emerald-300">
+                  元記事 #{item.reanalysis_of} の再解析版
+                </span>
+              )}
             </div>
-          )}
-          {isDraft && (
-            <div className="p-2 rounded-lg bg-emerald-950/30 border border-emerald-800/60 text-[11px] text-emerald-200 flex flex-wrap items-center gap-2">
-              <span>元の記事 #{item.reanalysis_of} を作り直した版です。</span>
-              {onCompare && (
+            <div className="flex items-center gap-2">
+              {isDraft && onCompare && (
                 <button
                   type="button"
                   onClick={onCompare}
@@ -459,52 +444,79 @@ export default function ReviewItemCard({
                   🆚 元の記事と比べる
                 </button>
               )}
+              {item.source_url && (
+                <a
+                  href={item.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 font-medium text-[11px] bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800"
+                >
+                  <ExternalLink className="w-2.5 h-2.5" /> 元動画を開く ↗
+                </a>
+              )}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* 3. 💡 核心エッセンス要約 ＆ 上位事実箇条書き（1秒スキャン直出し） */}
-      {(summary || (item.analysis_meta?.facts && item.analysis_meta.facts.length > 0)) && (
-        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
-            <span className="flex items-center gap-1.5">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>💡 実戦エッセンス（1秒スキャン）</span>
-            </span>
-            {item.analysis_meta?.facts && item.analysis_meta.facts.length > 0 && (
-              <span className="text-[9px] font-mono text-amber-400/80">
-                字幕事実 {item.analysis_meta.facts.length}件抽出済
-              </span>
-            )}
           </div>
 
-          {/* 字幕から取れた具体的事実（上位2〜3件）をダイレクト箇条書き表示 */}
-          {item.analysis_meta?.facts && item.analysis_meta.facts.length > 0 ? (
-            <ul className="space-y-1 text-xs text-amber-100/95 font-medium">
-              {item.analysis_meta.facts.slice(0, 3).map((f, idx) => (
-                <li key={idx} className="flex items-start gap-1.5 leading-snug">
-                  <span className="text-amber-400 font-mono text-[10px] shrink-0 mt-0.5 bg-amber-950/60 px-1 rounded border border-amber-600/40">
-                    {f.ts || '•'}
-                  </span>
-                  <span className="line-clamp-2">
-                    {f.claim}
-                    {f.numbers && <span className="text-emerald-300 ml-1 font-mono">[{f.numbers}]</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-amber-100/95 leading-relaxed font-medium line-clamp-2">
-              {summary}
-            </p>
+          {/* 薄い判定の理由案内（詳細内） */}
+          {thin && item.density && item.density.reasons.length > 0 && (
+            <div className="p-2 rounded-lg bg-amber-950/25 border border-amber-800/40 text-[11px] text-amber-200/90 flex items-start gap-1.5">
+              <span className="shrink-0">{item.isShortVideo ? '⚡' : '⚠️'}</span>
+              <span>{item.density.reasons.join(' ／ ')}</span>
+            </div>
           )}
-        </div>
-      )}
 
-      {/* 4. アコーディオン展開部（詳細・事実・本文・編集フォーム） */}
-      {isDetailsOpen && (
-        <div className="pt-2.5 pb-1 border-t border-zinc-800 space-y-3 animate-in fade-in duration-150">
+          {/* 💡 核心エッセンス要約 ＆ 上位事実箇条書き */}
+          {(summary || (item.analysis_meta?.facts && item.analysis_meta.facts.length > 0)) && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
+                <span className="flex items-center gap-1.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>💡 実戦エッセンス（要約）</span>
+                </span>
+                {item.analysis_meta?.facts && item.analysis_meta.facts.length > 0 && (
+                  <span className="text-[9px] font-mono text-amber-400/80">
+                    字幕事実 {item.analysis_meta.facts.length}件抽出済
+                  </span>
+                )}
+              </div>
+
+              {item.analysis_meta?.facts && item.analysis_meta.facts.length > 0 ? (
+                <ul className="space-y-1 text-xs text-amber-100/95 font-medium">
+                  {item.analysis_meta.facts.slice(0, 3).map((f, idx) => (
+                    <li key={idx} className="flex items-start gap-1.5 leading-snug">
+                      <span className="text-amber-400 font-mono text-[10px] shrink-0 mt-0.5 bg-amber-950/60 px-1 rounded border border-amber-600/40">
+                        {f.ts || '•'}
+                      </span>
+                      <span className="line-clamp-2">
+                        {f.claim}
+                        {f.numbers && <span className="text-emerald-300 ml-1 font-mono">[{f.numbers}]</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-amber-100/95 leading-relaxed font-medium">
+                  {summary}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 🧬 辞典(facts)マージ推定カテゴリ内訳 */}
+          {estimatedFactCategories.length > 0 && (
+            <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-[11px] text-zinc-400 font-bold flex items-center gap-1 mr-1">
+                <Dna className="w-3 h-3 text-amber-400" />
+                <span>辞典マージ対象:</span>
+              </span>
+              {estimatedFactCategories.map((cat) => (
+                <span key={cat.key} className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-amber-300 border border-zinc-700/80">
+                  {cat.label}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* 字幕から取れた事実 */}
           {Array.isArray(item.analysis_meta?.facts) && item.analysis_meta!.facts!.length > 0 && (
             <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800 space-y-1">
@@ -690,134 +702,142 @@ export default function ReviewItemCard({
             <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-zinc-300">P</kbd>
           </button>
 
-          {/* 📺 プレイリスト追加ボタン（1STEP直接追加） */}
-          {youtubeVideoId && (
-            <button
-              type="button"
-              onClick={handleAddToPlaylist}
-              disabled={isPlaylistLoading}
-              className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-sm disabled:opacity-50 ${
-                isPlaylistAdded
-                  ? 'bg-rose-950/40 border-rose-600/60 text-rose-300'
-                  : 'bg-zinc-900 border-zinc-800 hover:border-rose-500/50 text-zinc-300 hover:text-white'
-              }`}
-              title={
-                isPlaylistAdded
-                  ? 'YouTubeプレイリスト「PLPiEXmmDzgcs」に追加済み'
-                  : 'クリックしてYouTubeプレイリスト「PLPiEXmmDzgcs」に直接追加 (1STEP)'
-              }
-            >
-              {isPlaylistLoading ? (
-                <Loader2 className="w-3.5 h-3.5 text-rose-400 animate-spin" />
-              ) : (
-                <ListPlus className={`w-3.5 h-3.5 ${isPlaylistAdded ? 'text-rose-400' : 'text-rose-500'}`} />
-              )}
-              <span>{isPlaylistLoading ? '追加中...' : isPlaylistAdded ? 'リスト追加済 ✓' : '➕ プレイリスト'}</span>
-            </button>
-          )}
-
-          {canReanalyze && (
-            <button
-              type="button"
-              onClick={() => onReanalyze!()}
-              disabled={busy}
-              className={`px-2 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition ${
-                thin
-                  ? 'bg-amber-950/40 border-amber-600/60 text-amber-300'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="理由や深掘りしたい観点を付けて再解析"
-            >
-              <RotateCcw className="w-3 h-3" /> 再解析
-            </button>
-          )}
-
+          {/* 却下／破棄ボタン */}
           {isDraft && onDiscardReanalysis ? (
             <button
               type="button"
               onClick={() => onDiscardReanalysis()}
               disabled={busy}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-amber-800/60 text-zinc-400 hover:text-amber-300 text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+              title="再解析の破棄: この再解析下書きを取り消し、元の記事に戻します (X)"
             >
-              <Undo2 className="w-3 h-3" /> 破棄
+              <Undo2 className="w-3.5 h-3.5" />
+              <span>破棄</span>
+              <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-amber-300">X</kbd>
             </button>
           ) : (
             <button
               type="button"
               onClick={() => onReject()}
               disabled={busy}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-900/60 text-zinc-400 hover:text-rose-400 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
-              title="却下 (X)"
+              className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-900/60 text-zinc-400 hover:text-rose-400 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
+              title="却下: この記事を不採用として審査一覧から削除します (X)"
             >
               <XCircle className="w-3.5 h-3.5" />
               <span>却下</span>
               <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-rose-300">X</kbd>
             </button>
           )}
+
+          {/* ⋯ その他メニュー（低頻度操作：プレイリスト追加・再解析・手動分解） */}
+          <div className="relative" ref={moreMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowMoreMenu((prev) => !prev)}
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1 cursor-pointer transition"
+              title="その他の操作（プレイリスト追加・再解析・知見の確認分解）"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+              <span>その他</span>
+            </button>
+
+            {showMoreMenu && (
+              <div className="absolute left-0 bottom-full mb-1.5 z-30 w-52 rounded-xl bg-zinc-900/95 backdrop-blur-md border border-zinc-750 shadow-2xl p-1.5 space-y-1 text-xs animate-in fade-in duration-100">
+                {/* 📺 プレイリスト追加 */}
+                {youtubeVideoId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      handleAddToPlaylist(e);
+                      setShowMoreMenu(false);
+                    }}
+                    disabled={isPlaylistLoading}
+                    className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs font-medium flex items-center gap-2 cursor-pointer transition ${
+                      isPlaylistAdded
+                        ? 'bg-rose-950/40 text-rose-300'
+                        : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    <ListPlus className={`w-3.5 h-3.5 ${isPlaylistAdded ? 'text-rose-400' : 'text-rose-500'}`} />
+                    <span>{isPlaylistLoading ? '追加中...' : isPlaylistAdded ? 'プレイリスト追加済 ✓' : 'プレイリストに追加'}</span>
+                  </button>
+                )}
+
+                {/* 🔁 再解析 */}
+                {canReanalyze && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onReanalyze!();
+                      setShowMoreMenu(false);
+                    }}
+                    disabled={busy}
+                    className="w-full px-2.5 py-1.5 rounded-lg text-left text-xs font-medium flex items-center gap-2 text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer transition disabled:opacity-50"
+                    title="字幕からAIで事実・数値を再抽出し直す"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>再解析を依頼</span>
+                  </button>
+                )}
+
+                {/* ✂️ 確認して分解 */}
+                {onDecompose && !item.is_atomic && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDecompose();
+                      setShowMoreMenu(false);
+                    }}
+                    disabled={busy}
+                    className="w-full px-2.5 py-1.5 rounded-lg text-left text-xs font-medium flex items-center gap-2 text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer transition disabled:opacity-50"
+                    title="動画から複数チャンプの知見を取り出して個別に確認統合する (D)"
+                  >
+                    <Scissors className="w-3.5 h-3.5 text-purple-400" />
+                    <span className="flex items-center justify-between flex-1">
+                      <span>確認して分解</span>
+                      <kbd className="px-1 py-0.2 rounded bg-zinc-800 text-[9px] font-mono font-bold text-purple-300">D</kbd>
+                    </span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 右側メイン操作（即時承認 または 分解） */}
+        {/* 右側メイン操作（即時承認 または 自動分解） */}
         <div className="flex items-center gap-2">
-          {item.isMultiChampion && onDecompose && !item.is_atomic ? (
-            <>
+          {item.isMultiChampion ? (
+            onApprove && (
               <button
                 type="button"
-                onClick={() => onDecompose()}
+                onClick={() => onApprove()}
                 disabled={busy}
-                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-purple-600/60 text-purple-300 hover:text-purple-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
-                title="モーダルを開いて各チャンピオンの知見を確認・編集してから統合 (D)"
+                className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
+                title="確認なしで裏で各チャンピオンに自動分解し、教本へ直接統合 (A)"
               >
-                <Scissors className="w-3.5 h-3.5 text-purple-400" />
-                <span>確認して分解</span>
-                <kbd className="px-1 py-0.2 rounded bg-purple-950/80 border border-purple-500/60 text-[9px] font-mono font-bold text-purple-200">D</kbd>
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                <span>⚡ 自動分解して承認</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-amber-400 text-zinc-950 text-[10px] font-mono font-black shadow-xs">A</kbd>
               </button>
-              {onApprove && (
-                <button
-                  type="button"
-                  onClick={() => onApprove()}
-                  disabled={busy}
-                  className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
-                  title="確認なしで裏で各チャンピオンに自動分解し、教本へ直接統合 (A)"
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-300" />
-                  <span>⚡ 自動分解して承認</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-amber-400 text-zinc-950 text-[10px] font-mono font-black shadow-xs">A</kbd>
-                </button>
-              )}
-            </>
+            )
           ) : (
-            <>
-              {onDecompose && !item.is_atomic && (
-                <button
-                  type="button"
-                  onClick={() => onDecompose()}
-                  disabled={busy}
-                  className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  title="複数知見に分割 (D)"
-                >
-                  <Scissors className="w-3.5 h-3.5" />
-                  <span>分解</span>
-                  <kbd className="px-1 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-[9px] font-mono font-bold text-zinc-300">D</kbd>
-                </button>
-              )}
-              {onApprove && (
-                <button
-                  type="button"
-                  onClick={() => onApprove()}
-                  disabled={busy}
-                  className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-md transition active:scale-95 ${
-                    item.density?.triage === 'approve'
-                      ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-950/60 ring-1 ring-emerald-400/50'
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40'
-                  }`}
-                  title="プレビューなしで現在の統合ルートへ即座に教本マージ (A)"
-                >
-                  <Zap className="w-4 h-4 text-amber-300" />
-                  <span className="tracking-wide">⚡ 即時承認（教本統合）</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-950/80 border border-emerald-400/50 text-emerald-300 text-[10px] font-mono font-black shadow-xs">A</kbd>
-                </button>
-              )}
-            </>
+            onApprove && (
+              <button
+                type="button"
+                onClick={() => onApprove()}
+                disabled={busy}
+                className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-md transition active:scale-95 ${
+                  item.density?.triage === 'approve'
+                    ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-950/60 ring-1 ring-emerald-400/50'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40'
+                }`}
+                title="プレビューなしで現在の統合ルートへ即座に教本マージ (A)"
+              >
+                <Zap className="w-4 h-4 text-amber-300" />
+                <span className="tracking-wide">⚡ 即時承認（教本統合）</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950/80 border border-emerald-400/50 text-emerald-300 text-[10px] font-mono font-black shadow-xs">A</kbd>
+              </button>
+            )
           )}
         </div>
       </div>

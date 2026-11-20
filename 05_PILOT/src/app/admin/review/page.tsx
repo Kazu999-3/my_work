@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass, RotateCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass, RotateCcw, HelpCircle, X } from 'lucide-react';
 import AdminNavHeader from '@/components/AdminNavHeader';
 import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
@@ -45,6 +45,7 @@ export default function ReviewPage() {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [processingMap, setProcessingMap] = useState<Record<number, "approving" | "rejecting">>({});
   const [busy, setBusy] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // 統合プレビューモーダル用ステート
@@ -732,23 +733,81 @@ export default function ReviewPage() {
                 );
               })()}
 
-              {/* ⌨️ キーボードショートカット案内バッジ */}
-              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-400 bg-zinc-950/80 px-2.5 py-1 rounded-lg border border-zinc-800">
-                <span className="text-zinc-500 font-bold">⌨️ ショートカット:</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-400">J/K</span>
-                <span>移動</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-cyan-400">Space</span>
-                <span>選択</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-emerald-400">A</span>
-                <span>即時承認</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-rose-400">X</span>
-                <span>却下</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-teal-400">D</span>
-                <span>分解</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-300">Enter/P</span>
-                <span>プレビュー</span>
-                <span className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-300">E</span>
-                <span>詳細</span>
+              {/* ℹ️ 操作ヘルプ＆凡例ボタン（常時表示を廃止しポップアップ化） */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowHelp((prev) => !prev)}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition ${
+                    showHelp
+                      ? 'bg-amber-500/20 border-amber-500/70 text-amber-200'
+                      : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-750'
+                  }`}
+                  title="ショートカット操作と画面用語（FOCUS/分解/再解析）の凡例"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+                  <span>操作ガイド & 凡例</span>
+                </button>
+
+                {showHelp && (
+                  <div className="absolute left-0 top-full mt-2 z-40 w-80 sm:w-96 p-3 rounded-2xl bg-zinc-900 border border-zinc-750 shadow-2xl space-y-3 text-xs animate-in fade-in duration-100">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-zinc-800">
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-amber-400" />
+                        操作ガイド ＆ 凡例
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowHelp(false)}
+                        className="text-zinc-500 hover:text-white cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* ショートカット */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-zinc-400 tracking-wider">キーボードショートカット</span>
+                      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-300">J / K</kbd><span>次 / 前のカード</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-cyan-300">Space</kbd><span>選択トグル</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-emerald-300">A</kbd><span>即時承認（統合）</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-rose-300">X</kbd><span>却下 / 破棄</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-purple-300">D</kbd><span>ナレッジ分解</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-200">P / Enter</kbd><span>プレビュー確認</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-300">E</kbd><span>詳細・修正展開</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-400">Esc</kbd><span>モーダルを閉じる</span></div>
+                      </div>
+                    </div>
+
+                    {/* 用語凡例 */}
+                    <div className="space-y-1.5 pt-1.5 border-t border-zinc-800 text-[11px] text-zinc-300">
+                      <span className="text-[10px] font-bold text-zinc-400 tracking-wider">用語・表示の凡例</span>
+                      <ul className="space-y-1.5 leading-relaxed">
+                        <li>
+                          <span className="font-bold text-amber-300 bg-amber-950/60 px-1 rounded mr-1">FOCUS（黄色枠）</span>
+                          現在キーボード操作の対象になっているカードです。AやXキーで即時操作できます。
+                        </li>
+                        <li>
+                          <span className="font-bold text-purple-300 bg-purple-950/60 px-1 rounded mr-1">分解 (D)</span>
+                          複数チャンピオンが混在した動画から、チャンプ別の知見を個別分割して教本へ統合します。
+                        </li>
+                        <li>
+                          <span className="font-bold text-amber-300 bg-amber-950/60 px-1 rounded mr-1">再解析</span>
+                          動画字幕から事実・タイムスタンプ・数値をAIで再抽出し直します。
+                        </li>
+                        <li>
+                          <span className="font-bold text-rose-300 bg-rose-950/60 px-1 rounded mr-1">却下 と 破棄</span>
+                          「却下」は記事を不採用として一覧から削除。「破棄」は再解析ドラフトを取り消して元記事に戻します。
+                        </li>
+                        <li>
+                          <span className="font-bold text-emerald-300 bg-emerald-950/60 px-1 rounded mr-1">👑 即承認推奨</span>
+                          単一チャンプ特定済かつ800文字以上の高密度記事で、安全に即時統合できます。
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
