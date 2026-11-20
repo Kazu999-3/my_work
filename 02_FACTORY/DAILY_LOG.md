@@ -1,5 +1,39 @@
 ## 📅 2026-11-20（金）
 
+### 🚀 【ナレッジ品質防壁】指示文 14: 知見分解の Gemini API 固定（Ollama 完全バイパス）完了
+
+**概要**:
+ユーザー指示「GitHubに指示文14を置きました。05_PILOT/docs/specs/14-decompose-gemini-only-instruction.md を読んで、そのとおりに実施してください。」に基づき、SPEC 13 の検証結果（7Bモデルでのオウム返し水増し・コピペ量産・ロール誤認）を受けて知見分解（`decomposeArticle`）のルーティングを改修・デプロイ。
+
+1. **実装内容**:
+   - `05_PILOT/src/lib/knowledgeDecompose.ts`:
+     - LLM呼び出しを `callHybridLlm` から `callGemini` へ完全切り替え（オプション `{ temperature: 0.2, maxOutputTokens: 6000, responseMimeType: 'application/json' }` は完全維持）。
+     - 不要になった `callHybridLlm` のインポートを削除。
+     - 知見分解の処理経路から Ollama を完全に排除し、常に Gemini API を利用してナレッジベース（`personal_knowledge`）の品質と純度を保証。
+   - `05_PILOT/src/lib/__tests__/knowledgeDecomposeHybrid.test.ts`:
+     - テスト名称およびスキップ条件を Gemini 前提（`GEMINI_API_KEY` の有無）に更新。
+     - CI環境等でのシークレット未注入時や、無料枠429発生時には明示的理由を出力して `t.skip` で安全に通過する仕組みを配備。
+     - `isOllamaAvailable returns boolean`（他機能向けのollamaClient死活確認テスト）は現状維持。
+   - **非変更領域の厳守**:
+     - `callHybridLlm` / `ollamaClient.ts` 自体、コーチの自由質問（`app/api/coach/ask`）、`championFactsMerge.ts`、`laneGuideIntegrate.ts`、および `scripts/llm_fallback_adapter.py` は一切変更せず現状維持。
+
+2. **検証結果**:
+   - 単体テスト: `knowledgeDecomposeHybrid.test.ts` を含む全104テスト ALL PASS（fail: 0）。
+   - 本番ビルド: `05_PILOT` の `npm run build` が全28ルート静的最適化・型チェック ALL PASS（Exit Code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. ナレッジ蓄積パイプラインでは「安さ・速度」よりも「データの純度・構造化精度」を最優先し、低容量モデルによる水増しや誤分類のリスクがある処理はフロンティアモデル固定へ割り切る設計判断が極めて重要。
+> 2. ハイブリッド委譲アダプターを特定機能のみでバイパスする場合、基盤モジュール（ollamaClient）を破壊せず呼び出し元で直接上位クライアントを呼ぶことで、他機能（コーチ即答等）への副作用をゼロに抑えられる。
+> 3. テストのスキップ条件は「そのテストが検証する対象コンポーネントが依存する最小の外部リソース（GEMINI_API_KEY等）」に正確に連動させることで、CIの誤赤落ちを構造的に防げる。
+
+- `[要検証]`: GitHub Actions CI（pilot-test）の自動実行結果確認（緑パス）
+- `[継続ウォッチ]`: 新規動画・記事取り込み時における知見分解データのロール精度および重複度
+- `[発信候補]`: 「ローカルLLMとクラウドAPIの住み分け基準」― 速度優先の即時対話 vs 純度優先のナレッジ分解（アーキテクチャ設計論）
+
+---
+
+## 📅 2026-11-20（金）
+
 ### 🔬 【モデル比較・品質検証】SPEC 13: Ollama (Qwen2.5 7B) vs Gemini の生成品質・量の比較検証（実動実測・429安全中断・レポート策定）完了
 
 **概要**:
@@ -33,7 +67,75 @@
 
 ## 📅 2026-11-20（金）
 
+### 🚀 【ナレッジ品質防壁】指示文 14: 知見分解の Gemini API 固定（Ollama 完全バイパス）完了
+
+**概要**:
+ユーザー指示「GitHubに指示文14を置きました。05_PILOT/docs/specs/14-decompose-gemini-only-instruction.md を読んで、そのとおりに実施してください。」に基づき、SPEC 13 の検証結果（7Bモデルでのオウム返し水増し・コピペ量産・ロール誤認）を受けて知見分解（`decomposeArticle`）のルーティングを改修・デプロイ。
+
+1. **実装内容**:
+   - `05_PILOT/src/lib/knowledgeDecompose.ts`:
+     - LLM呼び出しを `callHybridLlm` から `callGemini` へ完全切り替え（オプション `{ temperature: 0.2, maxOutputTokens: 6000, responseMimeType: 'application/json' }` は完全維持）。
+     - 不要になった `callHybridLlm` のインポートを削除。
+     - 知見分解の処理経路から Ollama を完全に排除し、常に Gemini API を利用してナレッジベース（`personal_knowledge`）の品質と純度を保証。
+   - `05_PILOT/src/lib/__tests__/knowledgeDecomposeHybrid.test.ts`:
+     - テスト名称およびスキップ条件を Gemini 前提（`GEMINI_API_KEY` の有無）に更新。
+     - CI環境等でのシークレット未注入時や、無料枠429発生時には明示的理由を出力して `t.skip` で安全に通過する仕組みを配備。
+     - `isOllamaAvailable returns boolean`（他機能向けのollamaClient死活確認テスト）は現状維持。
+   - **非変更領域の厳守**:
+     - `callHybridLlm` / `ollamaClient.ts` 自体、コーチの自由質問（`app/api/coach/ask`）、`championFactsMerge.ts`、`laneGuideIntegrate.ts`、および `scripts/llm_fallback_adapter.py` は一切変更せず現状維持。
+
+2. **検証結果**:
+   - 単体テスト: `knowledgeDecomposeHybrid.test.ts` を含む全104テスト ALL PASS（fail: 0）。
+   - 本番ビルド: `05_PILOT` の `npm run build` が全28ルート静的最適化・型チェック ALL PASS（Exit Code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. ナレッジ蓄積パイプラインでは「安さ・速度」よりも「データの純度・構造化精度」を最優先し、低容量モデルによる水増しや誤分類のリスクがある処理はフロンティアモデル固定へ割り切る設計判断が極めて重要。
+> 2. ハイブリッド委譲アダプターを特定機能のみでバイパスする場合、基盤モジュール（ollamaClient）を破壊せず呼び出し元で直接上位クライアントを呼ぶことで、他機能（コーチ即答等）への副作用をゼロに抑えられる。
+> 3. テストのスキップ条件は「そのテストが検証する対象コンポーネントが依存する最小の外部リソース（GEMINI_API_KEY等）」に正確に連動させることで、CIの誤赤落ちを構造的に防げる。
+
+- `[要検証]`: GitHub Actions CI（pilot-test）の自動実行結果確認（緑パス）
+- `[継続ウォッチ]`: 新規動画・記事取り込み時における知見分解データのロール精度および重複度
+- `[発信候補]`: 「ローカルLLMとクラウドAPIの住み分け基準」― 速度優先の即時対話 vs 純度優先のナレッジ分解（アーキテクチャ設計論）
+
+---
+
+## 📅 2026-11-20（金）
+
 ### 🚀 【品質・インフラ・バランサー】CI修復・Whisper実働検証・次世代バランサーPhase 1〜3（監査・テスト・シャドー評価）完了
+
+---
+
+## 📅 2026-11-20（金）
+
+### 🚀 【ナレッジ品質防壁】指示文 14: 知見分解の Gemini API 固定（Ollama 完全バイパス）完了
+
+**概要**:
+ユーザー指示「GitHubに指示文14を置きました。05_PILOT/docs/specs/14-decompose-gemini-only-instruction.md を読んで、そのとおりに実施してください。」に基づき、SPEC 13 の検証結果（7Bモデルでのオウム返し水増し・コピペ量産・ロール誤認）を受けて知見分解（`decomposeArticle`）のルーティングを改修・デプロイ。
+
+1. **実装内容**:
+   - `05_PILOT/src/lib/knowledgeDecompose.ts`:
+     - LLM呼び出しを `callHybridLlm` から `callGemini` へ完全切り替え（オプション `{ temperature: 0.2, maxOutputTokens: 6000, responseMimeType: 'application/json' }` は完全維持）。
+     - 不要になった `callHybridLlm` のインポートを削除。
+     - 知見分解の処理経路から Ollama を完全に排除し、常に Gemini API を利用してナレッジベース（`personal_knowledge`）の品質と純度を保証。
+   - `05_PILOT/src/lib/__tests__/knowledgeDecomposeHybrid.test.ts`:
+     - テスト名称およびスキップ条件を Gemini 前提（`GEMINI_API_KEY` の有無）に更新。
+     - CI環境等でのシークレット未注入時や、無料枠429発生時には明示的理由を出力して `t.skip` で安全に通過する仕組みを配備。
+     - `isOllamaAvailable returns boolean`（他機能向けのollamaClient死活確認テスト）は現状維持。
+   - **非変更領域の厳守**:
+     - `callHybridLlm` / `ollamaClient.ts` 自体、コーチの自由質問（`app/api/coach/ask`）、`championFactsMerge.ts`、`laneGuideIntegrate.ts`、および `scripts/llm_fallback_adapter.py` は一切変更せず現状維持。
+
+2. **検証結果**:
+   - 単体テスト: `knowledgeDecomposeHybrid.test.ts` を含む全104テスト ALL PASS（fail: 0）。
+   - 本番ビルド: `05_PILOT` の `npm run build` が全28ルート静的最適化・型チェック ALL PASS（Exit Code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. ナレッジ蓄積パイプラインでは「安さ・速度」よりも「データの純度・構造化精度」を最優先し、低容量モデルによる水増しや誤分類のリスクがある処理はフロンティアモデル固定へ割り切る設計判断が極めて重要。
+> 2. ハイブリッド委譲アダプターを特定機能のみでバイパスする場合、基盤モジュール（ollamaClient）を破壊せず呼び出し元で直接上位クライアントを呼ぶことで、他機能（コーチ即答等）への副作用をゼロに抑えられる。
+> 3. テストのスキップ条件は「そのテストが検証する対象コンポーネントが依存する最小の外部リソース（GEMINI_API_KEY等）」に正確に連動させることで、CIの誤赤落ちを構造的に防げる。
+
+- `[要検証]`: GitHub Actions CI（pilot-test）の自動実行結果確認（緑パス）
+- `[継続ウォッチ]`: 新規動画・記事取り込み時における知見分解データのロール精度および重複度
+- `[発信候補]`: 「ローカルLLMとクラウドAPIの住み分け基準」― 速度優先の即時対話 vs 純度優先のナレッジ分解（アーキテクチャ設計論）
 
 ---
 

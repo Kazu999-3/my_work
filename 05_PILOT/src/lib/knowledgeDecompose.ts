@@ -1,6 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { callGemini } from './geminiClient';
-import { callHybridLlm } from './ollamaClient';
 import { resolveRosterChampion, resolveRosterChampions, getChampionNameJa } from './championRoster';
 import { LaneKey, LANE_CONFIG } from './laneDetector';
 import { integrateArticles, IntegrateArticle } from './knowledgeIntegrate';
@@ -95,7 +94,8 @@ ${parentChampNameJa ? `【記事の主役チャンピオン: ${parentChampNameJa
   ]
 }`;
 
-  const resText = await callHybridLlm(prompt, {
+  // 指示文14: 知見分解は高品質・ロール誤認防止のため常にGemini APIを使用（Ollamaバイパス）
+  const resText = await callGemini(prompt, {
     temperature: 0.2,
     maxOutputTokens: 6000,
     responseMimeType: 'application/json',

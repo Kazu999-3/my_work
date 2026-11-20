@@ -19,7 +19,7 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-import { isOllamaAvailable, callHybridLlm } from '../ollamaClient';
+import { isOllamaAvailable } from '../ollamaClient';
 import { decomposeArticle } from '../knowledgeDecompose';
 
 test('isOllamaAvailable returns boolean', async () => {
@@ -28,12 +28,12 @@ test('isOllamaAvailable returns boolean', async () => {
   console.log('isOllamaAvailable:', available);
 });
 
-test('decomposeArticle works with hybrid LLM', async (t) => {
-  const ollama = await isOllamaAvailable();
-  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+// 指示文 14: 知見分解は Gemini API 固定（Ollamaバイパス）
+test('decomposeArticle works with Gemini (Ollama bypassed)', async (t) => {
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_FREE);
 
-  if (!ollama && !hasGemini) {
-    t.skip('Ollamaデーモンが未起動かつGEMINI_API_KEYが未設定のためスキップします（CI環境等）');
+  if (!hasGemini) {
+    t.skip('GEMINI_API_KEYが未設定のためスキップします（CI環境等）');
     return;
   }
 
@@ -52,12 +52,21 @@ test('decomposeArticle works with hybrid LLM', async (t) => {
     champion: 'Darius',
   };
 
-  const results = await decomposeArticle(sampleArticle);
-  assert.ok(Array.isArray(results));
-  assert.ok(results.length >= 2, `分解知見数が2件以上であること: 実際は ${results.length} 件`);
+  try {
+    const results = await decomposeArticle(sampleArticle);
+    assert.ok(Array.isArray(results));
+    assert.ok(results.length >= 2, `分解知見数が2件以上であること: 実際は ${results.length} 件`);
 
-  console.log(`✓ ナレッジ分解成功 (${results.length}件の知見を抽出):`);
-  for (const r of results) {
-    console.log(`  - [${r.champion}${r.enemyChampion ? ` vs ${r.enemyChampion}` : ''}] ${r.title} (${r.scope})`);
+    console.log(`✓ ナレッジ分解成功 (${results.length}件の知見を抽出):`);
+    for (const r of results) {
+      console.log(`  - [${r.champion}${r.enemyChampion ? ` vs ${r.enemyChampion}` : ''}] ${r.title} (${r.scope})`);
+    }
+  } catch (err: any) {
+    // 無料枠の日次上限（429）等の外部制約エラーの場合はスキップ扱い
+    if (err?.message?.includes('429') || err?.message?.includes('利用制限') || err?.message?.includes('quota')) {
+      t.skip(`Gemini API クォータ制限のためスキップします: ${err.message}`);
+      return;
+    }
+    throw err;
   }
 });
