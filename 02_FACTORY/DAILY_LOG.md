@@ -1,3 +1,47 @@
+## 📅 2026-11-20（金）
+
+### 🚀 【解析パイプライン健全化】SPEC 08 終端エラー自動退避 ＆ SPEC 09 登録優先度統一（プレイリストhigh→チャンネルmedium→チャンプ調査low）完了
+
+**概要**:
+1. **背景と目的**:
+   - ユーザー依頼「終わったら8、9も実装して」に基づき、YouTube動画解析パイプラインの品質向上と処理順序統一を実装・デプロイ。
+   - SPEC 08: 字幕なし・権限拒否・生成失敗などの終端エラー動画（約28件）がキューに滞留して手動確認のノイズになるのを防ぐため、手動確認用プレイリストへ自動退避してクローズする機構を新設。
+   - SPEC 09: 登録優先度が本来の指定と真逆（チャンプ調査がhigh、プレイリストがmedium扱い）になっていた問題を是正し、「①プレイリスト（high）➔ ②特定チャンネル（medium）➔ ③チャンプ調査（low）」に完全統一。
+
+2. **実施内容**:
+   - **【SPEC 08: 解析不可動画の自動退避（`scripts/auto_close_terminal_errors.py`）】**:
+     - 対象ステータス: `error_generation`, `error_no_transcript`, `failed`（終端エラーのみ。pending, completed, manually_closed, retry_count未到達等は除外）。
+     - 安全設計: 既定は OFF（`AUTO_CLOSE_UNANALYZABLE=1` または `--force` 時のみ実行）。ドライランモード（`--dry-run`）完備。
+     - 実測検証: DB上の終端エラー 28件（`error_generation`: 1件、`failed`: 1件、`error_no_transcript`: 26件）を正常検出。
+     - 退避処理: YouTube Data API / ポータルAPI `/api/youtube/playlist/add` 経由で退避用プレイリストへ追加 ➔ 成功時のみ `status='manually_closed'` へ更新。追加失敗時は次回再試行（ステータス変更せず）。
+     - `scripts/youtube_worker.py`: 毎サイクルの末尾で自動呼び出し可能に配線。
+     - 単体テスト: `scripts/tests/test_auto_close.py` 3件 ALL PASS。
+     - コミット: `939f6647`。
+   - **【SPEC 09: 動画解析の優先度統一】**:
+     - 登録側の priority を修正:
+       - `03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py`: プレイリスト解決を `priority="high"`、チャンネル監視を `priority="medium"` に明示。
+       - `scripts/champion_researcher.py` & `scripts/prospector.py`: 登録時の既定 priority を `"high"` ➔ `"low"` に変更。
+       - `05_PILOT/src/app/api/youtube/scout-champion/route.ts`: 既定 priority を `'high'` ➔ `'low'` に変更。
+       - `05_PILOT/src/app/api/youtube/queue/route.ts`: プレイリスト由来（一括登録／URL `list=`／`source='PL'`）を `'high'` に変更。
+     - 既存仕組みの保護: ワーカーの処理順（high→medium→low、同優先度は古い順）およびタイムアウト時の low 落ちペナルティは完全維持。
+     - 既存 pending（354件）の調査と付け替え:
+       - プレイリスト由来と100%判別可能な `MqySKbCVRuo`（`[PL] Playlist PL7aNfKUA...`）を `medium` ➔ `high` へ昇格。
+       - タイムアウトによる low 落ち（29件）はペナルティ維持。特定チャンネル由来（344件）は medium 維持。
+     - 単体テスト: `scripts/tests/test_priority_order.py` 5件 ALL PASS。
+     - コミット: `bc2c928e`。
+
+3. **検証とデプロイ結果**:
+   - `05_PILOT/npm run build`: 全28ルート・TypeScript型チェック・プリレンダリング ALL PASS。
+   - Python テスト: 全31テスト ALL PASS。
+   - Git: `origin/master` へプッシュ完了。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. キュー処理システムでは、登録元の優先度（デフォルト値）のズレが時間経過とともに逆転現象を生むため、登録箇所全てに共通定数または明示的な優先度文字列を持たせることが肝要。
+> 2. 自動退避・クローズのような破壊的/不可逆になりうる処理は、環境変数フラグで既定OFFにし、ドライラン機能と単体テストを先に作って実測値を確認してから有効化するのが最も安全。
+> 3. タイムアウト時のペナルティ（優先度降格）を持つキューでは、既存データの全量一括リセットを避け、由来が確実に証明できるもの（プレフィックス等）のみピンポイントで付け替えることで安全性を担保できる。
+
+---
+
 ## 📅 2026-11-19（木）
 
 ### 🚀 【ローカルLLM】Ollama（Qwen2.5 7B）配備 ＆ 動画解析ハイブリッド事実抽出の実動検証完了（Geminiトークン消費0化達成）
