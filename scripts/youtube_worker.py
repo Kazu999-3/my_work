@@ -1061,6 +1061,17 @@ def main():
     if failed and not done and all(st == "error_no_transcript" for _, st, _ in failed):
         print("⚠️ 全件が字幕取得に失敗。yt-dlpのIP制限の可能性があります。", file=sys.stderr)
 
+    # SPEC 08: 技術的に解析できない終端エラー動画の自動プレイリスト退避＆クローズ
+    try:
+        from auto_close_terminal_errors import run_auto_close_cycle
+        auto_close_report = run_auto_close_cycle()
+        closed_n = auto_close_report.get("closed_count", 0)
+        failed_n = auto_close_report.get("failed_count", 0)
+        if closed_n > 0 or failed_n > 0:
+            print(f"📦 [SPEC 08 自動退避] クローズ: {closed_n}件, 失敗: {failed_n}件")
+    except Exception as ac_err:
+        print(f"⚠️ [auto_close] 自動退避処理中にエラー: {ac_err}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
