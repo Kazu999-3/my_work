@@ -17,6 +17,29 @@ interface AdminNotification {
   created_at: string;
 }
 
+// 通知は旧ポータル(04)とPilot(05)で admin_notifications を共有している。
+// ポータルに無いPilot専用ページ（/coach, /admin/dict-health 等）は Pilot の絶対URLへ振り替える。
+const PILOT_BASE_URL = 'https://ktm-pilot.vercel.app';
+const PILOT_PATHS = [
+  '/coach',
+  '/library',
+  '/lane-guides',
+  '/admin/dict-health',
+  '/admin/dict-maintenance',
+  '/admin/review',
+  '/admin/youtube',
+  '/admin/dashboard',
+];
+
+function resolveNotificationUrl(url: string): { href: string; external: boolean } {
+  if (/^https?:\/\//.test(url)) return { href: url, external: true };
+  const path = url.split(/[?#]/)[0];
+  if (PILOT_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return { href: `${PILOT_BASE_URL}${url}`, external: true };
+  }
+  return { href: url, external: false };
+}
+
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -249,28 +272,36 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
           : champ
           ? `⚡ ${champ} の振り返りを開く →`
           : '⚡ 振り返りを開く →';
-      return { label, url: n.url || '/coach' };
+      const resolved = resolveNotificationUrl(n.url || '/coach');
+      return { label, url: resolved.href, external: resolved.external };
     }
     if (type.includes('dict_review')) {
       const stale = typeof d.staleCount === 'number' ? d.staleCount : null;
+      const resolved = resolveNotificationUrl(n.url || '/admin/dict-health');
       return {
         label: stale ? `📖 停滞中の${stale}件を確認 →` : '📖 辞典ヘルスを確認 →',
-        url: n.url || '/admin/dict-health',
+        url: resolved.href,
+        external: resolved.external,
       };
     }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
-      return { label: '⚡ 1分振り返りを開く →', url: '/coach' };
+      const resolved = resolveNotificationUrl('/coach');
+      return { label: '⚡ 1分振り返りを開く →', url: resolved.href, external: resolved.external };
     }
     if (type.includes('discord') || title.includes('メンバー') || title.includes('参加')) {
-      return { label: '👤 名簿で確認・Rank設定 →', url: '/ktm-admin' };
+      return { label: '👤 名簿で確認・Rank設定 →', url: '/ktm-admin', external: false };
     }
     if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
-      return { label: '🏆 戦績履歴を見る →', url: '/ktm-admin' };
+      return { label: '🏆 戦績履歴を見る →', url: '/ktm-admin', external: false };
     }
     if (type.includes('error') || title.includes('riot')) {
-      return { label: '🔧 Riot ID修正へ →', url: '/ktm-admin' };
+      return { label: '🔧 Riot ID修正へ →', url: '/ktm-admin', external: false };
     }
-    return n.url ? { label: '関連ページを開く →', url: n.url } : null;
+    if (n.url) {
+      const resolved = resolveNotificationUrl(n.url);
+      return { label: '関連ページを開く →', url: resolved.href, external: resolved.external };
+    }
+    return null;
   };
 
   const displayedNotifications = onlyUnread 
@@ -401,6 +432,8 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                             <a
                               href={action.url}
                               onClick={() => markRead(n)}
+                              target={action.external ? '_blank' : undefined}
+                              rel={action.external ? 'noopener noreferrer' : undefined}
                               className="text-[10px] font-black text-primary-800 hover:text-primary-950 transition hover:underline flex items-center gap-0.5"
                             >
                               {action.label}

@@ -91,9 +91,9 @@ export async function handlePortalBasicsButtons(interaction, env, ctx, { customI
             },
             {
               type: 2,
-              label: '🌐 ポータルで確認',
+              label: '🌐 記事承認画面で確認',
               style: 5,
-              url: `${CONFIG.PORTAL_URL}/admin/knowledge`
+              url: `${CONFIG.PILOT_URL || 'https://ktm-pilot.vercel.app'}/admin/review`
             }
           ]
         }

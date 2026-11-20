@@ -9,6 +9,7 @@ const CHANNEL_NAME = '🎒-教えて先輩-相談募集';
 export const DEFAULT_MENTORSHIP_CHANNEL_ID = '1550159520687325205';
 export const DEFAULT_MENTORSHIP_FORUM_CHANNEL_ID = '1524740558550073496';
 const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app';
+const PILOT_BASE_URL = process.env.NEXT_PUBLIC_PILOT_URL || 'https://ktm-pilot.vercel.app';
 
 const DASHBOARD_TITLE = '🎒 KTM 教えて先輩！リアルタイム相談掲示板';
 
@@ -674,7 +675,7 @@ export async function createMentorshipForumThread(
       `3. Discord画面共有での観戦やKTMカスタムでの同チーム参加 🎮\n\n` +
       `🔗 **便利なポータルツール:**\n` +
       `• [マイページ（目標進捗・メモ共有）](${PORTAL_BASE_URL}/mypage)\n` +
-      `• [戦績コーチング・リプレイ監査](${PORTAL_BASE_URL}/coach)`,
+      `• [戦績コーチング・リプレイ監査](${PILOT_BASE_URL}/coach)`,
     color: 0x10b981, // エメラルドグリーン
     fields: [
       { name: '🧑‍🏫 先輩', value: `${mentorName} (${mentorMention})`, inline: true },

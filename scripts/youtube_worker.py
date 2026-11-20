@@ -1023,16 +1023,17 @@ def main():
             lines.append(f"**✅ 解析完了: {len(done)}本**")
             lines += [f"・{item['title'] if isinstance(item, dict) else item}" for item in done]
 
-            # 承認はポータル側の未承認ナレッジ管理ページで行うため、Discord上の個別承認ボタンは撤去
-            portal_url = os.environ.get("PORTAL_URL", "https://ktm-portal.pages.dev").rstrip("/")
-            if portal_url:
+            # 承認は Pilot 側の記事承認画面で行う（旧 /admin/knowledge は 05 /admin/review へ移行済み）
+            portal_url = os.environ.get("PORTAL_URL", "https://my-work-8jbd.vercel.app").rstrip("/")
+            pilot_url = os.environ.get("PILOT_URL", "https://ktm-pilot.vercel.app").rstrip("/")
+            if pilot_url or portal_url:
                 components = [{
                     "type": 1,
                     "components": [{
                         "type": 2,
-                        "label": "🌐 未承認ナレッジ確認・承認 (ポータル)",
+                        "label": "🌐 記事承認画面で確認 (Pilot)",
                         "style": 5, # リンク
-                        "url": f"{portal_url}/admin/knowledge"
+                        "url": f"{pilot_url}/admin/review"
                     }]
                 }]
 

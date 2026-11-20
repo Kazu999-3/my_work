@@ -21,6 +21,8 @@ export const CONFIG = {
   // env.PORTAL_API_URL未設定時にファイルごとに違うドメインへ飛ぶ不整合があった。
   // 実際にVercelにデプロイされているのは my-work-8jbd なので、これに統一する。
   PORTAL_URL: "https://my-work-8jbd.vercel.app",
+  // 戦術パイロット（05_PILOT）URL。記事承認・コーチング等は 05 へ集約。
+  PILOT_URL: "https://ktm-pilot.vercel.app",
 };
 
 /** env.PORTAL_API_URL があればそれを優先し、なければCONFIG.PORTAL_URLにフォールバックする */
