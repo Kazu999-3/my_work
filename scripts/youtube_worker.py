@@ -837,14 +837,18 @@ def main():
             # 40分のタスク制限に収まらず、強制終了→再試行を繰り返していた。2026-10-04: 29分・44分の動画と配信アーカイブで実測）
             dur = it.get("duration_sec")
             whisper_ok = bool(dur) and dur < DURATION_UNKNOWN and dur <= WHISPER_MAX_SEC
+            whisper_attempted = False
+            whisper_chars = 0
             if a is None and not transcript and ENABLE_WHISPER and not whisper_ok:
                 print(f"  ⏭️ 長さ{'不明' if not dur or dur >= DURATION_UNKNOWN else f'{dur // 60}分'}のためWhisperを飛ばして映像解析へ進みます")
             if a is None and not transcript and ENABLE_WHISPER and whisper_ok:
+                whisper_attempted = True
                 try:
                     from whisper_transcriber import transcribe_youtube_video_fallback
                     print(f"  🎙️ 字幕が無いのでWhisperで文字起こしします: {vid}")
                     text, _ = transcribe_youtube_video_fallback(vid, model_size=WHISPER_MODEL)
                     text = (text or "").strip()
+                    whisper_chars = len(text)
                     min_chars = 50 if is_short else WHISPER_MIN_CHARS
                     if len(text) < min_chars:
                         print(f"  ⚠️ 文字起こしが短すぎます({len(text)}文字 < {min_chars})。実況なしの動画と判断します。",
@@ -862,6 +866,8 @@ def main():
 
             if a is None:
                 if not transcript:
+                    if whisper_attempted:
+                        raise NoTranscript(f"Whisper文字起こし結果が短すぎます（{whisper_chars}文字 < {50 if is_short else WHISPER_MIN_CHARS}）。実況・解説音声なし動画の可能性があります")
                     raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
                 try:
                     a = summarize_transcript(it.get("title") or ("YouTube Shorts" if is_short else "YouTube Video"),
