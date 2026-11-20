@@ -24582,3 +24582,21 @@
   - 毎時2回（月1,440回）空振りしていたオンボーディングポーリングを、新メンバー活動時間帯（毎日20:00 JST）の1日1回バッチへ完全集約。
   - GitHub Actions（`onboarding-daily`）へ移設し、手動即時実行（workflow_dispatch）および管理画面（`/ktm-admin`）での即時更新とのハイブリッド運用を確立。
   - これにより、VercelのバックグラウンドCPU稼働ゼロのまま、新メンバーの名簿登録・個別案内チャンネル開通の自動化を両立。
+
+
+## 2026-11-20 (追加分: SPEC 08 常駐自動退避＆クローズON化)
+
+- **【SPEC 08 常駐自動退避＆クローズの有効化】(`scripts/auto_close_terminal_errors.py`, `05_PILOT/src/proxy.ts`, `.env`)**:
+  - 常駐ワーカー環境(`.env`, `05_PILOT/.env.local`, `scratch/run_batch_worker.py`)に `AUTO_CLOSE_UNANALYZABLE=1` を設定し常駐運用を開始。`AUTO_CLOSE_DRY_RUN` は未設定であることを確認。
+  - `05_PILOT/src/proxy.ts` において `/api/youtube/playlist/add` へのアクセスを、Cookie に加え `SUPABASE_SERVICE_ROLE_KEY` または合言葉による Bearer 認証で通過できるようにセキュリティ改修し、本番デプロイ完了。
+  - 自動退避スクリプトの呼び出し先を新鋭ポータル `https://ktm-pilot.vercel.app` に向け、Service Role Key による安全な管理者認証を確立。
+  - 実測検証: 現在の終端エラーは114件(`error_no_transcript`: 111件, `failed`: 3件)。常駐ワーカーおよびスクリプト実行時、安全設計に従い「プレイリスト追加に成功したもののみ `manually_closed` へ更新」される。現在、YouTube OAuth 認証情報が未設定のため次回サイクル再試行として安全に保持中。
+
+**再利用可能な3行ナレッジ**:
+1. **「Next.js 16 (Turbopack) の `src/proxy.ts` は全APIを透過保護するため、常駐スクリプトや外部バッチからのアクセスには Bearer 認証と `SUPABASE_SERVICE_ROLE_KEY` の定数時間比較（`safeTimingCompare`）を併用することで、合言葉をハードコードせずに安全な機械的認証を実現できる。」**
+2. **「終端エラー（字幕欠落・解析不能）の自動クローズ処理は、安全設計（フェイルセーフ）として『外部プレイリストへの退避が成功したものだけをステータス更新する』条件にすることで、API障害や未設定時にデータを消失させる事故を構造的に防げる。」**
+3. **「バッチ処理の停止機構には、プロセス強制終了ではなく `STOP_BATCH` フラグファイルによるグレースフルシャットダウンを採用することで、実行中のLLM生成やDB更新を中断させず安全に停止・再起動できる。」**
+
+- `[要検証]`: YouTube Data API の OAuth 認証情報（`YOUTUBE_OAUTH_REFRESH_TOKEN` 等）を Vercel / `.env` に設定した際、114件の終端エラーがプレイリストへ退避され、`manually_closed` へ自動遷移することの実機検証。
+- `[継続ウォッチ]`: 常駐ワーカー（`run_batch_worker.py`）の自動実行サイクルにおいて、新規追加動画が解析完了するか、字幕なし動画が安全にスキップ・再試行されるかの監視。
+- `[発信候補]`: 「AIエージェントによるYouTube動画自動解析システムの障害設計：字幕なし・Shorts・非公開動画を破棄せず安全に退避・クローズするフェイルセーフアーキテクチャ」
