@@ -135,7 +135,7 @@ def add_via_portal_api(video_id: str, playlist_id: str) -> Tuple[bool, str]:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
     _, sb_key = get_supabase_client()
-    auth_token = os.environ.get("PILOT_SECRET_TOKEN") or sb_key
+    auth_token = sb_key or os.environ.get("PILOT_SECRET_TOKEN")
     if auth_token:
         headers["Authorization"] = f"Bearer {auth_token}"
 
