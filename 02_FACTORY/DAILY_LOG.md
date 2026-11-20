@@ -12,7 +12,7 @@
    - **【SPEC 08: 解析不可動画の自動退避（`scripts/auto_close_terminal_errors.py`）】**:
      - 対象ステータス: `error_generation`, `error_no_transcript`, `failed`（終端エラーのみ。pending, completed, manually_closed, retry_count未到達等は除外）。
      - 安全設計: 既定は OFF（`AUTO_CLOSE_UNANALYZABLE=1` または `--force` 時のみ実行）。ドライランモード（`--dry-run`）完備。
-     - 実測検証: DB上の終端エラー 28件（`error_generation`: 1件、`failed`: 1件、`error_no_transcript`: 26件）を正常検出。
+     - 実測検証: DB上の終端エラー 48件（`error_generation`: 1件、`failed`: 1件、`error_no_transcript`: 46件）を検出し、ユーザー承認のもと全件 `manually_closed` へ一括クローズ完了（終端エラー残存0件達成）。
      - 退避処理: YouTube Data API / ポータルAPI `/api/youtube/playlist/add` 経由で退避用プレイリストへ追加 ➔ 成功時のみ `status='manually_closed'` へ更新。追加失敗時は次回再試行（ステータス変更せず）。
      - `scripts/youtube_worker.py`: 毎サイクルの末尾で自動呼び出し可能に配線。
      - 単体テスト: `scripts/tests/test_auto_close.py` 3件 ALL PASS。
