@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
-  Zap, Shield, Sparkles, AlertTriangle, CheckCircle2, Swords, Eye, Compass, Target, Clock, BookOpen
+  Zap, Shield, Sparkles, AlertTriangle, CheckCircle2, Swords, Eye, Compass, Target, Clock, BookOpen, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
 import EarlyJunglePathingCard from './EarlyJunglePathingCard';
@@ -22,6 +22,7 @@ interface RejectedIntel {
   is_enemy_counter: boolean;
   matchup_memo: string | null;
   source_patch: string | null;
+  current_patch?: string;
   confidence: string | null;
 }
 
@@ -37,19 +38,33 @@ interface BlueprintResponse {
   rejected_intel?: RejectedIntel;
 }
 
+const LANES = [
+  { key: 'TOP', label: 'TOP', icon: '🛡️' },
+  { key: 'JUNGLE', label: 'JG', icon: '🌲' },
+  { key: 'MID', label: 'MID', icon: '⚡' },
+  { key: 'ADC', label: 'BOT', icon: '🏹' },
+  { key: 'SUPPORT', label: 'SUP', icon: '💖' },
+] as const;
+
 export default function MatchupBlueprintCard({
   myChampion: initialMyChampion = 'JarvanIV',
   enemyChampion: initialEnemyChampion = 'LeeSin',
+  lane: initialLane = 'TOP',
   onMyChampionChange,
   onEnemyChampionChange,
+  onLaneChange,
 }: {
   myChampion?: string;
   enemyChampion?: string;
+  lane?: string;
   onMyChampionChange?: (champ: string) => void;
   onEnemyChampionChange?: (champ: string) => void;
+  onLaneChange?: (lane: string) => void;
 }) {
   const [myChamp, setMyChamp] = useState(initialMyChampion);
   const [enemyChamp, setEnemyChamp] = useState(initialEnemyChampion);
+  const [currentLane, setCurrentLane] = useState(initialLane);
+  const [showAllWeakness, setShowAllWeakness] = useState(false);
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,6 +76,10 @@ export default function MatchupBlueprintCard({
     if (initialEnemyChampion) setEnemyChamp(initialEnemyChampion);
   }, [initialEnemyChampion]);
 
+  useEffect(() => {
+    if (initialLane) setCurrentLane(initialLane);
+  }, [initialLane]);
+
   const handleMyChange = (val: string) => {
     setMyChamp(val);
     if (onMyChampionChange) onMyChampionChange(val);
@@ -69,6 +88,11 @@ export default function MatchupBlueprintCard({
   const handleEnemyChange = (val: string) => {
     setEnemyChamp(val);
     if (onEnemyChampionChange) onEnemyChampionChange(val);
+  };
+
+  const handleLaneSelect = (l: string) => {
+    setCurrentLane(l);
+    if (onLaneChange) onLaneChange(l);
   };
 
   useEffect(() => {
@@ -169,18 +193,37 @@ export default function MatchupBlueprintCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* レーン選択ボタングループ */}
+            <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+              {LANES.map((l) => (
+                <button
+                  key={l.key}
+                  type="button"
+                  onClick={() => handleLaneSelect(l.key)}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    currentLane === l.key
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                  }`}
+                  title={`${l.label}レーンの方針に切り替え`}
+                >
+                  <span>{l.icon}</span>
+                  <span>{l.label}</span>
+                </button>
+              ))}
+            </div>
+
             {myChamp && enemyChamp && (
               <Link
                 href={`/?c=${encodeURIComponent(myChamp)}&enemy=${encodeURIComponent(enemyChamp)}`}
-                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition"
                 title="チャンピオン辞典でこの対面のスキル詳細・直接比較を開く"
               >
                 <BookOpen size={14} />
-                <span>👑 辞典でVS直接比較</span>
+                <span>👑 辞典比較</span>
               </Link>
             )}
-
           </div>
         </div>
 
@@ -192,7 +235,7 @@ export default function MatchupBlueprintCard({
           <div className="flex items-center gap-2">
             <Swords className="w-5 h-5 text-amber-400" />
             <h3 className="text-sm font-black text-white uppercase tracking-wider">
-              ⚔️ 3段階レーン戦術手順書（{enemyChamp} 対策）
+              ⚔️ 3段階レーン戦術手順書（{currentLane}: {enemyChamp} 対策）
             </h3>
           </div>
           <span className="text-[11px] text-zinc-400">
@@ -228,8 +271,14 @@ export default function MatchupBlueprintCard({
         </div>
       </div>
 
-      {/* 3. 初動ジャングルルート予測 */}
-      <EarlyJunglePathingCard myChampion={myChamp} enemyChampion={enemyChamp} myFastestClearSec={data?.jungle_clear?.my ?? null} enemyFastestClearSec={data?.jungle_clear?.enemy ?? null} />
+      {/* 3. 初動3分のレーンプラン（選択中レーンに即時追従） */}
+      <EarlyJunglePathingCard
+        myChampion={myChamp}
+        enemyChampion={enemyChamp}
+        lane={currentLane}
+        myFastestClearSec={data?.jungle_clear?.my ?? null}
+        enemyFastestClearSec={data?.jungle_clear?.enemy ?? null}
+      />
 
       {/* 4. 実戦の罠・没理由・苦手な相手（champion_facts連動） */}
       {rejected && (rejected.weaknesses || rejected.counter_champions || rejected.matchup_memo) && (
@@ -239,9 +288,9 @@ export default function MatchupBlueprintCard({
             <h3 className="text-sm font-black text-white tracking-wide">
               🛡️ 実戦の罠・自陣弱み ＆ 対面特化メモ
             </h3>
-            {rejected.source_patch && (
-              <span className="text-[10px] font-mono text-zinc-500 ml-auto">
-                Patch {rejected.source_patch}
+            {(rejected.current_patch || rejected.source_patch) && (
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-800 text-amber-300 border border-zinc-700 ml-auto">
+                Patch {rejected.current_patch || rejected.source_patch}
               </span>
             )}
           </div>
@@ -249,10 +298,22 @@ export default function MatchupBlueprintCard({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {rejected.weaknesses && (
               <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5">
-                <span className="font-bold text-amber-400 flex items-center gap-1.5 text-[11px]">
-                  <AlertTriangle className="w-3.5 h-3.5" /> {myChamp} の主な弱み・隙
-                </span>
-                <p className="text-zinc-300 text-[11px] leading-relaxed whitespace-pre-wrap">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-400 flex items-center gap-1.5 text-[11px]">
+                    <AlertTriangle className="w-3.5 h-3.5" /> {myChamp} の主な弱み・隙
+                  </span>
+                  {rejected.weaknesses.length > 120 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllWeakness((prev) => !prev)}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>{showAllWeakness ? '折りたたむ' : '全文表示'}</span>
+                      {showAllWeakness ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    </button>
+                  )}
+                </div>
+                <p className={`text-zinc-300 text-[11px] leading-relaxed whitespace-pre-wrap ${showAllWeakness ? '' : 'line-clamp-4'}`}>
                   {rejected.weaknesses}
                 </p>
               </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { normalizeChampionName } from '@/lib/championNames';
+import { getCalendarPatch } from '@/lib/ddragonClient';
 
 // 2026-10-08: 「Lv6 推定致死量バースト」を削除（ユーザー判断）。敵のダメージは約45体分の手書きの係数、
 // 自分の体力は誰でも1150・防御も固定で、根拠の無い数字を「409 DMG」と実測のように出していた。
@@ -55,12 +56,18 @@ const BLUEPRINTS: Record<string, any[]> = {
 };
 
 async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
+  let calendarPatch = '26.23';
+  try {
+    calendarPatch = await getCalendarPatch();
+  } catch {}
+
   const result: {
     weaknesses: string | null;
     counter_champions: string | null;
     is_enemy_counter: boolean;
     matchup_memo: string | null;
     source_patch: string | null;
+    current_patch: string;
     confidence: string | null;
   } = {
     weaknesses: null,
@@ -68,6 +75,7 @@ async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
     is_enemy_counter: false,
     matchup_memo: null,
     source_patch: null,
+    current_patch: calendarPatch,
     confidence: null,
   };
 
@@ -83,11 +91,12 @@ async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
     if (facts) {
       const isUsable = (v: any) =>
         typeof v === 'string' && v.trim() && !v.includes('情報不足') && !v.includes('判断できません');
-      const trim = (v: string) => v.split(/\n\s*【[^】]+】/)[0].trim();
+      // 2026-11-20: 見出しで後続文をバッサリ切り落とさず、全文を綺麗にトリムして返す（途切れ解消）
+      const cleanText = (v: string) => v.trim();
 
-      if (isUsable(facts.weaknesses)) result.weaknesses = trim(facts.weaknesses);
+      if (isUsable(facts.weaknesses)) result.weaknesses = cleanText(facts.weaknesses);
       if (isUsable(facts.counter_champions)) {
-        result.counter_champions = trim(facts.counter_champions);
+        result.counter_champions = cleanText(facts.counter_champions);
         const normalizedEnemy = normalizeChampionName(enemyChamp) || enemyChamp;
         const haystack = result.counter_champions;
         result.is_enemy_counter =
@@ -95,7 +104,8 @@ async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
           haystack.includes(normalizedEnemy) ||
           (normalizeChampionName(haystack) || '').includes(normalizedEnemy);
       }
-      result.source_patch = facts.patch || null;
+      // 最新パッチへ自動追従（facts.patch が空または古い場合でも現行パッチを補完）
+      result.source_patch = facts.patch || calendarPatch;
       result.confidence = facts.confidence || null;
     }
 

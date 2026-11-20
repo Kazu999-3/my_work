@@ -43,19 +43,24 @@ function CoachPageContent() {
   };
 
   // 対面設計図用ステート
-  const [myChamp, setMyChamp] = useState('JarvanIV');
-  const [enemyChamp, setEnemyChamp] = useState('LeeSin');
+  const [myChamp, setMyChamp] = useState('Darius');
+  const [enemyChamp, setEnemyChamp] = useState('Aatrox');
+  const [lane, setLane] = useState('TOP');
 
   // URLのチャンピオン指定は、その値が変わった時だけ反映する
   // （タブ切替でURLが変わるたびに、画面で選び直したチャンピオンが戻されないように）
   const qMy = searchParams.get('my') || searchParams.get('champion');
   const qEnemy = searchParams.get('enemy');
+  const qLane = searchParams.get('lane');
   useEffect(() => {
     if (qMy) setMyChamp(qMy);
   }, [qMy]);
   useEffect(() => {
     if (qEnemy) setEnemyChamp(qEnemy);
   }, [qEnemy]);
+  useEffect(() => {
+    if (qLane) setLane(qLane.toUpperCase());
+  }, [qLane]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
@@ -72,7 +77,10 @@ function CoachPageContent() {
           </p>
         </div>
 
-        <CoachRiotIdBar />
+        {/* Riot ID バー（スクロール追従 sticky 配置で常に届く） */}
+        <div className="sticky top-2 z-30 shadow-xl shadow-zinc-950/80">
+          <CoachRiotIdBar />
+        </div>
 
         {/* ナビゲーションタブ（時系列順。スマホでは横スクロール） */}
         <div className="flex items-center gap-2 border-b border-zinc-800 pb-2 overflow-x-auto [&>button]:shrink-0">
@@ -103,26 +111,42 @@ function CoachPageContent() {
                 <Zap className="w-3.5 h-3.5 text-amber-400" /> 定番マッチアップ例:
               </span>
               <button
-                onClick={() => { setMyChamp('Darius'); setEnemyChamp('Aatrox'); }}
-                className="px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-amber-500 text-zinc-300 font-bold shrink-0 transition-colors"
+                onClick={() => { setMyChamp('Darius'); setEnemyChamp('Aatrox'); setLane('TOP'); }}
+                className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-colors ${
+                  myChamp === 'Darius' && enemyChamp === 'Aatrox' && lane === 'TOP'
+                    ? 'bg-amber-500/20 border-amber-500/70 text-amber-300'
+                    : 'bg-zinc-950 border-zinc-800 hover:border-amber-500 text-zinc-300'
+                }`}
               >
                 Darius vs Aatrox (TOP)
               </button>
               <button
-                onClick={() => { setMyChamp('JarvanIV'); setEnemyChamp('LeeSin'); }}
-                className="px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-amber-500 text-zinc-300 font-bold shrink-0 transition-colors"
+                onClick={() => { setMyChamp('JarvanIV'); setEnemyChamp('LeeSin'); setLane('JUNGLE'); }}
+                className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-colors ${
+                  myChamp === 'JarvanIV' && enemyChamp === 'LeeSin' && lane === 'JUNGLE'
+                    ? 'bg-amber-500/20 border-amber-500/70 text-amber-300'
+                    : 'bg-zinc-950 border-zinc-800 hover:border-amber-500 text-zinc-300'
+                }`}
               >
                 JarvanIV vs LeeSin (JG)
               </button>
               <button
-                onClick={() => { setMyChamp('Zed'); setEnemyChamp('Ahri'); }}
-                className="px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-amber-500 text-zinc-300 font-bold shrink-0 transition-colors"
+                onClick={() => { setMyChamp('Zed'); setEnemyChamp('Ahri'); setLane('MID'); }}
+                className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-colors ${
+                  myChamp === 'Zed' && enemyChamp === 'Ahri' && lane === 'MID'
+                    ? 'bg-amber-500/20 border-amber-500/70 text-amber-300'
+                    : 'bg-zinc-950 border-zinc-800 hover:border-amber-500 text-zinc-300'
+                }`}
               >
                 Zed vs Ahri (MID)
               </button>
               <button
-                onClick={() => { setMyChamp('Jinx'); setEnemyChamp('Lucian'); }}
-                className="px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-amber-500 text-zinc-300 font-bold shrink-0 transition-colors"
+                onClick={() => { setMyChamp('Jinx'); setEnemyChamp('Lucian'); setLane('ADC'); }}
+                className={`px-2.5 py-1 rounded-lg border font-bold shrink-0 transition-colors ${
+                  myChamp === 'Jinx' && enemyChamp === 'Lucian' && lane === 'ADC'
+                    ? 'bg-amber-500/20 border-amber-500/70 text-amber-300'
+                    : 'bg-zinc-950 border-zinc-800 hover:border-amber-500 text-zinc-300'
+                }`}
               >
                 Jinx vs Lucian (ADC)
               </button>
@@ -132,8 +156,10 @@ function CoachPageContent() {
             <MatchupBlueprintCard
               myChampion={myChamp}
               enemyChampion={enemyChamp}
+              lane={lane}
               onMyChampionChange={setMyChamp}
               onEnemyChampionChange={setEnemyChamp}
+              onLaneChange={setLane}
             />
 
             <PreGameBottom />
