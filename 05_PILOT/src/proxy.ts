@@ -32,8 +32,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // GitHub Actions の定期実行（辞典への統合）だけは Cookie を持てないため Bearer トークンで受け付ける
-  if (nextUrl.pathname === '/api/knowledge/integrate') {
+  // GitHub Actions や常駐スクリプト（辞典統合、自動プレイリスト退避等）は Cookie を持てないため Bearer トークンで受け付ける
+  if (
+    nextUrl.pathname === '/api/knowledge/integrate' ||
+    nextUrl.pathname === '/api/youtube/playlist/add'
+  ) {
     const auth = request.headers.get('authorization') || '';
     if (auth.startsWith('Bearer ') && verifyToken(auth.slice(7))) {
       return NextResponse.next();
