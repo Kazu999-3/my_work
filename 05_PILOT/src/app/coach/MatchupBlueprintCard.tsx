@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
 import EarlyJunglePathingCard from './EarlyJunglePathingCard';
+import CoachFreeQuestionCard from './CoachFreeQuestionCard';
 
 interface Phase {
   phase: string;
@@ -349,6 +350,13 @@ export default function MatchupBlueprintCard({
           )}
         </div>
       )}
+
+      {/* 5. 🤖 AI戦術コーチへの自由質問（チャット相談） */}
+      <CoachFreeQuestionCard
+        myChampion={myChamp}
+        enemyChampion={enemyChamp}
+        lane={currentLane}
+      />
 
     </div>
   );
