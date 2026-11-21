@@ -16,7 +16,8 @@ import {
   Flame,
   ShoppingBag,
   TrendingUp,
-  History
+  History,
+  Dices
 } from 'lucide-react';
 
 export default function GuidePortalTab() {
@@ -44,6 +45,12 @@ export default function GuidePortalTab() {
         </a>
         <a href="#portal-mentorship" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
           🤝 師弟ハブ
+        </a>
+        <a href="#portal-festival" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          🎭 お祭りピック
+        </a>
+        <a href="#portal-history" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
+          📜 対戦履歴
         </a>
         <a href="#portal-mmr" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
           📊 MMRの見方
@@ -404,6 +411,80 @@ export default function GuidePortalTab() {
           <div className="bg-primary-50 rounded-2xl p-3.5 border border-primary-edge-soft text-[11px] text-primary-900 leading-relaxed">
             💡 チーム分けバランサーはこのMMRを使って両チームの戦力が釣り合うように組みます。
             レーンごとに管理しているのは「TOPは得意だがSUPは不慣れ」といった差を正しく反映するためです。
+          </div>
+        </div>
+
+        {/* 8. お祭りピック ＆ 大会ドラフト */}
+        <div id="portal-festival" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-500 transition-all group scroll-mt-20">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 font-bold text-2xl group-hover:scale-105 transition">
+                🎭
+              </div>
+              <span className="text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                特殊縛り ＆ 大会抽選
+              </span>
+            </div>
+            <h3 className="text-base font-black text-foreground">お祭りピック ＆ 大会ドラフト</h3>
+            <p className="text-muted text-xs leading-relaxed">
+              全50種類の特殊縛りテーマ（例: ノクサス軍団、全員タンク、青髪縛り等）をワンタップで反映。Lolalytics実測統計（通常 vs オフメタ枠）に基づく公平なプール絞り込みが可能です。
+            </p>
+            <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
+              <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
+                <Dices size={13} className="text-amber-500" />
+                主な機能
+              </div>
+              <p>・🎲 <strong>お祭り縛りテーマ抽選ルーレット</strong>（ランダムでテーマ即決定）</p>
+              <p>・「このテーマのみ残す」ボタンで対象外チャンプを一発全除外</p>
+              <p>・Lolalytics過去30日実測統計準拠の通常 vs オフメタ枠自動分類</p>
+              <p>・トーナメント形式でのドラフト指名モーダル ＆ 画像書き出し</p>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
+            <Link
+              href="/festival/pick"
+              className="inline-flex items-center gap-1 text-xs font-black text-amber-600 hover:underline"
+            >
+              <span>お祭りピックを開く</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+        </div>
+
+        {/* 9. 対戦履歴 ＆ 戦績アナリティクス */}
+        <div id="portal-history" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-secondary-edge transition-all group scroll-mt-20">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-secondary-500/15 border border-secondary-edge-strong/30 flex items-center justify-center text-secondary-600 font-bold text-2xl group-hover:scale-105 transition">
+                📜
+              </div>
+              <span className="text-[11px] font-bold text-secondary-600 bg-secondary-500/10 px-2.5 py-1 rounded-full border border-secondary-edge-strong/20">
+                戦績ログ ＆ 分析
+              </span>
+            </div>
+            <h3 className="text-base font-black text-foreground">対戦履歴 ＆ 戦績アナリティクス</h3>
+            <p className="text-muted text-xs leading-relaxed">
+              過去のカスタム全試合を詳細スタッツ付きで完全アーカイブ。プレイヤー名で絞り込むと、勝率やレーン別勝敗サマリーがリアルタイムで自動計算されます。
+            </p>
+            <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
+              <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
+                <History size={13} className="text-secondary-600" />
+                主な機能
+              </div>
+              <p>・📊 <strong>プレイヤー別リアルタイム戦績サマリー</strong>（勝率・レーン内訳表示）</p>
+              <p>・公式戦 vs お祭り（エキシビション）の種別フィルター切り替え</p>
+              <p>・ロール別（TOP/JG/MID/ADC/SUP）フィルター</p>
+              <p>・アコーディオンによる詳細スタッツ（KDA・与ダメージバー・装備）展開</p>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
+            <Link
+              href="/history"
+              className="inline-flex items-center gap-1 text-xs font-black text-secondary-600 hover:underline"
+            >
+              <span>対戦履歴を開く</span>
+              <ArrowRight size={13} />
+            </Link>
           </div>
         </div>
 
