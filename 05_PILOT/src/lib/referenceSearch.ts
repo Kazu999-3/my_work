@@ -128,3 +128,103 @@ export function searchReferenceItems(
 
   return results;
 }
+
+export interface TacticalInsight {
+  code: string;
+  badge: string;
+  title: string;
+  hint: string;
+  type: 'gold' | 'timing' | 'matchup' | 'macro';
+}
+
+/**
+ * 試合中のリアルタイム実測データ（秒数、所持ゴールド、レーン、対面チャンプ等）に基づいて、
+ * 今この瞬間に最も意識すべき戦術アイテム（1件）を0msでリアルタイム抽出する（HUD RAGエンジン）
+ */
+export function getLiveTacticalInsight(params: {
+  gameTimeSec?: number;
+  currentGold?: number;
+  lane?: string;
+  myChampion?: string;
+  enemyChampion?: string;
+}): TacticalInsight | null {
+  const sec = params.gameTimeSec || 0;
+  const gold = params.currentGold || 0;
+
+  // 1. 所持金が 1000G を超えている（シャットダウン・即リコール原則）
+  if (gold >= 1000) {
+    return {
+      code: 'D40',
+      badge: '💰 1000G突破',
+      title: '即リコール・アイテム化原則',
+      hint: `${gold.toLocaleString()}G保持中。キャノン押し切り後に帰還してパワースパイク化を！`,
+      type: 'gold',
+    };
+  }
+
+  // 2. 03:00〜03:45（序盤5分支配論・スカトル同期）
+  if (sec >= 180 && sec <= 225) {
+    return {
+      code: 'D5',
+      badge: '⏱️ 03:15スカトル',
+      title: '序盤5分支配論 ＆ カニ同期',
+      hint: 'レーンPrioが無い側のカニは無理に争わず逆サイドへ！敵JGの位置を確認。',
+      type: 'timing',
+    };
+  }
+
+  // 3. 07:30〜08:30（ヴォイドグラブ・ヘラルド前）
+  if (sec >= 450 && sec <= 510) {
+    return {
+      code: 'D14',
+      badge: '👾 08:00グラブ',
+      title: 'ヴォイドグラブ戦術 ＆ トップPrio',
+      hint: 'TOP/MIDを押し込み、川の視界を先手で確保してグラブ争奪戦へ合流！',
+      type: 'timing',
+    };
+  }
+
+  // 4. 13:20〜14:00（タワープレート消滅カウントダウン）
+  if (sec >= 800 && sec <= 840) {
+    return {
+      code: 'D45',
+      badge: '🛡️ 14:00プレート消滅',
+      title: 'タワープレート消滅カウントダウン',
+      hint: '残りプレートを削るか、欲張らず安全に帰還して中盤オブジェクトに備えるか判断！',
+      type: 'timing',
+    };
+  }
+
+  // 5. 19:30〜20:30（バロン出現・視界セットアップ原則）
+  if (sec >= 1170 && sec <= 1230) {
+    return {
+      code: 'D37',
+      badge: '🐉 20:00バロン出現',
+      title: 'バロン前視界セットアップ ＆ 抑制器管理',
+      hint: '出現30秒前に視界をセット。不用意な単独プッシュでキャッチされないこと！',
+      type: 'macro',
+    };
+  }
+
+  // 6. 対面やレーンに基づく定常マッチアップ知見
+  if (params.myChampion || params.enemyChampion) {
+    const matched = searchReferenceItems(
+      `${params.myChampion || ''} ${params.enemyChampion || ''}`,
+      params.lane,
+      params.myChampion,
+      params.enemyChampion,
+      1
+    );
+    if (matched[0]) {
+      return {
+        code: matched[0].code,
+        badge: `⚔️ vs ${params.enemyChampion || params.lane || '対面'}`,
+        title: matched[0].title,
+        hint: matched[0].summary.slice(0, 60) + (matched[0].summary.length > 60 ? '…' : ''),
+        type: 'matchup',
+      };
+    }
+  }
+
+  return null;
+}

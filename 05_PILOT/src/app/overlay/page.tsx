@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { getChampIcon } from "@/lib/ddragonClient";
-import { Shield, Swords, Coins, Eye, Activity, Clock, Target, Minimize2, Maximize2, Compass, Zap } from "lucide-react";
+import { Shield, Swords, Coins, Eye, Activity, Clock, Target, Minimize2, Maximize2, Compass, Zap, Sparkles } from "lucide-react";
 import type { HabitRadarSummary } from "@/lib/habitRadar";
 import { calculateLanePriority, MacroPriorityReport } from "@/lib/lanePriorityCalculator";
+import { getLiveTacticalInsight, TacticalInsight } from "@/lib/referenceSearch";
 
 // 対面の癖は /api/lol/habit-radar（対面の直近試合のタイムライン実測）から、試合ごとに1回だけ取る。
 // 2026-10-16: 以前は全対面に同じ固定時刻（2:48・5:15）を出していた。実測が無い時は何も推測しない。
@@ -188,69 +189,98 @@ export default function OverlayPage() {
       ? calculateLanePriority(data.allPlayers as any, myTeam, data.gameTimeSec || 0)
       : null;
 
+  // 🧠 HUD リアルタイム戦況RAGインサイト計算（全149件の正本戦術知見から0ms抽出）
+  const tacticalInsight: TacticalInsight | null = data.inGame
+    ? getLiveTacticalInsight({
+        gameTimeSec: data.gameTimeSec,
+        currentGold: me?.currentGold,
+        lane: myPos,
+        myChampion: me?.championName,
+        enemyChampion: enemy?.championName,
+      })
+    : null;
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-transparent select-none font-sans p-4 pointer-events-none">
       {/* 画面上部: リアルタイムタクティカルバー（Hextech Slate & Glass HUD） */}
-      <div className="mx-auto flex w-fit items-center gap-4 rounded-full border border-cyan-500/30 bg-slate-950/80 px-5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.6)] ring-1 ring-cyan-500/20 backdrop-blur-md">
-        {/* チャンピオン & レベル */}
-        {me && (
-          <div className="flex items-center gap-2.5 border-r border-cyan-500/20 pr-4">
-            <div className="relative">
-              <Image
-                src={getChampIcon(me.championName)}
-                alt={me.championName}
-                width={36}
-                height={36}
-                className="h-8 w-8 rounded-full border border-cyan-400/40 shadow-sm object-cover"
-              />
-              <span className="absolute -bottom-1 -right-1 rounded-full bg-cyan-600 px-1 text-[9px] font-black text-white shadow ring-1 ring-black/80">
-                {me.level}
-              </span>
-            </div>
-            <div>
-              <div className="text-xs font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{me.championName}</div>
-              <div className="text-[10px] font-mono font-bold text-slate-300">
-                <span className="text-emerald-400 font-black">{me.kills}</span> / <span className="text-slate-400">{me.deaths}</span> / <span className="text-cyan-400 font-black">{me.assists}</span>
+      <div className="mx-auto flex flex-col items-center">
+        <div className="flex w-fit items-center gap-4 rounded-full border border-cyan-500/30 bg-slate-950/80 px-5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.6)] ring-1 ring-cyan-500/20 backdrop-blur-md">
+          {/* チャンピオン & レベル */}
+          {me && (
+            <div className="flex items-center gap-2.5 border-r border-cyan-500/20 pr-4">
+              <div className="relative">
+                <Image
+                  src={getChampIcon(me.championName)}
+                  alt={me.championName}
+                  width={36}
+                  height={36}
+                  className="h-8 w-8 rounded-full border border-cyan-400/40 shadow-sm object-cover"
+                />
+                <span className="absolute -bottom-1 -right-1 rounded-full bg-cyan-600 px-1 text-[9px] font-black text-white shadow ring-1 ring-black/80">
+                  {me.level}
+                </span>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* 試合時間 */}
-        <div className="flex items-center gap-1.5 border-r border-cyan-500/20 pr-4 text-xs font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-          <Clock className="h-3.5 w-3.5 text-cyan-400" />
-          <span className="tracking-wider">{formatTime(data.gameTimeSec)}</span>
-        </div>
-
-        {/* CS ＆ 分間CS */}
-        {me && (
-          <div className="flex items-center gap-3 border-r border-cyan-500/20 pr-4 text-xs font-mono">
-            <div>
-              <div className="text-[9px] font-bold uppercase text-slate-400">CS / 分</div>
-              <div className="font-black text-emerald-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                {me.cs} <span className="text-[9px] text-slate-300 font-bold">({csPerMin})</span>
-              </div>
-            </div>
-
-            {/* 対面CS差 */}
-            {csDiff !== null && (
-              <div className="pl-1">
-                <div className="text-[9px] font-bold uppercase text-slate-400">対面差</div>
-                <div className={`font-black drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
-                  csDiff >= 0 ? "text-emerald-400" : "text-rose-400"
-                }`}>
-                  {csDiff >= 0 ? `+${csDiff}` : csDiff}
+              <div>
+                <div className="text-xs font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{me.championName}</div>
+                <div className="text-[10px] font-mono font-bold text-slate-300">
+                  <span className="text-emerald-400 font-black">{me.kills}</span> / <span className="text-slate-400">{me.deaths}</span> / <span className="text-cyan-400 font-black">{me.assists}</span>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* 所持ゴールド */}
-        {me && (
-          <div className="flex items-center gap-1.5 text-xs font-mono font-black text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            <Coins className="h-4 w-4 text-amber-400" />
-            <span className="tracking-wide">{me.currentGold.toLocaleString()} G</span>
+          {/* 試合時間 */}
+          <div className="flex items-center gap-1.5 border-r border-cyan-500/20 pr-4 text-xs font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            <Clock className="h-3.5 w-3.5 text-cyan-400" />
+            <span className="tracking-wider">{formatTime(data.gameTimeSec)}</span>
+          </div>
+
+          {/* CS ＆ 分間CS */}
+          {me && (
+            <div className="flex items-center gap-3 border-r border-cyan-500/20 pr-4 text-xs font-mono">
+              <div>
+                <div className="text-[9px] font-bold uppercase text-slate-400">CS / 分</div>
+                <div className="font-black text-emerald-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                  {me.cs} <span className="text-[9px] text-slate-300 font-bold">({csPerMin})</span>
+                </div>
+              </div>
+
+              {/* 対面CS差 */}
+              {csDiff !== null && (
+                <div className="pl-1">
+                  <div className="text-[9px] font-bold uppercase text-slate-400">対面差</div>
+                  <div className={`font-black drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
+                    csDiff >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}>
+                    {csDiff >= 0 ? `+${csDiff}` : csDiff}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 所持ゴールド */}
+          {me && (
+            <div className="flex items-center gap-1.5 text-xs font-mono font-black text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              <Coins className="h-4 w-4 text-amber-400" />
+              <span className="tracking-wide">{me.currentGold.toLocaleString()} G</span>
+            </div>
+          )}
+        </div>
+
+        {/* 🧠 HUD リアルタイム戦況RAGインサイトバッジ */}
+        {tacticalInsight && (
+          <div className="mt-2 flex w-fit items-center gap-2 rounded-full border border-amber-500/30 bg-slate-950/85 px-4 py-1 shadow-[0_4px_20px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/20 backdrop-blur-md animate-fade-in pointer-events-auto">
+            <span className="flex items-center gap-1 font-mono text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+              <Sparkles className="h-2.5 w-2.5 text-amber-400" />
+              {tacticalInsight.code}
+            </span>
+            <span className="text-[11px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {tacticalInsight.title}
+            </span>
+            <span className="text-[10px] text-slate-300 max-w-sm truncate hidden sm:inline">
+              — {tacticalInsight.hint}
+            </span>
           </div>
         )}
       </div>
