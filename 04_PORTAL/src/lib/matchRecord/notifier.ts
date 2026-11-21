@@ -2,6 +2,9 @@ import { syncPlayersDiscordRoles } from '../discordRoleSync';
 import { updateCustomVoiceChannelStatus } from '../discordNotify';
 import { buildMatchupField, resultEmbedColor } from '../matchResultMessage';
 import { generateMatchNews, buildMatchNewsField } from '../matchNews';
+import { discordFetch } from '../discordFetch';
+
+export const DEFAULT_RESULTS_CHANNEL_ID = '1487077567939743995'; // ✍🏻カスタムログ
 
 export interface NotifyMatchResultParams {
   supabase: any;
@@ -115,10 +118,13 @@ export async function performMatchNotifications(params: NotifyMatchResultParams)
     console.warn('[matchRecord/notifier] push skipped:', pushErr?.message);
   }
 
-  // 6. Discord 結果速報 Webhook 送信
+  // 6. Discord 結果速報 送信 (Webhook または Bot 直接送信フォールバック)
   try {
     const webhookUrl = process.env.DISCORD_RESULTS_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
-    if (webhookUrl && process.env.NODE_ENV !== 'development') {
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+    const resultsChannelId = process.env.DISCORD_RESULTS_CHANNEL_ID || DEFAULT_RESULTS_CHANNEL_ID;
+
+    if (webhookUrl || (botToken && resultsChannelId)) {
       const matchupField = buildMatchupField(results as any, winningTeam, !!isExhibition);
       const betPayoutSummary = payoutWinners.length > 0
         ? payoutWinners.map(w => `・\`${w.name}\`: **+${w.payout.toLocaleString()}🪙** 獲得！(x${w.multiplier}倍)`).join('\n')
@@ -239,39 +245,84 @@ export async function performMatchNotifications(params: NotifyMatchResultParams)
         }]
       };
 
-      const sep = webhookUrl.includes('?') ? '&' : '?';
-      const whRes = await fetch(`${webhookUrl}${sep}wait=true`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(err => { console.error("Discord webhook error:", err); return null; });
+      let sentMsg: { id?: string; channel_id?: string } | null = null;
 
-      if (whRes && whRes.ok) {
-        const msg = await whRes.json();
-        if (!newsArticle && msg?.id && afterHook) {
+      // A. Webhook による送信
+      if (webhookUrl) {
+        try {
+          const sep = webhookUrl.includes('?') ? '&' : '?';
+          const whRes = await discordFetch(`${webhookUrl}${sep}wait=true`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (whRes.ok) {
+            sentMsg = await whRes.json();
+          }
+        } catch (err) {
+          console.error('[matchRecord/notifier] Webhook送信エラー:', err);
+        }
+      }
+
+      // B. Bot Token による直接送信フォールバック（Webhook未設定または失敗時）
+      if (!sentMsg && botToken && resultsChannelId) {
+        try {
+          const botRes = await discordFetch(`https://discord.com/api/v10/channels/${resultsChannelId}/messages`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bot ${botToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+          if (botRes.ok) {
+            sentMsg = await botRes.json();
+          } else {
+            console.error('[matchRecord/notifier] Bot送信失敗:', botRes.status, await botRes.text());
+          }
+        } catch (err) {
+          console.error('[matchRecord/notifier] Bot送信エラー:', err);
+        }
+      }
+
+      if (sentMsg?.id) {
+        const msgId = sentMsg.id;
+        const channelId = sentMsg.channel_id || resultsChannelId;
+
+        if (!newsArticle && afterHook) {
           const resultEmbed = payload.embeds[0];
           afterHook(async () => {
             try {
               await new Promise((r) => setTimeout(r, 20_000));
               const article = await generateMatchNews(newsInput, { maxRetries: 4 });
               await saveNews(article);
-              await fetch(`${webhookUrl}/messages/${msg.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  embeds: [{ ...resultEmbed, fields: [buildMatchNewsField(article), ...resultEmbed.fields] }],
-                }),
-              });
+              const patchPayload = {
+                embeds: [{ ...resultEmbed, fields: [buildMatchNewsField(article), ...resultEmbed.fields] }],
+              };
+              if (webhookUrl) {
+                await discordFetch(`${webhookUrl}/messages/${msgId}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(patchPayload),
+                });
+              } else if (botToken && channelId) {
+                await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
+                  method: 'PATCH',
+                  headers: {
+                    Authorization: `Bot ${botToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(patchPayload),
+                });
+              }
             } catch (retryErr) {
               console.warn('[matchRecord/notifier] 号外の後追い追記失敗:', retryErr);
             }
           });
         }
 
-        if (msg?.id) {
-          await supabase.from('ktm_matches').update({ result_message_id: msg.id }).eq('id', newMatchId);
-          await supabase.from('balancer_predictions').update({ result_message_id: msg.id, result_channel_id: msg.channel_id }).eq('match_id', newMatchId);
-        }
+        await supabase.from('ktm_matches').update({ result_message_id: msgId }).eq('id', newMatchId);
+        await supabase.from('balancer_predictions').update({ result_message_id: msgId, result_channel_id: channelId }).eq('match_id', newMatchId);
       }
     }
   } catch (discordErr) {

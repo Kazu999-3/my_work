@@ -1,3 +1,43 @@
+## 📅 2026-11-22（日）
+
+### ⚡ 【試合手動記録：画像解析精度向上（解像度2倍・ロール正規化・チャンプ辞書）＆ Discord結果通知Botフォールバック＆未送信試合救済】
+
+**概要**:
+ユーザーからのフィードバック「カスタム試合を手動記録の画像解析の精度が低すぎる」「ごりが試合記録登録したけどKTM 試合結果の記録がでない」「（エラー画像）これなに？」に対応。
+1. **画像解析エラー（500）の根絶 ＆ 認識精度の抜本的向上**:
+   - `04_PORTAL/src/app/balancer/record/_parts/ocrUtils.ts`:
+     - 画像解像度を 1280px / 0.7 ➔ **2560px（フルHD原寸保持）/ 0.92（高画質JPEG）** に引き上げ、微小フォントのCS・KDA・アイコンが潰れる問題を解消。
+     - チャンピオン辞書に `renata`（RenataGlasc）, `missfortune`, `jarvaniv` などの別名表記および特殊文字クリーニングを追加。
+     - ロール正規化関数 `normalizeRole`（`JUNGLE` ➔ `JG`、`SUPPORT` ➔ `SUP`、`BOTTOM/BOT` ➔ `ADC`）を実装。
+   - `04_PORTAL/src/app/balancer/record/_parts/useOcrImageProcessor.ts`:
+     - AIが抽出したロール（`JUNGLE`, `SUPPORT` 等）と受取側（`JG`, `SUP` 等）が不一致になり空き枠へシャッフルされていたバグを `normalizeRole` 照合で解消。
+   - `04_PORTAL/src/lib/geminiClient.ts` & `04_PORTAL/src/app/api/match/analyze-image/route.ts`:
+     - 無料枠制限（429）に達していた `gemini-3.5-flash` / `gemini-3.6-flash` を回避し、実測200 OKの `gemini-2.5-flash` に一本化。
+     - Geminiのオブジェクト間カンマ欠落（`}\s*{`）を自動修復するJSONサニタイザーおよび正規表現フォールバックを完備。
+2. **Discord結果通知のBot直接送信フォールバック配備**:
+   - `04_PORTAL/src/lib/matchRecord/notifier.ts`:
+     - これまで Webhook URL（`DISCORD_RESULTS_WEBHOOK_URL`）のみに依存していたため、未設定環境で通知がスキップされていた設計的盲点を解消。
+     - Webhook URL がない場合でも、設定済みの `DISCORD_BOT_TOKEN` を使って Discord の **`✍🏻カスタムログ`（ID: 1487077567939743995）** へ直接 Discord REST API で結果速報 Embed を自動送信するフォールバックを実装。
+3. **未送信だったごりさんの試合結果を救済送信**:
+   - `scripts/resend_match_notification.py` を作成・実行。
+   - 01:26 に登録された試合（ID: `1bd57019-821e-47eb-bb4d-ee707aa6eb58`）の対戦リザルト（RED勝利、10人分のKDA・MMR・コイン）を Discord の「✍🏻カスタムログ」へ即座に送信（Msg ID: `1573740391973392396`）。
+   - `ktm_matches` の `result_message_id` も正常に紐付け更新完了。
+4. **管理者権限チェックの完全撤廃**:
+   - `/balancer/record` 画面および `/api/match/record` API から管理者制限を削除し、参加者全員が記録・貢献できるように開放。
+5. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `npx tsc --noEmit` ➔ PASS（型エラー0件）。
+   - `npm run build` ➔ 全64ルート PASS（Turbopack最適化完了、Exit code 0）。
+   - Discord API実送信 ➔ 成功（HTTP 200 / Message ID取得）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. AIビジョン（Gemini）とフロントエンド間のEnum連携では、AIが英語フルネーム（JUNGLE/SUPPORT）を返す前提で必ず正規化レイヤー（normalizeRole）を挟み、直接比較によるフォールバック暴走を防げ。
+> 2. Discord通知は環境変数（Webhook）の欠落リスクに備え、Bot Token + チャンネルIDへのフォールバックを標準装備にし、サイレントスキップを構造的に根絶せよ。
+> 3. スクショ解析の画質圧縮（canvas）は「通信量削減」より「文字認識精度」を優先し、フルHD原寸（2560px/0.92）をキープすることがOCRの成否を分ける。
+
+- `[要検証]`: ユーザー実戦での次回カスタム試合スクショ解析時のレーン配置とKDA自動入力の体感精度
+- `[継続ウォッチ]`: Discord「✍🏻カスタムログ」への自動結果通知の到達状況
+- `[発信候補]`: 「Gemini 2.5 Flashを活用したLoLリザルト画面OCRの最適化：画像圧縮率とプロンプトサニタイズの実戦ノウハウ」
+
 ## 📅 2026-11-21（土）
 
 ### ⚡ 【機能整理：バランサーUI連携・DiscordスイーパーCronの取り消し ＆ AIコーチ15分テンポ指標の維持】

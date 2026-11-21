@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { resizeAndCompressImage, matchPlayer, matchChampion, getOcrAliases } from './ocrUtils';
+import { resizeAndCompressImage, matchPlayer, matchChampion, getOcrAliases, normalizeRole } from './ocrUtils';
 import { ROLES, type PlayerStat, type PlayerPoolItem, type ChampionItem } from './types';
 
 interface UseOcrImageProcessorParams {
@@ -157,8 +157,9 @@ export function useOcrImageProcessor({
 
             // 2. 【第2優先】ロール（TOP/JG/MID/ADC/SUP）が一致する未割り当てプレイヤー
             if (foundIdx === -1 && targetRole) {
+              const normTarget = normalizeRole(targetRole);
               foundIdx = ocrPool.findIndex(
-                (p: any, pIdx: number) => !usedSet.has(pIdx) && p.role && p.role.toUpperCase() === targetRole.toUpperCase()
+                (p: any, pIdx: number) => !usedSet.has(pIdx) && p.role && normalizeRole(p.role) === normTarget
               );
             }
 

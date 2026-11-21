@@ -85,10 +85,34 @@ export const matchPlayer = (extractedName: string, pool: PlayerPoolItem[]): stri
   return '';
 };
 
-// チャンピオン曖昧マッチング
+// チャンピオン曖昧マッチング（表記ゆれ・別名辞書対応）
+const CHAMP_ALIASES: Record<string, string> = {
+  renataglasc: 'Renata',
+  renata: 'Renata',
+  missfortune: 'MissFortune',
+  jarvaniv: 'JarvanIV',
+  jarvan: 'JarvanIV',
+  chogath: 'Chogath',
+  kaisa: 'Kaisa',
+  kogmaw: 'KogMaw',
+  leblanc: 'Leblanc',
+  nunu: 'Nunu',
+  nunuwillump: 'Nunu',
+  tahmkench: 'TahmKench',
+  twistedfate: 'TwistedFate',
+  xinzhao: 'XinZhao',
+  monkeyking: 'MonkeyKing',
+  wukong: 'MonkeyKing',
+};
+
 export const matchChampion = (extractedChamp: string, list: ChampionItem[]): string => {
   if (!extractedChamp) return '';
-  const cleanExtracted = extractedChamp.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+  const cleanExtracted = extractedChamp.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // 0. 特殊エイリアス辞書での解決
+  if (CHAMP_ALIASES[cleanExtracted]) {
+    return CHAMP_ALIASES[cleanExtracted];
+  }
 
   // 1. Ddragon ID (id) との一致を検索
   for (const c of list) {
@@ -99,17 +123,28 @@ export const matchChampion = (extractedChamp: string, list: ChampionItem[]): str
   }
 
   // 2. 日本語名 (name) との一致を検索
+  const cleanExtractedJp = extractedChamp.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
   for (const c of list) {
     const cleanName = c.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
-    if (cleanName === cleanExtracted) {
+    if (cleanName === cleanExtractedJp) {
       return c.id;
+    }
+  }
+
+  // 3. 部分一致（長めの文字列なら）
+  if (cleanExtracted.length >= 4) {
+    for (const c of list) {
+      const cleanId = c.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleanId.includes(cleanExtracted) || cleanExtracted.includes(cleanId)) {
+        return c.id;
+      }
     }
   }
 
   return '';
 };
 
-// 画像をCanvasで最大幅1280pxにリサイズ＆圧縮してBase64文字列を生成
+// 画像を高解像度（最大幅2560px・品質92%）で圧縮してBase64文字列を生成（文字潰れ・ブロックノイズ根絶）
 export const resizeAndCompressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -120,7 +155,7 @@ export const resizeAndCompressImage = (file: File): Promise<string> => {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxW = 1280;
+          const maxW = 2560;
           let w = img.width;
           let h = img.height;
           if (w > maxW) {
@@ -131,8 +166,13 @@ export const resizeAndCompressImage = (file: File): Promise<string> => {
           canvas.height = h;
 
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.7));
+          if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
+          }
+          // 高画質JPEG (0.92) で小さな文字やCS数値、チャンプアイコンを鮮明に維持
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
         } catch (err) {
           reject(err);
         }
@@ -142,3 +182,18 @@ export const resizeAndCompressImage = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
   });
 };
+
+/**
+ * ロール表記ゆれを標準形（TOP, JG, MID, ADC, SUP）に正規化する
+ */
+export const normalizeRole = (role?: string): string => {
+  if (!role) return '';
+  const r = role.trim().toUpperCase();
+  if (r === 'TOP') return 'TOP';
+  if (r === 'JG' || r === 'JUNGLE' || r === 'JUNGLER') return 'JG';
+  if (r === 'MID' || r === 'MIDDLE') return 'MID';
+  if (r === 'ADC' || r === 'AD' || r === 'BOT' || r === 'BOTTOM') return 'ADC';
+  if (r === 'SUP' || r === 'SUPPORT' || r === 'SP') return 'SUP';
+  return r;
+};
+
