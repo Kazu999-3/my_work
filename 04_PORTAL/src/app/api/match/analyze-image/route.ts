@@ -79,6 +79,7 @@ ${championsText}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【出力JSONフォーマット】
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+必ず以下のキー構造を持つ有効なJSONのみを出力してください（省略記号や解説文は厳禁）：
 {
   "sourceType": "LOBBY_RESULT",
   "imageWinner": "TEAM1",
@@ -86,7 +87,7 @@ ${championsText}
   "gameDurationSec": 1923,
   "players": [
     {
-      "name": "グランメゾンTOP",
+      "name": "サモナー名1",
       "rawTeam": 1,
       "team": "BLUE",
       "role": "TOP",
@@ -97,23 +98,14 @@ ${championsText}
       "gold": 15690,
       "champion_name": "Urgot",
       "champion": "Urgot"
-    },
-    ... (チーム1の残り4名),
-    ... (チーム2の5名: rawTeam: 2)
+    }
   ]
 }
-※ "players" 配列には合計10名分を、チーム1の5名 ➔ チーム2の5名の順序で出力してください。
+※ "players" 配列には合計10名分（チーム1の5名 ➔ チーム2の5名）をそれぞれ完全なオブジェクトとして含めてください。
 `;
 
-    // 画像解析はモデルによって可否・クォータが分かれる。
-    // 1つ目がダメでも代替の画像対応モデルへ切り替えられるよう、複数モデルを順に試す。
-    // （共通クライアント化した際にこのフォールバックが失われ、画像解析が落ちやすくなっていた）
-    // gemini-2.0-flash/gemini-1.5-flash-latestはこのアカウントのAI Studioクォータ画面で
-    // 無料枠が0/0(gemini-2.0-flash)または廃止済み(1.5系)と判明したため、実クォータのある
-    // モデルのみに変更(2026-08-10)。gemini-2.5-flash-liteはさらに実際のAPI呼び出しで
-    // 404 NOT_FOUNDと判明したため、実リクエストで動作確認済みのgemini-3.5-flash-liteに
-    // 差し替え(同日、gemini-model-health-checkスキルで検出)。
-    const visionModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
+    // 2026-10-29 / 2026-11-21 実測に基づく安定稼働ビジョンモデル
+    const visionModels = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
     let textOutput = '';
     let lastErr: any = null;
     for (const model of visionModels) {
@@ -124,7 +116,7 @@ ${championsText}
           responseMimeType: 'application/json',
           temperature: 0.1,
           maxOutputTokens: 4096,
-          maxRetries: 1,
+          maxRetries: 2,
         });
         if (textOutput && !textOutput.startsWith('※')) break;
       } catch (e) {
@@ -138,10 +130,24 @@ ${championsText}
 
     let cleanText = textOutput.trim();
     if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
+    if (cleanText.startsWith("```")) cleanText = cleanText.substring(3);
     if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
     cleanText = cleanText.trim();
 
-    const parsedData = JSON.parse(cleanText);
+    // JSONパースの二重保護（万一ゴミテキストが混入しても抽出）
+    let parsedData: any = null;
+    try {
+      parsedData = JSON.parse(cleanText);
+    } catch {
+      const s = cleanText.indexOf('{');
+      const e = cleanText.lastIndexOf('}');
+      if (s >= 0 && e > s) {
+        parsedData = JSON.parse(cleanText.slice(s, e + 1));
+      } else {
+        throw new Error('AIが返却した解析結果のJSONパースに失敗しました。');
+      }
+    }
+
     return NextResponse.json({ status: "SUCCESS", data: parsedData });
 
   } catch (err: any) {
