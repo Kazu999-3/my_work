@@ -290,15 +290,6 @@ function CustomRecordPageContent() {
       return;
     }
 
-    if (!userLoading && !user?.isAdmin) {
-      setMessage({
-        type: 'error',
-        text: '試合結果の保存には管理者権限が必要です。右上の「ログインする」から管理者アカウントでログインしてください。',
-      });
-      toast.error('管理者権限が必要です');
-      return;
-    }
-
     setSubmitting(true);
     setMessage({ type: '', text: '' });
 
@@ -416,31 +407,6 @@ function CustomRecordPageContent() {
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-6 shadow-2xl">
-          {!userLoading && !user?.isAdmin && (
-            <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-in fade-in">
-              <div className="flex items-center gap-2.5">
-                <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
-                <div>
-                  <div className="font-black text-white">
-                    ⚠️ 試合結果の保存には「管理者権限」が必要です
-                  </div>
-                  <div className="text-[11px] text-stone-300 mt-0.5">
-                    {user
-                      ? `現在 @${user.displayName || user.username} でログイン中（一般権限）。管理者のDiscordアカウントで再ログインしてください。`
-                      : '現在未ログインです。管理者のDiscordアカウントでログインしてください。'}
-                  </div>
-                </div>
-              </div>
-              <Link
-                href={`/login?returnTo=${encodeURIComponent('/balancer/record' + (pendingId ? `?pending_id=${pendingId}` : ''))}`}
-                className="shrink-0 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-              >
-                <LogIn size={14} />
-                <span>管理者ログイン</span>
-              </Link>
-            </div>
-          )}
-
           {message.text && (
             <div
               className={`mb-6 p-4 rounded-lg text-sm font-bold border ${
