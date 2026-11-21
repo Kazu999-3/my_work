@@ -81,6 +81,35 @@ function buildParticipantPayloads({
 // 2026-10-07: 3,029行 → 1,140行（82168c14）→ 本ファイル。使われていなかった状態(selectedHandicaps / showRecordPanel)を削除。
 export default function BalancerPage() {
   const { user: currentUser } = useCurrentUser();
+
+  // 🏆 直前の試合結果とMMR変動サマリー（sessionStorage連携）
+  const [lastMatchResult, setLastMatchResult] = useState<{
+    matchId?: string;
+    winningTeam: 'BLUE' | 'RED';
+    updates: Array<{ name: string; team: string; role: string; champion_name?: string; mmrDelta: number; newMmr: number }>;
+    recordedAt: number;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = sessionStorage.getItem('ktm_last_match_result');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Date.now() - parsed.recordedAt < 15 * 60 * 1000) {
+            setLastMatchResult(parsed);
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleDismissLastMatch = () => {
+    setLastMatchResult(null);
+    try {
+      sessionStorage.removeItem('ktm_last_match_result');
+    } catch {}
+  };
   const [message, setMessage] = useState({ type: "", text: "" });
 
   // ★ 管理者向け（整合性チェック・品質統計）
@@ -308,6 +337,45 @@ export default function BalancerPage() {
   return (
     <div className="min-h-screen bg-background text-foreground-soft p-4 pb-28 md:p-8 md:pb-28 lg:p-10 lg:pb-28 max-w-[1680px] w-full mx-auto space-y-6">
       <CustomSubNav />
+
+      {/* 🏆 直前の試合結果 ＆ MMR変動サマリーハイライト */}
+      {lastMatchResult && (
+        <div className="max-w-[1900px] mx-auto p-3 md:p-6 pb-0">
+          <div className="bg-gradient-to-r from-surface to-surface-subtle border border-primary-500/30 rounded-2xl p-4 sm:p-5 shadow-lg relative animate-in fade-in slide-in-from-top-2">
+            <button
+              onClick={handleDismissLastMatch}
+              className="absolute top-3 right-3 text-muted hover:text-foreground p-1 rounded-lg transition"
+              title="閉じる"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-primary-500 text-white shadow-xs">
+                🎉 直前の試合記録完了
+              </span>
+              <span className="text-xs text-muted font-bold">
+                勝利: <strong className={lastMatchResult.winningTeam === 'BLUE' ? 'text-cyan-500' : 'text-rose-500'}>{lastMatchResult.winningTeam === 'BLUE' ? 'BLUEチーム' : 'REDチーム'}</strong>
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+              {lastMatchResult.updates.map((u: any, i: number) => (
+                <div key={i} className="bg-surface/90 border border-border rounded-xl p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="font-black text-foreground truncate">{u.name}</span>
+                    <span className="text-[10px] text-muted font-mono">{u.role}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-strong font-mono">{u.newMmr}pt</span>
+                    <span className={`font-black font-mono text-xs ${u.mmrDelta > 0 ? 'text-emerald-500' : u.mmrDelta < 0 ? 'text-rose-500' : 'text-muted'}`}>
+                      {u.mmrDelta > 0 ? `+${u.mmrDelta}` : u.mmrDelta}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 👥 参加者層サマリー */}
       <div>

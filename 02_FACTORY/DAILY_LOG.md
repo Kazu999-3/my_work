@@ -1,5 +1,101 @@
 ## 📅 2026-11-21（土）
 
+### ⚡ 【ポータル＆パイロット全30ページ ブラッシュアップ 3大施策（案3・案1・案2）完全完了】
+
+**概要**:
+ユーザー指示の優先順位（案3 ➔ 案1 ➔ 案2）に従い、3大コア機能のブラッシュアップ改修を一気通貫で実施。
+1. **第1弾（案3：バランサー・結果記録連携 ＆ お祭りピック高速化）**:
+   - `04_PORTAL/src/app/balancer/record/page.tsx` 保存成功時に `sessionStorage` へ試合結果サマリーを自動保存。
+   - `04_PORTAL/src/app/balancer/page.tsx` 直前の試合結果カード（勝敗・各参加者のMMR変動値）を描画し、結果記録から戻った際に即座に変動を確認できる運用ループを確立。
+   - `04_PORTAL/src/app/festival/pick/page.tsx` の1,462行に達していたプール描画ロジックを `_parts/ChampionPoolView.tsx` に分離（1,008行へスリム化）。全50種の特殊縛りテーマとLolalytics実測統計（通常 vs オフメタ枠）の描画を型安全に整理。
+2. **第2弾（案1：自作インゲームHUD極薄ガラス化 Hextech Slate & Glass HUD）**:
+   - `05_PILOT/src/app/overlay/page.tsx` の重い真っ黒背景（`bg-black/90`）を廃止し、ゲーム視界を遮らない `bg-slate-950/75 backdrop-blur-md border border-cyan-500/25` の半透明サイバーガラスへ統一。
+   - 上部タクティカルバーをフローティング・カプセル形状に集約（アイコン・KDA・時間・CS/分・対面CS差・ゴールド）。
+   - 左上（JGレーン主導権 Prio）をコンパクトなバッジとCS差に整理し、スパイク時のゴールドパルス警告を配備。
+   - 右上（対面の癖 Habit Radar ＆ 定石タイマー）の長文テキストを全廃し、**「アイコン ＋ 目的 ＋ 残り秒数プログレスバー」**の直感UIへ刷新。ミニモード（`[M]`）の視認性も向上。
+3. **第3弾（案2：note記事スタジオ動的化 ＆ ハードコード根絶）**:
+   - `05_PILOT/src/app/note/page.tsx` で4記事固定（自己紹介・ザイラ・ウーコン・リリア）だったスレッド切替ピルを、`threadsMap` から動的抽出する `availableThreads` 配列に置換（新記事追加時も自動反映）。
+   - 全記事に強制付与されていた `#ザイラ` 推奨タグを、ドラフトのタイトル・メタデータから対象チャンピオンを自動判定して付与する動的ロジックへ修正。
+4. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+   - `05_PILOT`: `npm run build` ➔ 全28ルート PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. ゲーム透過オーバーレイHUDでは、黒ベタ（`bg-black/90`）は視界遮断と圧迫感を生むため、`bg-slate-950/75` に `backdrop-blur-md` と極細アクセント枠（`border-cyan-500/25`）を重ねることで、視認性とゲーム画面の透過透過性を両立せよ。
+> 2. 定石・タイマーHUDはプレイ中に長文を読む余裕がないため、説明文を排除し「対象アイコン ＋ 残り秒数 ＋ グラデーション進捗バー（0.1秒認識UI）」へ凝縮せよ。
+> 3. note等のコンテンツ管理UIでは、初期プロトタイプで入れた固定タグや記事切替ボタンを放置せず、`threadsMap` やタイトル・メタデータから動的生成することで、記事増設時のメンテナンス負荷をゼロ化せよ。
+
+- `[要検証]`: 実際のLoLクライアント接続（127.0.0.1:2999）下でのHUD透過度とミニモード（[M]）の操作感
+- `[継続ウォッチ]`: note記事のPV・スキ率データ蓄積とSupabaseテーブル同期
+- `[発信候補]`: 「LoL専用透過HUDをNext.jsで作る！ゲーム視界を邪魔しない極薄スモークガラスUI設計」
+
+
+
+### 🛡️ 【ポータル公式カルテ整理 ＆ オーナー決め打ち完全撤去 ＆ Plinkoルール追記】
+
+**概要**:
+ユーザー方針（`/analyzer` は04_PORTALに残して維持、マイカルテから専属AIコーチを削除）に基づき、`04_PORTAL/src/app/player/[id]/page.tsx` からオーナーアカウント（Discord ID: `697220229964759130` / 名前: `KAZUKI`）限定でハードコードされていた「🤖 専属AIコーチ」タブおよびカルテ表示を完全撤去。
+使われなくなった `CoachReportCard.tsx` を安全に削除し、コミュニティメンバー全員にとって公平・明瞭な公式カルテへ正常化。
+さらに `04_PORTAL/src/app/casino/rules/page.tsx` にジグスPlinkoの仕様（10段ピン・11ポケット・3段階リスク・RTP 96〜97%）を明記し、`mypage/page.tsx` に通信エラーアラート、`ktm-admin/page.tsx` ヘッダーにパイロット管制塔（`05_PILOT`）への直通リンクを配備した。
+`04_PORTAL` の `next build` を実行し、全64ルートの静的生成・型チェックが完全PASS（Exit code 0）することを実証した。
+
+1. **修正内容**:
+   - `04_PORTAL/src/app/player/[id]/page.tsx`: `isKazuki`、`coach` タブ、サモナー最上部のカルテ表示を削除。
+   - `04_PORTAL/src/app/player/CoachReportCard.tsx`: 死蔵コンポーネントを安全に削除。
+   - `04_PORTAL/src/app/casino/rules/page.tsx`: ジグスPlinkoルール・配当表セクションを追記。
+   - `04_PORTAL/src/app/mypage/page.tsx`: 通信エラー時の理由アラートバナーを描画。
+   - `04_PORTAL/src/app/ktm-admin/page.tsx`: Auth Bar に「パイロット管制塔（`05_PILOT`）」への直通リンクを追加。
+   - `04_PORTAL/src/app/analyzer/page.tsx`: ユーザー指示に基づき、統合せずそのまま維持。
+
+2. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `next build` ➔ 全64ルート静的生成・型チェック完全PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. コミュニティ向け共有ポータルに開発者・オーナー個人専用のハードコード条件分岐（ID/サモナー名判定）を残すと、名簿やUIの保守性を著しく毀損するため、個人用機能は必ず個人コックピット（05_PILOT）側へ完全分離せよ。
+> 2. カジノやゲーム機能を持つポータルでは、ラッキーデー等のキャンペーン文言とルール解説ページの対象ゲーム（Plinko等）を常に1:1で整合させよ。
+> 3. リダイレクト専用ラッパー（`/mypage`等）であっても、通信切断やセッション異常時にユーザーが原因を即座に視認できるよう、未描画のError Stateを必ずUI上にフォールバック表示せよ。
+
+- `[要検証]`: 一般メンバーアカウントでの `/player/[id]` 閲覧時のタブ表示の整合性
+- `[継続ウォッチ]`: ジグスPlinkoの稼働統計とRTP推移
+- `[発信候補]`: 「LoLコミュニティポータルからオーナー決め打ちロジックを完全排除して公平化したアーキテクチャ設計」
+
+### 🛠️ 【ポータル＆パイロット全30ページ棚卸し・リンク切れ・API欠落・HUDクロージャ全面修復】
+
+**概要**:
+`04_PORTAL`（17ページ）および `05_PILOT`（13ページ）の計30ページに対し、実コードベースでの棚卸し・全API（166ルート）および内部リンクの静的突合監査を実施。
+報告された `/balancer/record` の「チャンピオン一覧の読み込み失敗（404 HTMLパースエラー）」を新規APIルート `/api/riot/champions` 配備で根本解決。
+さらに `/guide` のリンク切れ（`/synergy` ➔ `/leaderboard?tab=synergy`）、透過HUD `/overlay` のナビバー被り非表示化＆ハートビート `dataRef` クロージャバグ修正、`/admin/youtube` ➔ `/library` のクエリ不整合、重複警告バナー削除、管理ナビ統一、戦術取込トースト配備を完了。
+両プロジェクト（04_PORTAL / 05_PILOT）ともに `npm run build` を実行し、全92ルートの静的生成・型チェックが完全PASS（Exit code 0）することを実証した。
+
+1. **API・リンク切れ網羅的突合監査（スクリプト自動検証）**:
+   - `04_PORTAL`（全107 API・全17ページ）および `05_PILOT`（全59 API・全13ページ）を走査。
+   - 欠落APIは `/api/riot/champions`（唯一）、リンク切れは `/synergy`（唯一）のみであることを完全特定・修正。
+
+2. **修正内容（計8項目）**:
+   - `04_PORTAL/src/app/api/riot/champions/route.ts`: 新規作成（ローカルマスター辞書＋DDragon CDNフォールバック＋24hキャッシュ）。
+   - `04_PORTAL/src/app/guide/tabs/GuidePortalTab.tsx`: `/synergy` を `/leaderboard?tab=synergy` へ修正。
+   - `05_PILOT/src/components/GlobalNavbar.tsx`: `/overlay` と `/login` で Navbar を非表示化。運用メニューに `/admin/dashboard` と `/overlay` を追加。
+   - `05_PILOT/src/app/overlay/page.tsx`: `dataRef`（`useRef`）を導入し、ハートビート送信時の `inGame` クロージャ固定バグを解消。
+   - `05_PILOT/src/app/admin/youtube/QueueTab.tsx` ＆ `library/page.tsx`: `?article=` から `?id=` への統一および `?article=` フォールバック対応。
+   - `05_PILOT/src/app/admin/dict-health/page.tsx`: 340行目と402行目で2回重複描画されていた警告バナーの片方を削除。
+   - `05_PILOT/src/app/admin/dict-maintenance/page.tsx`: 未使用だった `AdminNavHeader` を適用し、管理ナビゲーションを統一。
+   - `05_PILOT/src/app/page.tsx`: `KnowledgeIngestModal` の `onSaved` に成功トースト通知（3.5秒自動消去）と画面再同期を配備。
+   - `05_PILOT/src/app/coach/page.tsx` ＆ `LiveTab.tsx`: 見出しから「試合中の偵察」表記を削除し、使われていない `LiveTab.tsx` を安全に削除。
+
+3. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `next build` ➔ 全64ルート静的生成・型チェック完全PASS（Exit code 0）。
+   - `05_PILOT`: `next build` ➔ 全28ルート静的生成・型チェック完全PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. リファクタリング時にクライアントの fetch 先を変更する際は、APIルートの実在と返却JSON型を必ず機械的突合スクリプトで同時に検証せよ（404 HTMLパースエラーの未然防止）。
+> 2. `useEffect(..., [])` 内の定期タイマー（ハートビート等）でリアルタイムStateを参照する場合、State直接参照は初期値でクロージャ固定されるため、必ず `useRef` で最新値を同期せよ。
+> 3. 透過オーバーレイHUDやログイン画面を持つアプリでは、グローバルレイアウト側で一括描画せず、Navbar側で `pathname` による条件付きレンダリング（早期リターン）を行うのが最も堅牢で保守性が高い。
+
+- `[要検証]`: `/balancer/record` でのOCR画像貼り付け（Ctrl+V）後のチャンピオン自動認識・手動変更の実動作
+- `[継続ウォッチ]`: Next.js 16.4.3 のセキュリティアップグレード推奨（`next upgrade --agent=security`）の実施時期
+- `[発信候補]`: 「LoLカスタムポータルのOCR試合記録＆インゲーム透過HUDバグ根絶・UX最適化ログ」
+
+
 ### 📜 【全149件マスターチートシート（虎の巻）体系化完了】ロール別・フェーズ別・仕様別に完全分類・索引化
 
 **概要**:

@@ -231,44 +231,24 @@ function DictMaintenanceContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 flex flex-col font-sans">
-      {/* 上部ヘッダーバー */}
-      <header className="border-b border-zinc-800 bg-[#121216] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/?c=${encodeURIComponent(currentChamp.id)}`}
-            className="p-1.5 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition border border-zinc-700"
-            title="辞典メインへ戻る"
-          >
-            <ArrowLeft size={16} />
-          </Link>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40">
-              <Layers size={16} />
-            </span>
-            <h1 className="text-sm sm:text-base font-black text-zinc-100">
-              ⚙️ チャンピオン辞典 統合メンテナンス管理
-            </h1>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
-          <Link
-            href="/admin/dict-health"
-            className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold border border-zinc-700 transition"
-          >
-            🏥 辞典監査
-          </Link>
-          <Link
-            href="/admin/youtube"
-            className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold border border-zinc-700 transition"
-          >
-            📺 YouTube管理
-          </Link>
-        </div>
-      </header>
+      <div className="max-w-7xl w-full mx-auto p-3 sm:p-5 pb-0">
+        <AdminNavHeader
+          title="チャンピオン教本エディタ"
+          subtitle="全173体のチャンピオン教本Markdown編集・ロール設定・事実情報の直接修正を管理します。"
+          action={
+            <Link
+              href={`/?c=${encodeURIComponent(currentChamp.id)}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold transition border border-zinc-700"
+            >
+              <ArrowLeft size={14} />
+              <span>辞典メインへ戻る</span>
+            </Link>
+          }
+        />
+      </div>
 
       {/* メインレイアウト */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-3 sm:p-5 gap-4">
+      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-3 sm:p-5 pt-2 gap-4">
         {/* 左サイドバー: チャンピオン選択 */}
         <div className="w-full md:w-64 bg-[#121216] border border-zinc-800 rounded-2xl p-3 flex flex-col shrink-0 h-[300px] md:h-[calc(100vh-100px)] sticky top-16">
           <div className="relative mb-2">

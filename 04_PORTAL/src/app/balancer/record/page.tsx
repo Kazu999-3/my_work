@@ -325,12 +325,31 @@ function CustomRecordPageContent() {
         await fetch(`/api/balancer/pending?id=${pendingId}`, { method: 'DELETE' }).catch(() => {});
       }
 
+      // 直前の試合結果とMMR変動サマリーをsessionStorageへ一時保管（バランサー側でハイライト表示）
+      try {
+        if (typeof window !== 'undefined' && Array.isArray(data.updates)) {
+          sessionStorage.setItem('ktm_last_match_result', JSON.stringify({
+            matchId: data.matchId,
+            winningTeam,
+            updates: data.updates.map((u: any) => ({
+              name: u.name,
+              team: u.team,
+              role: u.role,
+              champion_name: u.champion_name,
+              mmrDelta: u.mmrDelta || 0,
+              newMmr: u.newMmr || u.currentMmr || 0,
+            })),
+            recordedAt: Date.now(),
+          }));
+        }
+      } catch {}
+
       toast.success('✅ 試合結果を記録し、MMRを更新しました！');
       setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！（チーム分け画面へ戻ります）' });
       setDurationText('');
 
       setTimeout(() => {
-        router.push('/balancer');
+        router.push('/balancer?recorded=1');
       }, 500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

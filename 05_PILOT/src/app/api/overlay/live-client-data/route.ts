@@ -92,6 +92,8 @@ export async function GET() {
         championName: p.championName,
         team: p.team, // 'ORDER' (Blue) | 'CHAOS' (Red)
         position: p.position,
+        level: p.level || 1,
+        isDead: p.isDead || false,
         kills: p.scores?.kills || 0,
         deaths: p.scores?.deaths || 0,
         assists: p.scores?.assists || 0,

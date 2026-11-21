@@ -132,6 +132,15 @@ export default function NoteDraftsPage() {
   const currentDraft = drafts.find((d) => d.id === selectedId) || drafts[0];
   const currentThread: ThreadData | undefined = currentDraft ? threadsMap[currentDraft.id] : undefined;
 
+  // 🚀 スレッドが存在するドラフト一覧を動的生成（新記事追加時も自動反映）
+  const availableThreads = Object.keys(threadsMap).map((id) => {
+    const draft = drafts.find((d) => d.id === id);
+    const thread = threadsMap[id];
+    let label = thread?.title || draft?.title || id;
+    if (label.length > 20) label = label.slice(0, 18) + '…';
+    return { id, label };
+  });
+
   const handleCopy = () => {
     if (!currentDraft) return;
     navigator.clipboard.writeText(currentDraft.content).then(() => {
@@ -383,12 +392,7 @@ export default function NoteDraftsPage() {
               <Share2 className="w-3 h-3" />
               <span>スレッド切替:</span>
             </span>
-            {[
-              { id: 'profile_intro', label: '✨ 自己紹介 (固定/バイオ)' },
-              { id: 'zyra_jg_guide', label: '🌿 ザイラJG' },
-              { id: 'wukong_jg_guide', label: '🐒 ウーコンJG' },
-              { id: 'lillia_jg_guide', label: '🦌 リリアJG' }
-            ].map((t) => {
+            {availableThreads.map((t) => {
               const isSelected = selectedId === t.id;
               return (
                 <button
@@ -640,12 +644,7 @@ export default function NoteDraftsPage() {
                     <Share2 className="w-3.5 h-3.5" />
                     <span>スレッド選択:</span>
                   </span>
-                  {[
-                    { id: 'profile_intro', label: '✨ 自己紹介 (固定/バイオ)' },
-                    { id: 'zyra_jg_guide', label: '🌿 ザイラJG' },
-                    { id: 'wukong_jg_guide', label: '🐒 ウーコンJG' },
-                    { id: 'lillia_jg_guide', label: '🦌 リリアJG' }
-                  ].map((t) => {
+                  {availableThreads.map((t) => {
                     const isSelected = selectedId === t.id;
                     return (
                       <button
@@ -801,10 +800,17 @@ export default function NoteDraftsPage() {
 
                   {/* チェック2: 推奨タグの候補リスト ＆ ワンタップコピー */}
                   {(() => {
-                    const isProfile = currentDraft.id === 'profile_intro';
+                    const isProfile = currentDraft.id === 'profile_intro' || currentDraft.title.includes('自己紹介');
+                    let detectedChamp = '';
+                    if (currentDraft.title.includes('ザイラ') || currentDraft.content.includes('ザイラ')) detectedChamp = '#ザイラ';
+                    else if (currentDraft.title.includes('ウーコン') || currentDraft.content.includes('ウーコン')) detectedChamp = '#ウーコン';
+                    else if (currentDraft.title.includes('リリア') || currentDraft.content.includes('リリア')) detectedChamp = '#リリア';
+                    else if (currentDraft.title.includes('オラフ') || currentDraft.content.includes('オラフ')) detectedChamp = '#オラフ';
+                    else if (currentDraft.meta?.champion) detectedChamp = `#${currentDraft.meta.champion}`;
+
                     const coreTags = isProfile
                       ? ['#自己紹介', '#はじめてのnote', '#LeagueofLegends', '#LoL', '#ジャングル', '#コミュニティ運営']
-                      : ['#LeagueofLegends', '#LoL', '#ジャングル', '#ザイラ', '#低ランク脱出'];
+                      : ['#LeagueofLegends', '#LoL', '#ジャングル', ...(detectedChamp ? [detectedChamp] : []), '#低ランク脱出'];
                     
                     const audienceTags = isProfile
                       ? [
@@ -1259,15 +1265,10 @@ export default function NoteDraftsPage() {
                 このドラフトのXスレッドはまだ作成されていません
               </h3>
               <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
-                以下のボタンをタップすると、作成済みのX拡散スレッド（自己紹介・ザイラ・ウーコン・リリア）を即座に確認・コピーできます。
+                以下のボタンをタップすると、作成済みのX拡散スレッドを即座に確認・コピーできます。
               </p>
               <div className="flex flex-wrap justify-center gap-2 pt-2">
-                {[
-                  { id: 'profile_intro', label: '✨ 自己紹介 (固定/バイオ)' },
-                  { id: 'zyra_jg_guide', label: '🌿 ザイラJG' },
-                  { id: 'wukong_jg_guide', label: '🐒 ウーコンJG' },
-                  { id: 'lillia_jg_guide', label: '🦌 リリアJG' }
-                ].map((t) => (
+                {availableThreads.map((t) => (
                   <button
                     key={t.id}
                     onClick={() => setSelectedId(t.id)}

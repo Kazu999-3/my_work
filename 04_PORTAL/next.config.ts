@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  experimental: {
+    agentUpgrade: "security",
+  } as any, // agentUpgrade is used by Next.js upgrade reporting
   // 2026-10-19: 他サイトの iframe に埋め込めないようにする（管理画面を透明に重ねてボタンを押させるクリックジャッキング対策）。
   // 自分のページを iframe で使っている箇所は無い（OBS のブラウザソースは直接開くので影響しない）
   async headers() {

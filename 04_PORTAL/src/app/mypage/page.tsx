@@ -50,6 +50,12 @@ function MyPageContent() {
         <div className="w-16 h-16 rounded-2xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-center mx-auto text-primary-500">
           <Sparkles className="w-8 h-8" />
         </div>
+        {error && error !== "ログインが必要です。" && (
+          <div className="p-3.5 bg-danger-500/10 border border-danger-500/30 rounded-2xl text-xs text-danger-600 dark:text-danger-400 font-bold flex items-center gap-2 text-left animate-in fade-in">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-danger-500" />
+            <span>{error}</span>
+          </div>
+        )}
         <div>
           <h2 className="text-xl font-black text-foreground mb-2">マイページのご利用にはログインが必要です</h2>
           <p className="text-xs text-muted leading-relaxed">

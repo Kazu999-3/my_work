@@ -398,18 +398,8 @@ function DictHealthDashboardContent() {
           </div>
         )}
 
-        {/* ⚠️ DB不整合・異常行の検出警告バナー（SPEC 01/SPEC 05 警告可視化） */}
-        {data && data.anomalies && data.anomalies.length > 0 && (
-          <div className="p-3.5 bg-rose-950/40 border border-rose-800/80 rounded-xl text-xs text-rose-300 flex items-center justify-between flex-wrap gap-2 shadow-sm animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>
-                <strong>⚠️ 異常レコード検出警告:</strong> DB内に正本（全{data.totalCount}体）外の行を <strong>{data.anomalies.length}件</strong> 検出しました（{data.anomalies.map(a => `「${a.champion}」`).join(', ')}）。総数表示は正本実数に揃えて集計しています。
-              </span>
-            </div>
-            <span className="text-[11px] text-zinc-400 font-mono">DB生総数: {data.dbRawCount}行</span>
-          </div>
-        )}
+
+
 
         {/* 検索 ＆ フィルタバー */}
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">

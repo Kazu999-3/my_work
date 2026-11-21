@@ -407,6 +407,32 @@ export default function QueueTab() {
                       aria-label="選択"
                     />
                   ) : <span className="w-[13px] shrink-0" />}
+
+                  {/* YouTube サムネイル（CDN直接参照・コスト完全ゼロ） */}
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative shrink-0 w-24 sm:w-28 aspect-video rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800 group block"
+                    title="YouTubeで視聴"
+                  >
+                    <img
+                      src={`https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`}
+                      alt={title}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.src.includes('hqdefault')) {
+                          target.src = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Play className="w-5 h-5 text-white/90 drop-shadow fill-white/80" />
+                    </div>
+                  </a>
+
                   <div className="min-w-0 flex-1 space-y-1">
                     <a href={item.url} target="_blank" rel="noopener noreferrer" className="font-bold text-xs text-zinc-200 hover:text-amber-400 flex items-start gap-1.5">
                       <span className="break-words">{title}</span>
@@ -441,7 +467,7 @@ export default function QueueTab() {
                         item.articles.map((a) => (
                           <Link
                             key={a.id}
-                            href={`/library?article=${a.id}`}
+                            href={`/library?id=${a.id}`}
                             title={a.archived ? `${a.title}（辞典/ガイドへ統合済み）` : a.title}
                             className={`px-2.5 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 border max-w-[280px] truncate transition ${
                               a.archived

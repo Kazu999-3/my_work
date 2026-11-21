@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, ChevronDown, Shield, ClipboardCheck, FileText, Settings
+  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, ChevronDown, Shield, ClipboardCheck, FileText, Settings, LayoutDashboard, Gauge
 } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
 import NotificationBell from './NotificationBell';
@@ -29,13 +29,20 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 
 // ⚙️ 管理・運用メニュー（レビュー・解析・点検）
 const ADMIN_NAV_ITEMS: NavItem[] = [
+  { name: '運用ダッシュボード', href: '/admin/dashboard', icon: LayoutDashboard, desc: '総合ヘルス・ワーカー・募集ログ' },
   { name: '攻略ライブラリ', href: '/library', icon: Library, desc: '全知知見アーカイブ・検索' },
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video, desc: '動画解析キュー監視' },
   { name: '健全性監査', href: '/admin/dict-health', icon: Activity, desc: '教本鮮度・欠損点検' },
+  { name: 'インゲームHUD', href: '/overlay', icon: Gauge, desc: 'LoL試合中透過オーバーレイ' },
 ];
 
 export default function GlobalNavbar() {
   const pathname = usePathname();
+
+  // 透過HUDおよび未認証ログイン画面ではナビゲーションバーを非表示にする
+  if (pathname === '/overlay' || pathname === '/login') {
+    return null;
+  }
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);

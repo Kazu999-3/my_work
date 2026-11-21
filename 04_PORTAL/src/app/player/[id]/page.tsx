@@ -8,7 +8,6 @@ import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import PlayerSettingsPanel from "../PlayerSettingsPanel";
 import ScoutingReport from "../../../components/ScoutingReport";
 import MentorshipProgressCard from "../MentorshipProgressCard";
-import CoachReportCard from "../CoachReportCard";
 import confetti from "canvas-confetti";
 import { 
   Activity, 
@@ -95,12 +94,12 @@ export default function PlayerMyPage() {
   
   // タブ管理用のステートを追加 (案B: KTMカスタムとソロキューの明確な分離)
   const rawTab = (searchParams.get("tab") as string) || "summary";
-  const normalizeTab = (t: string): 'summary' | 'coach' | 'analytics' | 'soloq' | 'chemistry' | 'history' | 'settings' => {
+  const normalizeTab = (t: string): 'summary' | 'analytics' | 'soloq' | 'chemistry' | 'history' | 'settings' => {
     if (t === 'lanes' || t === 'champions') return 'analytics';
-    if (['summary', 'coach', 'analytics', 'soloq', 'chemistry', 'history', 'settings'].includes(t)) return t as any;
+    if (['summary', 'analytics', 'soloq', 'chemistry', 'history', 'settings'].includes(t)) return t as any;
     return 'summary';
   };
-  const [activeTab, setActiveTab] = useState<'summary' | 'coach' | 'analytics' | 'soloq' | 'chemistry' | 'history' | 'settings'>(normalizeTab(rawTab));
+  const [activeTab, setActiveTab] = useState<'summary' | 'analytics' | 'soloq' | 'chemistry' | 'history' | 'settings'>(normalizeTab(rawTab));
 
   // 🎁 デイリーボーナス関連ステート
   const [claimingDaily, setClaimingDaily] = useState(false);
@@ -840,18 +839,9 @@ export default function PlayerMyPage() {
     (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
   );
 
-  // 👑 KAZUKI（先行テスト枠）判定: 本人または管理者のみ先行検証可能
-  const isKazuki = Boolean(
-    player?.discord_id === '697220229964759130' ||
-    player?.name?.toUpperCase() === 'KAZUKI' ||
-    player?.name === 'かずき' ||
-    currentUser?.discordId === '697220229964759130'
-  );
-
   // タブアイテム定義（案B: KTMカスタムとソロキューを完全分離）
   const tabItems = [
     { id: "summary", name: "総合カルテ", icon: <Activity className="w-4 h-4" /> },
-    ...(isKazuki ? [{ id: "coach", name: "🤖 専属AIコーチ", icon: <Sparkles className="w-4 h-4 text-primary-500" /> }] : []),
     { id: "analytics", name: "⚔️ KTMカスタム分析", icon: <Swords className="w-4 h-4" /> },
     { id: "soloq", name: "🎮 ソロキュー戦績", icon: <Award className="w-4 h-4" /> },
     { id: "chemistry", name: "🤝 相性＆好敵手", icon: <Users className="w-4 h-4" /> },
@@ -1349,30 +1339,12 @@ export default function PlayerMyPage() {
               transition={{ duration: 0.25 }}
             >
               
-              {/* 🤖 専属AIコーチタブ（KAZUKI先行テスト時のみ） */}
-              {isKazuki && activeTab === 'coach' && (
-                <div className="space-y-6">
-                  <CoachReportCard
-                    playerName={player?.name || ''}
-                    isMe={Boolean(isMe)}
-                    isAdmin={Boolean(currentUser?.isAdmin)}
-                  />
-                </div>
-              )}
+
 
               {/* 1. 総合分析タブ */}
               {activeTab === 'summary' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* 🤖 専属AIコーチカルテ（サマリー最上部・KAZUKI先行テスト時のみ表示） */}
-                  {isKazuki && (
-                    <div className="lg:col-span-3">
-                      <CoachReportCard
-                        playerName={player?.name || ''}
-                        isMe={Boolean(isMe)}
-                        isAdmin={Boolean(currentUser?.isAdmin)}
-                      />
-                    </div>
-                  )}
+
 
                   {/* 🤝 あなたの師弟関係 ＆ 目標ランク進捗レポート */}
                   <div className="lg:col-span-3">

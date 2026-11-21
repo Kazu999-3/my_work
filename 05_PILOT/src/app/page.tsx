@@ -3,7 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import championsSummary from "@/data/champions_summary.json";
-import { ArrowLeft, Target } from "lucide-react";
+import { ArrowLeft, Target, Check } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "./_champions/MatchupPicker";
 import LaneMaintenanceModal from "./_champions/LaneMaintenanceModal";
@@ -71,6 +71,7 @@ function PilotApp() {
 
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
+  const [ingestNotice, setIngestNotice] = useState<string | null>(null);
 
   // 👑 統合戦術マスター教本（GLOBAL本文）の展開・コピー状態
   const [isGlobalGuideExpanded, setIsGlobalGuideExpanded] = useState(false);
@@ -237,13 +238,23 @@ function PilotApp() {
         )}
       </main>
 
+      {/* 📥 戦術取込通知トースト */}
+      {ingestNotice && (
+        <div className="fixed top-16 right-4 z-50 bg-amber-500 text-zinc-950 px-4 py-2.5 rounded-xl font-black text-xs shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Check size={16} className="stroke-[3]" />
+          <span>{ingestNotice}</span>
+        </div>
+      )}
+
       {/* 📥 戦術取込モーダル */}
       <KnowledgeIngestModal
         isOpen={isIngestOpen}
         onClose={() => setIsIngestOpen(false)}
         defaultChampion={selectedDetail?.id || ""}
         onSaved={() => {
-          // 保存完了時にクエリ再読み込みや通知
+          setIngestNotice("✅ 戦術データの取り込みが完了しました。");
+          setTimeout(() => setIngestNotice(null), 3500);
+          router.refresh();
         }}
       />
 

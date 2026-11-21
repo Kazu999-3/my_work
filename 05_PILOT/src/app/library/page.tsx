@@ -14,7 +14,7 @@ import type { ArticleDetail, ArticleItem, LibraryCategory, LibrarySort, LibraryL
 function LibraryApp() {
   const searchParams = useSearchParams();
   const initialQ = searchParams?.get("q") || "";
-  const initialId = searchParams?.get("id") || null;
+  const initialId = searchParams?.get("id") || searchParams?.get("article") || null;
   // ?src=<元動画URL> … その動画から作られた記事の詳細を直接開く
   const initialSrc = searchParams?.get("src") || null;
   const initialLane = (searchParams?.get("lane")?.toUpperCase() as LibraryLane) || "ALL";

@@ -10,7 +10,7 @@ import ReplayPathsPanel from "./ReplayPathsPanel";
 import PlayerAnalyzerPage from "../analyzer/page";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
-import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe, Map as MapIcon } from "lucide-react";
+import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe, Map as MapIcon, ExternalLink } from "lucide-react";
 import { useAdminRoster, type AdminMessage } from "./_admin/useAdminRoster";
 import { useRosterSync } from "./_admin/useRosterSync";
 import AdminToolbar from "./_admin/AdminToolbar";
@@ -207,6 +207,17 @@ export default function KtmAdminPage() {
             <span className="text-xs font-bold text-foreground whitespace-nowrap">管理画面</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 text-xs">
+            <a
+              href="https://ktm-pilot.vercel.app/admin/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 font-bold border border-primary-edge text-xs transition"
+              title="Sovereign OS パイロット管制塔（ワーカー・募集監査・総合ヘルス）を開く"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">パイロット管制塔</span>
+              <span className="sm:hidden">05</span>
+            </a>
             <span className="text-faint hidden sm:inline">
               ログイン中: <strong className="text-foreground font-bold">管理者</strong>
             </span>

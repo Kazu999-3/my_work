@@ -51,6 +51,16 @@ const SLOT_ROWS = [
 
 // 倍率は src/lib/minesMath.ts の payoutMultiplier() から算出した値。
 // 「最大」はベット100コイン時の上限（払い戻し上限50,000コインに当たるまで）。
+// 倍率は src/lib/plinkoMath.ts の PLINKO_PAYOUT_TABLES から算出した値。
+const PLINKO_POCKET_ROWS = [
+  { pocket: '最外端 (0 / 10)', prob: '0.1%', low: '×6.0', med: '×20.0', high: '×75.0' },
+  { pocket: '外側2 (1 / 9)', prob: '1.0%', low: '×2.5', med: '×8.0', high: '×20.0' },
+  { pocket: '外側3 (2 / 8)', prob: '4.4%', low: '×1.8', med: '×3.0', high: '×5.0' },
+  { pocket: '中外 (3 / 7)', prob: '11.7%', low: '×1.2', med: '×1.5', high: '×1.5' },
+  { pocket: '中心脇 (4 / 6)', prob: '20.5%', low: '×0.8', med: '×0.7', high: '×0.3' },
+  { pocket: '真ん中 (5)', prob: '24.6%', low: '×0.6', med: '×0.3', high: '×0.1' },
+];
+
 const MINES_ROWS = [
   { label: '1マス', m1: '1.00', m3: '1.07', m5: '1.18', m10: '1.58' },
   { label: '2マス', m1: '1.03', m3: '1.23', m5: '1.50', m10: '2.71' },
@@ -163,6 +173,45 @@ export default function CasinoRulesPage() {
           </div>
           <p className="text-[11px] text-muted-strong mt-2">
             何かしらの配当が出る確率は 30.2%。ハウスエッジ（胴元の取り分）は 7.0% です。
+          </p>
+        </section>
+
+        {/* ジグスPlinko */}
+        <section className={CARD}>
+          <h2 className={H2}>
+            💣 ジグスPlinko <RtpBadge rtp={0.97} />
+          </h2>
+          <p className="text-xs text-muted mb-3">
+            ボールを上から落とし、10段のピンをランダムに跳ねながら11個のポケットのいずれかに落ちます。
+            二項分布 B(10, 0.5) に基づく数学的公平性で設計されており、ベット額は 10 / 50 / 100 / 500 / 1000 コインから選択できます。
+            リスク設定を「低（堅実）」「中（バランス）」「高（ドパガキ一攫千金）」の3段階から切り替え可能です。
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs md:text-sm border-collapse">
+              <thead>
+                <tr className="bg-surface-subtle">
+                  <th className={TH}>落下ポケット</th>
+                  <th className={TH}>確率</th>
+                  <th className={TH}>低リスク</th>
+                  <th className={TH}>中リスク</th>
+                  <th className={TH}>高リスク</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PLINKO_POCKET_ROWS.map((r) => (
+                  <tr key={r.pocket}>
+                    <td className={TD}>{r.pocket}</td>
+                    <td className={`${TD} font-mono`}>{r.prob}</td>
+                    <td className={`${TD} font-mono font-bold text-emerald-600 dark:text-emerald-400`}>{r.low}</td>
+                    <td className={`${TD} font-mono font-bold text-amber-600 dark:text-amber-400`}>{r.med}</td>
+                    <td className={`${TD} font-mono font-bold text-rose-600 dark:text-rose-400`}>{r.high}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-muted-strong mt-2">
+            数学的還元率（RTP）は低リスク: 96.5%、中リスク: 96.4%、高リスク: 96.8%（ハウスエッジ 3.2〜3.6%）です。
           </p>
         </section>
 

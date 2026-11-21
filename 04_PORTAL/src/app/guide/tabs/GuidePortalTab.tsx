@@ -203,7 +203,7 @@ export default function GuidePortalTab() {
           </div>
           <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
-              href="/synergy"
+              href="/leaderboard?tab=synergy"
               className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               相性分析ページへ移動 <ArrowRight size={13} />

@@ -70,6 +70,14 @@ export default function BalancerStadiumView({
         <div className="flex items-center gap-2 flex-wrap">
 
           <Link
+            href={result.id ? `/balancer/record?pending_id=${result.id}` : '/balancer/record'}
+            className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-stone-700"
+            title="試合結果の入力・OCRスコアボード解析へ進む"
+          >
+            <span>📝 結果記録・OCR</span>
+          </Link>
+
+          <Link
             href="/casino"
             className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-primary-edge"
           >

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { fetchPuuidByRiotId } from '@/lib/riot';
 import { callGemini } from '@/lib/geminiClient';
 import { computeTrendAggregates, formatMainRoleLine, formatDeathContextBlock } from '@/lib/coachTrends';
+import { auditPlayerHabits, DeathEvent } from '@/lib/coachHabitBreaker';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -68,24 +69,74 @@ export async function POST(req: NextRequest) {
 
       const agg = computeTrendAggregates(analyses);
       const { deathPhases: phaseCount, topKillers, topWeaknesses, csTrend, visionTrend, winRate, totalDeaths } = agg;
-      const prompt = `あなたはLoLの成長コーチです。あるプレイヤーの直近${analyses.length}試合の集計データから、繰り返し現れる課題を1つに絞り込み、今週の練習フォーカスを提案してください。
 
+      // 2026年オブジェクト直前スローデス等の悪癖診断を実行
+      const allDeaths: DeathEvent[] = [];
+      for (const a of analyses) {
+        for (const ev of (a.death_timeline || []) as any[]) {
+          const sec = typeof ev.timestampSec === 'number'
+            ? ev.timestampSec
+            : typeof ev.timestamp === 'number'
+            ? Math.floor(ev.timestamp / 1000)
+            : 0;
+          allDeaths.push({
+            timestampSec: sec,
+            phase: ev.phase,
+            killer: ev.killer,
+            teamGoldDiffAtDeath: ev.teamGoldDiffAtDeath,
+          });
+        }
+      }
+      const habitAudit = auditPlayerHabits(allDeaths, agg.mainRole);
+
+      const prompt = `あなたはLoL 2026年最新シーズン（Season 16 / パッチ26.x）の超一流辛口・即効性重視のAIコーチ（Veigar v2スタイル）です。
+プレイヤーの直近${analyses.length}試合の客観的データと「悪癖診断エンジン」の結果から、勝率を劇的に引き上げるための【たった1つの致命的悪癖の破壊】と【次戦の絶対行動ルール】を断定してください。
+
+【プレイヤー情報】
 ${formatMainRoleLine(agg)}
-デス時間帯の分布（回数）: 序盤${phaseCount.序盤} / 中盤${phaseCount.中盤} / 終盤${phaseCount.終盤}
+・勝率: ${winRate}% (総デス数: ${totalDeaths})
+・デス時間帯: 序盤${phaseCount.序盤} / 中盤${phaseCount.中盤} / 終盤${phaseCount.終盤}
 ${formatDeathContextBlock(agg)}
-繰り返し狩られている相手: ${topKillers.map((k) => `${k.champion}(${k.count})`).join(', ') || 'なし'}
-再発している弱点: ${topWeaknesses.map((w) => `${w.label}(${w.count})`).join(', ') || 'なし'}
-CS/min傾向: 直近${csTrend.recent} ← 以前${csTrend.older}
-Vision/min傾向: 直近${visionTrend.recent} ← 以前${visionTrend.older}
-勝率: ${winRate}%
+・CS/min推移: 直近${csTrend.recent} ← 以前${csTrend.older}
+・Vision/min推移: 直近${visionTrend.recent} ← 以前${visionTrend.older}
+・狩られた敵: ${topKillers.map((k) => `${k.champion}(${k.count})`).join(', ') || 'なし'}
+・頻出課題: ${topWeaknesses.map((w) => `${w.label}(${w.count})`).join(', ') || 'なし'}
 
-上記の「主にプレイしているロール」に即した具体的なアドバイスにすること（実際のロールと矛盾する助言をしないこと）。
-日本語300字程度で、(1)最も繰り返している課題の指摘、(2)その原因の仮説、(3)今週意識すべきフォーカスを1つだけ、具体的に述べてください。`;
+【2026年悪癖診断エンジン判定結果】
+・主要悪癖コード: ${habitAudit.primaryHabitTrap.code} (${habitAudit.primaryHabitTrap.severity})
+・タイトル: ${habitAudit.primaryHabitTrap.title}
+・診断要約: ${habitAudit.primaryHabitTrap.description}
+・オブジェクト直前45秒以内のスローデス: 計${habitAudit.objectiveThrowDeaths.length}回
+${habitAudit.objectiveThrowDeaths.slice(0, 3).map((d) => `  - ${d.deathFormatted} (${d.objective} 湧き${d.secondsBeforeSpawn}秒前)`).join('\n')}
+・推奨アクションルール: ${habitAudit.primaryHabitTrap.nextGameActionRule}
+
+【回答フォーマット（厳格な制約）】
+※「意識しましょう」「状況に応じて」等の曖昧な逃げ言葉は絶対禁止。
+※神話アイテムや旧シーズン・旧仕様（旧3:30カニ、旧5分/10分幼虫、旧アタカン等）の概念は一切出さず、2026年公式最新基準（スカトル初湧き02:55、ドラゴン05:00、ヴォイドグラブ08:00単発湧き、ヘラルド15:00、バロン20:00）で語ること。
+※日本語300〜400字程度で、以下の構成で出力してください：
+
+1. 【断定：あなたの首を絞めているたった1つの悪癖】
+データに基づき、なぜ負けに直結しているかを容赦なく言語化。
+2. 【2026年メカニズム解説】
+なぜその行動が2026年のメタ（02:55スカトル前倒し、08:00幼虫1回限定など）で致命傷になるのかの論理的根拠。
+3. 【次戦の絶対合言葉（アクションルール）】
+次の試合のロード画面で唱える「具体的トリガー＋行動」を1行で提示。`;
+
       const summary = await callGemini(prompt, { temperature: 0.7, maxOutputTokens: 2048 });
 
       return NextResponse.json({
-        mode: 'trends', enough: true, count: analyses.length,
-        winRate, totalDeaths, deathPhases: phaseCount, topKillers, topWeaknesses, csTrend, visionTrend, summary,
+        mode: 'trends',
+        enough: true,
+        count: analyses.length,
+        winRate,
+        totalDeaths,
+        deathPhases: phaseCount,
+        topKillers,
+        topWeaknesses,
+        csTrend,
+        visionTrend,
+        habitAudit,
+        summary,
       });
     }
 
