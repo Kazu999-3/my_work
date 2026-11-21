@@ -8,6 +8,7 @@ import { BalancerBo3Manager } from "../components/BalancerBo3Manager";
 import { WinRatePredictorCard } from "./WinRatePredictorCard";
 import NemesisClashCard from "./NemesisClashCard";
 import { LaneMatchupRow } from "./LaneMatchupRow";
+import { TacticsSentinelModal } from "./TacticsSentinelModal";
 import type { BalanceResultModalProps, ClashResponseData, BalanceTeamMember, FestivalRestriction, BalanceResult } from "./types";
 
 // ★ チーム分け結果モーダル
@@ -48,6 +49,14 @@ export default function BalanceResultModal({
 }: BalanceResultModalProps) {
   const [clashData, setClashData] = useState<ClashResponseData | null>(null);
   const [loadingClash, setLoadingClash] = useState(false);
+  const [tacticsModalInfo, setTacticsModalInfo] = useState<{
+    isOpen: boolean;
+    role: string;
+    myPlayerName: string;
+    enemyPlayerName: string;
+    myChampion: string;
+    enemyChampion: string;
+  } | null>(null);
 
   const teamBlue = useMemo(() => balanceResult?.teamBlue || balanceResult?.blueTeam || [], [balanceResult]);
   const teamRed = useMemo(() => balanceResult?.teamRed || balanceResult?.redTeam || [], [balanceResult]);
@@ -466,6 +475,18 @@ export default function BalanceResultModal({
                   handleDropPlayer={handleDropPlayer}
                   handleSelectSwapPlayer={handleSelectSwapPlayer}
                   renderSwapSelect={renderSwapSelect}
+                  onOpenTactics={(r, myName, enemyName) => {
+                    const myChamp = (pBData as any)?.favoriteChampion || (pBData?.metadata as any)?.favorite_champion || (r === 'TOP' ? 'Aatrox' : r === 'JG' ? 'JarvanIV' : r === 'MID' ? 'Ahri' : r === 'ADC' ? 'Jinx' : 'Thresh');
+                    const enemyChamp = (pRData as any)?.favoriteChampion || (pRData?.metadata as any)?.favorite_champion || (r === 'TOP' ? 'Darius' : r === 'JG' ? 'LeeSin' : r === 'MID' ? 'Zed' : r === 'ADC' ? 'Kaisa' : 'Nautilus');
+                    setTacticsModalInfo({
+                      isOpen: true,
+                      role: r,
+                      myPlayerName: myName,
+                      enemyPlayerName: enemyName,
+                      myChampion: myChamp,
+                      enemyChampion: enemyChamp,
+                    });
+                  }}
                 />
               );
             })}
@@ -615,6 +636,18 @@ export default function BalanceResultModal({
           </div>
         </div>
       </div>
+
+      {tacticsModalInfo && (
+        <TacticsSentinelModal
+          isOpen={tacticsModalInfo.isOpen}
+          onClose={() => setTacticsModalInfo(null)}
+          role={tacticsModalInfo.role}
+          myPlayerName={tacticsModalInfo.myPlayerName}
+          enemyPlayerName={tacticsModalInfo.enemyPlayerName}
+          myChampion={tacticsModalInfo.myChampion}
+          enemyChampion={tacticsModalInfo.enemyChampion}
+        />
+      )}
     </div>
   );
 }

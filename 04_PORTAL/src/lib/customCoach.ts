@@ -18,6 +18,17 @@ export interface CustomCoachReport {
     winRate: number;
     mostPlayedChamp: string;
     mainRole: string;
+    // 15分影響力スタッツ
+    avgCsAt15?: number;
+    avgGoldAt15?: number;
+    earlyTempoScore?: number; // 0-100点
+  };
+  earlyGameImpact?: {
+    headline: string;
+    score15min: number;
+    tempoControl: 'DOMINANT' | 'STRONG' | 'EVEN' | 'STRUGGLING';
+    earlyLaneDominance: string;
+    actionableAdvice: string;
   };
   strengths: Array<{
     title: string;
@@ -233,6 +244,58 @@ export function buildRuleBasedReport(playerName: string, matches: any[], soloqIn
   const timeDeadSec = avgTimeDead % 60;
   const timeDeadText = avgTimeDead > 0 ? `${timeDeadMin}分${timeDeadSec}秒` : '少数デス';
 
+  // 15分影響力・テンポスタッツ（FORESTER原則：15分のリードが勝利74%を決定づける）
+  const validMatchesFor15m = matches.filter((m: any) => m.duration >= 300);
+  const csAt15List = validMatchesFor15m.map((m: any) => {
+    const min = Math.max(1, m.duration / 60);
+    return Math.round((m.cs / min) * 15);
+  });
+  const goldAt15List = validMatchesFor15m.map((m: any) => {
+    const min = Math.max(1, m.duration / 60);
+    return Math.round((m.gold / min) * 15);
+  });
+  const avgCsAt15 = csAt15List.length > 0
+    ? Math.round(csAt15List.reduce((a: number, b: number) => a + b, 0) / csAt15List.length)
+    : (mainRole === 'SUP' ? 25 : 100);
+  const avgGoldAt15 = goldAt15List.length > 0
+    ? Math.round(goldAt15List.reduce((a: number, b: number) => a + b, 0) / goldAt15List.length)
+    : 4800;
+
+  // 15分テンポスコアの算出 (0-100)
+  let earlyTempoScore = 50;
+  if (mainRole === 'SUP') {
+    earlyTempoScore = Math.min(100, Math.round(50 + (Number(avgKda) >= 3 ? 25 : 10) + (avgTimeDead < 180 ? 25 : 0)));
+  } else {
+    const csPerMin = avgCsAt15 / 15;
+    if (csPerMin >= 8.0) earlyTempoScore += 25;
+    else if (csPerMin >= 6.5) earlyTempoScore += 15;
+    else if (csPerMin < 5.0) earlyTempoScore -= 15;
+
+    if (avgGoldAt15 >= 5500) earlyTempoScore += 25;
+    else if (avgGoldAt15 >= 4800) earlyTempoScore += 15;
+    else if (avgGoldAt15 < 4000) earlyTempoScore -= 15;
+  }
+  earlyTempoScore = Math.max(20, Math.min(98, earlyTempoScore));
+
+  let tempoControl: 'DOMINANT' | 'STRONG' | 'EVEN' | 'STRUGGLING' = 'EVEN';
+  if (earlyTempoScore >= 80) tempoControl = 'DOMINANT';
+  else if (earlyTempoScore >= 65) tempoControl = 'STRONG';
+  else if (earlyTempoScore < 45) tempoControl = 'STRUGGLING';
+
+  const earlyGameImpact = {
+    headline: tempoControl === 'DOMINANT' || tempoControl === 'STRONG'
+      ? '序盤15分から高いCSとゴールド水準で主導権を掌握'
+      : '15分までのファームテンポとリコールタイミングの最適化が課題',
+    score15min: earlyTempoScore,
+    tempoControl,
+    earlyLaneDominance: mainRole === 'SUP'
+      ? `15分までの視界確保とローム支援が安定。序盤のエンゲージ判断で主導権を握れています。`
+      : `15分推計CSは ${avgCsAt15} (約 ${(avgCsAt15 / 15).toFixed(1)} CS/分)、推計ゴールドは ${avgGoldAt15.toLocaleString()}G。FORESTER指標に照らしても十分な序盤キャパシティを持っています。`,
+    actionableAdvice: tempoControl === 'STRUGGLING'
+      ? '序盤15分は無理なキル狙いよりも「ウェーブを押し切ってからの安全なリコール」を最優先し、CS欠損を減らしましょう。'
+      : '15分でリードを握った後は、サイドレーンを1枚押して相手JGを釣り出し、オブジェクトへ先手合流するテンポを意識しましょう。',
+  };
+
   const improvementFocus = {
     headline: '中盤の孤立デスを1回減らし、画面白黒時間を削る',
     analysis: `1試合あたりの平均白黒画面時間は約${timeDeadText}。デスの多くが中盤15分〜25分の視界外でのキャッチや単独プッシュ時に発生しています。`,
@@ -271,7 +334,11 @@ export function buildRuleBasedReport(playerName: string, matches: any[], soloqIn
       winRate,
       mostPlayedChamp,
       mainRole,
+      avgCsAt15,
+      avgGoldAt15,
+      earlyTempoScore,
     },
+    earlyGameImpact,
     strengths,
     improvementFocus,
     itemAndBuildAdvice,
@@ -333,6 +400,7 @@ export async function generateCustomCoachReport(playerName: string): Promise<Cus
 ・平均勝率: ${baseReport.keyStats.winRate}% (平均KDA: ${baseReport.keyStats.avgKda})
 ・主なロール: ${baseReport.keyStats.mainRole} / 主なチャンプ: ${baseReport.keyStats.mostPlayedChamp}
 ・平均与ダメ: ${baseReport.keyStats.avgDamage.toLocaleString()} / 平均白黒時間: ${baseReport.keyStats.avgTimeDeadSec}秒
+・【序盤15分テンポ指標 (FORESTER法則)】: 15分推計CS ${baseReport.keyStats.avgCsAt15} (約 ${(baseReport.keyStats.avgCsAt15! / 15).toFixed(1)} CS/分) / 15分推計ゴールド ${baseReport.keyStats.avgGoldAt15!.toLocaleString()}G / 15分テンポスコア ${baseReport.keyStats.earlyTempoScore}点 (判定: ${baseReport.earlyGameImpact?.tempoControl})
 ${matchesSummary}
 ${soloqSection}
 
@@ -343,6 +411,13 @@ ${soloqSection}
     "title": "選手を表すキャッチーな称号（例: 集団戦の主砲、不沈の守護神、影のゲームメイカー、変幻自在の遊撃手など）",
     "description": "称号の理由となる本人のプレイスタイルの魅力（40文字以内）",
     "icon": "称号にふさわしい絵文字1文字"
+  },
+  "earlyGameImpact": {
+    "headline": "序盤15分の影響力・テンポ支配力に関する総評（30文字以内）",
+    "score15min": ${baseReport.keyStats.earlyTempoScore},
+    "tempoControl": "${baseReport.earlyGameImpact?.tempoControl}",
+    "earlyLaneDominance": "15分までのCS、ゴールド、対面との主導権争いに関する具体的分析（80文字程度）",
+    "actionableAdvice": "15分までの序盤で勝率を最大化するための具体的アドバイス（80文字程度）"
   },
   "strengths": [
     {
