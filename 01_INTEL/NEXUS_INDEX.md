@@ -35,6 +35,7 @@
 ## 🧠 戦術概念 ＆ 共通哲学ライブラリ (Concepts)
 全バイブルを横断する中核概念の定義と実戦原則集（Karpathy LLM Wiki準拠）。
 
+- **🔥 [LoL全戦術ライブラリ マスターチートシート（虎の巻149選）](file:///d:/my_work/01_INTEL/guides/lol_tactics_master_cheatsheet.md)**: D群115件、E群22件、F群12件の全一次戦術データをロール・フェーズ・仕様別に完全体系化。AI戦術コーチ（動的RAG）と連動する最強の試合前30秒虎の巻。
 - **[パワースパイク戦術論（時間帯・レベル・完成アイテムによる主導権掌握）](file:///D:/my_work/01_INTEL/concepts/power_spike.md)**
 - **[タワーダイブ攻略論（ウェーブクラッシュ・ヘルス差・タワーアグロ管理）](file:///D:/my_work/01_INTEL/concepts/tower_dive.md)**
 - **[インベード戦術論（Lv1奇襲・敵ジャングル視界奪還・バフ強奪）](file:///D:/my_work/01_INTEL/concepts/invade.md)**
