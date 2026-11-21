@@ -128,23 +128,60 @@ ${championsText}
       throw lastErr || new Error('Gemini からの解析結果が空です（画像対応モデルで生成できませんでした）。');
     }
 
-    let cleanText = textOutput.trim();
-    if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
-    if (cleanText.startsWith("```")) cleanText = cleanText.substring(3);
-    if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
-    cleanText = cleanText.trim();
+    // AI特有のJSON構文エラー（オブジェクト間のカンマ欠落や末尾カンマ等）を自動修復
+    function repairJsonText(raw: string): string {
+      let s = raw.trim();
+      if (s.startsWith('```json')) s = s.slice(7);
+      if (s.startsWith('```')) s = s.slice(3);
+      if (s.endsWith('```')) s = s.slice(0, -3);
+      s = s.trim();
 
-    // JSONパースの二重保護（万一ゴミテキストが混入しても抽出）
+      const firstBrace = s.indexOf('{');
+      const lastBrace = s.lastIndexOf('}');
+      if (firstBrace >= 0 && lastBrace > firstBrace) {
+        s = s.slice(firstBrace, lastBrace + 1);
+      }
+
+      // オブジェクト間のカンマ欠落の修復: }\s*{ -> },{
+      s = s.replace(/}\s*\{/g, '},{');
+      // 配列間のカンマ欠落修復: ]\s*[ -> ],[
+      s = s.replace(/\]\s*\[/g, '],[');
+      // 末尾の余計なカンマの除去: ,} -> }, ,] -> ]
+      s = s.replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']');
+
+      return s;
+    }
+
     let parsedData: any = null;
+    const repairedText = repairJsonText(textOutput);
+
     try {
-      parsedData = JSON.parse(cleanText);
+      parsedData = JSON.parse(repairedText);
     } catch {
-      const s = cleanText.indexOf('{');
-      const e = cleanText.lastIndexOf('}');
-      if (s >= 0 && e > s) {
-        parsedData = JSON.parse(cleanText.slice(s, e + 1));
-      } else {
-        throw new Error('AIが返却した解析結果のJSONパースに失敗しました。');
+      // 予備パース: 各プレイヤーオブジェクトを正規表現で個別に拾い上げて復元
+      try {
+        const playerMatches = repairedText.match(/\{[^{}]*"name"[^{}]*\}/g);
+        if (playerMatches && playerMatches.length >= 5) {
+          const recoveredPlayers = playerMatches.map((m) => {
+            try { return JSON.parse(m); } catch { return null; }
+          }).filter(Boolean);
+
+          const isTeam1Win = /"imageWinner"\s*:\s*"TEAM1"|"winningTeam"\s*:\s*"BLUE"/i.test(repairedText);
+          const durMatch = repairedText.match(/"gameDurationSec"\s*:\s*(\d+)/);
+
+          parsedData = {
+            sourceType: "LOBBY_RESULT",
+            imageWinner: isTeam1Win ? "TEAM1" : "TEAM2",
+            winningTeam: isTeam1Win ? "BLUE" : "RED",
+            gameDurationSec: durMatch ? Number(durMatch[1]) : 1800,
+            players: recoveredPlayers,
+          };
+        } else {
+          throw new Error('プレイヤー情報の抽出に失敗しました。');
+        }
+      } catch (recoveryErr: any) {
+        console.error('JSON recovery failed:', recoveryErr);
+        throw new Error(`AIが返却した解析結果のJSONパースに失敗しました: ${recoveryErr.message || '構文エラー'}`);
       }
     }
 
