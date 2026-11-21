@@ -38,6 +38,7 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
       const res = await fetch('/api/balancer/pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ balanceResult })
       }).catch(() => null);
 
@@ -109,6 +110,7 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
         fetch('/api/balancer/pending', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ balanceResult }),
         }).catch(err => console.warn('[pending save error]', err));
       } catch (e) {
