@@ -33,17 +33,16 @@ export interface GeminiCallOptions {
   translateProperNouns?: boolean;
 }
 
-// 2026-10-29 実測:
-// - gemini-3.5-flash / gemini-3.5-flash-lite / gemini-3.6-flash が 200 OK で高速かつ安定稼働中。
-// - gemini-3-flash-preview は現在一時的な429枯渇中。
-// - gemini-3.1-flash-lite は Google 側で 503 UNAVAILABLE。
-// - gemini-2.5-flash は無料枠の1日20回制限(429)で即死するため候補から除外。
-const DEFAULT_MODEL = 'gemini-3.5-flash';
+// 2026-11-22 実測:
+// - gemini-2.5-flash / gemini-3.5-flash-lite / gemini-3-flash-preview が 200 OK で高速かつ安定稼働中。
+// - gemini-3.5-flash / gemini-3.6-flash は現在無料枠の日次上限（429 RESOURCE_EXHAUSTED）到達中。
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 const FALLBACK_MODELS = [
-  'gemini-3.5-flash',
+  'gemini-2.5-flash',
   'gemini-3.5-flash-lite',
-  'gemini-3.6-flash',
   'gemini-3-flash-preview',
+  'gemini-3.5-flash',
+  'gemini-3.6-flash',
 ];
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -187,13 +186,14 @@ ${properNounRule}
 
   // ハルシネーション対策。個別プロンプトごとに書き分けるのは漏れが出るため、
   // 全AI生成を通す共通クライアント側で最後に必ず付ける。
+  // ※画像解析時（image指定時）は独自プロンプトで自己完結しているため、過度な制限干渉（「情報不足なら空欄」など）を防止
   const HALLUCINATION_GUARD = `
 
 【事実性の絶対条件】
 - 与えられた情報・データに実際に含まれる内容のみを根拠にすること。与えられていない具体的な数値・アイテム名・スキル名・URL・試合結果を創作しないこと。
 - 判断に足る情報が無い場合は、断定せず「情報不足のため判断できません」等と明記すること。もっともらしい推測で埋めないこと。
 - 不確かな内容は断定的な言い切りを避け、確信度に応じた表現(「〜の可能性がある」等)を使うこと。`;
-  const finalPrompt = `${prompt}${JP_GUARD}${HALLUCINATION_GUARD}`;
+  const finalPrompt = image ? prompt : `${prompt}${JP_GUARD}${HALLUCINATION_GUARD}`;
 
   let lastError: unknown = null;
 

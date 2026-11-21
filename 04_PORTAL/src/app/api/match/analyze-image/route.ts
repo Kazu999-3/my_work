@@ -104,8 +104,8 @@ ${championsText}
 ※ "players" 配列には合計10名分（チーム1の5名 ➔ チーム2の5名）をそれぞれ完全なオブジェクトとして含めてください。
 `;
 
-    // 2026-10-29 / 2026-11-21 実測に基づく安定稼働ビジョンモデル
-    const visionModels = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+    // 2026-11-22 実測に基づく安定稼働ビジョンモデル
+    const visionModels = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash-preview'];
     let textOutput = '';
     let lastErr: any = null;
     for (const model of visionModels) {
