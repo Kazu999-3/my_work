@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""参考資料ライブラリ（AI活用・副業）初期データ投入・照会・管理スクリプト
+"""参考資料ライブラリ（AI活用・副業・開発・ツール）初期データ投入・照会・管理スクリプト
 
 指示文15: 05_PILOT/docs/specs/15-reference-library-instruction.md
-全22件の参考資料（A群: Xブックマーク 10件、B群: チャット共有 12件）を
-Supabase の reference_items テーブルへ安全に投入・検証・照会する。
+指示文16: 05_PILOT/docs/specs/16-reference-items-add-dev-tools-instruction.md
+指示文17: 05_PILOT/docs/specs/17-reference-items-evaluation-instruction.md
+
+全34件の参考資料（A群: 10件、B群: 12件、C群: 12件）と
+一次評価データ（29件: 取り込み候補 10件、参考 19件、評価なし 5件）を管理。
 
 使い方:
   py -3 scripts/seed_reference_items.py                  # 集計表示 ＆ マイグレーションSQL生成
-  py -3 scripts/seed_reference_items.py --list           # 全22件の一覧テーブル表示
-  py -3 scripts/seed_reference_items.py --get A1         # 指定コードの詳細・本文表示
+  py -3 scripts/seed_reference_items.py --list           # 全34件の一覧テーブル表示
+  py -3 scripts/seed_reference_items.py --get A1         # 指定コードの詳細・本文・評価表示
   py -3 scripts/seed_reference_items.py --search "キーワード" # キーワード検索
 """
 
@@ -16,9 +19,9 @@ import os
 import sys
 import json
 import argparse
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
-# 全22件のマスターデータ定義
+# 全34件のマスターデータ定義
 REFERENCE_ITEMS: List[Dict[str, Any]] = [
     # ========================================================
     # A群: Xブックマークから（全文取得済み: 10件）
@@ -57,6 +60,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 活かしどころ：SPEC作成や調査依頼の前に「前提改善」「条件明確化」を挟む、など今のワークフローにそのまま差し込める。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "取り込み候補",
+        "target_project": "開発フロー",
+        "adoption_note": "SPEC・指示文のチェックリストに転用可（前提検証・条件明確化・自己レビュー）。未決事項の明記など一部は実践済み",
     },
     {
         "code": "A2",
@@ -71,6 +77,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 活かしどころ：先日のサブスク棚卸し（Gmail領収書ベースで実施済み）と同じ発想。登録サイト一覧は未実施なので、セキュリティ棚卸しとして一度やる価値あり。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "取り込み候補",
+        "target_project": "開発フロー（運用）",
+        "adoption_note": "定期棚卸しルーチンの型。サブスク棚卸しは実施済みで、登録サイト洗い出しも同じ手順で可能",
     },
     {
         "code": "A3",
@@ -84,6 +93,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 活かしどころ：SPEC運用（MarkdownでGitHub受け渡し）の先の話として、大きなSPECは「触れる解説ページ」化するとレビュー精度が上がる、という方向性。Pilot/Portalの仕様確認に使える。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "参考",
+        "target_project": "開発フロー",
+        "adoption_note": "ADR＝Markdownは現行SPEC運用と同型。人間向け資料のHTML化は朝刊で一部実践済み",
     },
     {
         "code": "A4",
@@ -97,6 +109,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 活かしどころ：公式の実装事例として信頼できる技術参考。「AIの誤った補完・推測を減らす」設計は、Pilotの解析精度の考え方にも通じる。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "参考",
+        "target_project": "―",
+        "adoption_note": "大規模行政のMCP事例。発想のみ参考",
     },
     {
         "code": "A5",
@@ -109,6 +124,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 注意：非公式のルーティングツールで「無料・無制限」をうたうものは、アカウントや利用規約、セキュリティ面のリスクがあり得る。使う前提ではなく、存在の記録のみ。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": None,
+        "target_project": None,
+        "adoption_note": None,
     },
     {
         "code": "A6",
@@ -120,6 +138,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": """本文はX Articleへのリンクのみで、記事本文は取得できなかった。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": None,
+        "target_project": None,
+        "adoption_note": None,
     },
     {
         "code": "A7",
@@ -132,6 +153,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 活かしどころ：内容そのものより、「中高年×AI習得」という市場の大きさを示す材料。自分の発信の読者像を考える際の参考。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "参考",
+        "target_project": "note・Brain販売",
+        "adoption_note": "「中高年×AI習得」市場の材料として",
     },
     {
         "code": "A8",
@@ -145,6 +169,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
 位置づけ：とら記事・くろねこの「AI×アフィ」系と同じ型。あなたの方針は「型だけ取り入れる」で確定済み（2026-11-20）。数字は著者の主張として割り引くこと。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "参考",
+        "target_project": "note・Brain販売",
+        "adoption_note": "型だけ取り入れる方針が確定済み。数字は未検証",
     },
     {
         "code": "A9",
@@ -156,6 +183,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": """敵JGの習慣を記録する自作サイトを使い約800LP上がったと報告。Pilotのオーバーレイ改善と同じ「自作ツールで競技力を上げる」路線の事例。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "取り込み候補",
+        "target_project": "Pilot",
+        "adoption_note": "敵JGの習慣を記録・可視化する機能はHUD／コーチと同路線。機能アイデアとしてSPEC候補。中身の追加調査が要る",
     },
     {
         "code": "A10",
@@ -167,6 +197,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": """全試合を自動分析してミスや移動を指摘する無料ボット。スレッド続き編に続き1件あり。Pilotの競合参考。""",
         "has_fulltext": True,
         "source_group": "A",
+        "verdict": "参考",
+        "target_project": "Pilot",
+        "adoption_note": "競合ベンチマーク。機能比較を作れば改善材料になる",
     },
     # ========================================================
     # B群: チャットで共有された記事（要点のみ: 12件）
@@ -181,6 +214,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "メルマガ解除リスト化とサブスク棚卸しの着想元（実際にGmail棚卸しを実施）",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "取り込み候補",
+        "target_project": "開発フロー（運用）",
+        "adoption_note": "実施済み。メルマガ解除リスト化とサブスク棚卸しを実際にやった",
     },
     {
         "code": "B2",
@@ -192,6 +228,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "ユーザー判断「型だけ取り入れる」。6つの型は note目標の `参考-とら記事から取り入れる型.md` に保存済み",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "取り込み候補",
+        "target_project": "note・Brain販売",
+        "adoption_note": "取り込み済み。型ファイルに保存し、Brain第1弾の設計に反映する方針が確定",
     },
     {
         "code": "B3",
@@ -203,6 +242,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "自動化レベル1〜5、止まる5原因、週次点検。4行設計シートが借りられる型",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "取り込み候補",
+        "target_project": "開発フロー",
+        "adoption_note": "自動化の設計シート（4行）と週次点検の型。週次メモリ整理cronは一部実践。SPEC作成時の設計チェックに採用可",
     },
     {
         "code": "B4",
@@ -214,6 +256,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "人格・記憶・整理・仕事・説明書のファイルを積み上げる運用論。現行運用とほぼ一致",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "参考",
+        "target_project": "開発フロー",
+        "adoption_note": "現行運用（人格・記憶・指示ファイル）とほぼ一致",
     },
     {
         "code": "B5",
@@ -225,6 +270,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "超重要事項＋シーン別ファイルへの目次化。週次メモリ整理の着想元",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "取り込み候補",
+        "target_project": "開発フロー",
+        "adoption_note": "取り込み進行中。週次メモリ整理cronの着想元",
     },
     {
         "code": "B6",
@@ -236,6 +284,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "コーディングAIのWeb誘導リポジトリ、文章の人間味仕上げ等",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "参考",
+        "target_project": "開発フロー",
+        "adoption_note": "ツール候補のメモ。個別ツールの要否は未検討",
     },
     {
         "code": "B7",
@@ -247,6 +298,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "yt-dlp、Ollama、Whisper等。Pilot SPEC 11（Whisper実働検証）のきっかけ",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "取り込み候補",
+        "target_project": "Pilot・開発フロー",
+        "adoption_note": "一部実施済み（Whisper→SPEC 11、Ollama→導入済み）。残り（n8n等）は未評価",
     },
     {
         "code": "B8",
@@ -258,6 +312,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "テーマ選定が9割、実績ある型に流し込む、低価格入口→高価格導線（収益数字は主張・未検証）",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "参考",
+        "target_project": "note・Brain販売",
+        "adoption_note": "低価格入口→高価格導線の型はBrainの段階価格設計と同型で反映済み。数字は未検証",
     },
     {
         "code": "B9",
@@ -269,6 +326,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "「AIに作らせたnoteはそのまま公開してもほとんど売れません」が品質重視の自説と一致",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "参考",
+        "target_project": "note・Brain販売",
+        "adoption_note": "「AI産のままでは売れない」は品質方針の裏付け。方針確認済み",
     },
     {
         "code": "B10",
@@ -280,6 +340,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "長文記事本体は未取得",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": None,
+        "target_project": None,
+        "adoption_note": None,
     },
     {
         "code": "B11",
@@ -291,6 +354,9 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "長文記事本体は未取得",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": None,
+        "target_project": None,
+        "adoption_note": None,
     },
     {
         "code": "B12",
@@ -302,63 +368,206 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "content": "X長文＋短尺動画＋「保存して」締め、段階価格（5,000円→50,000円）、自社LP＋Stripe。数字は本人の主張",
         "has_fulltext": False,
         "source_group": "B",
+        "verdict": "取り込み候補",
+        "target_project": "note・Brain販売",
+        "adoption_note": "段階価格はBrain設計に一部反映済み。X長文＋短尺動画＋「保存して」締めの投稿型は未実施で候補",
+    },
+    # ========================================================
+    # C群: 開発・ツールから（全文取得済み: 12件）
+    # ========================================================
+    {
+        "code": "C1",
+        "title": "LoL戦績ツールの制作記",
+        "author": "むぅ☁️ @peryton_girl",
+        "url": "https://x.com/peryton_girl/status/2123237482057908224",
+        "category": "開発事例・競合",
+        "summary": "OTPが作った超個人的なLoL戦績ツールの制作記（note記事へのリンク）。個人開発の同路線事例",
+        "content": "オタク／OTPがLOLの超個人的すぎる戦績ツールを作った話｜mu https://note.com/peryton_girl/n/n74b055ed9422?sub_rt=share_pb",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "Pilot・Portal",
+        "adoption_note": "個人開発の同路線事例。note本文を読めば見せ方の参考になりうる",
+    },
+    {
+        "code": "C2",
+        "title": "スキルCD表示の規約論点",
+        "author": "LoL Guide @lol_guide_jp",
+        "url": "https://x.com/lol_guide_jp/status/2121165245033107527",
+        "category": "開発事例・競合",
+        "summary": "スキルCDを画面に出しながらプレイするのは規約上ありか、という論点。CDはDataDragon API＋統計的スキルレベル推定、Live Client APIからは相手チャンピオン・ロール・レベルを取得する方式で「統計サイトを別モニターで見るのと本質的に変わらないのでOKでは」という見解。PilotのHUD設計に直結する論点。詳細画像3枚あり",
+        "content": "これを画面上に出しながらプレイするのは、規約的にありかなしか。出ているクールダウンは、ゲーム内の情報から取得しているわけではなく、通常のDataDragonのAPIから、出ているアイテムの候補とレベルに対してのスキルレベルは、統計情報の最も選択率が高いもの。ゲーム内のLive Client APIから取得しているのは、相手のチャンピオンとロール名とレベル。サブモニターがある人なら、別のモニターで、いろんな統計サイトのチャンピオンのページを見て、スキルのCDを把握とかはしてる人はいると思う。それと本質的には変わらないのでOKな気もするのだが。",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "取り込み候補",
+        "target_project": "Pilot",
+        "adoption_note": "最優先。スキルCD表示の実装方式（DataDragon＋統計推定＋Live Client API）と規約解釈は、作業中のHUD刷新の判断材料に直結",
+    },
+    {
+        "code": "C3",
+        "title": "学祭系システム制作報告",
+        "author": "ぽーと @sangikousenuser",
+        "url": "https://x.com/sangikousenuser/status/2117527184831283666",
+        "category": "開発事例・競合",
+        "summary": "学祭系システムを作ったという制作報告。詳細は添付画像内（本文は短文のみ）",
+        "content": "学祭系システム まあまあ頑張った",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "―",
+        "adoption_note": "詳細が添付画像のみ",
+    },
+    {
+        "code": "C4",
+        "title": "ワンクリック最適ビルド推薦",
+        "author": "Coachless.gg @CoachlessGG",
+        "url": "https://x.com/CoachlessGG/status/2113630443085987884",
+        "category": "開発事例・競合",
+        "summary": "勝率貢献度（Win Probability Added）ベースで最適ビルドをワンクリック推薦する新機能。ルーン・サモナースペル・アイテムセットをクライアントへコピペ可能。海外の競合サービス",
+        "content": "Coachless Builds in 1 Click 🆕 Recommended Builds are here - quickly find the strongest setups for your champion based on Win Probability Added, taking into account sample size and item/rune synergies. Runes, Summoner Spells, and an optimized Item Set with situational options that you can directly copy paste into your client. Let us know any feedback & the best builds that you find!",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "Pilot",
+        "adoption_note": "競合ベンチマーク。ビルド推薦の見せ方はコーチ機能の比較材料",
+    },
+    {
+        "code": "C5",
+        "title": "個人開発ツールのリリース告知",
+        "author": "PEAK/zac @chavah_lol",
+        "url": "https://x.com/chavah_lol/status/2106687563872498098",
+        "category": "開発事例・競合",
+        "summary": "ChatGPTサイト上でLoLツールをリリースしたという告知（リンクのみの自己リプライ）",
+        "content": "https://lol.peak-kit.chatgpt.site/ ここでリリースしました！",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": None,
+        "target_project": None,
+        "adoption_note": None,
+    },
+    {
+        "code": "C6",
+        "title": "Discord最適化設定",
+        "author": "Kuta @KutaTweaks",
+        "url": "https://x.com/KutaTweaks/status/2098107609240793124",
+        "category": "ツール・設定",
+        "summary": "Discordが引き起こす入力遅延とFPS低下を減らす最適化・軽量化設定の紹介。具体的な設定手順は添付動画内",
+        "content": "Discord is causing MASSIVE Input Delay and FPS drops while your Gaming and Streaming. Do these Settings to Optimize and Debloat Discord for Maximum Performance on Windows 10/11. (Increased FPS + Reduced Latency) Info Below!",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "KTMコミュニティ",
+        "adoption_note": "環境設定の話。コミュニティ向け「快適設定」の共有材料になる",
+    },
+    {
+        "code": "C7",
+        "title": "LoLデータベースサイトの機能追加",
+        "author": "ズリセンコキ務長官 @kokimu_",
+        "url": "https://x.com/kokimu_/status/2090634342271996056",
+        "category": "開発事例・競合",
+        "summary": "自作LoLデータベースサイト（nunune.pages.dev）に、チャンピオンごとの時間帯別スケーリング表示機能を追加。個人開発の競合事例",
+        "content": "LoLのデータベースサイトに、各キャラの時間帯ごとのスケーリングが一目でわかる機能を追加しました。「スケール良くて序盤もそこまで弱くないキャラを使いたいなあ」みたいなキャラ選びの指針に役立てて欲しいです。ホーム画面の右上から行けます。https://nunune.pages.dev",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "Pilot",
+        "adoption_note": "時間帯別スケーリング表示はチャンピオン図鑑の見せ方の候補。現時点は競合事例として保持",
+    },
+    {
+        "code": "C8",
+        "title": "Stream Deck×Twitchツール設定",
+        "author": "可能性のケモノフレンズ @Y918Boss",
+        "url": "https://x.com/Y918Boss/status/2086828683629859326",
+        "category": "ツール・設定",
+        "summary": "Stream DeckのプラグインからTwitchツールを使う設定手順。Channel Nameには見たい人のIDを入れる。具体手順は添付画像内",
+        "content": "字読まなくてもなるべくわかるようにまとめました。StreamDeckのプラグインからTwitchツールを選んで あとは画像の通り！ Channel Nameのところは、見たい人の\"ID\"じゃなきゃダメよ！",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "―",
+        "adoption_note": "配信まわりの設定メモ。配信が本格化したら使う",
+    },
+    {
+        "code": "C9",
+        "title": "チャンネルモニターの使い方",
+        "author": "可能性のケモノフレンズ @Y918Boss",
+        "url": "https://x.com/Y918Boss/status/2086624636683608409",
+        "category": "ツール・設定",
+        "summary": "チャンネルモニターに見たい人のIDを入れるだけ、という回答ポスト（C8と対）",
+        "content": "@gegetanV ここのチャンネルモニターで見たい人のID入れとくだけです！",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "―",
+        "adoption_note": "C8と対の設定メモ",
+    },
+    {
+        "code": "C10",
+        "title": "Microsoft PC Manager",
+        "author": "mizugame @mizugame_VRC",
+        "url": "https://x.com/mizugame_VRC/status/2084476117831110822",
+        "category": "ツール・設定",
+        "summary": "PCのカクつきはメモリキャッシュが原因のことがあり、Microsoft PC Managerで対処できるという推奨ポスト",
+        "content": "なんか俺最近いろんなフレンドがPCカクつくとか言ってるから「それメモリのキャッシュ溜まってんじゃない？Microsoft PC Manager使いな」ってめっちゃ宣伝してる人になってる ちなみにMicrosoft PC Managerは神です",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "―",
+        "adoption_note": "個人PCメンテの話。プロジェクトへの取り込みなし",
+    },
+    {
+        "code": "C11",
+        "title": "対面別トレードパターン学習サービス",
+        "author": "WARDEX @wardex_jp",
+        "url": "https://x.com/wardex_jp/status/2069107429682696263",
+        "category": "開発事例・競合",
+        "summary": "チャンピオンごとの対面別トレードパターンを学ぶサービスWARDEXへの投稿告知（セラフィーン対面なしLv1の例）。Pilotと同領域の学習サービス",
+        "content": "セラフィーン vs 対面なし Lv1 のトレードパターンが #WARDEX で投稿されました！「アッシュの隣のときはEを取ろう」by @shimako34343 https://wardex.app/scene/49d7d8b5-5cc7-4bc3-b562-b5a95e7591b6",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "Pilot",
+        "adoption_note": "「シーン単位」で対面パターンを出す提示方法は、コーチ・対面タブの見せ方候補",
+    },
+    {
+        "code": "C12",
+        "title": "Discordのハードウェアアクセラレーション",
+        "author": "BANDAL ゲーミングPCストア @BANDAL_PC",
+        "url": "https://x.com/BANDAL_PC/status/1999781347565469779",
+        "category": "ツール・設定",
+        "summary": "DiscordのハードウェアアクセラレーションをOFFにするとグラボがゲーム専用になりFPSが安定する、という設定注意喚起。デメリット（Discordの動作・画面共有の画質）も明記",
+        "content": "Discordがあなたの「グラボ」を勝手に使ってます。「ゲーム中、Discordが重い」「FPSが安定しない」その原因、この設定がONのまま放置されているからかもしれません。🚫 ハードウェアアクセラレーション設定（歯車）＞ 詳細設定 ＞ 「ハードウェアアクセラレーション」をOFF。これでグラボが「ゲーム専用」になりますが、デメリットもあります。⚠️ オフにするデメリット ・Discord自体の動きが少しモッサリするかも ・「画面共有 (Go Live)」のカクつき・画質低下の原因になる。「画面共有の綺麗さ」より「自分の撃ち合いの強さ」を優先したい人は、迷わずOFFにしてください！",
+        "has_fulltext": True,
+        "source_group": "C",
+        "verdict": "参考",
+        "target_project": "KTMコミュニティ",
+        "adoption_note": "C6と同じく環境設定。コミュニティ共有の材料",
     },
 ]
 
 def generate_migration_sql() -> str:
-    """マイグレーション用 SQL (128_reference_items.sql) を生成"""
+    """マイグレーション用 SQL (129_reference_items_add_c_and_evaluations.sql) を生成"""
     sql_lines = [
         "-- ============================================================",
-        "-- 128: 参考資料ライブラリ (AI活用・副業) 専用テーブル作成 ＆ 初期データ投入",
+        "-- 129: 参考資料ライブラリ C群(開発・ツール12件)追加 ＆ 一次評価(29件)反映",
         "--",
-        "-- 指示文15: 05_PILOT/docs/specs/15-reference-library-instruction.md",
-        "-- personal_knowledge (LoL知見) とは分離し、参考資料専用のテーブルとして運用する。",
+        "-- 指示文16: 05_PILOT/docs/specs/16-reference-items-add-dev-tools-instruction.md",
+        "-- 指示文17: 05_PILOT/docs/specs/17-reference-items-evaluation-instruction.md",
         "-- ============================================================",
         "",
-        "-- 1. テーブル作成",
-        "CREATE TABLE IF NOT EXISTS reference_items (",
-        "    id int8 PRIMARY KEY GENERATED ALWAYS AS IDENTITY,",
-        "    code text UNIQUE NOT NULL,",
-        "    title text NOT NULL,",
-        "    author text,",
-        "    url text,",
-        "    category text NOT NULL,",
-        "    summary text,",
-        "    content text,",
-        "    has_fulltext boolean NOT NULL DEFAULT false,",
-        "    source_group text NOT NULL,",
-        "    metadata jsonb DEFAULT '{}'::jsonb,",
-        "    created_at timestamptz DEFAULT now(),",
-        "    updated_at timestamptz DEFAULT now()",
-        ");",
+        "-- 1. 評価用カラムの追加（既存テーブルに安全に追加）",
+        "ALTER TABLE reference_items ADD COLUMN IF NOT EXISTS verdict text;",
+        "ALTER TABLE reference_items ADD COLUMN IF NOT EXISTS target_project text;",
+        "ALTER TABLE reference_items ADD COLUMN IF NOT EXISTS adoption_note text;",
         "",
-        "-- 2. インデックス作成",
-        "CREATE INDEX IF NOT EXISTS idx_reference_items_category ON reference_items (category);",
-        "CREATE INDEX IF NOT EXISTS idx_reference_items_code ON reference_items (code);",
+        "-- インデックス作成",
+        "CREATE INDEX IF NOT EXISTS idx_reference_items_verdict ON reference_items (verdict);",
         "",
-        "-- 3. RLS の有効化とポリシー設定",
-        "ALTER TABLE reference_items ENABLE ROW LEVEL SECURITY;",
-        "",
-        "DO $$ BEGIN",
-        "    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reference_items' AND policyname = 'Allow read for all') THEN",
-        "        CREATE POLICY \"Allow read for all\" ON reference_items FOR SELECT USING (true);",
-        "    END IF;",
-        "    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reference_items' AND policyname = 'Allow insert for admin') THEN",
-        "        CREATE POLICY \"Allow insert for admin\" ON reference_items FOR INSERT TO authenticated WITH CHECK (true);",
-        "    END IF;",
-        "    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reference_items' AND policyname = 'Allow update for admin') THEN",
-        "        CREATE POLICY \"Allow update for admin\" ON reference_items FOR UPDATE TO authenticated USING (true);",
-        "    END IF;",
-        "    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reference_items' AND policyname = 'Allow delete for admin') THEN",
-        "        CREATE POLICY \"Allow delete for admin\" ON reference_items FOR DELETE TO authenticated USING (true);",
-        "    END IF;",
-        "END $$;",
-        "",
-        "-- 4. 初期データ投入（全22件: 冪等性確保のため ON CONFLICT (code) DO UPDATE）",
+        "-- 2. C群（12件）の追加・更新（冪等性確保のため ON CONFLICT (code) DO UPDATE）",
     ]
 
-    for item in REFERENCE_ITEMS:
-        # SQL文字列エスケープ
+    c_items = [item for item in REFERENCE_ITEMS if item["source_group"] == "C"]
+    for item in c_items:
         code = item["code"].replace("'", "''")
         title = item["title"].replace("'", "''")
         author = item["author"].replace("'", "''")
@@ -368,10 +577,13 @@ def generate_migration_sql() -> str:
         content = item["content"].replace("'", "''")
         has_fulltext = "true" if item["has_fulltext"] else "false"
         source_group = item["source_group"].replace("'", "''")
+        verdict = f"'{item['verdict'].replace("'", "''")}'" if item["verdict"] else "NULL"
+        target_project = f"'{item['target_project'].replace("'", "''")}'" if item["target_project"] else "NULL"
+        adoption_note = f"'{item['adoption_note'].replace("'", "''")}'" if item["adoption_note"] else "NULL"
 
         sql_lines.append(
-            f"INSERT INTO reference_items (code, title, author, url, category, summary, content, has_fulltext, source_group, updated_at)\n"
-            f"VALUES ('{code}', '{title}', '{author}', '{url}', '{category}', '{summary}', '{content}', {has_fulltext}, '{source_group}', now())\n"
+            f"INSERT INTO reference_items (code, title, author, url, category, summary, content, has_fulltext, source_group, verdict, target_project, adoption_note, updated_at)\n"
+            f"VALUES ('{code}', '{title}', '{author}', '{url}', '{category}', '{summary}', '{content}', {has_fulltext}, '{source_group}', {verdict}, {target_project}, {adoption_note}, now())\n"
             f"ON CONFLICT (code) DO UPDATE SET\n"
             f"    title = EXCLUDED.title,\n"
             f"    author = EXCLUDED.author,\n"
@@ -381,7 +593,27 @@ def generate_migration_sql() -> str:
             f"    content = EXCLUDED.content,\n"
             f"    has_fulltext = EXCLUDED.has_fulltext,\n"
             f"    source_group = EXCLUDED.source_group,\n"
+            f"    verdict = EXCLUDED.verdict,\n"
+            f"    target_project = EXCLUDED.target_project,\n"
+            f"    adoption_note = EXCLUDED.adoption_note,\n"
             f"    updated_at = now();\n"
+        )
+
+    sql_lines.append("\n-- 3. 既存A群・B群への一次評価データの反映（codeをキーにUPDATE）\n")
+    evaluated_non_c = [item for item in REFERENCE_ITEMS if item["source_group"] != "C" and item["verdict"] is not None]
+    for item in evaluated_non_c:
+        code = item["code"].replace("'", "''")
+        verdict = f"'{item['verdict'].replace("'", "''")}'" if item["verdict"] else "NULL"
+        target_project = f"'{item['target_project'].replace("'", "''")}'" if item["target_project"] else "NULL"
+        adoption_note = f"'{item['adoption_note'].replace("'", "''")}'" if item["adoption_note"] else "NULL"
+
+        sql_lines.append(
+            f"UPDATE reference_items SET\n"
+            f"    verdict = {verdict},\n"
+            f"    target_project = {target_project},\n"
+            f"    adoption_note = {adoption_note},\n"
+            f"    updated_at = now()\n"
+            f"WHERE code = '{code}';\n"
         )
 
     return "\n".join(sql_lines)
@@ -397,22 +629,38 @@ def print_summary():
         cat = item["category"]
         categories[cat] = categories.get(cat, 0) + 1
 
-    print("=" * 60)
+    groups = {}
+    for item in REFERENCE_ITEMS:
+        grp = item["source_group"]
+        groups[grp] = groups.get(grp, 0) + 1
+
+    eval_counts = {
+        "取り込み候補": sum(1 for item in REFERENCE_ITEMS if item["verdict"] == "取り込み候補"),
+        "参考": sum(1 for item in REFERENCE_ITEMS if item["verdict"] == "参考"),
+        "評価なし(NULL)": sum(1 for item in REFERENCE_ITEMS if item["verdict"] is None),
+    }
+
+    print("=" * 65)
     print(f"📚 参考資料マスターデータ集計 (合計: {total} 件)")
-    print(f"  - 本文あり (A群 Xブックマーク取得分): {fulltext_count} 件")
-    print(f"  - 要点のみ (B群 チャット共有分): {summary_only_count} 件")
+    print(f"  - グループ内訳: A群(X-AI/副業)={groups.get('A', 0)}件, B群(チャット)={groups.get('B', 0)}件, C群(X-開発/ツール)={groups.get('C', 0)}件")
+    print(f"  - 本文有無: 全文あり={fulltext_count}件, 要点のみ={summary_only_count}件")
     print("  - カテゴリ内訳:")
     for cat, count in categories.items():
         print(f"    * {cat}: {count} 件")
-    print("=" * 60)
+    print("  - 一次評価内訳:")
+    for v, count in eval_counts.items():
+        print(f"    * {v}: {count} 件")
+    print("=" * 65)
 
 def list_items():
-    """全22件の一覧を表示"""
-    print(f"{'コード':<5} | {'カテゴリ':<12} | {'本文':<4} | {'著者':<25} | タイトル")
-    print("-" * 80)
+    """全34件の一覧を表示"""
+    print(f"{'コード':<5} | {'カテゴリ':<12} | {'本文':<4} | {'判定':<8} | {'行き先':<14} | タイトル")
+    print("-" * 90)
     for item in REFERENCE_ITEMS:
         ft = "全文" if item["has_fulltext"] else "要点"
-        print(f"{item['code']:<5} | {item['category']:<10} | {ft:<4} | {item['author'][:23]:<25} | {item['title']}")
+        v = item["verdict"] or "―"
+        tp = item["target_project"] or "―"
+        print(f"{item['code']:<5} | {item['category']:<10} | {ft:<4} | {v:<6} | {tp:<12} | {item['title']}")
 
 def get_item(code: str):
     """指定コードの詳細を表示"""
@@ -424,11 +672,14 @@ def get_item(code: str):
     print(f"著者: {match['author']}")
     print(f"URL: {match['url']}")
     print(f"カテゴリ: {match['category']} (全文有無: {'全文あり' if match['has_fulltext'] else '要点のみ'})")
+    print(f"一次評価判定: {match['verdict'] or '未評価'}")
+    print(f"行き先: {match['target_project'] or '―'}")
+    print(f"取り込み方メモ: {match['adoption_note'] or '―'}")
     print(f"要点: {match['summary']}")
-    print("-" * 60)
+    print("-" * 65)
     print("【本文・内容】")
     print(match["content"])
-    print("-" * 60)
+    print("-" * 65)
 
 def search_items(query: str):
     """キーワード検索"""
@@ -436,18 +687,23 @@ def search_items(query: str):
     matches = [
         item for item in REFERENCE_ITEMS
         if q in item["title"].lower() or q in item["summary"].lower() or q in item["content"].lower() or q in item["author"].lower()
+        or (item["adoption_note"] and q in item["adoption_note"].lower())
+        or (item["target_project"] and q in item["target_project"].lower())
     ]
     print(f"🔍 検索キーワード: '{query}' ({len(matches)} 件ヒット)")
     print("-" * 80)
     for m in matches:
         ft = "全文" if m["has_fulltext"] else "要点"
-        print(f"[{m['code']}] ({m['category']}/{ft}) {m['title']} - {m['author']}")
+        v = m["verdict"] or "―"
+        print(f"[{m['code']}] ({m['category']}/{ft} | 評価:{v}) {m['title']} - {m['author']}")
         print(f"   要点: {m['summary']}")
+        if m["adoption_note"]:
+            print(f"   取り込み方: {m['adoption_note']}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="参考資料ライブラリ管理スクリプト")
     parser.add_argument("--list", action="store_true", help="全件一覧表示")
-    parser.add_argument("--get", type=str, help="指定コードの詳細・本文表示 (例: A1)")
+    parser.add_argument("--get", type=str, help="指定コードの詳細・本文・評価表示 (例: A1, C2)")
     parser.add_argument("--search", type=str, help="キーワード検索")
     args = parser.parse_args()
 
@@ -462,7 +718,7 @@ if __name__ == "__main__":
         sql_content = generate_migration_sql()
         target_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "04_PORTAL", "supabase", "migrations", "128_reference_items.sql"
+            "04_PORTAL", "supabase", "migrations", "129_reference_items_add_c_and_evaluations.sql"
         )
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(sql_content)
