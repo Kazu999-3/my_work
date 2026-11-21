@@ -20,6 +20,7 @@ import GapDiagnosisPanel from "./_parts/GapDiagnosisPanel";
 import TableSplitPanel from "./_parts/TableSplitPanel";
 import PlayerListTable from "./_parts/PlayerListTable";
 import QuickActionBar from "./_parts/QuickActionBar";
+import { BalancerVcManager } from "./components/BalancerVcManager";
 import CustomSubNav from "../../components/CustomSubNav";
 import ScrollToTopButton from "../../components/ScrollToTopButton";
 import type {
@@ -436,6 +437,9 @@ export default function BalancerPage() {
           handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount}
           inactiveCount={inactiveCount} canBalance={canBalance}
         />
+
+        {/* 🔊 Discord VCステータス操作バー */}
+        <BalancerVcManager onMessage={setMessage} />
 
         {/* ⚠️ MMR整合性ズレ警告バナー（ズレ検知時のみ自動出現） */}
         {integrityData?.hasDiscrepancy && (

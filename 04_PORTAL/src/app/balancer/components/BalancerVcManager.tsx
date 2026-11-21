@@ -77,11 +77,18 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
     if (res.success) {
       if (onMessage) onMessage({ type: 'success', text: `🔊 ${res.message}` });
     } else {
-      alert(`VC更新エラー: ${res.error}`);
+      if (onMessage) onMessage({ type: 'error', text: `VC更新エラー: ${res.error}` });
+      else alert(`VC更新エラー: ${res.error}`);
     }
     setUpdatingVc(false);
   };
 
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPresetText.trim()) return;
+    handleUpdate(newPresetText.trim());
+    setNewPresetText('');
+  };
 
   return (
     <div className="p-3 rounded-2xl bg-surface border border-border flex flex-wrap items-center justify-between gap-2.5 shadow-2xs">
@@ -144,6 +151,26 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
         >
           クリア ✕
         </button>
+
+        <form onSubmit={handleCustomSubmit} className="flex items-center gap-1 ml-1">
+          <input
+            type="text"
+            value={newPresetText}
+            onChange={(e) => setNewPresetText(e.target.value)}
+            placeholder="自由入力..."
+            maxLength={35}
+            disabled={updatingVc}
+            className="px-2 py-0.5 rounded-lg bg-surface-subtle border border-border text-foreground text-[11px] placeholder:text-muted focus:outline-none focus:border-primary-500 w-24 sm:w-28"
+          />
+          <button
+            type="submit"
+            disabled={updatingVc || !newPresetText.trim()}
+            className="px-2 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft font-bold text-[10px] transition disabled:opacity-40 cursor-pointer"
+          >
+            送信
+          </button>
+        </form>
+
         {updatingVc && <span className="text-[10px] text-primary-600 animate-pulse font-bold">更新中...</span>}
       </div>
     </div>
