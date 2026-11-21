@@ -578,7 +578,7 @@ export async function resolveGuildId(env, channelId) {
  */
 export async function cleanupOldReminderMessages(env, channelId) {
   try {
-    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages?limit=25`, {
+    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages?limit=50`, {
       headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` }
     });
     if (!res.ok) return;
@@ -586,19 +586,25 @@ export async function cleanupOldReminderMessages(env, channelId) {
     for (const m of messages) {
       if (!m.author?.bot) continue;
       const embedTitle = m.embeds?.[0]?.title || '';
+      // 募集カード本体（KTM 土曜・本戦カスタム / KTM 日曜・お祭りカスタム）は絶対に削除しない
       if (embedTitle.includes('KTM 土曜・本戦カスタム') || embedTitle.includes('KTM 日曜・お祭りカスタム')) {
         continue;
       }
-      const isReminderEmbed = embedTitle.includes('週末カスタム 残り枠のお知らせ');
-      const isShortfallContent = m.content && (
-        m.content.includes('あと1名で開催確定！') ||
-        m.content.includes('あと1名で出発できます！') ||
-        m.content.includes('あと1名で確定！') ||
-        m.content.includes('助っ人をピンポイント募集中') ||
-        m.content.includes('状況案内:') ||
-        m.content.includes('判定結果:') ||
-        m.content.includes('参加できる方はエントリーをお願いします')
-      );
+      const embedDesc = m.embeds?.[0]?.description || '';
+      const content = m.content || '';
+
+      const isReminderEmbed = embedTitle.includes('残り枠のお知らせ') || embedDesc.includes('残り枠のお知らせ');
+      const isShortfallContent =
+        content.includes('残り枠のお知らせ') ||
+        content.includes('助っ人をピンポイント募集中') ||
+        content.includes('助っ人急募') ||
+        content.includes('参加のお願い') ||
+        content.includes('あと1名で開催確定') ||
+        content.includes('あと1名で出発') ||
+        content.includes('あと1名で確定') ||
+        content.includes('状況案内:') ||
+        content.includes('判定結果:') ||
+        content.includes('参加できる方はエントリーをお願いします');
 
       if (isReminderEmbed || isShortfallContent) {
         console.log(`[Cleanup] 古いBotリマインド/催促メッセージを削除: ${m.id}`);

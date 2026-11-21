@@ -48,14 +48,7 @@ export async function sendEventUsersNotification(env, options = {}) {
     if (allReady) {
       console.log('[EventNotify] 対象日（' + summaries.map((s) => s.target.label).join(', ') + '）はすべて定員到達（開催確定）しているためリマインド送信をスキップします');
       // 満員になった場合も、以前の「残り枠リマインド」が残っていれば掃除する
-      for (const m of recentMessages) {
-        if (m.embeds?.[0]?.title?.includes('週末カスタム 残り枠のお知らせ')) {
-          await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${m.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-          }).catch(() => {});
-        }
-      }
+      await cleanupOldReminderMessages(env, channelId);
       return { action: 'skipped', reason: 'すべて定員到達' };
     }
 
