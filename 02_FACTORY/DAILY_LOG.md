@@ -1,5 +1,35 @@
 ## 📅 2026-11-21（土）
 
+### 🔧 【カスタム結果保存「入力データが不正です。10人の参加者と勝利チームが必要です」キー名不一致の完全解消】
+
+**概要**:
+結果保存時に「保存エラー: 入力データが不正です。10人の参加者と勝利チームが必要です。」が発生する原因を徹底調査・改修。
+1. **原因の特定**:
+   - `04_PORTAL/src/app/balancer/record/page.tsx`（送信側）が、旧来のスネークケース（`winning_team: winningTeam`, `match_duration: parsedDuration`）でJSONを送信していた。
+   - 一方、`04_PORTAL/src/lib/matchRecord/validator.ts` および `route.ts`（受信側）はキャメルケース（`const { winningTeam, gameDuration, participants } = body`）を期待していたため、`winningTeam` が `undefined` と判定され、バリデーションエラーが発生していた。
+2. **改修内容（ポステルの法則に準拠した二重保護）**:
+   - `04_PORTAL/src/lib/matchRecord/validator.ts`:
+     - `const winningTeam = body?.winningTeam || body?.winning_team;`
+     - `const gameDuration = body?.gameDuration ?? body?.match_duration;`
+     - キャメルケース・スネークケースの両方を自動吸収して安全に判定。
+   - `04_PORTAL/src/app/api/match/record/route.ts`:
+     - 同様に `winningTeam` と `gameDuration` を両方のキー名からフォールバック抽出。
+   - `04_PORTAL/src/app/balancer/record/page.tsx`:
+     - 送信JSONに `winningTeam` と `gameDuration`、互換用 `winning_team` と `match_duration` の双方を確実にセットして送信。
+3. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `npx tsc --noEmit` ➔ PASS、`npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. フロントエンドとAPI間で受け渡す重要パラメータ（`winningTeam` / `winning_team` 等）は、リファクタリング時に命名規則の差異が生じやすいため、バリデーター側で両方をフォールバック取得（`a || b`）する寛容設計（Robustness Principle）を徹底せよ。
+> 2. 「10人揃っているのに10人必要と怒られる」系エラーの9割は、配列長ではなく同時に判定している付随プロパティ（`winningTeam` 等）の undefined 落ちである。条件式の左辺・右辺を分離してログを追え。
+> 3. 送信側と受信側の双方で二重に対応することで、キャッシュが残ったクライアントや別スクリプトからの呼び出しでも100%エラーなく通過させよ。
+
+- `[要検証]`: 本番ポータルでの対戦結果（手動入力・OCR入力）の保存完了確認
+- `[継続ウォッチ]`: 試合結果記録時のバリデーションエラーログ発生状況
+- `[発信候補]`: 「APIリファクタリングで起きるスネーク/キャメルキー名不一致を防ぐバリデーション二重保護テクニック」
+
+
+
 ### 🚨 【カスタム結果保存エラー「Unauthorized (invalid bot secret)」根本改修 ＆ 認証ガード配備】
 
 **概要**:

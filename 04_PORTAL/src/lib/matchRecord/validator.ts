@@ -9,7 +9,9 @@ export interface ValidationResult {
  * 試合記録APIの入力パラメータ検証（エッジケース・異常値ガード）
  */
 export function validateMatchRecordInput(body: any): ValidationResult {
-  const { winningTeam, gameDuration, participants } = body || {};
+  const winningTeam = body?.winningTeam || body?.winning_team;
+  const gameDuration = body?.gameDuration ?? body?.match_duration;
+  const participants = body?.participants;
 
   if (!winningTeam || !participants || !Array.isArray(participants) || participants.length !== 10) {
     return { ok: false, error: '入力データが不正です。10人の参加者と勝利チームが必要です。' };

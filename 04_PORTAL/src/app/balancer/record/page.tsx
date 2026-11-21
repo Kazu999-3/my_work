@@ -309,7 +309,9 @@ function CustomRecordPageContent() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
+          winningTeam,
           winning_team: winningTeam,
+          gameDuration: parsedDuration,
           match_duration: parsedDuration,
           isFinalMatch,
           participants: stats.map((s) => ({

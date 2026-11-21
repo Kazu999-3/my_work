@@ -34,14 +34,16 @@ export async function POST(request: Request) {
     }
 
     // ===== 2. 入力バリデーション（エッジケース検証） =====
-    const body: MatchRecordBody = await request.json();
+    const body: any = await request.json();
     const valResult = validateMatchRecordInput(body);
     if (!valResult.ok) {
       return NextResponse.json({ error: valResult.error }, { status: 400 });
     }
 
-    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition, isFinalMatch, dry_run } = body;
-    const names = participants.map(p => p.name);
+    const winningTeam = body.winningTeam || body.winning_team;
+    const gameDuration = body.gameDuration ?? body.match_duration ?? 0;
+    const { participants, riotMatchId, balanceSatisfaction, isExhibition, isFinalMatch, dry_run } = body;
+    const names: string[] = (participants || []).map((p: any) => String(p.name));
 
     // プレイヤー名簿の取得と重複解決
     const { data: rawDbPlayers, error: pError } = await supabase
