@@ -88,14 +88,15 @@ export async function POST(req: NextRequest) {
 
             // 3. 予備: reference_items テーブルからのDBフォールバック
             if (!tweetText && supabase) {
+              const cleanUrl = url.split('?')[0];
               const { data: refItem } = await supabase
                 .from('reference_items')
                 .select('content, summary, title')
-                .or(`url.ilike.%${tweetId}%,url.ilike.%${url}%`)
+                .or(`url.ilike.%${tweetId}%,url.ilike.%${cleanUrl}%`)
                 .limit(1)
                 .maybeSingle();
               if (refItem) {
-                tweetText = `${refItem.title}\n${refItem.summary}\n${refItem.content || ''}`;
+                tweetText = `${refItem.title}\n要点: ${refItem.summary}\n${refItem.content || ''}`;
               }
             }
           }
@@ -155,10 +156,19 @@ ${rawText}
   "power_spike": "警戒すべきパワースパイクやタイミング（あれば、無ければ空文字）"
 }`;
 
-    const geminiText = await callGemini(prompt, {
-      temperature: 0.2,
-      maxOutputTokens: 2048,
-    });
+    let geminiText = '';
+    try {
+      geminiText = await callGemini(prompt, {
+        temperature: 0.2,
+        maxOutputTokens: 2048,
+        responseMimeType: 'application/json',
+      });
+    } catch (apiErr: any) {
+      console.error('Gemini呼び出し失敗:', apiErr);
+      return NextResponse.json({
+        error: `AI解析に失敗しました: ${apiErr.message || 'モデルの利用制限または通信エラー'}`,
+      }, { status: 502 });
+    }
 
     let parsedResult: any = null;
     const jsonMatch = geminiText.match(/\{[\s\S]*\}/);

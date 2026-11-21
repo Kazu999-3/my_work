@@ -1,16 +1,16 @@
 // Gemini API 呼び出しヘルパー（上から順に試す自動フォールバック）
 //
-// 2026-10-29 実測:
-// - gemini-3.5-flash / gemini-3.5-flash-lite / gemini-3.6-flash が 200 OK で高速かつ安定稼働中。
-// - gemini-3-flash-preview は現在一時的な429枯渇中。
-// - gemini-3.1-flash-lite は Google 側で 503 UNAVAILABLE。
-// - gemini-2.5-flash は無料枠の1日20回制限(429)で即死するため候補から除外。
+// 2026-11-21 実測:
+// - gemini-3.5-flash-lite / gemini-flash-lite-latest が 200 OK で高速かつ安定稼働中。
+// - gemini-2.5-flash は無料枠の1日20回制限(429)で即死するため除外。
+// - gemini-3.5-flash / gemini-3.6-flash は現在一時的な429制限中。
 const FALLBACK_MODELS = [
-  'gemini-2.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
   'gemini-flash-latest',
-  'gemini-2.5-flash-lite',
-  'gemini-3-flash-preview',
-  'gemini-pro-latest',
 ];
 
 export interface GeminiOptions {
@@ -126,6 +126,33 @@ export async function callGemini(prompt: string, options: GeminiOptions = {}): P
     }
   }
 
+  // 全Geminiモデルが失敗した場合のローカル Ollama (OpenAI互換) フォールバック
+  const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+  try {
+    const res = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: options.temperature ?? 0.2,
+        ...(options.responseMimeType === 'application/json' ? { response_format: { type: 'json_object' } } : {}),
+      }),
+      signal: AbortSignal.timeout(options.timeoutMs ?? 60000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        console.log(`[Ollama ${ollamaModel}] ローカルLLMフォールバックに成功しました`);
+        return content;
+      }
+    }
+  } catch (_e) {
+    // Ollamaが未起動またはエラーの場合はスルーして、本来のlastErrorを投げる
+  }
+
   throw lastError || new Error('全Geminiモデルの呼び出しに失敗しました。');
 }
 
@@ -208,6 +235,33 @@ export async function callGeminiDetailed(prompt: string, options: GeminiOptions 
       console.warn(`[Gemini ${model}] 呼び出し失敗:`, e.message);
       lastError = e;
     }
+  }
+
+  // 全Geminiモデルが失敗した場合のローカル Ollama (OpenAI互換) フォールバック
+  const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+  try {
+    const res = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: options.temperature ?? 0.2,
+        ...(options.responseMimeType === 'application/json' ? { response_format: { type: 'json_object' } } : {}),
+      }),
+      signal: AbortSignal.timeout(options.timeoutMs ?? 60000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        console.log(`[Ollama ${ollamaModel}] ローカルLLMフォールバックに成功しました`);
+        return content;
+      }
+    }
+  } catch (_e) {
+    // Ollamaが未起動またはエラーの場合はスルーして、本来のlastErrorを投げる
   }
 
   throw lastError || new Error('全Geminiモデルの呼び出しに失敗しました。');
