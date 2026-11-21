@@ -61,21 +61,48 @@ export async function POST(req: NextRequest) {
           // X / Twitter の場合
           const tweetIdMatch = url.match(/status\/(\d+)/);
           const tweetId = tweetIdMatch ? tweetIdMatch[1] : '';
+          let tweetText = '';
+
           if (tweetId) {
-            const fxRes = await fetch(`https://api.fxtwitter.com/2/thread/${tweetId}`, {
+            // 1. fxtwitter status API
+            const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
               headers: { 'User-Agent': 'Mozilla/5.0' },
               signal: AbortSignal.timeout(8000),
             }).catch(() => null);
             if (fxRes && fxRes.ok) {
-              const fxData = await fxRes.json();
-              const tweetText = fxData.tweet?.text || '';
-              rawText = `[X投稿URL]: ${url}\n投稿本文: ${tweetText}\n${memo}`;
-            } else {
-              rawText = `[X投稿URL]: ${url}\n${memo}`;
+              const fxData: any = await fxRes.json().catch(() => null);
+              tweetText = fxData?.tweet?.text || fxData?.status?.text || '';
             }
-          } else {
-            rawText = `[X投稿URL]: ${url}\n${memo}`;
+
+            // 2. 予備: /2/thread API
+            if (!tweetText) {
+              const threadRes = await fetch(`https://api.fxtwitter.com/2/thread/${tweetId}`, {
+                headers: { 'User-Agent': 'Mozilla/5.0' },
+                signal: AbortSignal.timeout(8000),
+              }).catch(() => null);
+              if (threadRes && threadRes.ok) {
+                const threadData: any = await threadRes.json().catch(() => null);
+                tweetText = threadData?.tweet?.text || threadData?.status?.text || '';
+              }
+            }
+
+            // 3. 予備: reference_items テーブルからのDBフォールバック
+            if (!tweetText && supabase) {
+              const { data: refItem } = await supabase
+                .from('reference_items')
+                .select('content, summary, title')
+                .or(`url.ilike.%${tweetId}%,url.ilike.%${url}%`)
+                .limit(1)
+                .maybeSingle();
+              if (refItem) {
+                tweetText = `${refItem.title}\n${refItem.summary}\n${refItem.content || ''}`;
+              }
+            }
           }
+
+          rawText = tweetText 
+            ? `[X投稿URL]: ${url}\n投稿本文: ${tweetText}\n${memo}`
+            : `[X投稿URL]: ${url}\n${memo}`;
         } else {
           // 一般Webページ
           const webRes = await fetch(url, {
