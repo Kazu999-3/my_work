@@ -57,29 +57,49 @@ export function useOcrImageProcessor({
       const data = resData.data;
 
       if (data.players && Array.isArray(data.players)) {
-        const ocrBlue = data.players.filter((p: any) => p.team === 'BLUE');
-        const ocrRed = data.players.filter((p: any) => p.team === 'RED');
-        const winnerBlock = data.players.slice(0, 5);
-        const loserBlock = data.players.slice(5, 10);
+        // 画像上の10名（上5名=チーム1, 下5名=チーム2）
+        const team1 = data.players.filter((p: any) => p.rawTeam === 1 || p.team === 'BLUE').slice(0, 5);
+        const team2 = data.players.filter((p: any) => p.rawTeam === 2 || p.team === 'RED').slice(0, 5);
 
-        const knownBlue = new Set(stats.filter((s) => s.team === 'BLUE' && s.name).map((s) => s.name));
-        const knownRed = new Set(stats.filter((s) => s.team === 'RED' && s.name).map((s) => s.name));
+        // 画像上でどちらが勝利側（winner）か判定
+        const isTeam1ImageWinner = data.imageWinner === 'TEAM1' || data.winningTeam === 'BLUE';
+        const imageWinnerBlock = isTeam1ImageWinner ? team1 : team2;
+        const imageLoserBlock = isTeam1ImageWinner ? team2 : team1;
 
-        let winInBlue = 0;
-        let winInRed = 0;
+        // ★ 既存のバランサーチーム分け（stats）から勝敗（BLUE or RED）を厳密に判定
+        const knownBlueNames = new Set(
+          stats.filter((s) => s.team === 'BLUE' && s.name).map((s) => s.name.trim().toLowerCase())
+        );
+        const knownRedNames = new Set(
+          stats.filter((s) => s.team === 'RED' && s.name).map((s) => s.name.trim().toLowerCase())
+        );
 
-        winnerBlock.forEach((p: any) => {
-          const m = matchPlayer(p.name, playersPool);
-          if (m) {
-            if (knownBlue.has(m)) winInBlue++;
-            if (knownRed.has(m)) winInRed++;
-          }
+        let winnerBlueVotes = 0;
+        let winnerRedVotes = 0;
+        imageWinnerBlock.forEach((p: any) => {
+          const matched = matchPlayer(p.name, playersPool);
+          const cleanName = (matched || p.name || '').trim().toLowerCase();
+          if (knownBlueNames.has(cleanName)) winnerBlueVotes++;
+          if (knownRedNames.has(cleanName)) winnerRedVotes++;
         });
 
+        let loserBlueVotes = 0;
+        let loserRedVotes = 0;
+        imageLoserBlock.forEach((p: any) => {
+          const matched = matchPlayer(p.name, playersPool);
+          const cleanName = (matched || p.name || '').trim().toLowerCase();
+          if (knownBlueNames.has(cleanName)) loserBlueVotes++;
+          if (knownRedNames.has(cleanName)) loserRedVotes++;
+        });
+
+        // 既存チームの参加者との照合スコアから勝者を決定（ロビーの左右/上下配置が逆でも完全補正）
         let resolvedWinner: 'BLUE' | 'RED' = 'BLUE';
-        if (winInRed > winInBlue) {
+        const blueScore = winnerBlueVotes + loserRedVotes;
+        const redScore = winnerRedVotes + loserBlueVotes;
+
+        if (redScore > blueScore) {
           resolvedWinner = 'RED';
-        } else if (winInBlue > winInRed) {
+        } else if (blueScore > redScore) {
           resolvedWinner = 'BLUE';
         } else if (data.winningTeam === 'RED' || data.winningTeam === 'BLUE') {
           resolvedWinner = data.winningTeam;
@@ -87,23 +107,19 @@ export function useOcrImageProcessor({
 
         setWinningTeam(resolvedWinner);
 
+        // 試合時間
         const durSec = Number(data.gameDurationSec);
         if (Number.isFinite(durSec) && durSec >= 180 && durSec <= 7200) {
           setDurationText(`${Math.floor(durSec / 60)}:${String(Math.round(durSec % 60)).padStart(2, '0')}`);
         }
 
-        const bluePlayers =
-          ocrBlue.length === 5 && ocrRed.length === 5
-            ? ocrBlue
-            : resolvedWinner === 'BLUE'
-            ? winnerBlock
-            : loserBlock;
-        const redPlayers =
-          ocrBlue.length === 5 && ocrRed.length === 5
-            ? ocrRed
-            : resolvedWinner === 'RED'
-            ? winnerBlock
-            : loserBlock;
+        // 画像のチーム1/チーム2を、バランサーのBLUE/REDに正しく対応付ける
+        const ocrBluePlayers = isTeam1ImageWinner
+          ? (resolvedWinner === 'BLUE' ? team1 : team2)
+          : (resolvedWinner === 'BLUE' ? team2 : team1);
+        const ocrRedPlayers = isTeam1ImageWinner
+          ? (resolvedWinner === 'RED' ? team1 : team2)
+          : (resolvedWinner === 'RED' ? team2 : team1);
 
         let resolvedCount = 0;
         let aliasHitCount = 0;
@@ -111,30 +127,50 @@ export function useOcrImageProcessor({
         let preservedBalancerCount = 0;
         const currentAliases = getOcrAliases();
 
+        // ★ 定位置固定ではない問題の解決（名前最優先 ➔ ロール一致 ➔ 空き枠割り当て）
         setStats((prev) => {
-          return prev.map((currentStat, idx) => {
-            const isBlue = currentStat.team === 'BLUE';
-            const teamPlayers = isBlue ? bluePlayers : redPlayers;
-            const playerIdx = isBlue ? idx : idx - 5;
-            const targetRole = currentStat.currentRole || ROLES[playerIdx];
+          const usedBlueOcr = new Set<number>();
+          const usedRedOcr = new Set<number>();
 
-            let found: any = null;
+          return prev.map((currentStat) => {
+            const isBlue = currentStat.team === 'BLUE';
+            const ocrPool = isBlue ? ocrBluePlayers : ocrRedPlayers;
+            const usedSet = isBlue ? usedBlueOcr : usedRedOcr;
+            const targetRole = currentStat.currentRole;
+
+            let foundIdx = -1;
+
+            // 1. 【最優先】既存スロットの名前（currentStat.name）とOCRの名前が一致
             if (currentStat.name) {
-              found = teamPlayers.find((p: any) => matchPlayer(p.name, playersPool) === currentStat.name);
-              if (!found && Array.isArray(data.players)) {
-                found = data.players.find((p: any) => matchPlayer(p.name, playersPool) === currentStat.name);
+              foundIdx = ocrPool.findIndex(
+                (p: any, pIdx: number) => !usedSet.has(pIdx) && matchPlayer(p.name, playersPool) === currentStat.name
+              );
+              if (foundIdx === -1) {
+                const cClean = currentStat.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+                foundIdx = ocrPool.findIndex((p: any, pIdx: number) => {
+                  if (usedSet.has(pIdx)) return false;
+                  const pClean = (p.name || '').toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+                  return Boolean(cClean && pClean && (cClean.includes(pClean) || pClean.includes(cClean)));
+                });
               }
             }
 
-            if (!found) {
-              found = teamPlayers.find((p: any) => p.role && p.role.toUpperCase() === targetRole);
+            // 2. 【第2優先】ロール（TOP/JG/MID/ADC/SUP）が一致する未割り当てプレイヤー
+            if (foundIdx === -1 && targetRole) {
+              foundIdx = ocrPool.findIndex(
+                (p: any, pIdx: number) => !usedSet.has(pIdx) && p.role && p.role.toUpperCase() === targetRole.toUpperCase()
+              );
             }
 
-            if (!found && teamPlayers[playerIdx]) {
-              found = teamPlayers[playerIdx];
+            // 3. 【第3優先】空いているプレイヤーを順次割り当て
+            if (foundIdx === -1) {
+              foundIdx = ocrPool.findIndex((_: any, pIdx: number) => !usedSet.has(pIdx));
             }
 
-            if (found) {
+            if (foundIdx !== -1) {
+              usedSet.add(foundIdx);
+              const found = ocrPool[foundIdx];
+
               const matchedName = matchPlayer(found.name, playersPool);
               const matchedChamp = matchChampion(found.champion_name || found.champion || '', championsList);
 
@@ -158,7 +194,7 @@ export function useOcrImageProcessor({
 
               return {
                 ...currentStat,
-                name: matchedName || currentStat.name || found.name || '',
+                name: currentStat.name || matchedName || found.name || '',
                 raw_ocr_name: found.name || currentStat.raw_ocr_name,
                 champion_name: matchedChamp || currentStat.champion_name,
                 kills,
@@ -166,9 +202,10 @@ export function useOcrImageProcessor({
                 assists,
                 cs,
                 damage_dealt: damage,
-                currentRole: targetRole,
+                currentRole: targetRole || found.role || currentStat.currentRole,
               };
             }
+
             return currentStat;
           });
         });
