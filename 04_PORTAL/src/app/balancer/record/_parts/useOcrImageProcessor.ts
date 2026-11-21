@@ -136,7 +136,7 @@ export function useOcrImageProcessor({
 
             if (found) {
               const matchedName = matchPlayer(found.name, playersPool);
-              const matchedChamp = matchChampion(found.champion || '', championsList);
+              const matchedChamp = matchChampion(found.champion_name || found.champion || '', championsList);
 
               const rawClean = (found.name || '').toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
               const isAliasHit = Boolean(rawClean && currentAliases[rawClean]);
@@ -158,7 +158,7 @@ export function useOcrImageProcessor({
 
               return {
                 ...currentStat,
-                name: matchedName || currentStat.name,
+                name: matchedName || currentStat.name || found.name || '',
                 raw_ocr_name: found.name || currentStat.raw_ocr_name,
                 champion_name: matchedChamp || currentStat.champion_name,
                 kills,
