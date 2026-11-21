@@ -186,6 +186,36 @@ function LaneGuidesApp() {
                   );
                 })}
               </ul>
+
+              {/* 🔗 関連知見へのスマートジャンプ */}
+              <div className="pt-3 border-t border-zinc-800 space-y-2">
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">
+                  関連リソース
+                </span>
+                <div className="space-y-1.5">
+                  <Link
+                    href={`/library?tab=all&lane=${activeLane}`}
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition group border border-zinc-750"
+                  >
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold">
+                      <BookOpen size={12} className="text-amber-400" />
+                      <span>{activeLane}の動画知見</span>
+                    </span>
+                    <ExternalLink size={10} className="text-zinc-500 group-hover:text-zinc-300" />
+                  </Link>
+
+                  <Link
+                    href={`/coach?lane=${activeLane}`}
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-cyan-950/30 hover:bg-cyan-950/50 text-cyan-200 hover:text-cyan-100 transition group border border-cyan-500/30"
+                  >
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold">
+                      <Swords size={12} className="text-cyan-400" />
+                      <span>AIコーチに質問</span>
+                    </span>
+                    <ChevronRight size={11} className="text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* 右カラム: ガイド本文 (章別構造化カード) */}
@@ -247,6 +277,36 @@ function LaneGuidesApp() {
                   </div>
                 </section>
               ))}
+
+              {/* 🧭 ガイド末尾の深掘り・AI相談フッター */}
+              <div className="bg-gradient-to-r from-amber-500/10 via-zinc-900 to-cyan-500/10 border border-zinc-800 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-black text-zinc-100 flex items-center gap-2">
+                    <Sparkles size={15} className="text-amber-400" />
+                    <span>{activeLane} の実戦知見をさらに深掘りする</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    YouTube動画から抽出された一次アーカイブや、専用AIコーチとの壁打ちで勝率を高めましょう。
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  <Link
+                    href={`/library?tab=all&lane=${activeLane}`}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-750 text-zinc-200 hover:text-white text-xs font-bold border border-zinc-700 transition cursor-pointer shadow-sm"
+                  >
+                    <BookOpen size={13} className="text-amber-400" />
+                    <span>📚 動画知見アーカイブ</span>
+                  </Link>
+                  <Link
+                    href={`/coach?lane=${activeLane}`}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white text-xs font-black transition cursor-pointer shadow-sm"
+                  >
+                    <Swords size={13} />
+                    <span>🤖 AIコーチに相談</span>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         ) : (

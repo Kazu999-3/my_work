@@ -10,7 +10,8 @@ import {
   HeartHandshake, 
   Sparkles,
   ShieldAlert,
-  History
+  History,
+  Dices
 } from 'lucide-react';
 
 export const metadata = {
@@ -192,7 +193,7 @@ export default function HomePage() {
             <span className="text-sm font-black text-foreground dark:text-white">⚡ コミュニティ ＆ 統計情報</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
                 title: '順位表 ＆ 名簿',
@@ -214,6 +215,13 @@ export default function HomePage() {
                 href: '/history',
                 icon: <History className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />,
                 borderHover: 'hover:border-secondary-edge',
+              },
+              {
+                title: 'お祭りピック',
+                sub: '全50種特殊縛り・抽選',
+                href: '/festival/pick',
+                icon: <Dices className="w-5 h-5 text-amber-500" />,
+                borderHover: 'hover:border-amber-500',
               },
             ].map((item) => (
               <Link
