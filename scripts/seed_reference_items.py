@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
-"""参考資料ライブラリ（AI活用・副業・開発・ツール）初期データ投入・照会・管理スクリプト
+"""参考資料ライブラリ（AI活用・副業・開発ツール・LoL）データ投入・照会・管理スクリプト
 
-指示文15: 05_PILOT/docs/specs/15-reference-library-instruction.md
-指示文16: 05_PILOT/docs/specs/16-reference-items-add-dev-tools-instruction.md
-指示文17: 05_PILOT/docs/specs/17-reference-items-evaluation-instruction.md
+指示文15: 05_PILOT/docs/specs/15-reference-library-instruction.md (A群: 10件, B群: 12件)
+指示文16: 05_PILOT/docs/specs/16-reference-items-add-dev-tools-instruction.md (C群: 12件)
+指示文17: 05_PILOT/docs/specs/17-reference-items-evaluation-instruction.md (一次評価29件)
+指示文18: 05_PILOT/docs/specs/18-reference-items-add-lol-instruction.md (D群: 113件, E群: 17件)
 
-全34件の参考資料（A群: 10件、B群: 12件、C群: 12件）と
-一次評価データ（29件: 取り込み候補 10件、参考 19件、評価なし 5件）を管理。
+全164件の参考資料（A: 10, B: 12, C: 12, D: 113, E: 17）を一元管理。
 
 使い方:
-  py -3 scripts/seed_reference_items.py                  # 集計表示 ＆ マイグレーションSQL生成
-  py -3 scripts/seed_reference_items.py --list           # 全34件の一覧テーブル表示
-  py -3 scripts/seed_reference_items.py --get A1         # 指定コードの詳細・本文・評価表示
+  py -3 scripts/seed_reference_items.py                  # 集計表示 ＆ 130マイグレーションSQL生成
+  py -3 scripts/seed_reference_items.py --list           # 全164件の一覧テーブル表示
+  py -3 scripts/seed_reference_items.py --get D1         # 指定コードの詳細・本文・評価表示
   py -3 scripts/seed_reference_items.py --search "キーワード" # キーワード検索
 """
 
 import os
 import sys
 import json
+import re
 import argparse
 from typing import List, Dict, Any, Optional
 
-# 全34件のマスターデータ定義
-REFERENCE_ITEMS: List[Dict[str, Any]] = [
-    # ========================================================
-    # A群: Xブックマークから（全文取得済み: 10件）
-    # ========================================================
+# ========================================================
+# A群・B群・C群（34件）マスターデータ定義
+# ========================================================
+STATIC_ITEMS: List[Dict[str, Any]] = [
+    # A群: 10件
     {
         "code": "A1",
         "title": "プロンプト技法「ランクA／ランクS」",
@@ -201,9 +202,7 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "target_project": "Pilot",
         "adoption_note": "競合ベンチマーク。機能比較を作れば改善材料になる",
     },
-    # ========================================================
-    # B群: チャットで共有された記事（要点のみ: 12件）
-    # ========================================================
+    # B群: 12件
     {
         "code": "B1",
         "title": "Museの初心者向け活用法7選（2026-11-19）",
@@ -372,9 +371,7 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
         "target_project": "note・Brain販売",
         "adoption_note": "段階価格はBrain設計に一部反映済み。X長文＋短尺動画＋「保存して」締めの投稿型は未実施で候補",
     },
-    # ========================================================
-    # C群: 開発・ツールから（全文取得済み: 12件）
-    # ========================================================
+    # C群: 12件
     {
         "code": "C1",
         "title": "LoL戦績ツールの制作記",
@@ -545,29 +542,88 @@ REFERENCE_ITEMS: List[Dict[str, Any]] = [
     },
 ]
 
-def generate_migration_sql() -> str:
-    """マイグレーション用 SQL (129_reference_items_add_c_and_evaluations.sql) を生成"""
+def load_lol_items() -> List[Dict[str, Any]]:
+    """reference-materials-lol.md から D群(113件)およびE群(17件)をパースして取得"""
+    spec_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "05_PILOT", "docs", "specs", "reference-materials-lol.md"
+    )
+    if not os.path.exists(spec_path):
+        return []
+
+    with open(spec_path, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    pattern = r'(?m)^##\s+((?:D|E)\d+)\s+(.*?)$'
+    splits = list(re.finditer(pattern, text))
+
+    lol_items = []
+    for i, match in enumerate(splits):
+        code = match.group(1)
+        title = match.group(2).strip()
+        start = match.end()
+        end = splits[i+1].start() if i + 1 < len(splits) else len(text)
+        body = text[start:end].strip()
+
+        author, url, category, summary, content = "", "", "", "", ""
+        lines = body.split("\n")
+        content_lines = []
+        in_content = False
+
+        for line in lines:
+            if in_content:
+                content_lines.append(line)
+            elif line.startswith("- 著者："):
+                author = line[len("- 著者："):].strip()
+            elif line.startswith("- URL:"):
+                url = line[len("- URL:"):].strip()
+            elif line.startswith("- カテゴリ："):
+                category = line[len("- カテゴリ："):].strip()
+            elif line.startswith("- 要点："):
+                summary = line[len("- 要点："):].strip()
+            elif line.startswith("- 本文："):
+                in_content = True
+                rest = line[len("- 本文："):].strip()
+                if rest:
+                    content_lines.append(rest)
+
+        content = "\n".join(content_lines).strip()
+        lol_items.append({
+            "code": code,
+            "title": title,
+            "author": author,
+            "url": url,
+            "category": category,
+            "summary": summary,
+            "content": content,
+            "has_fulltext": True,
+            "source_group": code[0],
+            "verdict": None,
+            "target_project": None,
+            "adoption_note": None
+        })
+
+    return lol_items
+
+# 全164件のマスターアイテム統合
+def get_all_items() -> List[Dict[str, Any]]:
+    return STATIC_ITEMS + load_lol_items()
+
+def generate_130_migration_sql(lol_items: List[Dict[str, Any]]) -> str:
+    """マイグレーション用 SQL (130_reference_items_add_lol.sql) を生成"""
     sql_lines = [
         "-- ============================================================",
-        "-- 129: 参考資料ライブラリ C群(開発・ツール12件)追加 ＆ 一次評価(29件)反映",
+        "-- 130: 参考資料ライブラリ D群・E群(LoL 130件) 追加投入",
         "--",
-        "-- 指示文16: 05_PILOT/docs/specs/16-reference-items-add-dev-tools-instruction.md",
-        "-- 指示文17: 05_PILOT/docs/specs/17-reference-items-evaluation-instruction.md",
+        "-- 指示文18: 05_PILOT/docs/specs/18-reference-items-add-lol-instruction.md",
+        "-- D群: LoL上達・戦術 113件 / E群: LoL一般 17件 (全130件)",
+        "-- 既存34件は変更せず、評価カラムは今回は NULL として保持する。",
         "-- ============================================================",
         "",
-        "-- 1. 評価用カラムの追加（既存テーブルに安全に追加）",
-        "ALTER TABLE reference_items ADD COLUMN IF NOT EXISTS verdict text;",
-        "ALTER TABLE reference_items ADD COLUMN IF NOT EXISTS target_project text;",
-        "ALTER TABLE reference_items ADD COLUMN IF NOT EXISTS adoption_note text;",
-        "",
-        "-- インデックス作成",
-        "CREATE INDEX IF NOT EXISTS idx_reference_items_verdict ON reference_items (verdict);",
-        "",
-        "-- 2. C群（12件）の追加・更新（冪等性確保のため ON CONFLICT (code) DO UPDATE）",
+        "-- D群・E群（全130件）の投入（冪等性確保のため ON CONFLICT (code) DO UPDATE）",
     ]
 
-    c_items = [item for item in REFERENCE_ITEMS if item["source_group"] == "C"]
-    for item in c_items:
+    for item in lol_items:
         code = item["code"].replace("'", "''")
         title = item["title"].replace("'", "''")
         author = item["author"].replace("'", "''")
@@ -577,13 +633,10 @@ def generate_migration_sql() -> str:
         content = item["content"].replace("'", "''")
         has_fulltext = "true" if item["has_fulltext"] else "false"
         source_group = item["source_group"].replace("'", "''")
-        verdict = f"'{item['verdict'].replace("'", "''")}'" if item["verdict"] else "NULL"
-        target_project = f"'{item['target_project'].replace("'", "''")}'" if item["target_project"] else "NULL"
-        adoption_note = f"'{item['adoption_note'].replace("'", "''")}'" if item["adoption_note"] else "NULL"
 
         sql_lines.append(
             f"INSERT INTO reference_items (code, title, author, url, category, summary, content, has_fulltext, source_group, verdict, target_project, adoption_note, updated_at)\n"
-            f"VALUES ('{code}', '{title}', '{author}', '{url}', '{category}', '{summary}', '{content}', {has_fulltext}, '{source_group}', {verdict}, {target_project}, {adoption_note}, now())\n"
+            f"VALUES ('{code}', '{title}', '{author}', '{url}', '{category}', '{summary}', '{content}', {has_fulltext}, '{source_group}', NULL, NULL, NULL, now())\n"
             f"ON CONFLICT (code) DO UPDATE SET\n"
             f"    title = EXCLUDED.title,\n"
             f"    author = EXCLUDED.author,\n"
@@ -593,56 +646,36 @@ def generate_migration_sql() -> str:
             f"    content = EXCLUDED.content,\n"
             f"    has_fulltext = EXCLUDED.has_fulltext,\n"
             f"    source_group = EXCLUDED.source_group,\n"
-            f"    verdict = EXCLUDED.verdict,\n"
-            f"    target_project = EXCLUDED.target_project,\n"
-            f"    adoption_note = EXCLUDED.adoption_note,\n"
             f"    updated_at = now();\n"
-        )
-
-    sql_lines.append("\n-- 3. 既存A群・B群への一次評価データの反映（codeをキーにUPDATE）\n")
-    evaluated_non_c = [item for item in REFERENCE_ITEMS if item["source_group"] != "C" and item["verdict"] is not None]
-    for item in evaluated_non_c:
-        code = item["code"].replace("'", "''")
-        verdict = f"'{item['verdict'].replace("'", "''")}'" if item["verdict"] else "NULL"
-        target_project = f"'{item['target_project'].replace("'", "''")}'" if item["target_project"] else "NULL"
-        adoption_note = f"'{item['adoption_note'].replace("'", "''")}'" if item["adoption_note"] else "NULL"
-
-        sql_lines.append(
-            f"UPDATE reference_items SET\n"
-            f"    verdict = {verdict},\n"
-            f"    target_project = {target_project},\n"
-            f"    adoption_note = {adoption_note},\n"
-            f"    updated_at = now()\n"
-            f"WHERE code = '{code}';\n"
         )
 
     return "\n".join(sql_lines)
 
-def print_summary():
+def print_summary(all_items: List[Dict[str, Any]]):
     """データ内訳の集計表示"""
-    total = len(REFERENCE_ITEMS)
-    fulltext_count = sum(1 for item in REFERENCE_ITEMS if item["has_fulltext"])
-    summary_only_count = sum(1 for item in REFERENCE_ITEMS if not item["has_fulltext"])
-    
+    total = len(all_items)
+    fulltext_count = sum(1 for item in all_items if item["has_fulltext"])
+    summary_only_count = sum(1 for item in all_items if not item["has_fulltext"])
+
     categories = {}
-    for item in REFERENCE_ITEMS:
+    for item in all_items:
         cat = item["category"]
         categories[cat] = categories.get(cat, 0) + 1
 
     groups = {}
-    for item in REFERENCE_ITEMS:
+    for item in all_items:
         grp = item["source_group"]
         groups[grp] = groups.get(grp, 0) + 1
 
     eval_counts = {
-        "取り込み候補": sum(1 for item in REFERENCE_ITEMS if item["verdict"] == "取り込み候補"),
-        "参考": sum(1 for item in REFERENCE_ITEMS if item["verdict"] == "参考"),
-        "評価なし(NULL)": sum(1 for item in REFERENCE_ITEMS if item["verdict"] is None),
+        "取り込み候補": sum(1 for item in all_items if item["verdict"] == "取り込み候補"),
+        "参考": sum(1 for item in all_items if item["verdict"] == "参考"),
+        "未評価/評価なし(NULL)": sum(1 for item in all_items if item["verdict"] is None),
     }
 
-    print("=" * 65)
+    print("=" * 68)
     print(f"📚 参考資料マスターデータ集計 (合計: {total} 件)")
-    print(f"  - グループ内訳: A群(X-AI/副業)={groups.get('A', 0)}件, B群(チャット)={groups.get('B', 0)}件, C群(X-開発/ツール)={groups.get('C', 0)}件")
+    print(f"  - グループ内訳: A={groups.get('A', 0)}, B={groups.get('B', 0)}, C={groups.get('C', 0)}, D={groups.get('D', 0)}, E={groups.get('E', 0)}")
     print(f"  - 本文有無: 全文あり={fulltext_count}件, 要点のみ={summary_only_count}件")
     print("  - カテゴリ内訳:")
     for cat, count in categories.items():
@@ -650,21 +683,21 @@ def print_summary():
     print("  - 一次評価内訳:")
     for v, count in eval_counts.items():
         print(f"    * {v}: {count} 件")
-    print("=" * 65)
+    print("=" * 68)
 
-def list_items():
-    """全34件の一覧を表示"""
-    print(f"{'コード':<5} | {'カテゴリ':<12} | {'本文':<4} | {'判定':<8} | {'行き先':<14} | タイトル")
-    print("-" * 90)
-    for item in REFERENCE_ITEMS:
+def list_items(all_items: List[Dict[str, Any]]):
+    """全件一覧を表示"""
+    print(f"{'コード':<5} | {'カテゴリ':<14} | {'本文':<4} | {'判定':<8} | {'行き先':<14} | タイトル")
+    print("-" * 95)
+    for item in all_items:
         ft = "全文" if item["has_fulltext"] else "要点"
         v = item["verdict"] or "―"
         tp = item["target_project"] or "―"
-        print(f"{item['code']:<5} | {item['category']:<10} | {ft:<4} | {v:<6} | {tp:<12} | {item['title']}")
+        print(f"{item['code']:<5} | {item['category']:<12} | {ft:<4} | {v:<6} | {tp:<12} | {item['title'][:40]}")
 
-def get_item(code: str):
+def get_item(all_items: List[Dict[str, Any]], code: str):
     """指定コードの詳細を表示"""
-    match = next((item for item in REFERENCE_ITEMS if item["code"].upper() == code.upper()), None)
+    match = next((item for item in all_items if item["code"].upper() == code.upper()), None)
     if not match:
         print(f"❌ コード '{code}' は見つかりませんでした。")
         return
@@ -672,7 +705,7 @@ def get_item(code: str):
     print(f"著者: {match['author']}")
     print(f"URL: {match['url']}")
     print(f"カテゴリ: {match['category']} (全文有無: {'全文あり' if match['has_fulltext'] else '要点のみ'})")
-    print(f"一次評価判定: {match['verdict'] or '未評価'}")
+    print(f"一次評価判定: {match['verdict'] or '未評価 (NULL)'}")
     print(f"行き先: {match['target_project'] or '―'}")
     print(f"取り込み方メモ: {match['adoption_note'] or '―'}")
     print(f"要点: {match['summary']}")
@@ -681,11 +714,11 @@ def get_item(code: str):
     print(match["content"])
     print("-" * 65)
 
-def search_items(query: str):
+def search_items(all_items: List[Dict[str, Any]], query: str):
     """キーワード検索"""
     q = query.lower()
     matches = [
-        item for item in REFERENCE_ITEMS
+        item for item in all_items
         if q in item["title"].lower() or q in item["summary"].lower() or q in item["content"].lower() or q in item["author"].lower()
         or (item["adoption_note"] and q in item["adoption_note"].lower())
         or (item["target_project"] and q in item["target_project"].lower())
@@ -694,32 +727,33 @@ def search_items(query: str):
     print("-" * 80)
     for m in matches:
         ft = "全文" if m["has_fulltext"] else "要点"
-        v = m["verdict"] or "―"
+        v = m["verdict"] or "未評価"
         print(f"[{m['code']}] ({m['category']}/{ft} | 評価:{v}) {m['title']} - {m['author']}")
-        print(f"   要点: {m['summary']}")
-        if m["adoption_note"]:
-            print(f"   取り込み方: {m['adoption_note']}")
+        print(f"   要点: {m['summary'][:80]}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="参考資料ライブラリ管理スクリプト")
     parser.add_argument("--list", action="store_true", help="全件一覧表示")
-    parser.add_argument("--get", type=str, help="指定コードの詳細・本文・評価表示 (例: A1, C2)")
+    parser.add_argument("--get", type=str, help="指定コードの詳細・本文・評価表示 (例: A1, C2, D1)")
     parser.add_argument("--search", type=str, help="キーワード検索")
     args = parser.parse_args()
 
+    all_items = get_all_items()
+
     if args.list:
-        list_items()
+        list_items(all_items)
     elif args.get:
-        get_item(args.get)
+        get_item(all_items, args.get)
     elif args.search:
-        search_items(args.search)
+        search_items(all_items, args.search)
     else:
-        print_summary()
-        sql_content = generate_migration_sql()
+        print_summary(all_items)
+        lol_items = [it for it in all_items if it["source_group"] in ("D", "E")]
+        sql_content = generate_130_migration_sql(lol_items)
         target_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "04_PORTAL", "supabase", "migrations", "129_reference_items_add_c_and_evaluations.sql"
+            "04_PORTAL", "supabase", "migrations", "130_reference_items_add_lol.sql"
         )
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(sql_content)
-        print(f"✅ マイグレーションファイルを生成しました: {target_path}")
+        print(f"✅ マイグレーションファイルを生成しました: {target_path} (投入対象: {len(lol_items)} 件)")
