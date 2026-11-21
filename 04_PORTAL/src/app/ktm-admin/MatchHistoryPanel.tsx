@@ -117,6 +117,8 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   const [saving, setSaving] = useState(false);
   const [playerFilter, setPlayerFilter] = useState('');
   const [winFilter, setWinFilter] = useState<'ALL' | 'WIN' | 'LOSS'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL'); // 'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'
+  const [matchTypeFilter, setMatchTypeFilter] = useState<'ALL' | 'NORMAL' | 'EVENT'>('ALL');
   const [limit, setLimit] = useState(50);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -494,84 +496,216 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         <>
 
       {/* 検索・アコーディオン一括開閉コントロールバー */}
-      <div className="bg-surface/80 backdrop-blur-md border border-border/80 rounded-2xl p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 flex-1">
-          {/* テキスト入力 */}
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={playerFilter}
-              onChange={(e) => setPlayerFilter(e.target.value)}
-              placeholder="プレイヤー名で検索..."
-              className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-foreground placeholder:text-faint focus:outline-none focus:border-primary-edge-strong transition"
-            />
+      <div className="bg-surface/80 backdrop-blur-md border border-border/80 rounded-2xl p-4 shadow-xs space-y-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            {/* テキスト入力 */}
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={playerFilter}
+                onChange={(e) => setPlayerFilter(e.target.value)}
+                placeholder="プレイヤー名で検索..."
+                className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-foreground placeholder:text-faint focus:outline-none focus:border-primary-edge-strong transition"
+              />
+              {playerFilter && (
+                <button
+                  type="button"
+                  onClick={() => setPlayerFilter('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-faint hover:text-foreground text-xs p-0.5"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* 勝敗フィルター */}
             {playerFilter && (
-              <button
-                type="button"
-                onClick={() => setPlayerFilter('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-faint hover:text-foreground text-xs p-0.5"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setWinFilter('ALL')}
+                  className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'ALL' ? 'bg-primary-500 text-stone-950 shadow-2xs' : 'text-muted hover:text-foreground'}`}
+                >
+                  全戦
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWinFilter('WIN')}
+                  className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'WIN' ? 'bg-success-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
+                >
+                  勝利のみ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWinFilter('LOSS')}
+                  className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'LOSS' ? 'bg-danger-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
+                >
+                  敗北のみ
+                </button>
+              </div>
             )}
           </div>
 
-          {/* 勝敗フィルター */}
-          {playerFilter && (
-            <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setWinFilter('ALL')}
-                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'ALL' ? 'bg-primary-500 text-stone-950 shadow-2xs' : 'text-muted hover:text-foreground'}`}
-              >
-                全戦
-              </button>
-              <button
-                type="button"
-                onClick={() => setWinFilter('WIN')}
-                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'WIN' ? 'bg-success-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
-              >
-                勝利のみ
-              </button>
-              <button
-                type="button"
-                onClick={() => setWinFilter('LOSS')}
-                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer ${winFilter === 'LOSS' ? 'bg-danger-600 text-white shadow-2xs' : 'text-muted hover:text-foreground'}`}
-              >
-                敗北のみ
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
+            <button
+              type="button"
+              onClick={() => toggleAllAccordions(true)}
+              className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border font-bold text-foreground-subtle transition cursor-pointer"
+            >
+              すべて展開
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleAllAccordions(false)}
+              className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border font-bold text-foreground-subtle transition cursor-pointer"
+            >
+              すべて畳む
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
-          <button
-            type="button"
-            onClick={() => toggleAllAccordions(true)}
-            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border font-bold text-foreground-subtle transition cursor-pointer"
-          >
-            すべて展開
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleAllAccordions(false)}
-            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border font-bold text-foreground-subtle transition cursor-pointer"
-          >
-            すべて畳む
-          </button>
+        {/* 2段目: 試合種別 ＆ レーンフィルター */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40 text-xs">
+          {/* 試合種別 */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-muted mr-1">種別:</span>
+            {[
+              { id: 'ALL', label: 'すべて' },
+              { id: 'NORMAL', label: '🏆 公式戦' },
+              { id: 'EVENT', label: '🎭 お祭り' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setMatchTypeFilter(t.id as any)}
+                className={`px-2.5 py-1 rounded-lg font-black transition cursor-pointer border ${
+                  matchTypeFilter === t.id
+                    ? 'bg-primary-500/15 border-primary-500 text-primary-500 shadow-2xs'
+                    : 'bg-background border-border text-muted hover:text-foreground'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* レーンフィルター */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-muted mr-1">レーン:</span>
+            {['ALL', ...ROLES].map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRoleFilter(r)}
+                className={`px-2 py-0.5 rounded-lg font-mono font-bold transition cursor-pointer border ${
+                  roleFilter === r
+                    ? 'bg-secondary-500/15 border-secondary-500 text-secondary-500 shadow-2xs'
+                    : 'bg-background border-border text-muted hover:text-foreground'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* 📊 プレイヤー検索時のリアルタイム戦績サマリーカード */}
+      {(() => {
+        if (!playerFilter.trim()) return null;
+        const q = playerFilter.trim().toLowerCase();
+        let total = 0;
+        let wins = 0;
+        let losses = 0;
+        const roleStats: Record<string, { total: number; wins: number }> = {};
+
+        matches.forEach((m) => {
+          if (matchTypeFilter === 'NORMAL' && !isNormalMatch(m)) return;
+          if (matchTypeFilter === 'EVENT' && !isEventMatch(m)) return;
+
+          const pt = m.participants.find((p) => p.player_name.toLowerCase().includes(q));
+          if (!pt) return;
+          if (roleFilter !== 'ALL' && pt.role !== roleFilter) return;
+
+          total++;
+          const isWin = pt.team === m.winning_team;
+          if (isWin) wins++;
+          else losses++;
+
+          const r = pt.role || 'OTHER';
+          if (!roleStats[r]) roleStats[r] = { total: 0, wins: 0 };
+          roleStats[r].total++;
+          if (isWin) roleStats[r].wins++;
+        });
+
+        if (total === 0) return null;
+        const winRate = Math.round((wins / total) * 100);
+
+        return (
+          <div className="bg-gradient-to-r from-primary-500/10 via-surface to-primary-500/10 border border-primary-500/30 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📊</span>
+              <div>
+                <div className="text-sm font-black text-foreground flex items-center gap-2">
+                  <span>「{playerFilter}」の戦績</span>
+                  <span className="text-xs font-mono font-bold text-muted-strong bg-surface px-2.5 py-0.5 rounded-full border border-border">
+                    {total}戦 {wins}勝 {losses}敗
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 text-xs text-muted-strong flex-wrap">
+                  <span className="font-bold text-foreground">勝率:</span>
+                  <span className={`font-mono font-black ${winRate >= 60 ? 'text-emerald-500' : winRate >= 50 ? 'text-primary-500' : 'text-danger-500'}`}>
+                    {winRate}%
+                  </span>
+                  {/* レーン別内訳 */}
+                  <div className="flex items-center gap-1.5 ml-2 border-l border-border pl-2 font-mono text-[11px] flex-wrap">
+                    {ROLES.map((r) => {
+                      const st = roleStats[r];
+                      if (!st || st.total === 0) return null;
+                      return (
+                        <span key={r} className="px-1.5 py-0.5 rounded bg-surface border border-border">
+                          {r}: {st.wins}W {st.total - st.wins}L
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 text-xs text-muted font-mono">
+              表示フィルター適用中
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="space-y-4">
         {matches
           .filter(match => {
-            if (!playerFilter.trim()) return true;
-            const q = playerFilter.trim().toLowerCase();
-            const pt = match.participants.find(p => p.player_name.toLowerCase().includes(q));
-            if (!pt) return false;
-            if (winFilter === 'WIN') return pt.team === match.winning_team;
-            if (winFilter === 'LOSS') return pt.team !== match.winning_team;
+            // 試合種別フィルター
+            if (matchTypeFilter === 'NORMAL' && !isNormalMatch(match)) return false;
+            if (matchTypeFilter === 'EVENT' && !isEventMatch(match)) return false;
+
+            // プレイヤー指定あり
+            if (playerFilter.trim()) {
+              const q = playerFilter.trim().toLowerCase();
+              const pt = match.participants.find(p => p.player_name.toLowerCase().includes(q));
+              if (!pt) return false;
+              if (roleFilter !== 'ALL' && pt.role !== roleFilter) return false;
+              if (winFilter === 'WIN') return pt.team === match.winning_team;
+              if (winFilter === 'LOSS') return pt.team !== match.winning_team;
+              return true;
+            }
+
+            // プレイヤー指定なしだがロール指定あり
+            if (roleFilter !== 'ALL') {
+              const hasRole = match.participants.some(p => p.role === roleFilter);
+              if (!hasRole) return false;
+            }
+
             return true;
           })
           .map(match => {
