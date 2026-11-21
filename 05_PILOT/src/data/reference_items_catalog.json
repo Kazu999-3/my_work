@@ -1,0 +1,1343 @@
+[
+  {
+    "code": "D1",
+    "title": "JGとボットは先にピックすべきか、670万試合のデータ検証動画を紹介",
+    "author": "あると @_arlton",
+    "url": "https://x.com/_arlton/status/2123463534755680661",
+    "category": "LoL上達・戦術",
+    "summary": "JGとボットは先にピックすべきか、670万試合のデータ検証動画を紹介",
+    "content": "ジャングルとボットが先にピックすべきなのか。\nデータサイエンティストが670万試合を使って検証したLoLの動画（@machineloling）がかなり面白かったので紹介。ツリーに続く↓\nhttps://t.co/mN3Il9Hf1g\n--- 続き1 ---\n結論：ロールの平均で見ると、ジャングルとボットは確かにカウンターされにくい。\nでもロール間の差は平均16%ほどで、同じロール内のチャンピオン同士の差のほうがずっと大きい。\n→先出しは「ロール」ではなく「チャンピオン」で決めるべき\n--- 続き2 ---\n冒頭の例がわかりやすい。サポのナミとジャングルのノクターンなら、ナミのほうがずっとブラインド向き。\n「ジャングルだから先に出す」と交換すると、むしろ損をするかもしれないらしい。\n--- 続き3 ---\n統計の話も良かった。1つのマッチアップの勝率を±1%の精度で測るには、約1万試合が必要。\nところが670万試合のデータでも、マッチアップの85%は1万試合未満。\n統計サイトの「～～～はカウンター」も、多くは誤差の範囲かもしれないという話\n--- 続き4 ---\n実践的な結論は\n・ブラインド向きのチャンピオンを序盤、相性差の大きいチャンピオンを終盤に\n・プールには両方のタイプを入れておく\n・最後のピックでブラインド向きを出すのはもったいない\nプロもおおむねこの順で選んでいるそうです。\n--- 続き5 ---\nソロキューで先出しされて損をしているチャンピオンの分析もあって、自分のメインがどこにいるかを見るだけでも楽しい。\n英語の動画だけど図が多くてわかりやすいので、おすすめです。\n\n終わり"
+  },
+  {
+    "code": "D2",
+    "title": "ビルド、ルーン、スキルの上げ順を紹介するポスト",
+    "author": "TrackDIFF @TrackDIFF",
+    "url": "https://x.com/TrackDIFF/status/2123403883636728112",
+    "category": "LoL上達・戦術",
+    "summary": "ビルド、ルーン、スキルの上げ順を紹介するポスト",
+    "content": "builds, runes and ability level up order 👇\n\nhttps://t.co/x9V2kxtw20"
+  },
+  {
+    "code": "D3",
+    "title": "ストームレイダー型モルガナJGのビルドと立ち回りを解説",
+    "author": "Ninkey @ninkeygwen",
+    "url": "https://x.com/ninkeygwen/status/2123187139340910839",
+    "category": "LoL上達・戦術",
+    "summary": "ストームレイダー型モルガナJGのビルドと立ち回りを解説",
+    "content": "Still in testing phase but Stormraider morgana jungle is REALLY disgustingly op, your ult INSTA procs it and she has a very fast clear that scales well. The better version of Zyra imo that ACTUALLY scales.\n \nI pick it mostly into ap junglers but it works into AD as well as long as you get some value from the spellshield vs this comp, runes will be below and build is usually Blackfire -> Crypt/Shadowflame -> Zhonyas -> literally anything u can do rylais/banshees/imperial.\n\nAlways CDR boots get them early on if possible and very important to take cdr + haste small runes.\n\nGame plan is to just full clear and cover ganks, pull objectives out and do them safely since you burst them very quickly and then look for teamfights with your R engage. Can also play on the sidelane for picks or just wait for their engage to counter out of vision!"
+  },
+  {
+    "code": "D4",
+    "title": "「ターン」概念と3人ターン同期マクロを長文解説（Tarzan選手の事例）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2094277966868238360",
+    "category": "LoL上達・戦術",
+    "summary": "「ターン」概念と3人ターン同期マクロを長文解説（Tarzan選手の事例）",
+    "content": "私がこれまで数多くのコーチングやフィードバックを行い、そしてスタンダードパッケージに問題集がすべて含まれている私の教本を執筆する中で、最も強調している核心的な概念が一つあります。それこそが「ターン（Turn）」です。\n\n本日は、最上位圏のソロランクやプロシーンにおいてゲームの勝敗を決定づける「3人ターン同期マクロ」について、私が持つすべてのチャレンジャーの知識を動員し、可能な限り長く、そして詳細に分析して解説いたします。\n\n1. ゲームが崩壊する最大の原因：「ターン（Turn）の不一致」\n\nLoLにおける「ターン」とは、簡単に言えば「自分がマップ上で自由に影響力を行使できる時間」のことです。最上位圏やプロシーンにおいてゲームが崩壊する最大の理由は、まさにこのターンがずれてしまうことにあります。例えば、味方のミッドレーナーがラインを見事に押し込み、主導権を握ってターンを確保したとしても、ジャングラーが自身のキャンプを狩っていたり、サポートがタワー下に閉じ込められていたりすれば、そのターンは空しく蒸発してしまいます。\n\n2. Tarzan 選手のマスターピース：「3人ターン同期マクロ」\n\nTarzan 選手の最も偉大な点は、ミッドレーナー、サポート、そして自身のジャングリング動線をたった1秒の誤差もなく合わせるマクロを完璧にシステム化したということです。\n\n彼のプレイを具体的に紐解いてみましょう。試合序盤、ヴォイドグラブ（幼虫）やドラゴンの周辺の視界争いが最も激しくなるタイミングです。特にミッドレーナーは7分30秒から8分20秒の間に必ずヴォイドグラブ側の川（リバー）のブッシュを通過して移動し、サポートもやはりグラブのタイミングになると無条件に上側（トップサイド）へと上がってきます。\n\nミッドレーナーのターン： ミッドレーナーはヴォイドグラブの交戦に合流するため、ラインを先に押し込んで主導権を握ります。\n\nサポートのターン： サポートがロームに行けるターンは、味方ADCがラインを敵タワーに押し込んだ後、次のミニオンウェーブが味方タワーに到達するまでの時間です。この貴重な時間を作り出したサポートが、川沿いに合流します。\n\nジャングラーのターン： Tarzan 選手は、このミッドとサポートのターン創出時間に正確に合わせて自身のジャングルキャンプの狩りを終え、川へと進入します"
+  },
+  {
+    "code": "D5",
+    "title": "JGの最初の5分の動き方がその後の全判断を決めるという解説",
+    "author": "Griffin @GriffinHQ_",
+    "url": "https://x.com/GriffinHQ_/status/2122325173143756901",
+    "category": "LoL上達・戦術",
+    "summary": "JGの最初の5分の動き方がその後の全判断を決めるという解説",
+    "content": "How to play the first 5 minutes of jungle which is very crucial to every decision you make in the future.\n\nGiving yourself a good start to the game will equate to more wins than anything more you can do in a game.\n\n(sick btw dont hate me) https://t.co/p2QqS6865i"
+  },
+  {
+    "code": "D6",
+    "title": "対面ローム時のミッドの対応、残りミニオンの触り方で差をつける",
+    "author": "マルチャレです @MalzaharMasa",
+    "url": "https://x.com/MalzaharMasa/status/2120538732994670837",
+    "category": "LoL上達・戦術",
+    "summary": "対面ローム時のミッドの対応、残りミニオンの触り方で差をつける",
+    "content": "対面がロームするたびに味方が死ぬ\nミッドは何をすればいい？\nまず見たいのは残ったミニオン\n触り方ひとつで相手のCSと経験値に差がつきます\n\nプレートを取るタイミングやゾーニングまで本編で解説しました\n続きはこちら👇\nhttps://t.co/7nR6hp7ezZ https://t.co/l2Gxlsykel"
+  },
+  {
+    "code": "D7",
+    "title": "Corgiコーチ推奨のJG練習チャンプ、リー・シンとヴァイを紹介",
+    "author": "福岡ソフトバンクホークス ゲーミング/SHG @esports_hawks",
+    "url": "https://x.com/esports_hawks/status/2118991859129479202",
+    "category": "LoL上達・戦術",
+    "summary": "Corgiコーチ推奨のJG練習チャンプ、リー・シンとヴァイを紹介",
+    "content": "【LoLが上手くなりたい人へ‼️】\n\nCorgiコーチがおすすめするのは\nJGのリー・シンとヴァイの2体🔥\n\nミクロとマクロの両方が鍛えられる\nチャンピオン達です‼️\n\n詳しくは画像をチェック✅\n#LeagueofLegends #LoL #SHG #SHGWIN https://t.co/LO85qmtQpD"
+  },
+  {
+    "code": "D8",
+    "title": "ステルス対策、コントロールワードとオラクルレンズの使い分け",
+    "author": "LoL Guide @lol_guide_jp",
+    "url": "https://x.com/lol_guide_jp/status/2118629468201746481",
+    "category": "LoL上達・戦術",
+    "summary": "ステルス対策、コントロールワードとオラクルレンズの使い分け",
+    "content": "【LoL攻略】見えない敵に、何度も倒されていませんか？\nステルスの種類と、コントロールワード・オラクルレンズの使い分けを知って対策しよう！\n\n「ステルスチャンピオンに狩られないために」\nhttps://t.co/PSdROYyipA\n#LoL #LoL初心者"
+  },
+  {
+    "code": "D9",
+    "title": "Iブッシュのコントロールワードが敵JGへの侵入ルートを作るという解説",
+    "author": "焼きソーば @sirotoma2",
+    "url": "https://x.com/sirotoma2/status/2118089007120990409",
+    "category": "LoL上達・戦術",
+    "summary": "Iブッシュのコントロールワードが敵JGへの侵入ルートを作るという解説",
+    "content": "コントロールワードをIブッシュに置く＝Mid-バフ前までのルート上に\"敵の視界がない\"ことが決まる（ラインの低いステルスワードが置かれてる可能性はあるが）\n\nなので、Iブッシュのワードは自身を守るワードと言うだけではなく、ジャングラーが敵ジャングルに安全に侵入することができるルートを作るという意味合いが大きいよ！！\n\nそしてEnaponさんが書いてあるとおり、そこにワードを置けている=主導権があって先に寄れるはずなので、バフでの攻防やそのままレーンに一緒に流れてのガンクアクションがとても強力！！\n\n毎日Enaponさんとてもいい解説出してくれるのでみんなフォロー必見👀‼️"
+  },
+  {
+    "code": "D10",
+    "title": "パッチ26.21シヴァーナのビルド紹介（Bork→Hexplate）",
+    "author": "Anafo @Anafinio",
+    "url": "https://x.com/Anafinio/status/2117674766442074181",
+    "category": "LoL上達・戦術",
+    "summary": "パッチ26.21シヴァーナのビルド紹介（Bork→Hexplate）",
+    "content": "BEST SHYVANA BUILD IN PATCH 26.21\n\nBork -&gt; Hex plate -&gt; defensive\n\nFREE LP printer, abuse now before it gets nerfed https://t.co/pivpmwQfKm"
+  },
+  {
+    "code": "D11",
+    "title": "Jax完全ガイド、65マッチアップ解説と179本の動画を用意したと告知",
+    "author": "CLA Vallheim @VallheimLoL",
+    "url": "https://x.com/VallheimLoL/status/2113344472964530177",
+    "category": "LoL上達・戦術",
+    "summary": "Jax完全ガイド、65マッチアップ解説と179本の動画を用意したと告知",
+    "content": "📖 GUIDE JAX ULTIME pour le maîtriser de A à Z 🎓 65 matchups expliqués, 179 vidéos et mis à jour continuellement\n\nJe suis Vallheim, j'ai peak 1800 lp, Rank 1 Jax monde et je vous partage 300H+ de connaissances sur Jax💡1/5 https://t.co/taBWgHvNRL"
+  },
+  {
+    "code": "D12",
+    "title": "カウンタージャングルをされた時の対処法を扱う投稿の紹介",
+    "author": "EL @lolplayerEL",
+    "url": "https://x.com/lolplayerEL/status/2117518977887011042",
+    "category": "LoL上達・戦術",
+    "summary": "カウンタージャングルをされた時の対処法を扱う投稿の紹介",
+    "content": "カウンタージャングルをされた時の対処法についての話が多いので、自分のジャングルキャンプを奪われた時にどう動けばいいのか分からない人におすすめです！\n拙い日本語でご不便をおかけする部分もあるかと思いますが、申し訳ありません！"
+  },
+  {
+    "code": "D13",
+    "title": "元日本1位MoyuのJGマクロ解説動画、レベル1から試合を動かすテンポ",
+    "author": "NX Kreative @lolkreative",
+    "url": "https://x.com/lolkreative/status/2117235993854284183",
+    "category": "LoL上達・戦術",
+    "summary": "元日本1位MoyuのJGマクロ解説動画、レベル1から試合を動かすテンポ",
+    "content": "レベル1から試合を動かす、圧倒的テンポのジャングルマクロ。\n\n元日本1位・Moyuさんの解説動画を公開しました！\n\n「絶対に死なない強さ」が身に染みて分かると同時に、JGの立ち回りや試合の動かし方の価値観がガラッと変わります。全JG必見です！\n\n気になる方はぜひ本編まで👇 https://t.co/OEmIsrJSwM"
+  },
+  {
+    "code": "D14",
+    "title": "ソロキューのキャリー方法を考えの解説付きで切り抜いた動画紹介",
+    "author": "NX Kreative @lolkreative",
+    "url": "https://x.com/lolkreative/status/2117064750039548251",
+    "category": "LoL上達・戦術",
+    "summary": "ソロキューのキャリー方法を考えの解説付きで切り抜いた動画紹介",
+    "content": "【神プレイ解説】 \n\nソロキューのキャリー方法がめちゃくちゃ分かりやすい試合を切り抜きました！ \n\n序盤から学びのポイントが詰まっていて、考えの解説付きです。\n\nランク上げたい人はマジで騙されたと思って本編も見てください！ https://t.co/Hv0b5408Ov"
+  },
+  {
+    "code": "D15",
+    "title": "ベル＝ヴェスを教えた時に使った教材資料を公開",
+    "author": "HALdesu @HALdesu4649",
+    "url": "https://x.com/HALdesu4649/status/2116857610582565067",
+    "category": "LoL上達・戦術",
+    "summary": "ベル＝ヴェスを教えた時に使った教材資料を公開",
+    "content": "ベル＝ヴェスの教えた時に使った教材です！\n興味ある方はどうぞ！\n口頭での説明しながらで行ってたやつなので参考程度に！\n資料➊\nhttps://t.co/c5UepPXDzl\n資料➋\nhttps://t.co/F9putZssNg\n資料➌\nhttps://t.co/e19VWnUof2 https://t.co/ZkNHM5D6TN"
+  },
+  {
+    "code": "D16",
+    "title": "不利な試合は正面の5v5でなく、戦わず時間を稼ぎ相手のミスを待つ",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2115990419767271562",
+    "category": "LoL上達・戦術",
+    "summary": "不利な試合は正面の5v5でなく、戦わず時間を稼ぎ相手のミスを待つ",
+    "content": "全てのレーナー・JGの皆さん、序盤に差をつけられて負けている試合で、「次の集団戦に勝って一気に取り返そう」と正面から戦いを挑んでいませんか？\n\n実は、最上位層のチャレンジャーは、ゴールド差がある状態で安易に5v5の集団戦を起こすことはありません。彼らが意識しているのは、無理に戦うことではなく「戦わずに時間を稼ぎ、相手のミスを待つ立ち回り」です。\n\nこの逆転の基本を知らなければ、少し不利になっただけの試合をそのまま落としてしまいます。その理由とは...👇\n\nフォローして毎日マクロの知識に触れるだけでも、LoLの見方が変わります。🔁"
+  },
+  {
+    "code": "D17",
+    "title": "バロンを始める4条件とやめる4条件、視界を消して釣る判断基準",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2115753923466367323",
+    "category": "LoL上達・戦術",
+    "summary": "バロンを始める4条件とやめる4条件、視界を消して釣る判断基準",
+    "content": "【バロン判断で負ける人の共通点】\n\nバロンで試合を落としてしまう人は、「今なら殴れそう」という曖昧な感覚だけでバロンを始めています。\n\nしかし、最上位層のチャレンジャーは「殴れるかどうか」ではなく、「確実に削り切れる条件が揃っているか」という明確な基準で判断します。\n\n【1. バロンを始めていい4つの条件】\n\n① 敵が2人以上倒されており、明確な人数差があるとき\n\n② 敵JGがバロンの逆サイド（BOT側など）に見えているとき\n敵JGがいなければスマイトで奪われる心配がないため、最も安全にバロンを触れるタイミングです。\n\n③ ドラゴンとバロンの出現時間が重なり、敵がドラゴンを選んだとき\n多くのチームはドラゴンに意識が向くため、敵がドラゴンへ寄った瞬間に人数を集めて一気に削り切る「バロンバースト」が非常に有効です。\n\n④ バロン周辺の視界を先に確保して敵のワードを消し、味方のHPとマナに余裕があるとき\n\n【2. すぐに攻撃をやめて下がるべき4つの状況】\n\nバロンを殴っている最中は、バロンからの攻撃で味方の防御力が低下し、狭いピット内に密集するため、そのまま集団戦になると非常に不利になります。\n\n以下の4つの兆候が見えたら、すぐにバロンから手を離しましょう。\n\n① 敵が視界から消えて、位置が分からなくなったとき\n\n② 味方のHPが削られ、バロンを削り切る前に戦闘になりそうなとき\n\n③ 敵JGが近くにいて、50対50の「スマイト勝負」になりそうなとき\n\n④ バロンのHPがまだ多く残っているのに、敵が寄ってきたとき\n\nバロンは途中でやめても何も失いませんが、無理に殴り続けて集団戦に負ければ、試合ごと持っていかれてしまいます。\n\n【3. 判断に迷ったら「視界をすべて消して敵を暗殺する」】\n\nバロンをエンドまで削るべきか迷ったときは、無理に殴り続けてはいけません。\n\n一度バロンを殴るのをやめ、バロン周辺とリバーの敵ワードをすべて消して視界を完全に奪いましょう。\n\n敵はバロンを止めようと急いで向かってきますが、視界がないため無防備な状態でブッシュへ近づいてきます。そこを味方全員で待ち伏せし、先手でスキルを当てて暗殺します。\n\n無理にバロンを殴り続けるのではなく、視界を消して確認しに来た敵を倒し、確実に人数差を作ってからバロンを取り切る。\n\nこれが、チャレンジャーが実践しているバロン"
+  },
+  {
+    "code": "D18",
+    "title": "コグ＝マウJGの強さ、ランク1コグマウがEUWチャレンジャーに到達",
+    "author": "Onetricks.gg @Onetricksgg",
+    "url": "https://x.com/Onetricksgg/status/2115513977333576067",
+    "category": "LoL上達・戦術",
+    "summary": "コグ＝マウJGの強さ、ランク1コグマウがEUWチャレンジャーに到達",
+    "content": "Kog Jungle Is Stronger Than You Think... 👨‍🍳 \n\nRank 1 Kog'Maw @Dawidsoneklol has been cooking in the jungle, recently even hitting EUW Challenger on the pick.\n\nDoes AP Kog do a bit too much damage? 🤔"
+  },
+  {
+    "code": "D19",
+    "title": "プラチナ脱出の意識6選とエメラルドで勝てない人の記事紹介",
+    "author": "LoL Guide @lol_guide_jp",
+    "url": "https://x.com/lol_guide_jp/status/2115730368171262264",
+    "category": "LoL上達・戦術",
+    "summary": "プラチナ脱出の意識6選とエメラルドで勝てない人の記事紹介",
+    "content": "【新着記事】\n\nプラチナから抜け出すために意識すべきコト6選\nhttps://t.co/tuZDuLnZKS\n\nエメラルドで勝てない人でありがちなコト\nhttps://t.co/trh6aXJ9Fe"
+  },
+  {
+    "code": "D20",
+    "title": "シルバー・ゴールドから抜け出せない人の共通点5選の記事紹介",
+    "author": "LoL Guide @lol_guide_jp",
+    "url": "https://x.com/lol_guide_jp/status/2115005581530415536",
+    "category": "LoL上達・戦術",
+    "summary": "シルバー・ゴールドから抜け出せない人の共通点5選の記事紹介",
+    "content": "「アイアン、ブロンズから上がったけど、シルバー・ゴールでスタックしてる・・。」\n\nそんな君へ。下記の記事がヒントになるかもしれません。\n\nシルバーから抜け出せない人の共通点5選\nhttps://t.co/y42ooIubES\n\nゴールドから抜け出せない人の共通点5選\nhttps://t.co/ttVtLckbCD"
+  },
+  {
+    "code": "D21",
+    "title": "フルクリア型JGへの「Reverse Parabolic Invade」ルート解説",
+    "author": "Ninkey @ninkeygwen",
+    "url": "https://x.com/ninkeygwen/status/2114788792896983310",
+    "category": "LoL上達・戦術",
+    "summary": "フルクリア型JGへの「Reverse Parabolic Invade」ルート解説",
+    "content": "Reverse Parabolic Invade\n\nThe most disgustingly OP invade that is super niche and nobody does. \n\nWorks well into full clearing junglers starting on their blue buff.\n----------------------------------------------------------\nWolves -> Gromp -> Enemy Krugs -> Reset -> Linear Clear Redside -> Crab \n\nThen you can recycle camps and play their krugs again.\n\nThis invade has very low counterplay, the most they can do is steal one of your buffs but if they commit to that it pretty much guarantees them being slow on their second clear letting you grab their 2nd Krugs respawn since they will respawn same time as Raptors, cant defend both!"
+  },
+  {
+    "code": "D22",
+    "title": "ザイラJGフルクリア2:16、狼スタートのファーム優先ルート動画",
+    "author": "ヨノナカ＠個人的JGフルクリアch @jgfullclear",
+    "url": "https://x.com/jgfullclear/status/2113556048548143361",
+    "category": "LoL上達・戦術",
+    "summary": "ザイラJGフルクリア2:16、狼スタートのファーム優先ルート動画",
+    "content": "本日はザイラ🌱🌸\n2:16【1スマイト】_ザイラ_狼_26.21\n今回は個人的というか、ほぼ自分用の撮影📹\n\nバフを貰ったので、\n普段使っているルーンでルートを試してみた\nシャードはアダプティブを2つ持つ方がファームは速いですが、個人的にはMSシャードを持つのが好きです🏃\n\n狼スタートのファーム優先ルートで\n基本的には1.5周しています\n\nグロンプで種🌱の位置が微妙だった時は\n1スマイト目をグロンプに使っても\n岩の狩り方を工夫すればリカバリーが効きます\n\n実戦でも＋10秒以内で回れるので\n結構おすすめのルートです！✨\n\nリコール後に上側を狩る時に役立つ狼の狩り方も\n別動画で付けておきます"
+  },
+  {
+    "code": "D23",
+    "title": "ザイラJGガイド、初動クリアの学習と序盤ファーム効率の要点",
+    "author": "BLG Sungod @SungodCN",
+    "url": "https://x.com/SungodCN/status/2112544043687124996",
+    "category": "LoL上達・戦術",
+    "summary": "ザイラJGガイド、初動クリアの学習と序盤ファーム効率の要点",
+    "content": "Guaranteed MASTER Rank, Zyra Jungle \n\nEveryday for a week, starting from Today I will post a guide, or teach a concept that personally helped my students to Speedrun to Master+ (https://t.co/Hxo3JIbUNB for Coaching and an educational Community)\n\nZyra Jungle is getting buffed next Patch, here's how you can play her (The Easy Way):\n\n- If you're new to her, set aside 30 minutes of your time to learn her First Clear, on both Red and Buff side. \nYoutube Clear Exemple Blue Buff Start (Credit to Poppzi): https://t.co/D3rtRv3p48\n\nDon't just recreate it. Understand your clear and damage numbers. Understand how fast you're getting your W (Seed) cooldown back from Raptors and Krugs.\n\nFirst 10 Minutes, you can just AFK farm as you like, don't spend your life Skirmishing or Ganking. Throw your spells Early game during a fight and Move on. Be sharp on what your objective is: being as efficient as possible with her CS numbers. \n\nHer main strength early on is just how fast her clearing speed can be, a"
+  },
+  {
+    "code": "D24",
+    "title": "リプレイを使ったJG向け自己フィードバック方法を長文で解説",
+    "author": "Imagine | イマレジェ @ImagineLegends7",
+    "url": "https://x.com/ImagineLegends7/status/2112129410791079971",
+    "category": "LoL上達・戦術",
+    "summary": "リプレイを使ったJG向け自己フィードバック方法を長文で解説",
+    "content": "[ リプレイを活用した自己フィードバックの方法 ]\n\n子どもの頃、シルバーからスタートしてチャレンジャーに到達するまでの過程を振り返ると、自分の実力が大きく伸びたのは、単にゲームをたくさんプレイしていたときではありませんでした。\n毎試合リプレイを見返して自分のプレイを振り返り、ミスや改善点を見つけて、自分自身でフィードバックを行っていたときが、最も成長につながったと感じています。\n\n多くの方をコーチングしていると、「自分がどこでミスをしたのかわからない」とおっしゃる方がたくさんいます。私自身も、多くの試合で重要な場面で動くべきタイミングを逃してしまうことがあります。ただ、リプレイを見たときに、自分でそのミスに気づけるかどうかが、実力を伸ばすうえで大きな分かれ道になると考えています。\n\nそこで今回は、自分自身でフィードバックを行う方法について、簡単にまとめてみようと思います。ジャングルに焦点を当てた内容ですが、他のレーナーの方もジャングルの考え方を知っておくことで、スノーボールの作り方についてより深く理解できると思います。ランクを上げたい方は、ぜひ一度読んでみてください。\n\n1. フルクリア・ガンク・カウンタージャングルを選択する基準\n\n配信やDMでよくいただく質問の一つが、「フルクリア、ガンク、カウンタージャングルの比重は、どのように調整すればいいですか？」というものです。\n\nそう聞かれるたびに、私は「毎試合違います！」と答えています。\n\nなぜなら、ジャングラーの動きは基本的に、各レーンの状況に合わせて決める必要があるからです。決まった比率でフルクリアとガンクを繰り返すのではなく、そのときのレーン状況において、どの行動が最も大きなリターンにつながるのかを判断することが重要です。\n\n例えば、レーンの主導権があるときとないときでは、ジャングラーが選択できる行動も変わってきます。\n\n① レーナーが主導権を握っているとき\nウェーブを溜めてからダイブを仕掛ける。\nレーナーがウェーブを押し込むタイミングに合わせて、相手のジャングルに侵入する。\nドラゴンやヴォイドグラブなどのオブジェクトを確保する。\n相手ジャングラーのガンクを予測し、カウンターガンクを狙う。\n\n② レーナーが主導権を握れていないとき\n味方側に押し込まれてくるウェーブに合わせてガンクを狙う。\n相手のダイブを予測し、"
+  },
+  {
+    "code": "D25",
+    "title": "JGシヴァーナのビルドとアイテム選択、スキルの上げ方を共有",
+    "author": "Damocles @Damocles121",
+    "url": "https://x.com/Damocles121/status/2110066607829741830",
+    "category": "LoL上達・戦術",
+    "summary": "JGシヴァーナのビルドとアイテム選択、スキルの上げ方を共有",
+    "content": "It seems like many players don't know how to properly play Jungle Shyvana, so I'm sharing the build and itemization.  Please don't make a strong champion look weak by playing it incorrectly. Understand the champion's strengths and make the most of them.\n\nSKill Q&gt;W&gt;E https://t.co/LHY95TjSu3"
+  },
+  {
+    "code": "D26",
+    "title": "エリスがマップ上の任意の対象へダッシュできる新テクニックの動画",
+    "author": "TrackDIFF @TrackDIFF",
+    "url": "https://x.com/TrackDIFF/status/2109715815771537440",
+    "category": "LoL上達・戦術",
+    "summary": "エリスがマップ上の任意の対象へダッシュできる新テクニックの動画",
+    "content": "Kirei 🇳🇱 showcases new Elise tech that lets her dash towards any target on the map and Agurin 🇩🇪 tests it out!\n\nSource: kireilol on twitch 👇"
+  },
+  {
+    "code": "D27",
+    "title": "10年ハードスタック事例と、抜け出すための6つのプロTipsのスレッド",
+    "author": "Thomas Yuen @KireiLoL",
+    "url": "https://x.com/KireiLoL/status/2108844371009523904",
+    "category": "LoL上達・戦術",
+    "summary": "10年ハードスタック事例と、抜け出すための6つのプロTipsのスレッド",
+    "content": "This guy has been hardstuck since 2016 (10 years)\n\nWith effort, reviewing and working on the right things ANYONE can climb \n\nHere are 6 pro tips that will help you unstuck \n\n(YOU ARE FOR SURE NOT DOING THIS)\n\n🧵1/6\n\n⬇️ https://t.co/i52I5om16k\n--- 続き1 ---\n1. CHAMPION POOL\n\nChoose 1 champion that you lock in NO MATTER WHAT DRAFT\n\nPick another champion if it's picked or banned (choose a 2nd main)\n\nIf you can create muscle memory on your champion and focus on the fundamentals\n\nYou'll build champion mastery AND Fundamentals that will be HABITS. That will help you in the future with ANY champion.\n--- 続き2 ---\n2. Review\n\nI know you lazy piggies refuse to do this consistently\n\nBut IF you are doing it, you're probably doing it wrong.\n\nYou want to do the following\nReview first 3 deaths and look at your micro and look at the following\n- How did you use your spells and was it used correctly?\n- Did I play slow and wait for my teammates or for my cooldowns?\n- Did you anticipate enemy abillities and d"
+  },
+  {
+    "code": "D28",
+    "title": "敵の3ドラゴン目は危機ではなく逆転のレバレッジ機会という考え方",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2108142364829143185",
+    "category": "LoL上達・戦術",
+    "summary": "敵の3ドラゴン目は危機ではなく逆転のレバレッジ機会という考え方",
+    "content": "敵が「3つ目のドラゴン（ソウルポイント）」を取ろうとしている時、視界もない暗闇のピットへ無理やり突っ込んでいませんか？ 実は、3ドラゴン目は「絶対に止めなければならない危機」ではなく、敵5人を特定のエリアに45秒間縛り付け、ゲームを完全に逆転させる「最高のレバレッジ機会」です。 \nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁"
+  },
+  {
+    "code": "D29",
+    "title": "JGの神様がチャレンジャーにコーチングしている動画へのリンク",
+    "author": "ゆにか @YunikaLoL",
+    "url": "https://x.com/YunikaLoL/status/2105871628546798017",
+    "category": "LoL上達・戦術",
+    "summary": "JGの神様がチャレンジャーにコーチングしている動画へのリンク",
+    "content": "https://t.co/UXVZxDf3zW\n\nJGの神様がチャレンジャーにコーチングしてる動画見る"
+  },
+  {
+    "code": "D30",
+    "title": "リンクのみのポスト（本文なし）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2104206236963229943",
+    "category": "LoL上達・戦術",
+    "summary": "リンクのみのポスト（本文なし）",
+    "content": "https://t.co/kIhDFg1hNe"
+  },
+  {
+    "code": "D31",
+    "title": "LoLalyticsの見方、サンプル数とΔ2を参考にする統計の読み方",
+    "author": "さいよ𓁹.𓁹 @HusumSwainLove",
+    "url": "https://x.com/HusumSwainLove/status/2104442637289947195",
+    "category": "LoL上達・戦術",
+    "summary": "LoLalyticsの見方、サンプル数とΔ2を参考にする統計の読み方",
+    "content": "結局どうすればいいの？に対する答えをLoLalyticsオタクが教えます！\n\n・少ないサンプル数の統計は不正確。30DaysまたはAll Rankにしよう。\n\n・相性はΔ1よりΔ2を参考にしよう。\n\n・結局opggなどの他サイトよりも圧倒的にLoLalyticsが正確だし細かく見れる。\n\nLoLalyticsがおすすめです！"
+  },
+  {
+    "code": "D32",
+    "title": "リリアでソロキャリーするガイド、序盤インベードとメジャイ運用",
+    "author": "BLG Sungod @SungodCN",
+    "url": "https://x.com/SungodCN/status/2104316287229087775",
+    "category": "LoL上達・戦術",
+    "summary": "リリアでソロキャリーするガイド、序盤インベードとメジャイ運用",
+    "content": "How to Actually Solo Carry with Lillia 🦌\n\nHad a lot of Lillia students recently, so here’s a straight to the point, no BS guide.\n\nEarly game\n Her early clear is garbage. She went from ranged to melee, which made her a very strong duelist with Conqueror but a weak pure power farmer (very different from pre-nerf Lillia).\n\nResult -> Adapt.\n\nBefore you have a lead, play aggressively. Look for level 1 / 2 / 3 / 4 / 5 invades. She’s extremely strong in a 1v1.\n\nNotice how I’m building early Mejais if Dark Seal is stacked, and Rabadons 3rd. She scales extremely hard with AP. Mejais + Rabadons turns her into a god-tier jungler at 3 items + Mejais because it synergizes perfectly with her kit.\n\n-> Jungle invading guide is in #lessons on Discord: https://t.co/Hxo3JIcsD9\n That guide covers the proactive invades you can actually pull off on Lillia. Recreating those paths is how you get the early lead she needs.\n\nPowerspikes\n\n•Strong dueling from level 1 to 5\n•Level 6\n•Liandry + T2 boots\n•Mejais\n•2n"
+  },
+  {
+    "code": "D33",
+    "title": "20分以降はタワーが折れたレーンのミニオンが速く走る仕様の小ネタ",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2103997769606377915",
+    "category": "LoL上達・戦術",
+    "summary": "20分以降はタワーが折れたレーンのミニオンが速く走る仕様の小ネタ",
+    "content": "ご存知ですか？試合時間「20分」を過ぎると、タワーが折れているレーンのミニオンが異常な速度で走り出すため、一度レーンを押すだけで敵の基地が勝手に崩壊します。\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁 https://t.co/oPMUK9WYVs"
+  },
+  {
+    "code": "D34",
+    "title": "ラプターを一点に寄せて範囲スキルを当てると狩りが5秒速くなる小技",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2103707426273075333",
+    "category": "LoL上達・戦術",
+    "summary": "ラプターを一点に寄せて範囲スキルを当てると狩りが5秒速くなる小技",
+    "content": "ご存知ですか？ラプターを一点に寄せて範囲スキルを撃つと、狩りが5秒以上速くなります。\n大きい鳥だけを殴り始める人から、カニのターンが消えます。\n下です。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁 https://t.co/oSOOVwTiWl"
+  },
+  {
+    "code": "D35",
+    "title": "マウス感度とDPIの目安、プロ標準はDPI800〜1600という小ネタ",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2103346439233630345",
+    "category": "LoL上達・戦術",
+    "summary": "マウス感度とDPIの目安、プロ標準はDPI800〜1600という小ネタ",
+    "content": "ご存知ですか？マウス感度が速すぎると、スキルが外れます。\nヒットボックスの半径は65〜80ユニットです。DPIが3000だと、指が0.5ミリ揺れただけで軌道が飛びます。\nプロの標準はDPI 800〜1600と、カメラ解除です。下です。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁 https://t.co/By4QegJPU5"
+  },
+  {
+    "code": "D36",
+    "title": "バロンの後ろに立つと正面ブレスの防御力低下を受けない小ネタ",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2103419606220095660",
+    "category": "LoL上達・戦術",
+    "summary": "バロンの後ろに立つと正面ブレスの防御力低下を受けない小ネタ",
+    "content": "ご存知ですか？バロンを叩くとき、バロンの後ろに立つと正面のブレスを受けません。\n正面の酸の弾は、追加で防御力が2回分削られます。後ろのトゲには、その追加がありません。\nただし「全く削られない」保証ではありません。立ち位置は下です。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁"
+  },
+  {
+    "code": "D37",
+    "title": "抑制器を早く壊すと相手に無料ゴールドを渡す、壊すタイミングの話",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2103274776131404203",
+    "category": "LoL上達・戦術",
+    "summary": "抑制器を早く壊すと相手に無料ゴールドを渡す、壊すタイミングの話",
+    "content": "ご存知ですか？抑制器を早く壊すと、相手に無限の無料ゴールドを渡して逆転されます。\nスーパーミニオン1体でおよそ60〜90Gです。本陣の前で、毎ウェーブ相手が一人で食べます。\n壊す秒は、バロンと魂の1分〜1分30秒前です。下です。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁"
+  },
+  {
+    "code": "D38",
+    "title": "JGの1stアイテムとして壊れているというアイテムの紹介（レンズ効果付き）",
+    "author": "Erknaite @zac_gaming__",
+    "url": "https://x.com/zac_gaming__/status/2102690950535692736",
+    "category": "LoL上達・戦術",
+    "summary": "JGの1stアイテムとして壊れているというアイテムの紹介（レンズ効果付き）",
+    "content": "the most broken 1st item on jungle\n\n- very good stats for how broken the passive is\n- free oracle lens every 90s and you oneshot wards\n- you always know if the enemy has vision of you xD? WTF (MEGA BROKEN in high elo)\n- the proc dmg is ok i guess https://t.co/wrlHW38neN"
+  },
+  {
+    "code": "D39",
+    "title": "ダイブ時のタワー攻撃順序は7段階、2番目はペットという小ネタ",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2102911032754851963",
+    "category": "LoL上達・戦術",
+    "summary": "ダイブ時のタワー攻撃順序は7段階、2番目はペットという小ネタ",
+    "content": "ご存知ですか？ダイブのとき、タワーが殴る順番は7段階あります。\n2番目はチャンピオンではありません。ペットです。\n3発目を受ける前に、この順番を読んでください。下です。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁 https://t.co/bBslEbo9Jm"
+  },
+  {
+    "code": "D40",
+    "title": "（JG）キル後は握ったゴールドをアイテムに変えてから敵JGへ入る話",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2102617606675181983",
+    "category": "LoL上達・戦術",
+    "summary": "（JG）キル後は握ったゴールドをアイテムに変えてから敵JGへ入る話",
+    "content": "（ジャングル）\nキルを取った直後、1000ゴールドを握ったまま敵ジャングルへ入る人から、シャットダウンが消える。\nキャンプが湧いたら維持。アイテムに変えてから雪だるま。\n維持を飛ばす人は下。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。🔁 https://t.co/zsjQMJdxOJ"
+  },
+  {
+    "code": "D41",
+    "title": "KRマスターのJ4 18連勝事例、2コア購入後に靴を強化する要点",
+    "author": "Once @Once_lol",
+    "url": "https://x.com/Once_lol/status/2029627206432084033",
+    "category": "LoL上達・戦術",
+    "summary": "KRマスターのJ4 18連勝事例、2コア購入後に靴を強化する要点",
+    "content": "KR SEVERマスターからJ4へ 18連勝している人がいて、私がやってみたんですが、かなりOPです\n私が感じた核心は\n1. 2コアを購入したら、靴をアップグレードすること\n2. 2コアは価格が安く、早く出ることを意識してそのタイミングで利益を得ること https://t.co/VypQJtRWhX"
+  },
+  {
+    "code": "D42",
+    "title": "（メンタル）見るべきはデスの瞬間ではなく30秒前の判断という話",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2101580700285903028",
+    "category": "LoL上達・戦術",
+    "summary": "（メンタル）見るべきはデスの瞬間ではなく30秒前の判断という話",
+    "content": "（メンタル）\n何百戦してもティアが止まっている人へ。\n原因はフィジカルでもチーム運でもない。\n4戦目から前頭葉が落ち、ミニマップを見る回数が半分になる。\nデスの瞬間を見て「手が遅かった」と言う人は、一生同じ死に方をする。\n見るべきは30秒前の判断である。\n4つの解法は下。\n\nフォローして毎日マクロを流し見るだけでも、LoLを見る世界が変わります。⬆️"
+  },
+  {
+    "code": "D43",
+    "title": "S16ジャングルの変則ルート紹介、リーシンが2:44にカニへ着くルート等",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2101211951280136377",
+    "category": "LoL上達・戦術",
+    "summary": "S16ジャングルの変則ルート紹介、リーシンが2:44にカニへ着くルート等",
+    "content": "（S16ジャングル）\n6キャンプを思考停止で回す人から、3分で消えます。\nリーシンが2:44にロングソードを持ってカニへ着くルートがある。\nノーアイテムの相手は、そこで終わります。\n4つの変則ルートは下。\n\nフォローして毎日マクロを流し見るだけでも、試合の見え方が変わります。\n無理に押さなくて大丈夫です。必要な時に、同じレンズで見てください。\n👀👀"
+  },
+  {
+    "code": "D44",
+    "title": "MIDのI字ブッシュのワーディング詳細、MID/JG/SUP向け第1弾",
+    "author": "JustFocus | ジャスフォ @JustFocus_lol",
+    "url": "https://x.com/JustFocus_lol/status/2100909403134410865",
+    "category": "LoL上達・戦術",
+    "summary": "MIDのI字ブッシュのワーディング詳細、MID/JG/SUP向け第1弾",
+    "content": "📢まだMIDのI字ブッシュにそのままワードを置いていますか？｜MID/JG/SUP必須ディテール 1弾📢\n\nこんにちは！\n今回扱うテーマは、MID/JG/SUPの方々が必ず知っておくと良い、MIDのI字ブッシュの視界に関するディテールです\n3回に分けて準備しましたが、明日までにすべてアップロードする予定です!!\n\n1弾では、\n序盤のインベイドとレイトインベイドに備えるためのI字ブッシュのワーディング方法について扱ってみます🫡\n\n① 敵のインベイドに備えるワーディング\nMID側へ移動しながらTori側で曲がる際に、マウスカーソルをあらかじめ置いておいて、すぐにワーディングすると、\nBLUEチームは下側のMID I字ブッシュ、REDチームは上側のMID I字ブッシュに、敵に気づかれずにワードを設置できるディテールがあります。\n\nこのワーディングは、以下のような状況で活用できます\n\nJG：相手のJGとMID、BOTの組み合わせが1レベルから非常に強力で、序盤のインベイドをベースに敵チームがこちらのTori側の陣営を掌握した場合、防ぐことができないと判断したとき\n（実際に入ってきたのか、入ってきていないのかを判断するための根拠になることがあります）\nMID：敵MidがToriへのワーディングをすることを守るための動きをしている状況で、\n敵SUPがNautilusのようなグラブチャンピオンの場合、出会った瞬間にフラッシュを使わなければならない状況が出てくる可能性があるため、\nこのワーディングを活用すれば、不要なリスクを減らしながら、こちらのTori側へ入ってくる敵Midを防ぐことができます。\nまた、このワードを通して、相手MIDが1レベルでTori側にワードを設置したかどうかを確認することができます。\n（このワードを設置して、味方JGと一緒に敵Toriのワーディングをしに行く状況の中で）\n\n② 敵JGのLateインベイドに備えるワーディング\nGravesのように序盤から強いチャンピオンは、1レベルからLateインベイドに入ってくる場合があります。\nもし反対側のキャンプからスタートした後、3キャンプを回って下側のキャンプに戻ってきたとき、\nすでにカウンタージャングルをされている状況を防ぐためにも、このワーディングを活用することができます。\n（敵Toriにワードを設置してお"
+  },
+  {
+    "code": "D45",
+    "title": "ジリアンJGフルクリア3:13、赤バフとクルーグ同時当てのルート動画",
+    "author": "ヨノナカ＠個人的JGフルクリアch @jgfullclear",
+    "url": "https://x.com/jgfullclear/status/2100872465044107714",
+    "category": "LoL上達・戦術",
+    "summary": "ジリアンJGフルクリア3:13、赤バフとクルーグ同時当てのルート動画",
+    "content": "本日はリクエストのジリアン⏳⏰\n多分、世界🌍初発見のルート！\nQをクルーグの裏に置くことで\n赤バフとクルーグに同時当てできます！\n間違ってクルーグにQを持っていかれないよう注意\n\nどの動画を探してもやってる人はいなかった…🔍\nのは、まぁ当たり前で\n\nたぶん世界初なのは\nこれだけ真面目にジリアンJGのルートを考えた人ってところだと思います👐\n3:13【2スマイト】_ジリアン_赤_26.18【JGフルクリア】\nhttps://t.co/t8FUDVWkwn"
+  },
+  {
+    "code": "D46",
+    "title": "サンダードスカイとファイターJGの1stアイテムに関する情報メモ",
+    "author": "wataneko @LoLwataneko",
+    "url": "https://x.com/LoLwataneko/status/2100872470995595568",
+    "category": "LoL上達・戦術",
+    "summary": "サンダードスカイとファイターJGの1stアイテムに関する情報メモ",
+    "content": "#LoL情報メモ\n【サンダードスカイとファイターJGの1stアイテム】\n特にランク戦では気にしたい部分 https://t.co/zayZ5vT6IE"
+  },
+  {
+    "code": "D47",
+    "title": "チャレンジャーが挙げたJGのアイテム購入ミス5選を紹介する記事",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://x.com/LOLNinjaBlog/status/2100787707584909586",
+    "category": "LoL上達・戦術",
+    "summary": "チャレンジャーが挙げたJGのアイテム購入ミス5選を紹介する記事",
+    "content": "【LoL】チャレンジャーが教える、ジャングラーがアイテム購入でやりがちな5つのミス\n\nロンソよりルビクリ優先、ポーションスタートはするななど、チャレンジャーが挙げたジャングラーのアイテム購入TIPS5つを紹介。キャッシュバックや魔法の靴を交えたコミュニティの反応もまとめた。\n\nhttps://t.co/xvXreyr8aJ"
+  },
+  {
+    "code": "D48",
+    "title": "コーチング動画3部作を公開、厳密なマクロ概念を解説した告知",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2100796442205933914",
+    "category": "LoL上達・戦術",
+    "summary": "コーチング動画3部作を公開、厳密なマクロ概念を解説した告知",
+    "content": "実際の生徒さんとのコーチングで、上のティアへ行くために絶対不可欠な「厳密なマクロ概念」を妥協なく徹底的に解説した動画を3部作で公開しました！\n\n🎬 第1部：全レーンガンク不可の絶望盤面を動かす「意思決定3ステップ」\n 🎬 第2部：無意識の侵入は戦犯。勝敗を分ける「インベイドの絶対ルール」\n🎬 第3部：森を奪わず敵を釣れ。機動力系JGの「悪魔の心理戦」\n\n「なぜその動線になるのか？」というチャレンジャーの根拠を、本当に細部まで詳細に言語化しています。感覚でのプレイから卒業し、本気でマクロを理解して上達したい方はぜひ見てください🔥"
+  },
+  {
+    "code": "D49",
+    "title": "低レートJGがLPを落とす5つのミス（ワード購入、ルビクリ優先等）",
+    "author": "hybradge @hybradge",
+    "url": "https://x.com/hybradge/status/2100633380220198941",
+    "category": "LoL上達・戦術",
+    "summary": "低レートJGがLPを落とす5つのミス（ワード購入、ルビクリ優先等）",
+    "content": "5 Mistakes Low Elo Junglers Make that Lose you LP\n\n1. Don't buy control wards before your first 2 items- With the snowballing nature of season 16 and huge impact Drakes/Herald have, League is a game that is dictated by who gets their item spikes first and buying control wards delays your item spikes. Getting later spikes reduces your ability to carry/impact Early fights especially below GM where fighting is  prominent and random. The most important spikes are always your first and second item spikes because they are your core items that establish your champion identity- think Tirforce on Shyvana, Hexplate on Nocturne, Bork on Warwick ETC. Control wards are also less useful in the early game because it's much easier to track junglers and laners at this point (top is top, mid is mid, bot is bot), so you can definitely buy control wards, but don't do it before your 1-2 Spike.\n\n2. Always Prioritize Ruby Crystals- One of the biggest misconceptions Junglers have is you should prioritize dama"
+  },
+  {
+    "code": "D50",
+    "title": "知っているだけで勝率が変わるカウンタープレイ集の記事紹介",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://x.com/LOLNinjaBlog/status/2100157893538644347",
+    "category": "LoL上達・戦術",
+    "summary": "知っているだけで勝率が変わるカウンタープレイ集の記事紹介",
+    "content": "【LoL】知っているだけで勝率が変わる、意外すぎるカウンタープレイ集まとめ\nhttps://t.co/xvUndAaknI\nティーモにはトリンダメアをカウンターする小技があるが、それをさらに返す小技も。 https://t.co/oKI6jo4x5T"
+  },
+  {
+    "code": "D51",
+    "title": "KDAは良いのに勝てない人の特徴5選を解説する動画紹介",
+    "author": "Smashlog®︎LoL @Smashlog_LoL",
+    "url": "https://x.com/Smashlog_LoL/status/2099800804299595901",
+    "category": "LoL上達・戦術",
+    "summary": "KDAは良いのに勝てない人の特徴5選を解説する動画紹介",
+    "content": "【🆙新着動画】\n\nキルは取れてる。KDAも悪くない。\nそれなのに、なぜか勝てない…🤔\n\nランクが上がらない人に見直してほしい\n5つのポイントを徹底解説しました🔥\n\n📺【キルより重要】KDAは良いのに試合に勝てない人の特徴5選\nhttps://t.co/E6bQVxmAXc\n\n🎙️キャスト\nDay1 @Day1week\neyes @eyes1015\n\n#LoL https://t.co/8faebjQkFv"
+  },
+  {
+    "code": "D52",
+    "title": "必須設定の話、Aキー攻撃移動・即時発動・自動攻撃オフ等",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2099676190642700319",
+    "category": "LoL上達・戦術",
+    "summary": "必須設定の話、Aキー攻撃移動・即時発動・自動攻撃オフ等",
+    "content": "（必須設定）\nフィジカルが足りないのではない。\nライアットの初期設定が、理不尽に損をさせている。\n右クリックだけでカイトするADCは、乱戦で地面を踏んで死ぬ。\n固定カメラは、マップを1画面に閉じ込める牢獄だ。\nAキー、即時発動、自動攻撃オフ。これだけで手が変わる。\n\n（必須の設定内容は以下をご覧ください！）\n⬇️⬇️⬇️⬇️\n--- 続き1 ---\n多くのプレイヤーが思い通りにプレイできない時、「自分のフィジカルが足りないから」「チャンピオンの理解度が低いから」レートが上がらないのだと自分を責める。\nしかし天上界の視点から見ると、フィジカルの問題ではなく、ライアットの初期設定が生み出す不要な入力遅延や狭い視界のせいで、理不尽に損をしているケースが非常に多い。\n--- 続き2 ---\nカーソル位置への攻撃移動。最重要である。\nホットキー設定でAキーをアタックムーブクリックに割り当て、ゲーム設定の「カーソル位置への攻撃移動」を必ずオンにせよ。\n右クリックのみで引き撃ちを行うと、乱戦中に地面を誤クリックして敵ブルーザーの目の前へ歩いてしまう致命的なミスが発生する。\nAキーを使えば、チャンピオン基準ではなく、カーソルに最も近い敵を攻撃する。完璧な最大射程での引き撃ちと、方向指定スキルの回避が同時に可能になる。\n実際にこの設定だけで、プラチナのADCプレイヤーの分間CSが6.8から8.2へと垂直上昇したデータがある。\n--- 続き3 ---\n全スキルのクイックキャスト。\n射程表示を確認してからクリックする通常発動は、思い切って捨てよ。\nキーボードを押して離した瞬間にスキルが発動する即時発動に設定すべきである。\nこの設定一つでコンボの発動速度が平均0.2秒短縮される。\nこの0.2秒の差が、「相手にフラッシュで反応する時間すら与えない」という決定的な違いを生む。\n\nフラッシュは自分自身に即時発動するショートカットを設定せよ。\nマルファイトやセトなど、フラッシュ＋アルティメットが要求される瞬間に、1フレームの入力遅延やマウス位置の誤りなくスキルが発動する。\n--- 続き4 ---\nライアットの初期値では、自動通常攻撃がオンになっている。\n移動後、チャンピオンが自動的に周囲のミニオンや敵を攻撃してしまう。\nこれにより、タワー下でラストヒットを待っている間に勝手に通常攻撃を行いフリーズ"
+  },
+  {
+    "code": "D53",
+    "title": "過去に作った関連動画へのリンク（引用ポストへの案内）",
+    "author": "ヨノナカ＠個人的JGフルクリアch @jgfullclear",
+    "url": "https://x.com/jgfullclear/status/2099685917938344257",
+    "category": "LoL上達・戦術",
+    "summary": "過去に作った関連動画へのリンク（引用ポストへの案内）",
+    "content": "これに関して昔動画作ったことあるから、気になる人は見てみて\nhttps://t.co/MoqWRU9tdg"
+  },
+  {
+    "code": "D54",
+    "title": "フリーズの作り方、後衛ミニオンを4体だけ残す等の具体手順",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2099671139245326603",
+    "category": "LoL上達・戦術",
+    "summary": "フリーズの作り方、後衛ミニオンを4体だけ残す等の具体手順",
+    "content": "（フリーズ）\n1ウェーブで崩れるフリーズは、残すミニオンを間違えている。\n砲撃ミニオンを生かしたまま凍らせるな。\n塔の手前で砲撃と前衛3体を消せ。\n後衛ミニオンはぴったり4体だけ残せ。\n3体だと押し返され、5体だとタワーに沈む。\n\n冷凍の秘訣は以下にあります)\n⬇️⬇️⬇️⬇️⬇️ https://t.co/aSUm2XGGpB\n--- 続き1 ---\nレーンを引いてフリーズを試みたものの、たった1ウェーブでミニオンがタワーに押し付けられてしまったり、逆にジワジワと相手側に押し返されてしまった経験は誰にでもあるはずである。\nその原因は何か。\n残すべきミニオンの種類と数を正確に計算していなかったからである。\n--- 続き2 ---\nバウンスウェーブ、すなわち跳ね返ってくるウェーブが味方タワー側に押し寄せてくる時、私たちのフリーズを妨害する最も恐ろしく危険な変数は、敵の砲撃ミニオンである。\n\n砲撃ミニオンは通常のミニオンとは比較にならないほど体力と防御力が高く、タワーの攻撃を受けるまでは味方のミニオンを文字通り削り殺してしまう。\n砲撃ミニオンを生かしたままフリーズを試みると、圧倒的な火力差によってレーンがあっという間に味方のタワー内へ押し込まれ、苦労して作ったフリーズは虚しく崩壊する。\n--- 続き3 ---\nでは、完璧なマイクロは何か。\nウェーブがタワー手前のギリギリの位置に到達した時、敵の砲撃ミニオンと前衛ミニオン3体は集中攻撃して素早く処理しなければならない。\nそしてここで最も重要な黄金律が、「敵の後衛ミニオンをぴったり4体」だけ完璧に生かしておくことである。\n--- 続き4 ---\nなぜ、あえて後衛ミニオン4体なのか。\n私たちがフリーズをかける位置は、味方タワーの射程のすぐ外側である。\n空間から見ると、この位置は味方のネクサスにずっと近い。\nそのため新しく湧いて歩いてくる味方の増援ミニオンが、敵のミニオンよりも時間において2〜3秒早く到着し、戦闘を始める。\n\nこの2〜3秒の先制攻撃の権利は、想像以上に大きな火力優位を作り出す。\nこの味方の時間的・空間的利点を相殺し、両ウェーブのダメージを1対1の完璧な均衡に保つためには、敵のウェーブに正確に約1200の体力、すなわち後衛ミニオン4体分と、継続的なダメージ能力を追加で残す必要がある。\n--- 続き5 ---\nもし3"
+  },
+  {
+    "code": "D55",
+    "title": "Aキーをカーソル位置への攻撃移動に割り当てる設定の重要性",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2099676422210240844",
+    "category": "LoL上達・戦術",
+    "summary": "Aキーをカーソル位置への攻撃移動に割り当てる設定の重要性",
+    "content": "カーソル位置への攻撃移動。最重要である。\nホットキー設定でAキーをアタックムーブクリックに割り当て、ゲーム設定の「カーソル位置への攻撃移動」を必ずオンにせよ。\n右クリックのみで引き撃ちを行うと、乱戦中に地面を誤クリックして敵ブルーザーの目の前へ歩いてしまう致命的なミスが発生する。\nAキーを使えば、チャンピオン基準ではなく、カーソルに最も近い敵を攻撃する。完璧な最大射程での引き撃ちと、方向指定スキルの回避が同時に可能になる。\n実際にこの設定だけで、プラチナのADCプレイヤーの分間CSが6.8から8.2へと垂直上昇したデータがある。"
+  },
+  {
+    "code": "D56",
+    "title": "S16ジャングル、川にワードを見たら帰らず塔裏から出る等の立ち回り",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2098326814112494022",
+    "category": "LoL上達・戦術",
+    "summary": "S16ジャングル、川にワードを見たら帰らず塔裏から出る等の立ち回り",
+    "content": "S16ジャングル） 川にワードを見たら、帰るな。 \n敵は「安全だ」と錯覚して、レーンを深く押す。\n 正面から入るな。塔の裏の三つ又から出ろ。 オブジェクトも同じだ。湧いたから叩くな。 出てきた敵を先に倒せ。  \n\n追加の概念と実戦の順番は、スレッド下の10分映像にまとめた。 ⬇️⬇️⬇️⬇️⬇️ https://t.co/bA8KclImrQ\n--- 続き1 ---\nソロランクの勝率を極限まで上げるには、フィジカルや狩猟速度だけでは足りない。\n天上界は相手の脳内の心理を読み、マップのシステム変化を武器化する。\nシーズン16の核心は三つ。フェイライト視界の逆利用、ホームガードの超加速、オブジェクトを餌にした待ち伏せである。\n--- 続き2 ---\n下位帯は、敵ボットが川やドラゴン前にワードを置くと「映ったから無理だ」と背を向ける。\n天上界にとって敵のワードは、敵を安心させる致命的な罠として機能する。\n\n敵ボットデュオは川にワードを置いた事実だけを信じ、ガンクから完全に安全だと錯覚してレーンを深く押す。\nこの時、正面の川から入るな。\nカニの視界や川ワードの死角の外側を大きく迂回し、敵の1次タワー裏の三つ又の茂みから入れ。\n敵は川だけを警戒している。自分のタワー裏から飛び出すジャングラーに退路を完全に塞がれ、無防備なままキルを献上する。\n視界は避けるものではない。逆に利用して油断を誘うものである。\nhttps://t.co/hLtpl5y3gS\n--- 続き3 ---\nシーズン16では、泉から出るホームガードの加速がレーンの奥深くまで維持されるように強化された。\n超長距離の横断奇襲は、敵レーナーの予測範囲を完全に逸脱する。\n\nボットにいて、ボットは引かれておりダイブもガンクもできない膠着だとする。\nミニマップを見ると、反対側のトップが味方側に軽く凍結されている。\nその瞬間、即座にBを押せ。泉でアイテムを買い、ホームガードの爆発的な移動速度に乗ってミッドの1次と2次の間を一直線に貫通し、トップへ直行する。\n\n敵トップはわずか10秒前にあなたがボットにいたのを見ている。「絶対にトップへ来られない」と盲信し、凍結を解くために前へ歩み出る。\nホームガードを受けたあなたは、相手の計算より3倍以上早く着く。\n油断したトップは反応すらできず、フラッシュを奪われ確定デスを迎える。\n---"
+  },
+  {
+    "code": "D57",
+    "title": "（ジャングル）優先順位はファーム→オブジェクト→先行→レーン圧",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2098272149777903786",
+    "category": "LoL上達・戦術",
+    "summary": "（ジャングル）優先順位はファーム→オブジェクト→先行→レーン圧",
+    "content": "（ジャングル） ガンクは4番目だ。 キャンプを捨ててレーンをうろつくジャングラーから消える。 分間8CSが無いガンクは、成功しても穴が開き、失敗すれば永遠に消える。 ファーム → オブジェクト → 先行 → レーン圧。 この順番が崩れた瞬間、50対50が始まる。\n\n⬇️⬇️⬇️⬇️⬇️⬇️ https://t.co/Rokflg5y3B\n--- 続き1 ---\nジャングラーの頭の中は、いかなる状況でも一つの揺るがない行動順序を維持しなければならない。\nファーム → オブジェクト → 自分と味方のゴールドリード → レーンへのプレッシャー。\n\n多くのプレイヤーは「ジャングラーはガンクでレーナーを助けなきゃ」と思い、自分のキャンプを放置したまま無理にレーンをうろつく。これは自滅への近道である。\n分間8CS以上のジャングルCSを安定して確保せずにガンクを試みるのは、成功しても成長に穴が開き、失敗すればゲームから永遠に消えることを意味する。\n--- 続き2 ---\nしたがってキャンプの引き撃ちを駆使し、狩猟の導線を0秒の遅延で最適化する。\nファーミングが完璧に終わったその短いターンの空白にオブジェクトを取り、キルラインを見てゴールドリードを作り、レーンにプレッシャーをかける。\nこの黄金の優先順位が体に染みた瞬間、レベルは常に敵ジャングラーを圧倒する。\n--- 続き3 ---\nLoLは結局、アイテムとレベルのゲームである。\nゴールドを実質的な戦闘力、すなわちアイテムに変換した直後に発生する圧倒的なパワー差を、リセットスパイクと呼ぶ。\n\n実践。あなたがシンジャオ、相手がリーシン。両方4レベルでフルクリアを終えた。\n敵リーシンはガンクの機会を伺い、ゴールドを抱えたままボット側の川をうろついている。\nあなたは即座にリコールし、ロングソード1本とルビークリスタルを買って飛び出した。\n川やカニの争奪で遭遇したらどうなるか。1対1で、あなたが無償で相手を圧殺する。\n敵の所持欄には先ほど狩ったモンスターのゴールドの数字があるだけで、実際のステータスは1レベルのマチェテのままだからである。\n\n常に敵のアイテム欄を確認せよ。\n相手がリコールしていない状態なら、積極的にカウンタージャングルへ入るか、カニの戦いを強制すべきである。\n50対50のギャンブルを排除し、数学的な優位でゲームを支配するテン"
+  },
+  {
+    "code": "D58",
+    "title": "フリーズは不利な時でなく強い時に相手を殺すために使うという話",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097963731879874823",
+    "category": "LoL上達・戦術",
+    "summary": "フリーズは不利な時でなく強い時に相手を殺すために使うという話",
+    "content": "（フリーズ） \n不利だから凍らせるな。\n 強い時だけ、相手を殺すために凍らせろ。 プラチナとダイヤが一番死ぬのは、負けてるレーンをタワー前で守ろうとした時だ。 \nそこは盾じゃない。\nダイブの生贄になる場所だ。 押すのは塔金じゃない。マップを歩く権利を買う行為だ。\n\n⬇️⬇️⬇️⬇️⬇️⬇️ https://t.co/l4JBNIFcot\n--- 続き1 ---\nレーン戦は、ミニオンのラストヒットを取るミニゲームではない。\n毎ウェーブ発生する無数の変数の中で、天上界は一次元のレーン管理を超えた心理戦を展開する。\n「不利だから引こう」「有利だから押そう」という断片的な固定観念から脱却し、もしものシナリオでレーン管理の本質を掘り下げる必要がある。\n--- 続き2 ---\n多くのプレイヤーはフリーズを「安全にファームするための盾」と誤解している。\n本質は違う。対面をタワーの外に長く誘い出し、CSと経験値を永久に奪うか、ミニオンを触りに来た瞬間にオールインしてキルするための攻撃的な武器である。\n\n成立条件は一つ。自分が相手より1対1で圧倒的に強い時にのみ成立する。\nダリウス対フラッシュ無しガレンを想定せよ。味方タワー前でレーンを凍らせれば、ガレンは経験値を吸うために自陣タワーの安全圏から離れ、長いレーンを歩いてこなければならない。\nゴーストで走り込めば逃げるスペースがなく、確定で死ぬ。\n近づいてこなければ、1ウェーブにつき約150ゴールドと莫大な経験値差を一方的に広げられる。\nフリーズは、相手を死の領域へ無理やり引きずり込む罠である。\n--- 続き3 ---\n「不利だからレーンをタワー前に凍らせて、安全にスケールしよう」。\nこれはプラチナやダイヤモンドで最もよく見る致命的な罠であり、自滅への近道である。\n\n不利な状態で凍らせようとすると、相手はタワー射程外の死角から一方的にスキルを浴びせる。\n体力は徐々に削られ、敵ジャングラーが合流した瞬間、100%確定のダイブの生贄になる。\nあなたがタワー前のミニオンに縛られている間、主導権を握った敵レーナーは川へ降りて味方ジャングルを荒らし、ヴォイドグラブやドラゴンの交戦に合流してゲームを壊す。\n\n解決策。不利な時はフリーズに固執するな。\nスキルを総動員してレーンをタワーへ押し込み跳ね返すか、いっそタワー下で綺麗に受け取ってファームせよ。"
+  },
+  {
+    "code": "D59",
+    "title": "3ウェーブダイブの作り方、15体溜めて3:15にぶつける",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097849295559131140",
+    "category": "LoL上達・戦術",
+    "summary": "3ウェーブダイブの作り方、15体溜めて3:15にぶつける",
+    "content": "（3ウェーブダイブ）\n2ウェーブを急いで押したダイブから、ボットが死ぬ。\nキャノンが単独でタワーに入ると、塔は一瞬で溶かす。\nミニオンが消えた塔の下で、味方はヘイトを全身で受ける。\n15体を溜めて3:15にぶつけろ。ミニオンが塔の盾になる。\n\n⬇️⬇️⬇️⬇️ https://t.co/BKujW8a26l\n--- 続き1 ---\n両チームのジャングラーが3キャンプ、あるいはフルクリアを終え、ボットへ視線を向ける運命の時間である。\nこの時のレベル3タワーダイブは、成功すればわずか3分で試合を決める完璧な勝利の方程式である。失敗すれば味方ボットとジャングルが同時に崩壊する最悪の災厄となる。\n\nダイブの成否を分ける99%の要因は、ライナーたちのウェーブコントロール能力にある。\n天上界のプレイヤーがダイブを設計する際、息をするように計算しているのが、ミニオンの緩衝の法則である。\n--- 続き2 ---\n低ティアで最も頻繁に発生する惨事の原因がある。\n先行レベル2に成功し、調子に乗って2番目のウェーブを通常攻撃とスキルで急いで押し切ってしまう行動である。\n\nこうして2ウェーブをタワーへ早く押し付けると、後続の3番目のキャノンは、味方ミニオンの蓄積がないまま単独で約6〜7体だけ敵タワーへ進入する。\nタワーは最優先でキャノンを狙い、一瞬で溶かす。\nミニオンが素早く全滅すると、タワー下に安全地帯がなくなる。\nダイブを始めた味方は、タワーの殺人級のヘイトを全身で受け止めなければならない。\n結局、スキルを満足に使えずタワー攻撃でキルを献上し、体力の減った敵デュオに3対2で返り討ちにされる。\n--- 続き3 ---\n完璧なダイブには忍耐が必要である。\n1ウェーブを処理し、2番目のウェーブが衝突した時点で先行レベル2を達成したなら、敵デュオをタワー側へ強くゾーニングしつつ、ミニオンは必ずラストヒットのみ取れ。\nこれがスロープッシュの核心である。\n\n味方ミニオンの数を敵よりちょうど3〜4体多く維持し、レーンがゆっくり前進するようにする。\nこうすれば味方ミニオンは死なずに生き残り、次のウェーブを待てる。\n--- 続き4 ---\nスロープッシュで生かしておいた1〜2ウェーブの残存と、3番目のキャノンがタワー前で一つに合流する。\n15〜18体にも及ぶ超大型ウェーブが、3:15頃に敵タワーへ衝突す"
+  },
+  {
+    "code": "D60",
+    "title": "ボット3分のファーストブラッドはキャノン押し込み後のハラスが原因",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097825977732915414",
+    "category": "LoL上達・戦術",
+    "summary": "ボット3分のファーストブラッドはキャノン押し込み後のハラスが原因",
+    "content": "（ボット3分）\n3分のファーストブラッドは、スキルが下手だから起きない。\nキャノンをタワーに押し込んだあと、目の前でハラスしているからだ。\nジャングラーが3キャンプ、6キャンプを終えて降りてくるのは3:20〜3:30。\nキャノン衝突は、ちょうどその時間に重なる。\n残ったボットから試合が終わる。\n\n⬇️⬇️⬇️⬇️\n--- 続き1 ---\nボットレーンをしていると、試合開始から3分台のガンクを一度受けただけで試合が崩壊する経験をよくする。\nティアを上げるためには、この序盤スノーボールの仕組みを完璧に理解しなければならない。\nボットの生死を分けるのは、3分台の運営である。\n--- 続き2 ---\n第一段階は、3ウェーブ目のキャノンによるタワー監禁である。\nボットでレベル1とレベル2のウェーブをゆっくり押し、ミニオンを巨大に蓄積させたあと、3ウェーブ目のキャノンを相手タワー内へ強く押し込む。\nキャノンミニオンは体力が非常に高く硬い。相手ボットデュオはこの巨大なウェーブを処理するため、最低15秒から20秒、タワー下に強制的に足止めされる。\nこの瞬間を、完璧な主導権のターンとして使わなければならない。\n--- 続き3 ---\nここで大多数のボットデュオが犯す最悪のミスが出現する。\n相手がタワーに押し込まれているからといって、タワーの目の前まで深く入り、無理に通常攻撃やスキルでハラスを試みることである。\n\nジャングラーが3キャンプを狩ってガンクに来るタイミング、6キャンプを全て狩り終えてレベル3で来る時間は、およそ3分20秒から3分30秒。\n3ウェーブ目のキャノンが衝突する時点は、まさにこの3分頃と重なる。\nこの時、相手タワー前をうろついていると、ボットの三つ目の茂みへ走ってくる敵ジャングラーに背中を完全に晒す。\nフラッシュが落ちるか、ADCとサポートが揃って爆死し、試合がたった3分で崩壊する。\n--- 続き4 ---\nでは、どう対処すべきか。\n正解は、3ウェーブ衝突直後の川への深いワードである。\n\n3ウェーブ目のキャノンが相手タワーに到達したまさにその瞬間、サポートはタワー前でハラスしたいという誘惑を思い切って振り払い、直ちにタワー前から離脱しなければならない。\n川の三つ目の茂み、あるいはドラゴンの巣の前の交差点に、ステルスワードを深く刺せ。\nこうしておけば、敵ジャングラーが"
+  },
+  {
+    "code": "D61",
+    "title": "レーン戦マイクロの練習法、練習ツールで0被弾・14分100CSドリル",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097641677259415601",
+    "category": "LoL上達・戦術",
+    "summary": "レーン戦マイクロの練習法、練習ツールで0被弾・14分100CSドリル",
+    "content": "（レーン戦マイクロ）\n「スキルを避けろ」だけでは、手は動かない。\nCSに集中した瞬間、相手の脅威範囲が消える。\nそこからハラスを受け続け、レーンが崩壊する。\n練習ツールでケイトリンを持て。中級AIランブル相手に、0被弾・14分・100CS。\n⬇️⬇️⬇️⬇️⬇️⬇️ https://t.co/PkuZmxgmCE\n--- 続き1 ---\nレーン戦でラストヒットに集中するあまり、相手スキルの脅威範囲への意識が疎かになる。不要なハラスを受け続け、レーンが崩壊する。\n単に「スキルを避けろ」と助言しても、脳と手の同期は行われない。\n\nこの限界を打つための訓練が、練習ツール「ケイトリン対中級AIランブル、0被弾・14分・100CS」である。\n射程という空間と、クールダウンという時間を同時に制御する能力を、無意識の領域まで引き上げる。\n--- 続き2 ---\n練習ツールまたはカスタムを作り、自分はケイトリン、トップに中級AIランブルを1対1で置く。\n\n勝利条件は、14分以内に100CS、ランブルキル、またはファーストタワー破壊のいずれか。\n絶対ルールは、ランブルのQ・E・通常から1ダメージも受けないこと。ミニオンヘイトのダメージのみ許容する。\n\n中級AIを甘く見るな。エメラルドやダイヤモンドでも、初回はエレクトロハープーン（E）に当たって落ちる。\n中級AIランブルはCSを無視し、レベル1から執拗に接近してスピット（Q）とハープーン（E）を乱射するからである。\n--- 続き3 ---\n核心は回避そのものではない。紐で繋がれているように一定距離を保つことである。\nケイトリンの通常射程650の限界点を、1ピクセル単位で微細にクリックし、ランブルとの距離を維持する。\n近づけば引き撃ち、下がれば前進しながらラストヒットを取り、スキル軌道を100%避ける。\n\nこの反復で脳は、CSを取る観察と、相手スキル射程を読むパターン認識を同時に行うようになる。\n完遂した頃には、実戦でも無意識に相手のスキル射程外を保つ距離感が、脳と手に刻まれる。\n--- 続き4 ---\n守りだけの距離維持では、14分100CSもタワー破壊も届かない。相手の隙を突く反撃が必要である。\n\nランブルの熱量が100に達しオーバーヒートになると、5.25秒間スキルを一切使えない自己沈黙に入る。\nこの脆弱性を即座に識別し、ヘッドシ"
+  },
+  {
+    "code": "D62",
+    "title": "ミッドロームの収支計算、アシスト1個では赤字になるという話",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097512238412333114",
+    "category": "LoL上達・戦術",
+    "summary": "ミッドロームの収支計算、アシスト1個では赤字になるという話",
+    "content": "（ミッドローム） \nアシスト1個で帰ってきたロームは、全部赤字だ。 1ウェーブ105〜125G。プレート1枚125G。合計260G。 150Gのアシストでは、ミッドは自分で自分を壊している。 https://t.co/iOXF0qp0jY"
+  },
+  {
+    "code": "D63",
+    "title": "ヒットボックスは頭ではなく床に着いた足に合わせるという小ネタ",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097475493293601009",
+    "category": "LoL上達・戦術",
+    "summary": "ヒットボックスは頭ではなく床に着いた足に合わせるという小ネタ",
+    "content": "（LoLは2D）\n頭にスキルを合わせる人から外す。\nヒットボックスは顔じゃない。床に着いた足だ。\n⬇️⬇️⬇️⬇️ https://t.co/TYgSdZJRv1\n--- 続き1 ---\n画面は3Dに見える。\n計算はXとYだけ。Z軸は無い。\n\n丘も、川の傾斜も、階段も錯覚。\nLoLの当たり判定は平面のグリッドだ。\n--- 続き2 ---\n川からレーンへ撃つとき、頭や胸にインジケーターを置くと外れる。\nセナもニダリーも、ヒットボックスは足元の地面にある。\n\n高低差が見えても、下半身と足裏が接する床を狙え。\n壁を越える相手も同じ。壁の高さを見るな。つま先の軌道を一直線に通せ。\n--- 続き3 ---\n浮いて見える敵は、1ピクセルも空にいない。\n\nマルファイトのR、ヤスオの竜巻、トリスのW。\nモデルは空にある。ヒットボックスは元の床に残る。\n\n空のモデルにモルガナQやスレッシュを投げると外れる。\nエアボーン前に立っていた床を撃て。そこで当たる。\n--- 続き4 ---\n頭の中からZ軸を消せ。\n頭を撃つな。足を撃て。\n空を撃つな。床を撃て。\n\nノンターゲットの外れは、手が遅いんじゃない。\n3Dを信じてるからだ。\n--- 続き5 ---\nhttps://t.co/PXgh9CI7tJ\n--- 続き6 ---\nhttps://t.co/uUFIhL1DUD\n--- 続き7 ---\nhttps://t.co/qJuYmrNkUE\n--- 続き8 ---\nhttps://t.co/m4HvGlnum8\n--- 続き9 ---\nhttps://t.co/uR6qmRxC2K\n--- 続き10 ---\nhttps://t.co/RnD6O5IqiB\n--- 続き11 ---\nhttps://t.co/c3KmTnlpeK\n--- 続き12 ---\nhttps://t.co/FqNsuRpfFr\n--- 続き13 ---\nhttps://t.co/KaZU3tRIVm\n--- 続き14 ---\nhttps://t.co/sNbO1AKyXt\n--- 続き15 ---\nhttps://t.co/WZcqHWYTaj\n--- 続き16 ---\nhttps://t.co/U2hi3Kuiwu\n--- 続き17 ---\nhttps://t.co/IwVKJ6U0uQ\n--- 続き18 ---\nh"
+  },
+  {
+    "code": "D64",
+    "title": "S16ジャングルインベード完全ガイド、7種のインベード手順を解説",
+    "author": "BLG Sungod @SungodCN",
+    "url": "https://x.com/SungodCN/status/2096002839361511832",
+    "category": "LoL上達・戦術",
+    "summary": "S16ジャングルインベード完全ガイド、7種のインベード手順を解説",
+    "content": "S16 - JUNGLE INVADING MASTERCLASS.\n\nIn this Guide, I'll show you some of the BEST strategies to invade and dominate your opponents from the get go along with explanations on how to do so. It's important we set conditions on when and how it could work. \n\nInvade 1 - Talon, Kayn, Naafiri (Don't do it against Graves, Lee Sin, Warwick, Olaf).\n\n1. Ward enemy jungle early to spot starting camp (Raptors/Buffs).\n2. Your Raptors, Red, Krugs -> Level 3 Point in E > Back > Purchase Long Sword > Enemy Buff (Blue or Red) > Kill Enemy Jungler > Finish 2 Camps or Take 1 and Leave if they're moving to you.\n\nHigh Chance of success, allows you to snowball early and efficiently. \n\nInvade 2 - All Junglers vs Slow or Average Clearing Speed Junglers\n\n1. Ward enemy jungle early to spot starting camp (Raptors/Buffs).\n2. Do this invade if they are starting on the same Buff side as you (For instance you're starting raptors, and they're starting Red or Raptors).\n3. Your Raptors, Red, Krugs -> Enemy Gromp > Back >"
+  },
+  {
+    "code": "D65",
+    "title": "リンクのみのポスト（本文なし）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2097157158077120888",
+    "category": "LoL上達・戦術",
+    "summary": "リンクのみのポスト（本文なし）",
+    "content": "https://t.co/Obli8y0ejV"
+  },
+  {
+    "code": "D66",
+    "title": "リコールのゴールド管理、500Gでも2000G抱えたままでも負けるという話",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2096913094534644205",
+    "category": "LoL上達・戦術",
+    "summary": "リコールのゴールド管理、500Gでも2000G抱えたままでも負けるという話",
+    "content": "500GでBするミッドと、2000G抱えたまま残るミッドは、同じように負けてる。\nゴールドはアイテムになるまで死んでる。\n(詳細はコメント欄に ⬇️⬇️) https://t.co/QlGbI2OsMw\n--- 続き1 ---\nリコールの3基準。\n\n① ゴールドスパイク\n500G未満のBはダガーか靴だけ。意味がない。\n1000G付近（増幅の魔道書2）で検討開始。\n1500G（チャプター、ピッケル、悲愴）は必ず帰れ。\n2000G超えたら、レーンがどうであれ即B。\nゴールドはアイテムになるまで死んだ資源。\n\n② マップに圧力をかけられるか\nHP30%、マナ30%、Rも点火も無いミッドは生ける屍。\nロームもカジョンも止められない。\n50%で耐えるより、100%で戻れ。\n\n③ ウェーブ損失を最小化\nソロキルか、削って先にBさせたあと、敵タワーへクラッシュしてから帰れ。\nCSロスなしで戻り、自側へスローバウンスまで作れる。\n--- 続き2 ---\n相性でリコールの形を変えろ。\n\n同時リコール（マッチベース）\nルブラン、アカリみたいに序盤クリアが無いチャンプ。\n相手がBしたあと無理に押し込もうとするな。\nスキル全部吐いてマナもHPも尽き、押し切れず、相手がフルで戻ってフリーズされる。\nクリア不足・不利相性は、相手がBしたら未練なく一緒に帰れ。\n\n先リコール\n相手が高いアイテムを溜めて残ってる時。\nライズ、カシオみたいに涙400、ダークシール350、靴300でスパイクが出る側が先にBしてTPで戻る。\nフルHP・フルマナ・アイテム差で1ウェーブのプライオリティを奪い、相手の遅れBのあいだにロームか視界を取る。\n--- 続き3 ---\n昔の理論は捨てろ。\n\n「キャノンウェーブを押してBすればタワー処理が長くて損が少ない」\n今はプレートがある。中途半端なキャノン前プッシュBは、戻りが早い相手かTP持ちにプレート2枚（約300G超）を献上する。\n\n正解は2ウェーブ遅延。\nキャノンが来た瞬間に押して帰るな。\n相手が1ウェーブ処理し終わる前に、次ウェーブが重なるスロープッシュを作れ。\n相手が2ウェーブ同時処理してるあいだに、泉で買って復帰が終わる。\nCSロスなしで主導権が残る。\n--- 続き4 ---\nTPはレーン復帰スペルじゃない。空間を潰すスペル。\n\nTP vs 点火\n削り合ったあと、自"
+  },
+  {
+    "code": "D67",
+    "title": "JGでレートを上げるために必要な「ターン」の考え方まとめ",
+    "author": "Ü @clef12010606",
+    "url": "https://x.com/clef12010606/status/2096615030397817176",
+    "category": "LoL上達・戦術",
+    "summary": "JGでレートを上げるために必要な「ターン」の考え方まとめ",
+    "content": "jgでレートを上げていくために必要な”ターン”についてざっくりとまとめました。\nレートがなかなか上がらない人は自分のミスを見つけるためにも”ターン”を意識するのが大事です。\n※人によって考えは違うのでこれが全てではありません。 https://t.co/oNkbEGWDS1"
+  },
+  {
+    "code": "D68",
+    "title": "ミッドが消えて負けるのは、ロームじゃない。ロテとロームを混ぜた側が死ぬ。（天狐ハクX Article）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2096416338772402333",
+    "category": "LoL上達・戦術",
+    "summary": "チャレンジャー以上におけるロテート（確実な利他・先押しオブジェクト協力）とローム（他レーン突撃のコインフリップ）の厳格な分離。ウェーブを2体残してロームするミッドは永久に主導権を失う1,703字の長文論考。",
+    "content": "LoL教科書 ｜ S16 ミッドマクロ\nミッドが消えて負けるのは、ロームじゃない\nウェーブを2体残して消えたミッドは、もうレーンクエストで負けている。\nチャレンジャー以上では、ミッドから離れる動きは2つしかない。ロテートとローム。目的もリスクも別物だ。これを混ぜた瞬間、不要なターンを捨てて主導権を永久に失う。\nS16はさらに厳しい。ミニオンが速くなった。レーンクエストがステータスを永久に分ける。昔みたいな「適当に消えるコスパローム」は死んだ。\n1. ロテートとロームは別の武器\nロテートは根拠がある動き\nドラゴン、ヴォイドグラブ、ヘラルド、バロン。川のJG同士の小規模戦。チームで数的優位を固める協力だ。核心は確実な根拠。先にウェーブを押し、視界を開け、味方JGが動ける盤面を作る。利他で安定している。\nロームはコインを投げる動き\nレーンを空にしてトップやボットへ直行し、キルを強制する。ダークシールを積み、ゴールドとXPを独占して一人で壊すための貪欲だ。敵ジャングルの視界を突破し、回避と逆ガンクを潜り抜けなければ成立しない。外れた瞬間、致命傷。50/50だ。\nロテは盤面を支える。ロームは盤面を賭ける。同じ「ミッドが消える」に見えるから、下手な人は全部ロームだと思って死ぬ。\n2. S16がロームを殺した理由\nミニオンの移動速度が上がり、ウェーブの到達周期が早くなった。適当に処理して視界から消える余裕は消えた。\nさらにレーンクエスト。レーンに残ってマッチアップをこなし、ポイントを積まないと永久アダプティブとティア3ブーツが開かない。2〜3体残して中途半端にロームして失敗すると、敵ミッドはウェーブを自タワーに押し、ゴールドとXPを独占する。そのクエスト差は体格差になって、終盤まで1v1で勝てなくなる。\n失敗したロームはキルを逃しただけじゃない。ステータスを永久に売ったのだ。\n3. 出すタイミングはチャンプ群で割れ\nアサシン（ゼド、アカリ、フィズ、カタリナ）\nレベル6と、1コア下位（セレイテッドダーク、ヘクステックオルタネーター）＋ブーツが乗った瞬間が適期。単体バーストが確定する。無理なダイブより、ドラやバロン前に視界を取りに出たキャリーを待ち伏せて消す。ピックオフが仕事だ。\nコントロールメイジ（マルザハール、ライズ、ビクター）\n強みはウェーブクリア速度。ライアンドリーやブラック"
+  },
+  {
+    "code": "D69",
+    "title": "「寄れ」と「見てくれ」を鳴らし合った時点で、もうマクロは死んでいる。（天狐ハクX Article）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2096186983211266542",
+    "category": "LoL上達・戦術",
+    "summary": "テンポを作るのはJGではなくレーンのウェーブ。タワー下でミニオン処理中の味方にオブジェクト寄りを強要するのは確定デス。ジャングルとレーンが一つの機械である本質を解き明かす1,553字の長文論考。",
+    "content": "ピンで負ける試合をやめろ\n「寄れ」と「見てくれ」を鳴らし合った時点で、もうマクロは死んでいる。\nジャングラーは「なぜ寄ってこない」と怒り、レーナーは「なぜ自分のレーンを見ない」と絶望する。この不毛なピン争いは性格の問題じゃない。ジャングルとレーンが一つの機械だと知らないだけだ。\nテンポを作るのはジャングラーではない。ウェーブだ。ここを外したままオブジェクトを触るのはギャンブルではなく、確定デスである。\n1. マクロを支配するのはレーン状態\nいちばん多い勘違いが「ジャングラーが試合のテンポを設計する」だ。サモナーズリフトの真実は逆。ジャングラーの全アクションは、100%レーンのウェーブ状況で決まる。\n5分、ヴォイドグラブが湧く。味方トップとミッドは削られてタワー下でミニオン処理。そこでジャングラーが「ピン鳴らせば寄るだろ」とグラブに手を出し、敵JGとレーナーに囲まれて死ぬ。そのあと味方にミアピンを鳴らす。これは味方のミスじゃない。ジャングラーの自滅だ。\nレーナーがプライオリティを持っていない状態でやるオブジェクトもカウンタージャングルも、全部確定デス。ウェーブを見て、自分のルートとつなげられないジャングラーにマクロを語る資格はない。\n2. ジャングラーの3チェック\nキャンプを打ちながらミニマップを見る時、頭の中でこの3つを機械的に回せ。\n① ウェーブの進行方向\nミニオンは自タワー側に引かれているか、敵タワー側に押し込まれているか。引かれているレーンはガンクチャンス。押し込んでいるレーンはダイブ、カウンタージャングル、オブジェクトのターン。\n② プライオリティとバックアップ\n撃ち合いが起きた時、味方レーナーが即動けるHPとマナがあるか。ウェーブが自タワーに刺さっている、マナが10%しかない。そのレーンの主導権はゼロ。ピンを何個鳴らしても来られない。\n③ コアCDの同期\n味方のフラッシュ、アルティメット、イグナイトは生きているか。この3つが見えて初めて、交戦の予測が立つ。\nガンクの完成はキルじゃない。クラッシュだ。\n敵レーナーを倒しても、味方にマナが無ければジャングラーは一緒にウェーブを叩き、敵タワーの奥まで完璧に押し込め。放置して自分だけ去ると、ウェーブが敵タワー手前で止まり、復活した敵がフリーズを作る。味方はCSも取れず干上がる。キルして帰ったガンクは、半分しか仕事し"
+  },
+  {
+    "code": "D70",
+    "title": "リンクのみのポスト（本文なし）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2096186983211266542",
+    "category": "LoL上達・戦術",
+    "summary": "リンクのみのポスト（本文なし）",
+    "content": "https://t.co/2bq5ANQZCH"
+  },
+  {
+    "code": "D71",
+    "title": "ザイラJGフルクリア2:18、赤スタートのクリア動画と種の置き方",
+    "author": "ヨノナカ＠個人的JGフルクリアch @jgfullclear",
+    "url": "https://x.com/jgfullclear/status/2090725599786779061",
+    "category": "LoL上達・戦術",
+    "summary": "ザイラJGフルクリア2:18、赤スタートのクリア動画と種の置き方",
+    "content": "本日はザイラ🌸🌱\n2:18【1スマイト】_ザイラ_赤_26.16【JGフルクリア】\nhttps://t.co/HezKqaFqDt\n今回採用したのは、簡単な方で\n赤を狩ってそのまま岩に向かうパターン\n\n赤スタートなら\n2回目の種を岩に置くやり方もあり🌱\n壁越しで狩り切れるので\nこっちを練習してみるのもアリ！\n\n種まきの参考に動画も貼っておきます👇"
+  },
+  {
+    "code": "D72",
+    "title": "JGチャンピオンのタイプ別おすすめワード位置を図解で紹介",
+    "author": "ゆにか @YunikaLoL",
+    "url": "https://x.com/YunikaLoL/status/2090281669567615114",
+    "category": "LoL上達・戦術",
+    "summary": "JGチャンピオンのタイプ別おすすめワード位置を図解で紹介",
+    "content": "JGチャンピオンのタイプ別におすすめのワード位置を紹介します！\n\nブリンク(壁越え)キャラ(1枚目)\n壁越えキャラに対しては読み合いだけど、鳥の広い道よりも\"壁越えしてきそうな所の草むら\"に置くのがおすすめ！\n出来るだけ草むらの上側に置くようにするのが良いと思う。\n\n鳥狩るのが早いキャラ(1枚目)\nレベル2インベードに対しては、青バフの左下の草むらに置くのがおすすめ！\nポイントは草むらの端じゃなくて、黄緑の点のところにしっかり置くこと！\n\nブルーサイドで視界に映らないでインベードしようにすると、壁越えしたりしても大回りしないといけないから相手も視認できない草むらに置くのが良いと思います。\n\nレベル1の殴り合いが強いキャラ(2枚目)\nこいつらに対しては、一番やばいのが赤バフでスマイト勝負になることなので自陣の鳥にワードを置いとくのがおすすめ！\n相手が入ってくるのが見えたら一度リセットさせて相手に時間を使わせたり、バレなければ鳥スタートに切り替えるのが強い。\n\n仮にトランドルみたいに、自陣の青バフスタートされているのが分かったらこれは割り切って、相手が入ってきた反対サイドの中立を取りに行くのが良い！(今回は相手の青バフ側)\nあくまでレーンの状況によったりするしトランドルが青バフまで追いかけたりしても、\"相手も時間を使っている\"から落ち着いて自陣の中立を狩ったりすればそこまで差は広がらないことが多い。\n\n鳥狩るのが早いキャラ2(3枚目)\n特にフルクリアしたいキャラ(ザイラ、カーサス等)を使う時は自陣の鳥スタートされるの注意！！\n上側の岩の道から遅れて入ってくる人も多いので、鳥が見える場所にワードを置くのがポイント！\n\n相手が入ってくるのが見えたら、スピード感によるけど出来るだけ相手のJGから狩り始めたい。\nそうすることで、相手のJGが赤バフを守ろうとしても間に合わないことが多い。\n\n後はレベル3インベード対策もあるけど多すぎると大変だから、まずはここら辺を覚えておけるとJGの嫌な思い出が減ると思う😑"
+  },
+  {
+    "code": "D73",
+    "title": "誰でもダイヤ到達は可能という主張のスレッド（著者の主張）",
+    "author": "Thomas Yuen @KireiLoL",
+    "url": "https://x.com/KireiLoL/status/2089425116711031122",
+    "category": "LoL上達・戦術",
+    "summary": "誰でもダイヤ到達は可能という主張のスレッド（著者の主張）",
+    "content": "ANYONE can reach diamond minimum even if you're hardstuck for years\n\nYou need to do the following\n\n🧵\n⬇️\n\n1/7 https://t.co/NBAsPPdvZz\n--- 続き1 ---\n1. Champion pool\n\nIf you decide to play more than 2 champions, just be aware that your climbing journey will be slower. And that's okay, but ideally, you want to lock in the SAME champ OVER AND OVER again.\n\nReview OTPs and see how they pilot their champion. Don't just watch. THINK about what you would do.\n\nThen compare that to what they do and ask yourself why they made a different decision.\n--- 続き2 ---\n2. Goal setting\n\nAsk yourself what do you need to work on the get the fastest results possible? \n\nAnything below gold, you need to focus on the following\n\n- Champion mastery\n- Having good base timers (all roles)\n- Early game laning phase (laners)\n- Early game knowing how to gank properly\n\nGold + you need to focus on\n- Having a basic gameplan (Who is the strongest laner & objective)\n- Knowing how to communicate (Ping people in their face, then "
+  },
+  {
+    "code": "D74",
+    "title": "ザイラJGの強さを主張し、生徒のランク到達実績を紹介（著者の主張）",
+    "author": "BLG Sungod @SungodCN",
+    "url": "https://x.com/SungodCN/status/2089314863973875988",
+    "category": "LoL上達・戦術",
+    "summary": "ザイラJGの強さを主張し、生徒のランク到達実績を紹介（著者の主張）",
+    "content": "This is the last time I’ll be advocating for Zyra Jungle since people refuse to listen anyway.\n\nI’ve had 4 students pick her up.\n\nOne went from Silver to Master playing her exclusively.\nOne reached Challenger adding her to his champ pool\nOne went from Plat to Master in 2 weeks\nAnd the last one is now in tryouts for Tier 1.\n\nYou can swap DH with electrocute if you want to look for early fights.\n\nI’ve been playing her since Skarner meta was a thing and I even had pro players in KR ask me for advices on her.\n\nSince Skarner meta in Season 14 she remains one of the most if not THE most broken AP jungler in the game by FAR. \n\nLearn her clear, learn how to utilize her abilities properly, play with fog of war, learn her E > Flash > W W Q R combo and you will completely destroy every game.\n\nShe is OVERPOWERED in every sense of the word. \n\nStop giving up just because min maxing her clear is a bit difficult. Get used to her and enjoy your free LPs."
+  },
+  {
+    "code": "D75",
+    "title": "パッチ26.16グレイブスJGのティア評価とビルド、カウンター解説",
+    "author": "ゆにか @YunikaLoL",
+    "url": "https://x.com/YunikaLoL/status/2087521689064394803",
+    "category": "LoL上達・戦術",
+    "summary": "パッチ26.16グレイブスJGのティア評価とビルド、カウンター解説",
+    "content": "【パッチ26.16】 SSティアー グレイブスJG \n今パッチは様々な理由からとにかくグレイブスがOPです。 \n1.フリートフットワークがバフされる(分かる) \n2.強いファイター達がナーフされる(まあ分かる) \n3.ADCの魔法防御増加→グブも(？) \n4.ペットのAR/MRバフ→Eと相性良すぎ(？？？)  \n\nさらに、同じく強いリーシンにもEの硬さで勝てるからグレイブスが最強だと思う。 \nただ、魔法防御バフは若干でAP JG相手は未だに勝ち辛いです。  \n\nカウンター\nバンしないでカウンターするなら、序盤はきついけどシヴァーナで1対1で勝つか、スケール見て集団戦でリリアで勝つのでも良い！ \nグレイブス側は、バンは苦手なチャンピオンで良いと思う。多いならナフィーリか、サイラスがおすすめ。 \n \nビルド\n基本は赤ペット＋収穫からヒュブリス積んでスノーボールを狙うのが良い。 今は妖夢より、グブと相性の良いヒュブリス一択です。  \n\nグブがきついのがAP JGと、ナフィーリ、ウーコン辺りの複数体何かがいるキャラなので、対面によっては緑ペット＋フリートにするのが本当におすすめ！！！！\nアサシン相手もシールド＋回復＋MS増加が刺さるからめっちゃ安定します！ \n収穫に比べると爆発力は薄まるけど、火力は全然でるのでデスしやすい人とかファーム重視の人にもおすすめ！"
+  },
+  {
+    "code": "D76",
+    "title": "リンクのみのポスト（本文は「これです」のみ）",
+    "author": "さいよ𓁹.𓁹 @HusumSwainLove",
+    "url": "https://x.com/HusumSwainLove/status/2083435518403158401",
+    "category": "LoL上達・戦術",
+    "summary": "リンクのみのポスト（本文は「これです」のみ）",
+    "content": "https://t.co/AYBC8vnJV0\nこれです"
+  },
+  {
+    "code": "D77",
+    "title": "アイアン〜プラチナ向けおすすめワード位置12選（青側・赤側別）",
+    "author": "LoL教科書 @schlolbook",
+    "url": "https://x.com/schlolbook/status/2078695334273015889",
+    "category": "LoL上達・戦術",
+    "summary": "アイアン〜プラチナ向けおすすめワード位置12選（青側・赤側別）",
+    "content": "アイアン～プラチナ向けに\nレーニング中の「おすすめワード位置12選」を青側・赤側別でまとめました！\n\n✔ ガンクを防ぐワード\n✔ 敵JGの位置が分かるワード\n✔ 勝っている時に置きたい攻めのワード\n\nぜひ見返せるように保存して使ってください！ https://t.co/oy7gB16Y8r"
+  },
+  {
+    "code": "D78",
+    "title": "初心者向け「ランクを上げる取り組み方」を1枚にまとめた教材",
+    "author": "LoL教科書 @schlolbook",
+    "url": "https://x.com/schlolbook/status/2078363744875553100",
+    "category": "LoL上達・戦術",
+    "summary": "初心者向け「ランクを上げる取り組み方」を1枚にまとめた教材",
+    "content": "初心者向けに\n「ランクを上げる取り組み方」を1枚にまとめました！\n\nランクを始めたばかりで\n「何を意識したらいいの？」\n「どうやって上達するの？」\nそんな人向けの教材です。\n\n・ランクの考え方\n・ランクを上げるコツ\n・初心者が絶対に意識したいこと\n\nランク前に見返してみてください！\n#LOL教科書 https://t.co/3PgcWicnNH"
+  },
+  {
+    "code": "D79",
+    "title": "時間ごとのゲームの進め方と各ロールの役割を1枚にまとめた教材",
+    "author": "LoL教科書 @schlolbook",
+    "url": "https://x.com/schlolbook/status/2077380308912263540",
+    "category": "LoL上達・戦術",
+    "summary": "時間ごとのゲームの進め方と各ロールの役割を1枚にまとめた教材",
+    "content": "シルバー~プラチナ向けに\n 「時間ごとのゲームの進め方・各ロールのやるべきこと」 をまとめました！\n自分のロールだけでなく、他ロールが何を考えて動いているのかも1枚で理解できる内容になっています。\n\n保存していつでも見返せるようにどうぞ！\n#LOL教科書 https://t.co/uKSWGzF7SA"
+  },
+  {
+    "code": "D80",
+    "title": "プロがキルを取るために使う概念、ガンク成功の考え方",
+    "author": "Thomas Yuen @KireiLoL",
+    "url": "https://x.com/KireiLoL/status/2077080912039235858",
+    "category": "LoL上達・戦術",
+    "summary": "プロがキルを取るために使う概念、ガンク成功の考え方",
+    "content": "#1 used concept by pro players on how they get kills \n\nLaners and junglers need to understand this to succesfully gank people https://t.co/CPlSmDGdNj"
+  },
+  {
+    "code": "D81",
+    "title": "マクロを51の命名パターンに体系化した長文解説",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2073252621326897472",
+    "category": "LoL上達・戦術",
+    "summary": "マクロを51の命名パターンに体系化した長文解説",
+    "content": "【LoL】マクロ（運営）：フィジカルを超えた意思決定の領域\n\nリーグ・オブ・レジェンドにおけるマクロ（運営）とは、フィジカル（メカニクス）の上位に位置する意思決定の領域です。リコール（帰還）後にどこへ向かうべきか、チームがどのオブジェクトを交換するのか、ローム（他レーンへの介入）の代わりにいつレーンをプッシュすべきか、そして視界（ワード）が毎回の集団戦をどのように形作るのかといった要素を扱います。\n\nフィジカルは1対1の交戦であなたを生き残らせてくれますが、マクロはその交戦が果たして本当に意味を持つものなのかを決定づけます。パッチ26.13基準で、過去30日間のダイアモンド帯ソロランクにおける平均プレイタイムは31.2分に達しており（以前のほとんどのシーズンよりも長くなっています）、毎分ごとに勝敗を分ける小さなマクロの選択が積み重なっていきます。\n\n1. リーグ・オブ・レジェンドにおいて「マクロ」とは何か？\n\n* マクロプレイは、大規模な戦略と小規模な戦術的決定の両方を包含します。マップ上での位置取り（ポジショニング）、交戦すべきオブジェクトの選択、視界確保（ビジョンコントロール）の方法、テンポ（ターン）の活用法、集団戦でのポジショニングなどがこれに該当します。\n\n* 対してミクロ（フィジカル）は、チャンピオン同士の戦闘中におけるクリックの精密さ、スキルショットの正確性、回避（ドッジ）、正しいスキルコンボの使用などを扱います。どちらも重要ですが、レーン戦で勝っても試合には負けるプレイヤーと、コンスタントにティアを上げるプレイヤーを分ける基準こそが、まさにマクロなのです。\n\n* シルバーとダイアモンドの間にフィジカルの格差は確かに存在しますが、マクロの格差はそれよりも遥かに絶大です。\n\n* シルバーのプレイヤーはミニオンを攻撃することは知っていても、ドラゴンが出現する前にミッドレーンをプッシュしておく（先プッシュ）ことがなぜ重要なのかはまだ理解していません。一方、ダイアモンドのプレイヤーはこれを無意識に遂行します。LoLにおいてマクロとは、根本的に20秒ごとに次のように自問自答することなのです。\n「今この瞬間、マップ上で自分が実行できる最も価値のある行動は何か？」\n\n2. パターンマップ：マクロの体系化と訓練\n\n* マクロは単一の技術として訓練するにはあまりにも広範す"
+  },
+  {
+    "code": "D82",
+    "title": "リリアガイド2026、ビルドとルーンの図解（1400LP到達と記載）",
+    "author": "Icelandic Hero @IcelandicHero",
+    "url": "https://x.com/IcelandicHero/status/2070130460475187327",
+    "category": "LoL上達・戦術",
+    "summary": "リリアガイド2026、ビルドとルーンの図解（1400LP到達と記載）",
+    "content": "I made a new 2026 Lillia Guide after hitting 1400 LP with a 68% Winrate 117 Games. Here are the Visuals for Builds &amp; Runes. Explanation on Youtube linked below. https://t.co/43hSI0XS2u"
+  },
+  {
+    "code": "D83",
+    "title": "ジャーヴァンIVのルーン考察、征服者より緑ルーンが適するという主張",
+    "author": "DesLoverLoL @DesLoverLoL",
+    "url": "https://x.com/DesLoverLoL/status/2069613489740550241",
+    "category": "LoL上達・戦術",
+    "summary": "ジャーヴァンIVのルーン考察、征服者より緑ルーンが適するという主張",
+    "content": "Jarvan IV es un desperdicio con Conqueror y la población aún no se da cuenta de que hablamos de uno de los champs con procs más lentos para cargarla; mientras que por el lado de runas verdes, tenemos la clave dónde Jarvan más abusa de ser uno de los champs con mejor building para resets de escudo. \n🐶Adjunto #MACRO Ciencia en 1st comment:"
+  },
+  {
+    "code": "D84",
+    "title": "グウェンJG、全レーン主導権なしから中盤マクロで逆転した試合解説",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2050860691863556407",
+    "category": "LoL上達・戦術",
+    "summary": "グウェンJG、全レーン主導権なしから中盤マクロで逆転した試合解説",
+    "content": "🚨 【グウェンJG】\n「絶対に見るべき試合」全レーン主導権なしからの大逆転！中盤の神マクロ✂️\n\nこんにちは皆さん、ハクです！^0^ 今回は全レーンが負けている超不利な状況から、中盤以降の「マクロ運営」だけで逆転するプレイを解説します！ \n（※中盤以降の動きは、僕がハクの名にかけて「絶対に見るべき」と自負する内容です！）\n\n不利な状況で逆転するには、\n①ゴールド獲得と\n②視界確保が全てです。敵は有利（ゴールド差）を活かして自陣の視界を奪い、常に先制攻撃を狙ってきます。これをどう覆すかが鍵です\n\n👑 ハク式・逆転の神マクロ（バロン周辺の運営）\n1️⃣ ドラゴン湧き「1分30秒前」のトップダイブゴールド獲得は、次のオブジェクト（ドラゴン）の「反対側（トップ）」で確実に行います。ドラゴン湧きの1分30秒前からトップの視界を消し続け、隙を突いて味方と敵トップをダイブ＆2ndタワーまで破壊します！ \n 教本の核心： 「タワーの破壊＝視界確保の範囲拡大」です。タワーが折れれば敵のウェーブが次のタワーまで下がり、僕たちはその周辺のジャングル視界を安全かつ持続的に掌握できます。\n\n2️⃣ 視界を活かした絶妙な「バロンバースト（速狩り）」トップ2ndを折ってバロン側の視界を掌握したら、以下の絶妙なタイミングでバロンを強襲します。 \n👉 ① ドラゴンが湧く「10秒前」にバロンを叩き始める！\n👉 ② 究極の錯覚を利用する： 味方（ADC・サポ・トップ等）をレーンに配置して顔を出させます。すると敵は「残りの2人（今回はタロン＋グウェン）だけでバロンを狩れるわけがない」と錯覚します。オブジェクト処理が早い構成だからこそ刺さる必殺の戦略です🔥\n\n3️⃣ 上級者の心理戦：バロンベイト（釣り）の罠と対策視界を盾に「釣り（ベイト）」をするのは、実は不利な状況では困難です。なぜなら敵がミッドを強プッシュして2ndタワーを叩けば、こちらは「バロンかタワー防衛か」の究極の二択を迫られるからです。 \n（※これを逆手に取れば、自分が有利な時はミッドをプッシュして敵の選択を強制し、敵が防衛に来たらタワーを折ってからバロンの視界を奪い返すのが最強のカウンターになります！）\n\n中盤のバロンタイミングに関する基本マクロはここまで！さらに詳しいマクロの極意は完全版の教本にてお伝えします📖✨\n理不尽な逆転劇の"
+  },
+  {
+    "code": "D85",
+    "title": "グウェンの2コア完成後の強さと吸血ビルドを紹介（著者の推奨）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2050162126275395781",
+    "category": "LoL上達・戦術",
+    "summary": "グウェンの2コア完成後の強さと吸血ビルドを紹介（著者の推奨）",
+    "content": "🚨 【LP無料配布】ハイパーキャリー力爆発！「黄昏と夜明け」無限吸血グウェンで甘い汁を吸い尽くせ！✂️\n\nこんにちは皆さん、ハクです！^0^ 今回は、LP（ランクポイント）をタダでもらえるレベルの最強ピック、グウェンの紹介です！\n\n💡 ハク式グウェンの理不尽な強さどんなにゲームの状況が悪くても、自分がどれだけ腐って（成長できずに）いても関係ありません！ 『黄昏と夜明け』＋『リフトメーカー』の2コアさえ完成すれば、無条件で2人分以上の働きができます🔥\n\n👟 さらに極悪なワンポイント！相手のCC（行動妨害スキル）が少ない構成なら、マーキュリーブーツの代わりに「新しく追加された吸血ステータス持ちの靴」に行ってみてください。 これ、マジで絶対に死にませんｗｗｗｗ🧛‍♀️✨\n\nグウェンが理不尽な吸血で無双するフル動画を見たい方は、下のリンクをクリック！👇🎥"
+  },
+  {
+    "code": "D86",
+    "title": "ノクターンのW上げと極火力ビルド、サイド運営の研究結果を共有",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2048312741174374698",
+    "category": "LoL上達・戦術",
+    "summary": "ノクターンのW上げと極火力ビルド、サイド運営の研究結果を共有",
+    "content": "🚨 【最新研究で勝率爆上がり】ノクターンは「W上げ」が正解！？最強のサイド運営＆最新ビルド 🤯🔥\n\nこんにちは皆さん、ハクです！^0^ クリティカル・ノクターンをさらに研究し続け、またもや「最新の最適化ビルド」へと進化しました！僕がなぜブルーザー（耐久力重視）ノクターンを嫌うのか、その明確な答えとマクロをお伝えします。\n\n💡 ① なぜ「極火力（暗殺型）」なのか？最強のサイド運営目標は「ノクターン1人で敵のサイドレーナーを暗殺し、自らサイド運営をする」ことです。 (1) サイドで敵をキルし、ウルトのCD中（30〜50秒）はひたすらサイドをプッシュしてタワーを削る。 (2) すると敵の誰かがそのウェーブの処理に来るため、反対側のサイドやミッドの敵が必ず手薄になります。 (3) ウルトが上がったら、人数有利になった逆サイドへ飛んで再び暗殺！敵がカバーに来ようとしても、ウルトの「視界遮断の2秒間」は絶対に介入できません。 （※味方と一緒にサイドの敵を倒した場合も同じ。味方をミッドに戻して4v4の睨み合いを作らせれば、自分はフリーでサイドを押し込めます！）\n🧪 ② ハクの最新・研究結果（4つの実験）\n✅ 実験1：スマイトの選択赤から青スマイトへの変更 ➡️ 微妙。やはり「赤」か「緑」がベストです。 \n✅ 実験2：2コア目の選択『コレクター』より『ヒュブリス』への転換 \n➡️ ヒュブリスの方が強い、もしくは同等以上に活躍します！ \n✅ 実験3：新コアの発見『ユン・タル ワイルドアロー』＋『エクスペリメンタル・ヘクスプレート』の組み合わせ \n➡️ めちゃくちゃ相性が良いです！\n✅ 実験4：2番目のスキル上げ（超重要🚨）E上げから「W上げ」へ変更 ➡️ W上げが大正解です！ノクターンのE（恐怖）が発動するまでには時間がかかり、相手のフラッシュやブリンクで逃げられることが多々あります。私たちの目標は**「恐怖が入る前に一瞬で殺し切る」**こと。 Wはレベルを上げると基本AS（攻撃速度）が30〜50%増加し、敵のスキルをブロックした時はなんと60〜100%も増加します！Q→W上げの方がバーストDPSが高く、WのCDも短くなるため序中盤の生存力も跳ね上がります！\n\n⚔️ ③ 最新の最強ビルドパス\n👉 『ユン・タル ワイルドアロー』\n ➡️ 靴（300Gの靴、あるいはスキップ"
+  },
+  {
+    "code": "D87",
+    "title": "極火力ジャーヴァンIVの最適ルーンとビルド（KRマスター帯で検証と記載）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2046394008730288533",
+    "category": "LoL上達・戦術",
+    "summary": "極火力ジャーヴァンIVの最適ルーンとビルド（KRマスター帯で検証と記載）",
+    "content": "🚨【KRマスター帯で証明済】J4の最終結論！「極火力ジャーヴァンIV」の最適ルーン＆ビルド\n​こんにちは皆さん、ハクです！^0^\n先日予告していたスマーフ（無双）用「極火力ジャーヴァンIV（J4）」の、最適なアイテムツリーとルーンの結論が出たので共有します！\n​💡 ルーンは『刃の雨（ヘイルブレード）』一択です！\n電撃や魂の収穫も全て試しましたが、中盤以降に敵のサポートが横にいると、ディーラーを削り切れない場面が出てきます。\nしかし、1コア『ヒュブリス』による爆発的なAD増加が「刃の雨」の価値を極限まで高めてくれます！さらに『プロフェイン・ヒドラ』のアクティブを混ぜることで**「一瞬で4回攻撃」**を叩き込めるため、後半になっても火力が全く落ちません。もちろん序盤のガンクも超強力です！\n​⚔️ 最強アイテムツリー（順番重要！）\n​1コア: ヒュブリス\n​（※敵のMidとJGがダブルAPの場合は、ここで『ヘクスドリンカー』を挟みます）\n​2コア: アクシオムアーク\n​3コア: プロフェイン・ヒドラ\n👉 ここまでは完全固定です！\n​⚠️ ハクのチャレンジャーTips（皆の勘違い）\n「敵にシールド付与系のサポがいるから『サーペントファング』を買おう」と考える人がいますが、これは絶対にNGです。アイテム自体のバリュー（ステータス）が低すぎます！\nシールド対策だとしても、代わりに「回復阻害＋物理防御貫通」がついたアイテム（モータルリマインダー等）に行く方が遥かに強いです。\n​🛡️ 4〜5コアのおすすめ相性アイテム\n後半の仕上げには、『ガーディアンエンジェル（GA）』『デスダンス』『ハルブレイカー』が非常に相性が良いです！\n（※序盤にヘクスドリンカーを買っていた場合は、『マルモティウスの胃袋』を完成させましょう）\n--- 続き1 ---\n少しでもお役に立てたら、ぜひフォローをお願いします！🙏✨\n👇 最強への近道はこちら\n✅ Discord: https://t.co/QHJlsXmYzO\n✅ YouTube: https://t.co/Xbdw2rZ1RZ\n​この200ページは1000ページ分のエッセンスを凝縮した秘伝の書！(年内2000ページ完成予定)\n🔥 今すぐ受け取る方法\n1️⃣ Discordに参加: https://t.co/pNqXMEkRiY\n2️⃣ "
+  },
+  {
+    "code": "D88",
+    "title": "パッチ26.8リリアの新ビルド、2コアにプロトプラズムハーネスを提案",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2044273281906384965",
+    "category": "LoL上達・戦術",
+    "summary": "パッチ26.8リリアの新ビルド、2コアにプロトプラズムハーネスを提案",
+    "content": "[X (Twitter) アップロード用 日本語 ポスト]\n🚨【パッチ26.8】Tier1確定！リリアの「突進して爆死する問題」を完全解決する新ビルド\n\nこんにちは皆さん、ハクです！^0^ 今回のパッチ26.8でリリアのジャングリングに大幅なバフが入り、少なくともTier2、高確率でTier1まで上がる可能性が非常に高くなりました。\nしかし、リリアをプレイする度に常に感じていた「2コアのタイミングでの不安定さ」がありました。 1コアの『リアンドリーの苦悶』が出た時点で、パッシブとの相乗効果によりダメージは十分に足ります。問題は2コアです。\n通常『リフトメーカー』を積みますが、火力も体力も上がるのに**「ダメージを完全に出し切る条件が揃わない」**という感覚に陥ります。リリアはAPでありながらアサシンでもないのに、敵陣へ「突進」しなければなりません。当然、突入した最初のターンで瀕死になります。 つまり、「火力はあるのに、フラッシュが無いとダメージを出し切れない」というパラドックスが生じるのです。\n\n💡 そこで考案した最強の解決策が2コア『プロトプラズムハーネス』です！\nそもそも基本性能が「体力+600、スキルヘイスト+20」と、リリアの命とも言えるヘイストをしっかり稼げます。 そして最も重要なのがパッシブ性能。**HPが30%以下に落ちると「最大体力増加＋体力回復＋テナシティ（行動妨害耐性）＋移動速度増加」**を得ます。\n\n✅ ハーネスがリリアに完璧に噛み合う理由:\n1️⃣ 「最初のターンの生存力」: 敵の集中砲火を受けても、回復で耐え、テナシティでCCを素早く抜け、増加したMSで離脱するという生存条件を完璧に作ってくれます。 \n2️⃣ 「後半のスケール」: リリアのアイテムツリーは、リフトメーカー、ライライ、血の呪い、ジャック・ショーなど「体力アイテム」が多いため、ハーネスの価値は後半になっても絶対に下がりません。 \n3️⃣ 「靴の自由度」: アイオニアブーツやプレートスチールキャップを履くとテナシティ（CC耐性）がなくて辛い場面が多いですが、ハーネスがそれを全てカバーしてくれます！\n🔥 最強ビルドまとめ『リアンドリーの苦悶』\n➡️『プロトプラズムハーネス』までは完全固定！ それ以降は状況に合わせて以下の組み合わせを選ぶと非常に快適です。\n\n⚔️ 状況別アイテ"
+  },
+  {
+    "code": "D89",
+    "title": "リンクのみのポスト（本文なし）",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2043586040175407189",
+    "category": "LoL上達・戦術",
+    "summary": "リンクのみのポスト（本文なし）",
+    "content": "https://t.co/80whakbAHk"
+  },
+  {
+    "code": "D90",
+    "title": "ガリアル氏のチームゲームで意識すべきことのまとめ記事紹介",
+    "author": "LoL Guide @lol_guide_jp",
+    "url": "https://x.com/lol_guide_jp/status/2043169738692431887",
+    "category": "LoL上達・戦術",
+    "summary": "ガリアル氏のチームゲームで意識すべきことのまとめ記事紹介",
+    "content": "[超超超拡散希望]\nガリアル氏( @ggarigori )がチームゲームに取り組む上で意識すべきことをまとめてくれました！\n\n勢いでLTK DLに参加したはいいもの、チームゲームが良くわからなくて困っているそこのチーム！\nぜひ読んでください。\n\nチームゲームで勝つために\n1. SoloQとチームゲームの違いとは？\nhttps://t.co/GXI5ADNt4L\n\n2. 具体的なコミュニケーション内容\nhttps://t.co/EH50UbWE2Z\n\n3. ドラフトに基づいた勝利条件の確認\nhttps://t.co/B1mZiyecss\n\n4. チームでのフィードバックについて\nhttps://t.co/q3yZ1GEarg"
+  },
+  {
+    "code": "D91",
+    "title": "チームゲーム解説第3回、ボイスチャットの情報言語化とレーン別役割",
+    "author": "Awaker @Awakerlol",
+    "url": "https://x.com/Awakerlol/status/2042203455662719349",
+    "category": "LoL上達・戦術",
+    "summary": "チームゲーム解説第3回、ボイスチャットの情報言語化とレーン別役割",
+    "content": "【LOL教科書】これを読めば全部わかる【チームゲーム解説】\n\n第3回：コミュニケーションとレーンの役割　情報を「言語化」する\n\n皆さん、こんにちは。Awakerです。\n第1回で「ソロランクとの違い」を学び、第2回で「オブジェクトへの逆算」を学びました。\n第3回となる今回は、それらを実行するために不可欠な「インゲーム・コミュニケーション（ボイスチャット）」の具体的なやり方について解説します。\n\n「何を喋ればいいか分からず、無言になってしまう」\n「自分が喋ることで、味方の邪魔をしてしまうのではないか」\nそんな不安を解消し、チームの連携を劇的に高める「言葉の出し方」を身につけましょう。\n\n・※この記事で使用する用語\n\n主導権： 自分がミニオンウェーブを押せている、または押すタイミングを自由に選択できる状態。\n\nターン： 自分（またはチーム）が自由に使える時間のこと\n\n1. ショットコールとは何か：チームの「行き先」を決める\n\n第2回で「ショットコーラー」という役割が必要だと言いましたが、具体的にはチームの大きな方向性を決める役割を指します。\n\n例： 「この試合は下（BOT）を大事に育てていこう」「今は無理せず、次のドラゴンを狙いに行こう」\nこれらは、チームがこれから何をすべきなのか、共通認識として意識させます。\n\n2. 全レーン共通：これだけは必ず言葉にする「4つの必須情報」\n\nレーニングフェイズにおいて、全プレイヤーが共通して出すべき情報があります。これらは流動的なので、状況が変わるたびに伝えましょう。\n\nプッシュ主導権の有無： 「今、押せてる（動ける）」「今、押されてる（動けない）」\n\n対面のローム： 「いないよ」だけでなく、予測される方向へピンを鳴らしながら「〇〇の方へ行った」と伝える。\n\n合流の可否： オブジェクト戦や寄りの際、「先に動けるか」「相手の方が先か」。\n\nワード位置： おおまかでも良いので、敵が置いた場所を共有する。\n\n3. 各レーンの役割別：話すべきことのポイント\n\n自分のレーンの状況を伝えることは、味方の判断を助ける「最高のプレゼント」です。\n\nTOP： TPの有無とサイドの主導権。\n特にTPでの人数差作りや、寄れるタイミングを明確にする。\n例：「自分だけTPあるから、ここプッシュしたあと飛んで人数差つくれるよ！」\n\nJG： 敵JGのルート予測と自"
+  },
+  {
+    "code": "D92",
+    "title": "チームゲーム解説第2回、有利をオブジェクトに変える判断基準",
+    "author": "Awaker @Awakerlol",
+    "url": "https://x.com/Awakerlol/status/2041093567641493512",
+    "category": "LoL上達・戦術",
+    "summary": "チームゲーム解説第2回、有利をオブジェクトに変える判断基準",
+    "content": "【LOL教科書】これを読めば全部わかる【チームゲーム解説】\n\n第2回：有利を形にする　オブジェクトの取り方\n\n第1回ではソロランクとチームゲームの根本的な違いについてお話ししました。 第2回となる今回は、チームとして最も大切な「有利をオブジェクト（ドラゴンやタワー）という形に変える意思決定」について具体的に解説していきます。\n「有利なはずなのに、なぜかオブジェクトに繋がらない」 「集団戦のあと、何をすればいいか迷ってしまう」 そんなチームが、迷いなく動けるようになるためのルールを学んでいきましょう。\n\n1. 有利を「オブジェクト」につなげる判断基準\n\nチームゲームにおいて、キルはあくまで「有利を作る手段」です。まずは「今、目の前の有利をどう活かすか」をチームで共有しましょう。判断に迷ったときは、以下の4つを確認してください。\n\n数える： マップに見えている敵の数を確認します。（人数有利はあるか？）\n\n見る： 自分たちのHP/マナと、主要スキル（ULTやTP）の有無を確認します。\n\n押す： オブジェクト付近のレーンが押せているかを確認します。\n\n安全： オブジェクトの近くの視界は制圧できているかを確認します。\n\nこれらが揃った時、それはオブジェクトへ向かう絶好のサインです。キルを取っただけで満足せず、必ずタワーやドラゴンという「チーム全体の利益」へ変換する意識を持ちましょう。\n\n2. ステップアップ：「取るために有利を作る」逆算\n\n1の判断ができるようになってきたら、次の段階へ進みます。有利が起きるのを待つのではなく、オブジェクトを取るという結果から逆算して、自分たちで状況をデザインします。\n\n鉄則：1分前には全員リコールを終えていることオブジェクトが湧く直前に帰っていては遅すぎます。1分前に装備を整え、体力を全快にして戦場に戻る。この「足並みを揃える」だけで、視界確保やウェーブ管理の主導権を握ることができます。\n\n準備： 「湧いたから集まる」のではなく、「湧く1分前から、敵を寄せ付けない圧倒的に有利な状況を作る」という能動的な姿勢を目指しましょう。\n\n3. チームで迷わないための「ショットコール」\nチームゲームにおける最大の敵は、判断の遅れです。\n\n意見がまとまらずバラバラに動いてしまったり、正解を出そうと考えているうちに状況が変わってしまって、結局何もできなかった"
+  },
+  {
+    "code": "D93",
+    "title": "後半スケーリングの誤解について、Caedrelのクリップを交えた考察",
+    "author": "Mauro Garih @maurogarih",
+    "url": "https://x.com/maurogarih/status/2040753020036674029",
+    "category": "LoL上達・戦術",
+    "summary": "後半スケーリングの誤解について、Caedrelのクリップを交えた考察",
+    "content": "Lo mismo que pasa con Kassadin\n\nOrianna Viktor no escalan monster\n\nEscalan fine pero no monster\n\nRyze Asol claramente son muchisimo mejores como primer ejemplo que me vienen a la cabeza de claramente champs god de ultralategame\n\nClassic missconception os dejo un reel de Caedrel el  cual reconoce estar equivocado en el escalado del game 2 de ayer del NAVI-VIT"
+  },
+  {
+    "code": "D94",
+    "title": "チームゲーム解説第1回、ソロランクとの決定的な違い",
+    "author": "Awaker @Awakerlol",
+    "url": "https://x.com/Awakerlol/status/2040369322661642371",
+    "category": "LoL上達・戦術",
+    "summary": "チームゲーム解説第1回、ソロランクとの決定的な違い",
+    "content": "【LOL教科書】これを読めば全部わかる【チームゲーム解説】\n\n第一回：チームゲームとソロランクの違い\n\n皆さん、こんにちは。Awakerです。\n今年でコーチ歴10年目になります。\n普段は初心者からプロ選手まで、多くの方にLoLを教えています。\n\nLoLというゲームは、1人でプレイする時と5人で連携する時では、全く別の顔を見せます。\n「個人の操作技術はあるのに、チーム戦になると途端に勝てなくなる」\n「何を基準に動けばいいのか、ボイスチャットで何を話せばいいのか分からない」\n「チームを組んでみたけど、頑張っているのになぜか上手くいかない」\nそんな壁にぶつかっているプレイヤーを多く見てきました。\n\nそこで今回、【LOL教科書】と題して、チームゲームで勝つためのエッセンスを体系的にまとめていくことにしました。\n\nこの記事の目的は、ただの知識共有ではありません。\n読み終えた皆さんが、次の練習試合で「今、チームとして何をすべきか」を迷わず判断できるようになり、「5人で勝つ最高に面白いLoL」を体感してもらうためのガイドブックを目指します。正しい知識さえあれば、チームは劇的に変わります。\n\n第1回目は、すべての基礎となる「チームゲームとソロランクの決定的な違い」について紐解いていきましょう。\n\n1. 利益の考え方：個人の有利からチームのオブジェクトへ\nソロランクでは、自分の対面に勝つことや、目の前のキルから有利を広げていくことが主流です。しかし、チームゲームでは「エピックモンスター（ドラゴン・バロン）」や「タワー」をどのように取得するかが全ての行動のベースになります。\n\nソロランクでは： 「キルを取った。次はどこで有利を作ろうか？」と個人の判断で動くことが多い。\n\nチームゲームでは： 「キルを取った。人数有利を活かして、確実にオブジェクト（ドラゴン・タワー）へ繋げよう」と、チームの共通目標のために動く。\n\nポイント： 利益（キル）を単発で終わらせず、5人で共有できる利益（オブジェクト）へ変換する意識が重要です。\n\n2.コミュニケーション：情報の共有から「予測」へ\nソロランクでは簡易的なピンによる意思疎通が主ですが、チームゲームではボイスチャットを併用することで、お互いに見えていない情報を補い合うことができます。\n\nソロランクでは： 敵が見えた時に「注意」のピンを鳴らすなど、少ない"
+  },
+  {
+    "code": "D95",
+    "title": "JGは序盤コントロールワードに投資すべきという主張と設置場所3選",
+    "author": "Griffin @GriffinHQ_",
+    "url": "https://x.com/GriffinHQ_/status/2039852914534191151",
+    "category": "LoL上達・戦術",
+    "summary": "JGは序盤コントロールワードに投資すべきという主張と設置場所3選",
+    "content": "If you are a jungler, invest in an early control ward.\n\nIf you have enough gold to buy a control ward after first back without forgoing important components, try to place them in these 3 locations and they might last all game as shown in the screenshot i provided. of course control wards in enemy jungle are less safe and harder to place but they give much more important information. the ward on your own red side is a lot safer to place and probably will last longer but it doesnt give AS MUCH value, but raptors are the most invaded camp so you can catch people lots of times or defend your mid laner from ganks from this angle\n\nPeople will always tell you first item spike is op and to not buy control wards to stunt your first item. \n\nIt is true that first item spike is very important but the amount of value an early control ward will give you is not measurable. These spots the ward will give you lots of info and be difficult to be taken out.\n\nAs long as you get a good first back to buy wh"
+  },
+  {
+    "code": "D96",
+    "title": "JG上級編スライド講義(2/3)：ウェーブ管理・ダイブ・タイマー待ち伏せ・縦割り（HALdesu提唱）",
+    "author": "HALdesu @HALdesu4649",
+    "url": "https://x.com/HALdesu4649/status/2038451091076268143",
+    "category": "LoL上達・戦術",
+    "summary": "タワーダイブの合図は巨大ウェーブクラッシュ時。味方の押し切りリコールを森から護衛するカバーの定義。奪った敵キャンプの再湧き時間待ち伏せ、敵ガンクスキル後のカウンターガンク、自陣＋敵陣森を奪う縦割りマクロ。",
+    "content": "【JG上級編：ウェーブ管理・ダイブ・トラッキング・縦割り（スライド4〜6完全テキスト）】\n1. ジャングラー視点のウェーブ管理とダイブ：\n- タワーダイブの絶対条件：味方が巨大なウェーブを敵タワーに押し付けた（クラッシュした）瞬間がダイブの合図。キル＋巨大ウェーブの経験値・ゴールドを全て失わせ致命傷を与える。\n- カバーの定義：味方レーナーがウェーブを押し切ってリコールしたい時、姿は見せず近所の森に潜んで敵JGのガンクから護衛する。\n2. トラッキングとカウンターアクション：\n- リスポーンタイマー待ち伏せ：自分が奪った敵キャンプ（ラプター等）の再湧き時間は自分だけの非公開情報。再湧き時間に合わせて待ち伏せキルする。\n- カウンターガンク：敵JGが自陣のどのレーンを狙うか予測し茂みで待機。敵がガンクスキルを使い切った瞬間に飛び出す後出しジャンケンで壊滅させる。\n3. 縦割り（盤面の分断）：\n- 強いサイド（Bot等）の「自陣森＋敵陣森」を狩り続け、敵JGを逆サイド（Top）に幽閉してドラゴンとキャリーを独占する。"
+  },
+  {
+    "code": "D97",
+    "title": "JG上級編スライド講義(1/3)：テンポ・予測・負けレーン介入ルール（HALdesu提唱）",
+    "author": "HALdesu @HALdesu4649",
+    "url": "https://x.com/HALdesu4649/status/2038088769040159106",
+    "category": "LoL上達・戦術",
+    "summary": "全レーン勝たせるのは不可能であり強サイドを決定する。1v1で負けているレーンには原則ガンク厳禁（2v1ダブルキルリスク回避）。キャンプ狩り➔ガンク➔即リコールのテンポ、湧く1分前のリコール原則。",
+    "content": "【JG上級編：試合を支配するテンポと予測（スライド1〜3完全テキスト）】\n1. ウィンコンディション特定と強いサイド/弱いサイドの決定：\n- 全レーン勝たせるのは不可能。CC有無・スノーボール力・マッチアップから強いサイドを決め、そこに向かって周回する。\n- 【鉄則】負けているレーンへの介入ルール：1v1で完全に負けている（0/2/0等）レーンには原則ガンクしない。敵が育っていると2v1でも返り討ちにされダブルキルを献上する。負けレーンはカバー（ダイブ阻止）に留め、勝たせた強いサイドと一緒に後から集団で対処する。\n2. テンポとターン制の理解：\n- ゴールドはベースに戻ってアイテムを買うまで戦闘力に反映されない。理想のターンは「キャンプ狩り切り ➔ ガンク ➔ 即リコール＆アイテム更新」。\n- オブジェクト1分前の法則：湧いてから向かうのは遅すぎる。湧く1分前にベースに戻りアイテム更新＆ピンクワードを購入してマップへ出撃する。"
+  },
+  {
+    "code": "D98",
+    "title": "JG必須テクニック2選、青バフ/グロンプ同時狩りとゴーレム無ダメ狩り",
+    "author": "ボチカ@青森最高レート @BOTika_LOL",
+    "url": "https://x.com/BOTika_LOL/status/2037358075993362833",
+    "category": "LoL上達・戦術",
+    "summary": "JG必須テクニック2選、青バフ/グロンプ同時狩りとゴーレム無ダメ狩り",
+    "content": "【令和最新版JG必須テクニック2選】\n一見全キャラ対応に見えてそういうわけでもないテクニックを解説していきます！！今日はこちらの2本立て！\n\n・デカキャラ限定！青バフ/グロンプ同時狩り\n・ゴーレムをノーダメで狩れる裏技\n\nリポストフォローよろしくお願いします #LOL"
+  },
+  {
+    "code": "D99",
+    "title": "ナフィーリJGのビルド紹介、ヒュブリス＋アクシオムアーク",
+    "author": "たなかまね @tanakamane_toto",
+    "url": "https://x.com/tanakamane_toto/status/2035286161367953660",
+    "category": "LoL上達・戦術",
+    "summary": "ナフィーリJGのビルド紹介、ヒュブリス＋アクシオムアーク",
+    "content": "#LOL #Naafiri\n\nシヴァーナはナーフされて調整中\nリーシンは難しいし…\n今のJG最強って誰だろう?\n\n「ナフィーリ」です\n\nJGの王となってナフィーリJGが帰ってきました\n\n「ヒュブリス＋アクシオムアーク」\n\nアクシオムアークでRの回転率を上げて\nシュブリスのスタックを無限に貯めまくるというコンセプトです!\n\n操作が簡単なので\n誰でもティア1のパワーを引き出せると思います\n\nこのビルドが流行れば必ずナーフが入ると断言できる程に強いです!\n\nルーン、ビルド、使い方をコメント欄に書いておきますので\nぜひ見て行ってください!\n--- 続き1 ---\nルーン\n\nRを集団戦中に２回使えるようになる事もありますし\n現在のJGはファイター達も多いので征服者を持つようにしてみてください!\n\nゲーム内のオススメだと迅速が表示されますが\n「レジェンドヘイスト」を必ず持ってください!\n\nナフィーリの生存能力は\nQを２回当てた時の回復と\nWやEによってスキルを避ける事に依存しています\n\nその為体自体は硬くないので\n集団戦中AAを多く入れるよりスキルを回した方が生存能力を確保しつつダメージも稼ぎやすくなります\n\nぜひレジェンドヘイストを持ってみてください!\n\nサブルーンに関してはランク帯によって分けていいと思います!\n\n最序盤に試合が終わりやすい高レート帯\n「魔法の靴と宇宙の英知」\n\n試合が長引きやすい一般的なランク帯\n「キャッシュバック＋宇宙の英知」\n\n魔法の靴は普通の300ゴールドの靴より移動速度がわずかに高いので\n靴を完成させずに武器を2つ完成させる買い方もできます\n\nただし試合が序盤に決まってしまうランク帯なら\n3コア、4コアまで試合が続くことがほとんどなので\nキャッシュバックの方が適しているのではないかと思います\n\nランク帯、プレイスタイル、敵の構成によっても変えていい部分なので\nサブルーンは好みで好きなものを持ってみてください!\n--- 続き2 ---\nビルド\n\n基本は2コアまで固定です!\n\nただし敵にシールド持ちが多い場合と自分が序盤に凹まされてしまった場合\nシールド持ちがいるなら補助的な役割に回っても構いません\nその場合は2コア目に毒蛇の牙を積みましょう\n\nスノーボール性能が異常に高いので理想は2コアまで固定です!\n\n3コア目以降は状況に応じて積んでください!\n\n"
+  },
+  {
+    "code": "D100",
+    "title": "「ターン」を徹底解説したLJL選手の配信切り抜き動画紹介",
+    "author": "hetel @heteel",
+    "url": "https://x.com/heteel/status/2034196704350847238",
+    "category": "LoL上達・戦術",
+    "summary": "「ターン」を徹底解説したLJL選手の配信切り抜き動画紹介",
+    "content": "今日の動画は、皆が今更過ぎて聞けないターンについて解説したよ！\nこのゲームにおいてターンの理解が一番重要といっても過言じゃないくらい大事だから見て損ない！！\n\n【LoL】LJL日本一のhetelが最近聞くターンを徹底解説します【配信切り抜き /#leagueoflegends / #SUP 】 https://t.co/N95lgAWnMS https://t.co/LsWAQDIknU"
+  },
+  {
+    "code": "D101",
+    "title": "Kanavi選手のジャングルルート分析、序盤の動線を問うスレッド",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2030915425945428407",
+    "category": "LoL上達・戦術",
+    "summary": "Kanavi選手のジャングルルート分析、序盤の動線を問うスレッド",
+    "content": "🚨【Kanaviの超絶マクロ】美しすぎる動線（ジャングルルート）分析。スレッドに続きます👇\n\n1️⃣ まず、現在の構図（マッチアップ）を見てみましょう。\n⚔️ Top: ジェイス VS サイオン （サイオンがHP30〜40%程度まで削られ、タワー下に押し込まれる想定）\n⚔️ Mid: タロン VS アニビア （アニビアが有利で、レーンコントロールの主導権あり）\n⚔️ Bot: ヴァルス＆スウェイン VS エズリアル＆カルマ （Lv6まではエズ・カルマが非常に有利で、敵のHPを40〜50%程度に削る想定。しかしLv6以降は、ヴァルスとスウェインのCCチェインとスウェインのUltがあるため、ガンクが来れば十分に勝機あり）\n⚔️ JG: ニダリー VS グレイブス （両者とも、マップを上下に割る「縦割り」からのタワーダイブで利益を得るのが大得意なチャンピオン）\n\n👉 つまり、このゲームの勝負は「どちらがより『a. 確実な利益』を『b. 影響力の強いサイド』に与えられるか」にかかっています。\n\n🤔 さて、ここからが皆さんへの質問です。グレイブスとニダリーは、Lv1の時にどのレーンを見るべきでしょうか？ いや、もっと具体的に「どのような序盤の動線（ルート）」を組むべきでしょうか？\n\n皆さんの予想をリプ欄で教えてください！👇\n--- 続き1 ---\n💡 最も重要な核心要約 (TL;DR):\n⓵ 「縦割り」の絶対条件: 継続的なカウンタージャングル(CJ)とダイブ圧、そして少人数戦（2v2/3v3）での「確実な勝利」が不可欠です。 \n⓶ グレイブスの致命的な錯覚: Lv6以降のBot（ヴァルス＆スウェイン）は強力なCCチェインを持つため、グレイブスは下側で縦割りの優位性を維持できません。\n ⓷ Kanavi（ニダリー）の回答: Top側の縦割りをあえてストップし、グレイブスが下に来るタイミングでBot側へカウンター。これにより敵JGの利益を完全に奪い去ります。\n\n2️⃣ 「ニダリーはTop側、グレイブスはBot側で縦割りをするだろう」。大半のジャングラーはそう安易に考えます。\n1) しかし「縦割り（マップを半分に割る）」の真の意味と強みは、以下の条件が揃って初めて機能します。(1) 継続して敵キャンプへカウンタージャングル(CJ)ができる。 (2) 継続してタワーダイ"
+  },
+  {
+    "code": "D102",
+    "title": "元プロ目線のLoLおすすめ設定まとめ動画の紹介",
+    "author": "えんてぃ / Enty @enty925",
+    "url": "https://x.com/enty925/status/2030609815001878657",
+    "category": "LoL上達・戦術",
+    "summary": "元プロ目線のLoLおすすめ設定まとめ動画の紹介",
+    "content": "LoLの設定、初期のままにしてませんか？\n\n実はこれ、\n変えるだけでかなりプレイしやすくなる設定があります\n\n元プロ目線で\n✔ 操作が安定する設定\n✔ 視界管理が楽になる設定\n✔ 知ってる人は使ってる設定\n\nまとめて解説しました👇\n初心者〜上級者まで参考になると思います。\n\nhttps://t.co/41WA9sdVA3 https://t.co/7PTFZyN0rK"
+  },
+  {
+    "code": "D103",
+    "title": "ヴォイドグラブとドラゴンの価値比較に関する自身の見解ポスト",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2029501240594575749",
+    "category": "LoL上達・戦術",
+    "summary": "ヴォイドグラブとドラゴンの価値比較に関する自身の見解ポスト",
+    "content": "私が書いた教本の内容と一部を除いて全て一致していますw。でもヴォイドが1ドラゴンより価値が低いというのは共感できません。修正タワーによってタワーを早く破壊できるようになったなら、ヴォイドによるさらなる加速でタワーを破壊する方が有利だと思うのですが。相手が1ドラゴンを取ったとしても、ボトムタワーやミッドタワー、トップタワーのいずれか一つでも破壊された瞬間、ドラゴンオブジェクトの主導権はタワーを破壊した側が握る可能性が非常に高くなります。そしてhttps://t.co/cHgkZlS55Cの指標でも、ドラゴンよりヴォイドを取った時の勝率が約1.5倍高かったのです。"
+  },
+  {
+    "code": "D104",
+    "title": "ガリアル氏のウェーブコントロール記事全4回の紹介",
+    "author": "LoL Guide @lol_guide_jp",
+    "url": "https://x.com/lol_guide_jp/status/2026620694025388350",
+    "category": "LoL上達・戦術",
+    "summary": "ガリアル氏のウェーブコントロール記事全4回の紹介",
+    "content": "[超超超超超絶拡散希望]\n元プロで現役LoL講師のGariaru(@ggarigori)氏に、ウェーブコントロールの記事を書いてもらいました。\n全4記事に渡る非常にボリューミーな内容です。\n\nミニオンウェーブについて、ここまで言語化できている日本語の記事は他にないと思います。\n\nグラマス・チャレやプロを目指す人は、絶対に読んでください。いや、ていうか全員読め。\n\nまた、Gariaruさんは、「はうちゃれ」というYoutubeチャンネルで、役に立つ本質的な動画をたくさん上げています。必ずチャンネル登録をしてください。\n\n改めて、素晴らしい記事を書いてくれたGariaruさんに感謝です。\nこの記事を読んだLoL民は、氏に足を向けては寝られないでしょう。\n\nウェーブコントロールとは？\nhttps://t.co/C3ody41oB4\n\nウェーブの種類とその作り方\nhttps://t.co/WjNb1OpYnx\n\nウェーブを使った有利の作り方\nhttps://t.co/zXE5OAzUyi\n\nウェーブコントロールについて勘違いしがちなこと\nhttps://t.co/PNIlBskj0w\n\nはうちゃれ ~How to be a Challenger~\nhttps://t.co/EUIkz2NA5K"
+  },
+  {
+    "code": "D105",
+    "title": "スマイトは青一択をやめるべきという意見ポスト",
+    "author": "xPetu @xPetu",
+    "url": "https://x.com/xPetu/status/2026348539257716826",
+    "category": "LoL上達・戦術",
+    "summary": "スマイトは青一択をやめるべきという意見ポスト",
+    "content": "Junglers should stop defaulting to Blue Smite. The other smites may be less noticeable, but they always give value.\n\nItems that \"feel good\" are often overvalued. The strongest effects are usually the ones you don’t notice (auras, damage amplifications, etc.)."
+  },
+  {
+    "code": "D106",
+    "title": "ザイラ縦割り用ルート2:15、蟹までに40秒の余裕が出るクリア動画",
+    "author": "ヨノナカ＠個人的JGフルクリアch @jgfullclear",
+    "url": "https://x.com/jgfullclear/status/2026220567095914606",
+    "category": "LoL上達・戦術",
+    "summary": "ザイラ縦割り用ルート2:15、蟹までに40秒の余裕が出るクリア動画",
+    "content": "本日はザイラ🌸🌱\n少し特殊な縦割り用ルートです📹\nタイマーストップは2分15秒⏱🫢\n\n🌿ザイラのファーム速度を知ってるJGは\nこっちのJGに入ってくることがあるので⚠️\nそれをカウンターする用の縦割り🗺️\n\n使うのはレッドサイドの時🔴\nBOTを強く見れる👀🔥\nファームが遅いJGを襲う動きもできる🗡️\n\n蟹までに40秒余裕あり🦀⏳\nその間に圧かけるも良し\n視界取るも良し\n荒らすも良し 😈\n\n2:15【1スマイト縦割り】_ザイラ_狼_26.04【JGフルクリア】\nhttps://t.co/aduTBVXOSS"
+  },
+  {
+    "code": "D107",
+    "title": "S16のスマイト強化を速くする戦略の解説ポスト",
+    "author": "Vil @Vil_euw",
+    "url": "https://x.com/Vil_euw/status/2012122019400478741",
+    "category": "LoL上達・戦術",
+    "summary": "S16のスマイト強化を速くする戦略の解説ポスト",
+    "content": "*TRICK OR TREAT* 🍬🍬\nS16 OP FASTER SMITE UPGRADE STRATEGY\nExplanation below https://t.co/M8Vyjx5YRz"
+  },
+  {
+    "code": "D108",
+    "title": "【2分53秒フルクリア】最強ザイラJGの全貌・初動インベード対策と交戦ポジショニング",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2006310380717695334",
+    "category": "LoL上達・戦術",
+    "summary": "天狐ハクによるザイラJGの2分53秒最速周回ミクロ、初動赤レンズ買い、安全な遠距離視界確保、引き→横→前の集団戦ポジション、状況別ビルド5選の完全解説（X Article全文・YouTube実戦連動）",
+    "content": "皆さんこんにちは、皆さんへ興味深い情報と解説をお届けに、ついにまたHakuがやって来ました！👋\nシーズン末、ジャングラーの方々に今本当に良いTOP3チャンピオンの中の一つである、**「ザイラJG」**をおすすめしようと思います！🌿\n私が前回、レーン別ダメージ順位の統計指標と、ただチャンピオンそのものの体級（ポテンシャル）について投稿しましたよね。\n(1) ダメージ順位も全ジャングル中5位、(2) チャンピオンも1ティアに留まっていて、(3) ジャングル周回も最も早く（2分53秒）、(4) 植物を通した安全な視界確保、(5) 集団戦時の植物の自動攻撃により、相手との安全な距離が維持できます。\nなので今、ザイラをやらない理由はなく、必ずやるべきだと思います！\n\nそこでザイラを使う前に、ザイラについての簡単なTipをお教えします！\n \n\n1. ザイラの最大の弱点はインベード（早いインベード or 遅いインベード）だ。\n \nザイラは序盤に種を先に撒いておき、それを基に、多くの植物を召喚して早いジャングル周回が可能なのですが。 この点を知っていて\n相手が早いインベードを通して植物を消しに来たり、\n遅いインベードを通してキャンプに入ってくる可能性があります。\nこれを防止するために、開始してすぐに「逆バフ」基準で (1) 下側の陣営は、上の写真の位置にワードを刺し、 (2) 上側の陣営は、ラプター（鳥）の前側にワードを刺せばOKです！\nこうすれば、リコールしてまたブルーに行く時間の間に、早いインベードをあらかじめ気付くことができ、味方を呼んで相手を逆にキルすることができます。\n \n2. ザイラは「レーン主導権」を作ってくれる。\n \nワードを刺したあと、すぐにリコールしてレンズ（赤トリンケット）を買ってきます。 どうせザイラは周回がものすごく速いので（2分53秒）、相手より無条件に早いレーンガンクが可能です。\n唯一の変数は相手のワードがあるかないかなのですが、もし相手がワードを刺していたならレンズを通してワードを消してあげて、そのレーンのプッシュ主導権を握ってあげて、全体的なレーン主導権が生まれるように作ることができます。\n \n3. ザイラはAPジャングラーの中で、唯一「安全な視界確保」が可能\n \nザイラはこのように植物を通して、簡単に視界を見ることができます。 (w) 種自体"
+  },
+  {
+    "code": "D109",
+    "title": "画面固定を外しやすくするカメラ速度設定（50→25）の紹介",
+    "author": "たなかまね @tanakamane_toto",
+    "url": "https://x.com/tanakamane_toto/status/1986342798220550273",
+    "category": "LoL上達・戦術",
+    "summary": "画面固定を外しやすくするカメラ速度設定（50→25）の紹介",
+    "content": "#LOL #League_of_Legends \n\nLOLを始めたばかりの方々、画面固定を外せない方々必見\n\n画面固定を外しやすくなる設定を紹介します\n\n設定→カメラ→コントロール→カメラ動作の速度（マウス）\n\nこのカメラ動作の速度（マウス）が初期だと50になっていますが\nこの設定を25くらいまで下げてみてください!\n\n初期設定のまま使うと1つ目の動画のように\nちょっとマウスを動かしただけでカメラがぐい～んってとんでもない距離まで移動してしまいます\n\n画面固定を外したくない理由の半分くらいは\nカメラを上手く動かせないからだと思うんです\n\n1v1中、集団戦中\nあらゆる場面でカメラ動かしたら敵が見えなくなった経験もあるでしょう\n\nLOLは始めたばかりの人にとって操作が多く、カメラを固定（自動に動く）にしてる方も多いと思います\n\nカメラ固定自体は悪くないのですが\nチャンピオンによってはカメラの外側まで届くスキルを持っていたりするんですね（代表的なのがヴェックスのR）\n\nその場合カメラ固定にしてしまうと損をしてしまいます\n\n特にADCなんかは敵の状況に合わせてカメラを細かく動かしてダメージを入れる必要があるので\nカメラ固定を外す時も必要だったりします（Rで飛んでいけるカイサとか）\n\n人によってマウスのDPIが違ったりするので\n遅いと感じた方はここから少し上に上げたり\n早いと感じた方はもっと下げてみてください\n\n25くらいまで下げたのが2つめの動画です\n\n人によってマウスのDPIが違ったりするので\n遅いと感じた方はここから少し上に上げたり\n早いと感じた方はもっと下げましょう\n\n元々画面固定外してる方も\nカメラの操作楽になるので一度試してみてください!"
+  },
+  {
+    "code": "D110",
+    "title": "令和最新版LoL設定のほぼ完全解説動画（2025ver）の紹介",
+    "author": "Eria / えりあ @eria02",
+    "url": "https://x.com/eria02/status/1964655283227251103",
+    "category": "LoL上達・戦術",
+    "summary": "令和最新版LoL設定のほぼ完全解説動画（2025ver）の紹介",
+    "content": "最近周りでもlolを始める人が増えてきて設定を教えるのが大変だったので動画にしました。\n細かく説明をしているので是非見てね～\n\n令和最新版 LoLの設定 ほぼ完全解説！2025ver\n【League of Legends】 \nhttps://t.co/xhZ2lkpEky https://t.co/HTYG5hBlsR"
+  },
+  {
+    "code": "D111",
+    "title": "JGでチーム全体が劣勢の時の逆転の考え方まとめ（続きはリプ）",
+    "author": "HALdesu @HALdesu4649",
+    "url": "https://x.com/HALdesu4649/status/1964298380676575388",
+    "category": "LoL上達・戦術",
+    "summary": "JGでチーム全体が劣勢の時の逆転の考え方まとめ（続きはリプ）",
+    "content": "今日はJGでチーム全体が劣勢の時の逆転する勝率を上げる為の考えをまとめてみました！\n続きはリプに貼ります https://t.co/G2MJIn0qoS\n--- 続き1 ---\n続き\nオブジェクト管理\n集団戦の立ち回り\nビルド戦略 https://t.co/7PSbGIWwEw"
+  },
+  {
+    "code": "D112",
+    "title": "JGの区画管理についてまとめたポスト、プロが意識する要点",
+    "author": "HALdesu @HALdesu4649",
+    "url": "https://x.com/HALdesu4649/status/1950849905247101420",
+    "category": "LoL上達・戦術",
+    "summary": "JGの区画管理についてまとめたポスト、プロが意識する要点",
+    "content": "JGに置いて一番重要と言ってもいい位大事な内容になってます。！プロは絶対に意識して行います\nJGのキャリーになる為の区画管理についてまとめました！\n理解できるようになれば絶対に上手くなりランクも上がりますので是非参考にしてみてください！\nリプに続きを載せます！ https://t.co/9nQPWJHBFU\n--- 続き1 ---\nまとめ https://t.co/cuMKDmFvgi\n--- 続き2 ---\n区画整理について難しいので補足します\nまずブルーサイドがmid・bot主導権あるとします\nJGは敵のbot側のjgに入れます\nですが普通に行えば縦割りとかになってしまいます。なので自陣のTOPファームと敵陣のBOT側ファームのみ食べますそしたら相手は上のjgにも入れずbot側にも入れません。 https://t.co/kqkV08KYsT"
+  },
+  {
+    "code": "D113",
+    "title": "サイオンで主導権を取る対面テクニック動画の紹介",
+    "author": "マルチャレです @MalzaharMasa",
+    "url": "https://x.com/MalzaharMasa/status/1938160315033915429",
+    "category": "LoL上達・戦術",
+    "summary": "サイオンで主導権を取る対面テクニック動画の紹介",
+    "content": "サイオンで主導権を取れ！Zika直伝の対面テクが実戦的すぎた　\n\nなるべく毎日上げるんでよかったらフォローしてね  \n\nYoutubeは16時　Xは18時に上げます https://t.co/ZYMzAj5jXX"
+  },
+  {
+    "code": "D114",
+    "title": "今シーズンの全ジャングラーへ贈る鉄則（Griffin提唱：ラプター処刑・5:30スマイト・初手ドラ）",
+    "author": "Griffin @GriffinHQ_",
+    "url": "https://x.com/GriffinHQ_/status/2028991766662398097",
+    "category": "LoL上達・戦術",
+    "summary": "ラプタースタート処刑（3:20待ち伏せ）、5:30スマイト強化タイマー合わせ、Lv1スカトル軽視と初手ドラ優先、敵3キャンプ即ガンクへのフルクリア対抗など今シーズンJGの勝率直結マクロ。",
+    "content": "今シーズンの全ジャングラーへ贈る鉄則まとめ。\n1. ラプタースタートは悪手。敵がラプタースタートした場合は蟹に行かず即リコールして装備を買い、3:20-3:25の敵ラプター再湧きに敵陣で待ち伏せキルすればGG。\n2. 5:30スマイト強化タイマー：2フルクリア+1蟹で餌21個。毎分:30（5:30）にボーナス餌がもらえるため、2周目の最後のキャンプを5:30まで待って狩ると、ちょうど2回目スカトル戦の瞬間に強化スマイトが完成してスカトルを確定奪取できる。\n3. Lv1スカトルは最弱キャンプ。敵がカニに長居したら敵キャンプ荒らしを優先。ただし2周目以降のスカトルはスケールするため最重要。\n4. クリスタルタワー仕様によりグラブより初手ドラゴンが優先。2周目フルクリア直後に湧くため主導権があれば即狩りして20分ソウル圧をかける。\n5. 敵の3キャンプ即ガンクには釣られてインベードせず自陣フルクリアを完了させてレベル差・テンポ差をつけ、後から湧いた敵キャンプを奪う。"
+  },
+  {
+    "code": "D115",
+    "title": "欧州王者Agurin直伝「リニアクリア（直線動線）」と赤バフスキップ理論",
+    "author": "bonevoid @bonevoid (Agurin @AgurinLoL)",
+    "url": "https://x.com/bonevoid/status/2100745745276276897",
+    "category": "LoL上達・戦術",
+    "summary": "欧州最強ソロランク王者Agurin氏の移動効率極大化マクロ。円形フルクリアの往復ロスを排除し、目的地への経路上にあるキャンプだけを直線（リニア）で狩る。テンポ最優先なら赤バフすらスキップして敵より先に盤面を制圧する最高峰のテンポ論。",
+    "content": "欧州王者Agurin直伝「リニアクリア（直線動線）」と赤バフスキップ理論。\n1. 思考停止フルクリアの罠：全キャンプを狩ろうとする円形クリアは無駄な往復移動（タイムロス）を生み、レーン状況の変化に後手になる。\n2. リニアクリア（Linear Clear）：目的地（ガンク・インベード・オブジェクト）へ向かう経路上にあるキャンプだけを一直線に狩る。\n3. なぜ赤バフを捨てるのか（Why I skip Red Buff）：赤バフを殴る15秒〜20秒のロスでウェーブクラッシュやダイブの黄金タイミングが消滅する。テンポ同期と敵JGへの先手を最優先し、赤バフをスキップして目的地へ直行する。\n4. ゲームを動かすのは「キャンプのゴールド」ではなく「テンポによって得られるレーン主導権とキル・タワープレート」。"
+  },
+  {
+    "code": "E1",
+    "title": "Worlds2026決勝、Xunのノクターンのプロ視点フル映像の告知",
+    "author": "LoL Esports @lolesports",
+    "url": "https://x.com/lolesports/status/2122676127726465361",
+    "category": "LoL一般",
+    "summary": "Worlds2026決勝、Xunのノクターンのプロ視点フル映像の告知",
+    "content": "The Worlds-winning game:\n\nCheck out the FULL PRO VIEW of Xun's Nocturne in the #Worlds2026 Final! https://t.co/VYdsixVGaK"
+  },
+  {
+    "code": "E2",
+    "title": "コンテンツ監修にchavah_lolが加わる告知とPEAK KITツールの紹介",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2109152167517171898",
+    "category": "LoL一般",
+    "summary": "コンテンツ監修にchavah_lolが加わる告知とPEAK KITツールの紹介",
+    "content": "より高品質で正確なLoL知識をお届けするため、なんと @chavah_lol さんにコンテンツの最終確認および監修をしていただくことになりました！ご協力いただき、本当にありがとうございます！\n\n@chavah_lol さんは、LoLをさらに盛り上げるための面白くて学べるサイトやツールを多数開発されています。\n🛠️ 便利なツールがまとまっている「PEAK KIT」はこちら！ 👉 \nhttps://t.co/35uZDilcEH\n過去に480万インプレッションを記録し、20万人ものユーザーが遊んだ大人気の「サモナータイプ診断」を作られた方でもあります！皆さんもぜひチェックしてみてください！\nこれからのさらにパワーアップした発信もお楽しみに！🦊"
+  },
+  {
+    "code": "E3",
+    "title": "ブログ記事へのリンクのみのポスト",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://x.com/LOLNinjaBlog/status/2104426369266638934",
+    "category": "LoL一般",
+    "summary": "ブログ記事へのリンクのみのポスト",
+    "content": "記事はこちら\nhttps://t.co/8XYetkySxU"
+  },
+  {
+    "code": "E4",
+    "title": "LJL再出発とLCPの2027年大幅再編、海外コミュニティ反応まとめ記事",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://x.com/LOLNinjaBlog/status/2101961510750941507",
+    "category": "LoL一般",
+    "summary": "LJL再出発とLCPの2027年大幅再編、海外コミュニティ反応まとめ記事",
+    "content": "【LoL】LJLが再び出発点に。LCPが2027年から大幅再編。海外コミュの反応まとめ\n\nhttps://t.co/PbrRAAsIqx https://t.co/SFpqWpBNJH"
+  },
+  {
+    "code": "E5",
+    "title": "教本の新プロジェクト告知、Gen.G選手を100日間分析する企画",
+    "author": "天狐ハク｜LoLを体系化 @haku_99_",
+    "url": "https://x.com/haku_99_/status/2100846308668129522",
+    "category": "LoL一般",
+    "summary": "教本の新プロジェクト告知、Gen.G選手を100日間分析する企画",
+    "content": "🔥今日からLoLの教本に新しい超巨大プロジェクトが追加されます。\n\n🔥タイトルは「2026 LCK優勝者であるGen.Gの選手全員（Kiin、Canyon、Chovy、Ruler、Duro）を100日間ハッキングする」です。\n毎日この選手たちの中から1人ずつゲームを分析し、一体「どんな秘密」を隠しているのか、また私自身もさらなる実力向上のために分析しようと思います。\n\nその詳細な内容は、毎日教本にアップデートされる予定です！（全レーン）\nありがとうございます！☺️☺️"
+  },
+  {
+    "code": "E6",
+    "title": "OTPの精神力は異常というコミュニティ議論のまとめ",
+    "author": "ゆーみ速報@LOLまとめ @yuumisokuhou",
+    "url": "https://x.com/yuumisokuhou/status/2089683734836760782",
+    "category": "LoL一般",
+    "summary": "OTPの精神力は異常というコミュニティ議論のまとめ",
+    "content": "「OTPの精神力が異常」同じチャンプを2連続で使えない人が続出\n\n・「メンタルの強さじゃない、それ以外を遊ぶ方がメンタル要る」\n・「LoLがしたいんじゃなく、ニダリーがしたい」\n・「新チャンプを触ると反応が200ms遅れる感覚」\n・レンガー一本7年の猛者も\nhttps://t.co/0KRoD6HBNP"
+  },
+  {
+    "code": "E7",
+    "title": "高ランクに押し上げる「たった一つの気づき」議論のまとめ",
+    "author": "ゆーみ速報@LOLまとめ @yuumisokuhou",
+    "url": "https://x.com/yuumisokuhou/status/2089391826675663119",
+    "category": "LoL一般",
+    "summary": "高ランクに押し上げる「たった一つの気づき」議論のまとめ",
+    "content": "プレイヤーを高ランクに押し上げる「たった一つの気づき」議論\n\n・「マップに長居せずリコール」\n\n・「ミニオンよりまず経験値」\n\n・「ジャングラー位置を常に確認」\n\n・「チームを実験動物のように観察してメンタルを守る」\n\nシルバー→ダイヤになった実体験も https://t.co/cemXRpvnVn"
+  },
+  {
+    "code": "E8",
+    "title": "無料クラシックモルガナアイコンのコード告知（投稿時点の情報）",
+    "author": "League of Legends Leaks & News @LeagueOfLeaks",
+    "url": "https://x.com/LeagueOfLeaks/status/2084794584400302481",
+    "category": "LoL一般",
+    "summary": "無料クラシックモルガナアイコンのコード告知（投稿時点の情報）",
+    "content": "Free Classic Morgana Champion Icon ‼️\n\nRedeem the code CC-CLASS-MORGA-T0123 in the League of Legends store to get it. https://t.co/zB0vEK4Egg"
+  },
+  {
+    "code": "E9",
+    "title": "無料クラシックワーウィックアイコンのコード告知（投稿時点の情報）",
+    "author": "League of Legends Leaks & News @LeagueOfLeaks",
+    "url": "https://x.com/LeagueOfLeaks/status/2084069853594374549",
+    "category": "LoL一般",
+    "summary": "無料クラシックワーウィックアイコンのコード告知（投稿時点の情報）",
+    "content": "Free Classic Warwick Champion Icon ‼️\n\nRedeem the code CC-CLASS-WARWI-T0123 in the League of Legends store to get it. https://t.co/9DLgFQ71pm"
+  },
+  {
+    "code": "E10",
+    "title": "LoLを教われる場所「ドネキフ塾」を作ったという告知",
+    "author": "ドネキフ @donekihu08",
+    "url": "https://x.com/donekihu08/status/2083398129043533989",
+    "category": "LoL一般",
+    "summary": "LoLを教われる場所「ドネキフ塾」を作ったという告知",
+    "content": "LoLを\"教われる場所\"「ドネキフ塾」を作りました。\n\n「誰も教えてくれない」まま、面白さにたどり着く前にやめていく人が多すぎる。\nそれを変えたくて、何ヶ月もかけて準備してきたものです。\n\n元プロの方にも、コーチングしてもらえます。\n解説記事は無料で読めます。\n\n▶ https://t.co/VO1k2KLnVV"
+  },
+  {
+    "code": "E11",
+    "title": "解説動画は非オリジナルであり出典を明示するという声明ポスト",
+    "author": "クレフラ @CrazyFriday_",
+    "url": "https://x.com/CrazyFriday_/status/2066684800937959577",
+    "category": "LoL一般",
+    "summary": "解説動画は非オリジナルであり出典を明示するという声明ポスト",
+    "content": "皆様がこの解説動画をこれほど気に入ってくださったことは大変光栄に存じます。\nしかしながら、本作は私のオリジナルコンテンツではございません。\nここに明記いたしますが、本動画のアイデアおよびクリエイティブな発想は「楚钧艾克」氏によるものであり、私は自身の理解をもとに本映像を再解釈したに過ぎません。\n本映像はいかなる商業的利用にも供しないことをお約束申し上げます。また、今後も他者のコンテンツを転載または参考にする際は、このような形で適切に出典を明示してまいります。\n\n各位如此喜愛這支解說影片，我深感榮幸。\n然而，本作品並非我的原創內容。\n特此聲明，本影片的構想及創意源自「楚钧艾克」先生，我僅是根據自身的理解對該影片進行了重新詮釋。\n在此鄭重承諾，本影片絕不會用於任何商業用途。\n此外，今後在轉載或參考他人內容時，我將持續以這種方式妥善標示出處。"
+  },
+  {
+    "code": "E12",
+    "title": "世界一のケイン使いと評するプレイ動画への短い反応ポスト",
+    "author": ". @jkun_lol",
+    "url": "https://x.com/jkun_lol/status/2053770586481160668",
+    "category": "LoL一般",
+    "summary": "世界一のケイン使いと評するプレイ動画への短い反応ポスト",
+    "content": "流石、世界一のケイン使い https://t.co/CQf1DOl1Ba"
+  },
+  {
+    "code": "E13",
+    "title": "LoL Wikiを全部読む動画（16時間40分）を公開したという告知",
+    "author": "LS @LSXYZ9",
+    "url": "https://x.com/LSXYZ9/status/2042785725381513405",
+    "category": "LoL一般",
+    "summary": "LoL Wikiを全部読む動画（16時間40分）を公開したという告知",
+    "content": "It's finally up after editing out a bunch of cuts etc - Reading The Entire LoL Wiki video is up now (16hr 40min), fixing the google doc w/ all the champion notes, as idk why it broke. \n\nhttps://t.co/1gkKQxxnfe"
+  },
+  {
+    "code": "E14",
+    "title": "日本人VTuberのLoL切り抜きが海外で大きく拡散した経緯を綴る長文",
+    "author": "Saskio @SaskioLoL",
+    "url": "https://x.com/SaskioLoL/status/2038688852068753627",
+    "category": "LoL一般",
+    "summary": "日本人VTuberのLoL切り抜きが海外で大きく拡散した経緯を綴る長文",
+    "content": "A Japanese girl playing League of Legends on Twitch produced one of the most viral clips the community has ever seen\n\nher name is Ruu. she's a vtuber. and her \"NAISU GEMU\" clip took over every platform\n\nTikTok. Twitter. YouTube. everywhere. millions of views. \n\nthe entire western League community falling in love with a Japanese streamer who barely speaks English\n\nand that's what's beautiful about it\n\nshe didn't go viral because of some insane mechanical outplay. \n\nshe didn't go viral because of high elo gameplay or a controversial take\n\nshe went viral because of pure genuine emotion for the game\n\nit's raw. it's unfiltered. \n\nit's exactly how every single one of us feels playing this game but we're too busy trying to be cool about it\n\nthe Japanese League community is different. they don't fake it. they don't put on a persona. \n\nthey just play the game with their whole heart.\n\nAnd I respect that.\n\nRuu reminded the entire western community why we fell in love with this game in the first p"
+  },
+  {
+    "code": "E15",
+    "title": "LGG対IDT戦、VicaLコーチの不利状況でのアクション解説動画紹介",
+    "author": "LoL Guide @lol_guide_jp",
+    "url": "https://x.com/lol_guide_jp/status/2012129873188597879",
+    "category": "LoL一般",
+    "summary": "LGG対IDT戦、VicaLコーチの不利状況でのアクション解説動画紹介",
+    "content": "【LGG vs IDT】VicaLコーチの語る不利的状況で取るべきアクションとは   【LoL/リーグ・オブ・レジェンド】 https://t.co/3TWTsP4K49 @YouTubeより"
+  },
+  {
+    "code": "E16",
+    "title": "SHG Evi選手のLCP2026試合後インタビュー記事の紹介",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://x.com/LOLNinjaBlog/status/2012142397950771401",
+    "category": "LoL一般",
+    "summary": "SHG Evi選手のLCP2026試合後インタビュー記事の紹介",
+    "content": "【LoL】SHG Evi「バロンの難易度が上がっている」- LCP2026 DCG戦直後インタビュー https://t.co/1POVLYJ8ly https://t.co/6bXIBk5I4j"
+  },
+  {
+    "code": "E17",
+    "title": "エメラルド以上の人への質問「初心者の頃の自分に伝えたいこと」記事",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://x.com/LOLNinjaBlog/status/2012048707940990990",
+    "category": "LoL一般",
+    "summary": "エメラルド以上の人への質問「初心者の頃の自分に伝えたいこと」記事",
+    "content": "【LoL】エメラルド以上の人に質問。初心者の頃の自分に伝えたいことは？ https://t.co/m9GXDduoEp https://t.co/O8JLbKX9ro"
+  },
+  {
+    "code": "E18",
+    "title": "みるみるランクが上がる「Bo3セッション法」（Coach Curtis提唱）",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://lolninja.net/2021/03/02/26554/",
+    "category": "LoL上達・戦術",
+    "summary": "Coach Curtis提唱のランク管理法。1セッションをBo3（2本先取、最大3戦）に区切り、0-2になったらティルト連敗防止のため即座に終了する。",
+    "content": "Coach Curtis提唱のBo3（2本先取）セッション法まとめ。無目的に回すのではなく、1日最大2ブロック（計6戦以内）に制限。0-2で即終了することで連敗によるLP喪失を防ぎ、集中力を維持して勝率を急上昇させる。"
+  },
+  {
+    "code": "E19",
+    "title": "統計サイト「LoLalytics」でデータの間違った見方を正しく解説",
+    "author": "LoL忍者 🥷 @LOLNinjaBlog",
+    "url": "https://lolninja.net/2024/02/09/44075/",
+    "category": "LoL上達・戦術",
+    "summary": "LoLalyticsの「平均勝率インフレ現象（Average Win Rateが52.5%等になる仕様）」とサバイバーバイアスを正しく読み解くための解説記事。E3と対になる統計読解の正本。",
+    "content": "LoLalyticsの正しい見方まとめ。エメラルド＋では上位層が下位層に勝ち越すため平均勝率が50%ではなく52%以上にインフレする。そのため画面右上のAverage Win Rateを基準に引き算して評価する必要がある。また完成アイテム勝率は勝っている時ほど完成しやすいサバイバーバイアスがかかるため相対勝率差で見るべきである。"
+  },
+  {
+    "code": "E20",
+    "title": "LS's Champion Notes（全175ページ・全ロール主要チャンピオン完全攻略バイブル）",
+    "author": "LS (Nick De Cesare) @LSXYZ9",
+    "url": "https://drive.google.com/file/d/1ZrgpoDGe9igedde98L4mc8GTKp_KVgad/view?usp=sharing",
+    "category": "LoL上達・戦術",
+    "summary": "元C9ヘッドコーチ・名物アナリストのLS氏が作成した全175ページに及ぶチャンピオンノート集。全主要チャンピオンの扉絵、マッチアップ、推奨ビルド、ルーン、スキルオーダー、パワースパイク、数理的メタ理解を網羅。",
+    "content": "元Cloud9ヘッドコーチ・世界最高峰のアナリストLS（Nick De Cesare）氏による全175ページの超大作チャンピオンノート集（Champion notes.pdf）。\nAatroxから始まり、アルファベット順に全ロール・全主要チャンピオンの扉絵・マッチアップ・推奨ビルド・ルーン・スキルオーダー・パワースパイク・アイテム効率計算を完全網羅。\n数理的アプローチによる過小評価アイテム・チャンピオンの掘り起こしや、競技シーン・高レートソロランクでの最適化メタ構築の正本資料。"
+  },
+  {
+    "code": "E21",
+    "title": "シルバーからダイヤへ導いた\"たった一つの習慣\" プレイヤーを高ランクに押し上げる気づき",
+    "author": "ゆーみ速報",
+    "url": "https://yuumi-sokuhou.com/2026/08/18/post-12895/",
+    "category": "LoL上達・戦術",
+    "summary": "低ランクが無視しがちなチーターリコールやスロープッシュのウェーブ操作、敵JGの意図的トラッキング、カメラ・キーバインド設定の最適化などランク停滞を打破する転換点まとめ。",
+    "content": "「レーンで普通にうまくなる」「CSを丁寧に取る」「ジャングルクリアを速くする」「スキルショットを当てる」みたいな、時間をかければ自然に伸びる基本の話じゃない。 低ランクの頃は完全に無視してたのに、ある時ようやく実践してみたら劇的に変わった、具体的なメカニクスやマインドセットの転換、習慣について聞きたい。試合の中で圧倒的な差を感じて「あ、これが自分が伸び悩んでた理由か」って気づいた瞬間があったはず。 例えば、チーターリコールやスローパッシュみたいな適切なウェーブ操作を覚えたこと、敵ジャングラーの動きを勘じゃなくて実際に追うようになったこと、カメラやキーバインド設定を変えたこと、とか。 自分にとってのその\"気づき\"は何だった？ ハイエロの基準で言うとダイヤ以上を想定。 (adsbygoogle = window.adsbygoogle || []).push({});"
+  },
+  {
+    "code": "E22",
+    "title": "「OTPの精神力は異常」同じチャンプを2連続で使えない人続出、海外で共感の嵐",
+    "author": "ゆーみ速報",
+    "url": "https://yuumi-sokuhou.com/2026/08/17/post-12883/",
+    "category": "LoL上達・戦術",
+    "summary": "Redditで共感を呼んだチャンプ変更癖とOTP（ワントリック）の精神力議論。同じチャンプを使い続けることで操作を無意識化し、マップマクロに脳のメモリを割く本質的な上達構造を解説。",
+    "content": "同じチャンプを2回連続以上で使い続けることがどうしてもできなくて、常にチャンプを変えたくなってしまう。同じような\"メンタルの問題\"を抱えてる人、他にもいる？ 引用元: https://old.reddit.com/r/leagueoflegends/comments/1vodrrw/i_envy_the_mental_fortitude_of_otps/ 反応まとめ 💬 それは\"メンタルの強さ\"というより、単純にそのチャンプを楽しんでもっと上手くなりたいだけだと思う。自分は逆に新しいチャンプをあまり触りたくないタイプ、右も左も分からず下手なままなのはただつらい 💬 自分にしっくりくるチャンプで戦うと、ようやく「リーグ・オブ・レジェンドという戦略ゲーム」をプレイできてる感覚になる 💬 このゲームを競技的なはけ口として遊んでいて、自分の限界を知っててコンボがキレイで、動きや当たり判定に慣れてて、細かいテクを全部知ってる状態が一番燃える。別のチャンプに変えたら100%は出せない (adsbygoogle = window.adsbygoogle || []).push({});\n\n# F群：LoL Guide (lol-guide.com) 厳選Web戦術正本（2026-11-21追加）\n\n全205件のLoL Guide記事から抽出された、普遍的かつマスター級のマクロ・JG・ロール戦術のコア正本群（F1〜F12）。"
+  },
+  {
+    "code": "F1",
+    "title": "ドラゴンファイトで勝つために：準備編（90秒前のリコールと視界確保）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/pplgp",
+    "category": "LoL上達・戦術",
+    "summary": "ドラゴン出現90秒前のリコール、1分前のウェーブ押しと視界の取り方、川のコントロールを事前に行う「勝つための準備マクロ」の鉄則。",
+    "content": "ドラゴンファイトの勝敗は戦いが起きる1分前に9割決まっている。湧く90秒前にリコールしてアイテム購入を完了させ、1分前には川の視界を確保して敵の侵入経路を塞ぎ、ミッドとボットのウェーブをプッシュして主導権を握る。準備のないドラゴンファイトはただのコインフリップである。"
+  },
+  {
+    "code": "F2",
+    "title": "中級者にありがちなミス「ミッドに集まるだけ」をやめよう！（アラム化の脱却）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/hxzjb",
+    "category": "LoL上達・戦術",
+    "summary": "レーン戦終了後に5人全員がミッドに集まって経験値とCSを浪費する「ARAM化」を脱却し、サイドレーン管理とクロスプレイスプリットを機能させる原則。",
+    "content": "中盤以降、ミッドに全員で突っ立っているとサイドウェーブのゴールドと経験値が毎分タワーに焼かれて差が縮まる。ADC+SUPがミッドを担当し、TPを持つソロレーナー（TOP/MID）がサイドを押して、敵を分散させてからオブジェクトに人数有利で仕掛けるローテーションの基礎を徹底解説。"
+  },
+  {
+    "code": "F3",
+    "title": "フルクリアするべき？ガンク偏重で勝てない理由（JGのファーム効率論）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/jpcyl",
+    "category": "LoL上達・戦術",
+    "summary": "成功率の低いガンクに時間を溶かしてレベル差・CS差で自滅するJGの病を治療する、フルクリアを基盤とした確実なゴールド最大化とカウンターガンク戦術。",
+    "content": "ガンクは失敗した瞬間に経験値とゴールドがゼロになり、敵JGにキャンプを荒らされて取り返しがつかない。まずは自陣のフルクリアを基本サイクル（Respawnタイマー管理）とし、通過ルート上にある「決まるガンク」だけを拾うことで、試合展開が荒れても安定して敵JGより先行する立ち回りを解説。"
+  },
+  {
+    "code": "F4",
+    "title": "ドラゴンとヴォイドグラブ、どちらが重要？（序中盤オブジェクトの価値基準）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/xplys",
+    "category": "LoL上達・戦術",
+    "summary": "チーム構成とタワー破壊シナジーから見るグラブとドラゴンの優先度判断。グラブ5〜6体によるタワー爆速シージとドラゴンソウルへの投資判断。",
+    "content": "タワープレートとファーストタワー獲得を狙える前半はグラブの価値が非常に高い。特にプッシュ力の高いチャンプがいる場合はグラブ優先。一方で相手にドラゴンソウルを渡したくない後半スケール構成なら1匹目のドラゴンから拒否するなど、構成と試合時間に応じたオブジェクト取捨選択の完全ガイド。"
+  },
+  {
+    "code": "F5",
+    "title": "ベースで迷う時間をなくそう！（リコール即出撃のテンポ管理術）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/kyiqp",
+    "category": "LoL上達・戦術",
+    "summary": "リコール中にショップを開いて購入アイテムを決定し、ベース滞在時間を5秒以内にしてレーン復帰とロームのテンポ差で敵を圧倒する上位帯の技術。",
+    "content": "低〜中レートで最も時間を無駄にしているのが「噴水で立ち止まってショップを眺める時間」。リコールのアニメーション中に購入アイテムと端数（ピンクワード/ポーション）を決め、リコール完了と同時にキー入力で購入して即出撃する。毎試合合計1〜2分のテンポ差が生まれ、寄りの速さに直結する。"
+  },
+  {
+    "code": "F6",
+    "title": "勝っている試合を落とさないための5つのポイント（スロー防止の安全原則）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/qfuya",
+    "category": "LoL上達・戦術",
+    "summary": "有利な試合で不用意な単独デス、無理なタワーダイブ、視界なしバロンで大逆転されるスローを防ぎ、安全確実にネクサスを破壊するクローズマクロ。",
+    "content": "スローの最大の原因は「有利だからと視界のない敵JGに孤立して侵入すること」と「バロンで5v5を強引に始めてエースを取られること」。有利なチームは敵のタワーを1本ずつ外側から安全に削り、敵JGの視界を完全制圧して窒息させるだけで勝てる。無理なキル狙いを捨ててリソース差で圧殺する手順。"
+  },
+  {
+    "code": "F7",
+    "title": "「ウィークサイド」「ストロングサイド」を認識しよう（味方JGの位置とレーン戦）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/hfhhp",
+    "category": "LoL上達・戦術",
+    "summary": "味方JGが反対側にいる「ウィークサイド」のときにガンクで死ぬ事故をゼロにし、味方が近い「ストロングサイド」で主導権を握る試合把握力。",
+    "content": "自分のレーンが強いか弱いかではなく、味方JGがいる側がストロングサイド、いない側がウィークサイドである。ウィークサイドのときはどれだけレーン戦で勝っていてもガンクを受けたら1v2で死ぬ。ウェーブを引いて耐えることがチーム全体の勝利に貢献するというマクロ意識の改革。"
+  },
+  {
+    "code": "F8",
+    "title": "エメラルドで勝てない人でありがちなコト（ソロQの壁を超えるマクロ思考）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/zvphd",
+    "category": "LoL上達・戦術",
+    "summary": "ミクロはあるのにエメラルドでスタックするプレイヤーの典型原因「勝負どころでないデス」「オブジェクト前のリコールミス」「チャットでのティルト」の克服。",
+    "content": "エメラルド帯のプレイヤーは操作精度は高いが、試合の勝敗を分ける「タイミング」の理解が欠けている。不要なキルトレードでシャットダウンを渡す、味方の寄りがない場所でファイトを始める等、期待値の低いギャンブルプレイを削ぎ落とすだけでダイヤへの扉が開く。"
+  },
+  {
+    "code": "F9",
+    "title": "ダイヤモンドから上がるための重要ポイント（マスター到達に必要な視界と予測）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/mzqga",
+    "category": "LoL上達・戦術",
+    "summary": "ダイヤからマスター・グランドマスターへ駆け上がるために必要な「敵の位置予測（フォグ・オブ・ウォーの読解）」「スキルのクールダウン管理」「ウェーブバウンス予測」。",
+    "content": "ダイヤ上位とマスターの決定的な差は、見えていない敵の動きをミニマップと試合時間から8割当てる予測力。相手のフラッシュやウルトのタイマーを記憶し、スキルが上がっていない30秒〜1分間の隙を正確に突いてキルとオブジェクトを回収する高解像度プレイ。"
+  },
+  {
+    "code": "F10",
+    "title": "スノーボールをする方法：ジャングル編（侵入・キャンプタイマー管理・タワーダイブ）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/kucye",
+    "category": "LoL上達・戦術",
+    "summary": "キルを取ったJGがさらにリードを拡大するための「敵JGキャンプの略奪」「味方レーナーを連れたタワーダイブ」「敵JGの視界封鎖」。",
+    "content": "有利を取ったJGが自陣のキャンプだけを回るのはリードの浪費。敵JGのファームを奪い、敵がCSを取れない状態を作り出す「デニーループ」を回す。味方のプッシュレーンに合わせて3人タワーダイブを仕掛け、敵のゲームを完全に崩壊させるアグレッシブスノーボール論。"
+  },
+  {
+    "code": "F11",
+    "title": "スノーボールをする方法：バロンバフ獲得後（1-3-1・1-4プッシュとシージの基本）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/gqyzl",
+    "category": "LoL上達・戦術",
+    "summary": "バロンバフを取ったのにタワーを折れずに終わるチームのミスを根絶する、3レーン同時進行プッシュとスーパーミニオン護衛マクロ。",
+    "content": "バロンバフの真価はミニオンの強化にある。5人で1レーンに集まると相手のウェーブクリアに止められてバフが切れる。1-3-1または1-4で複数レーンのウェーブを同時にタワーへ押し込み、相手に守備の人員分散を強要してインヒビターを安全にこじ開けるセオリー。"
+  },
+  {
+    "code": "F12",
+    "title": "相手のスノーボールを止める方法（シャットダウン回収・タートル・キャッチ）",
+    "author": "Gariaru (LoL Guide)",
+    "url": "https://www.lol-guide.com/articles/auvqd",
+    "category": "LoL上達・戦術",
+    "summary": "序盤に大差をつけられた不利な試合で、タワー下で耐え（タートル）、視界の隙から孤立したキャリーを捕まえて大逆転を起こす防衛戦術。",
+    "content": "不利なときに川や敵JGで戦うのは敗北行為。自陣のタワー下までミニオンを引き込み、相手のダイブミスを誘う。さらに相手が油断して孤立した瞬間をピンクワードの裏から5人でキャッチし、1,000ゴールドのシャットダウンを味方キャリーに集めて試合を振り出しに戻す逆転の教科書。"
+  }
+]

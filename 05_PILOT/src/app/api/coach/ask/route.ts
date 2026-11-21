@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { callHybridLlm } from '@/lib/ollamaClient';
 import { normalizeChampionName } from '@/lib/championNames';
+import { searchReferenceItems } from '@/lib/referenceSearch';
 
 /**
  * SPEC 10: AIコーチ回答のバリデーションとサニタイズ
@@ -106,6 +107,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 1.5 動的RAG: 質問・レーン・対面に基づいて全149件のLoL公式戦術ライブラリから関連知見を検索抽出
+    const relevantTactics = searchReferenceItems(trimmedQuestion, lane, myChampion, enemyChampion, 4);
+    let dynamicTacticsText = '';
+    if (relevantTactics.length > 0) {
+      dynamicTacticsText = relevantTactics
+        .map((t) => `- [${t.code} ${t.author}] ${t.title}:\n  要約: ${t.summary || t.content.slice(0, 150)}`)
+        .join('\n');
+
+      relevantTactics.forEach((t) => {
+        sources.push(`[${t.code}] ${t.title}`);
+      });
+    }
+
     if (sources.length === 0) {
       sources.push('LoL一般戦術理論 ＆ スキル仕様データ');
     }
@@ -120,6 +134,7 @@ export async function POST(request: NextRequest) {
       myFactsText ? `\n【自チャンプ(${myChampion})の正本データ】\n${myFactsText}` : '',
       enemyFactsText ? `\n【敵チャンプ(${enemyChampion})の正本データ】\n${enemyFactsText}` : '',
       matchupMemoText ? `\n【実戦対面メモ(vs ${enemyChampion})】\n${matchupMemoText}` : '',
+      dynamicTacticsText ? `\n【動的参照：LoL公式戦術ライブラリ（DB全149件から抽出）】\n${dynamicTacticsText}` : '',
     ].filter(Boolean).join('\n');
 
     const prompt = `
@@ -138,7 +153,7 @@ ${trimmedQuestion}
 
 【回答のルール】
 1. 曖昧な抽象論（「頑張ってCSを取りましょう」等）ではなく、スキルの当て方、CDの隙、ウェーブ管理、初動3分やLv6のキルラインなど、具体的なアクションを提示すること。
-2. 今回参照した正本データや対面メモがある場合は、「${sources.join(' / ')}」に基づいた根拠を一言添えること。
+2. 上記の【動的参照：LoL公式戦術ライブラリ】や正本データがある場合は、その公式コード番号（例: D39, D5, D115等）や著者・具体的数値（秒数・体数等）を根拠として必ず引用し、信頼性の高いアドバイスを構築すること。
 3. 文体は親しみやすく頼れるコーチ口調（「〜しよう」「〜がポイントだ」等）にすること。
 4. 長すぎず、試合前に30秒で読める簡潔な構成（箇条書き2〜3点＋要約）にすること。
 5. 【厳格】スキル名はRiot公式の正式日本語名（例: ViのQは「真っ向勝負」、Rは「強行突入」）を用い、中国語や不正確な訳語を使用しないこと。
