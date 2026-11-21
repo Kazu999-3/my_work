@@ -20,7 +20,6 @@ interface LaneMatchupRowProps {
   handleDropPlayer: (e: React.DragEvent, targetTeam: 'teamBlue' | 'teamRed' | 'spectators', targetRole: string) => void;
   handleSelectSwapPlayer: (team: string, role: string, name: string) => void;
   renderSwapSelect: (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => React.ReactNode;
-  onOpenTactics?: (role: string, myPlayerName: string, enemyPlayerName: string, myChampion?: string, enemyChampion?: string) => void;
 }
 
 export function LaneMatchupRow({
@@ -39,7 +38,6 @@ export function LaneMatchupRow({
   handleDropPlayer,
   handleSelectSwapPlayer,
   renderSwapSelect,
-  onOpenTactics,
 }: LaneMatchupRowProps) {
   const offB = pB && pB.mainLane !== 'ALL' && pB.mainLane !== '-' && pB.currentRole !== pB.mainLane;
   const offR = pR && pR.mainLane !== 'ALL' && pR.mainLane !== '-' && pR.currentRole !== pR.mainLane;
@@ -145,19 +143,6 @@ export function LaneMatchupRow({
         >
           {diff > 0 ? `+${diff}` : diff < 0 ? diff : '±0'}
         </span>
-        {pB?.name && pR?.name && onOpenTactics && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenTactics(role, pB.name, pR.name);
-            }}
-            className="text-[9px] font-bold text-amber-500 hover:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30 mt-1 transition-colors flex items-center gap-0.5 shadow-2xs"
-            title="試合前30秒 虎の巻を開く"
-          >
-            ⚡虎の巻
-          </button>
-        )}
         {clash && clash.games > 0 && (
           <span
             className="text-[8px] font-mono font-bold text-muted-strong bg-surface border border-border px-1 py-0.2 rounded mt-0.5 shadow-2xs whitespace-nowrap cursor-help"

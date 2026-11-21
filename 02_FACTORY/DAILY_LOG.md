@@ -1,6 +1,31 @@
 ## 📅 2026-11-21（土）
 
-### ⚡ 【AIコーチ15分テンポ指標 ＆ 試合前30秒 虎の巻動的RAG ＆ Discord自浄化Cronの実装】
+### ⚡ 【機能整理：バランサーUI連携・DiscordスイーパーCronの取り消し ＆ AIコーチ15分テンポ指標の維持】
+
+**概要**:
+ユーザーからの指示「バランサーUI連携 (BalanceResultModal.tsx / TacticsSentinelModal.tsx): チーム分け結果モーダルの各レーン中央に 『⚡虎の巻』ボタン を配備...はいらない」「Discord自浄化：個別案内チャンネル定期スイーパーCron機能はいらないから取り消して」に対応。
+1. **取り消し・ロールバック内容**:
+   - `04_PORTAL/src/app/balancer/_parts/LaneMatchupRow.tsx`: 中央ロール下の「⚡虎の巻」ボタンおよびPropsを完全撤去し元の状態へ復元。
+   - `04_PORTAL/src/app/balancer/_parts/BalanceResultModal.tsx`: モーダル呼び出しStateおよびレンダリングを削除し元通りに復元。
+   - `04_PORTAL/src/app/balancer/_parts/TacticsSentinelModal.tsx` & `04_PORTAL/src/app/api/tactics/`: 作成したモーダルコンポーネントおよびAPIを完全削除。
+   - `04_PORTAL/src/app/api/cron/onboarding-cleanup/`: 定期スイーパーCronエンドポイントを完全削除。
+   - `04_PORTAL/src/lib/onboardingProcessor.ts`: 追加した `autoSweepOnboardingChannels` 関数を取り消し、元通りに復元。
+2. **維持されたコア機能**:
+   - **AIコーチ機能の15分スタッツ・影響力（FORESTERテンポ指標）連動**（`04_PORTAL/src/lib/customCoach.ts`）:
+     - 15分推計CS（`avgCsAt15`）、推計ゴールド（`avgGoldAt15`）、15分テンポ支配率スコア（`earlyTempoScore` 0〜100点）および `earlyGameImpact` 講評生成は高精度に維持。
+3. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `.next` キャッシュクリア後、`npx tsc --noEmit` ➔ PASS、`npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. ユーザーからの「この機能はいらない・取り消して」という指示に対しては、git checkout / git rm を用いて差分をクリーンに元に戻し、不要なコードや依存関係を一切残さない徹底した清潔さを保て。
+> 2. Next.jsのApp Router環境でルートファイルを削除した際は、`.next` キャッシュ内の自動生成型定義（`validator.ts` 等）が古いルートを参照してTSエラーを起こすため、`.next` を即時クリーンして再ビルドせよ。
+> 3. 必要な機能（AIコーチの15分テンポ指標）だけを精密に残し、プロダクトの肥大化・複雑化を防いで最小限の美しいコードベースを維持せよ。
+
+- `[要検証]`: 専属AIコーチカルテにおける15分テンポスコア（DOMINANT / STRONG / STRUGGLING）の表示確認
+- `[継続ウォッチ]`: バランサー画面（`/balancer`）のチーム分け・入替UIの動作安定性
+- `[発信候補]`: 「LoLカスタム大会運用におけるミニマリズム：不要なUI装飾を削ぎ落とし、本質的なテンポ指標に集中する哲学」
+
+
 
 **概要**:
 ユーザーからのリクエスト「【7大コアプロダクト】の推進や運用自動化、Discord自浄化・戦術動的RAGエンジンでなにかない？」「２，３，４かな コーチ機能は15分までのスタッツや影響力も参考にできるようにしてほしい」に対応。
