@@ -1,5 +1,36 @@
 ## 📅 2026-11-21（土）
 
+### 🚨 【カスタム結果保存エラー「Unauthorized (invalid bot secret)」根本改修 ＆ 認証ガード配備】
+
+**概要**:
+ユーザーからの「カスタム結果送ったら『保存エラー: Unauthorized (invalid bot secret)』が毎回出て打てない」という緊急不具合を調査・完全改修。
+1. **原因の特定**:
+   - `04_PORTAL/src/app/api/match/record/route.ts` で、認証チェックが `botAuth = verifyBotSecret(request)` ➔ `if (!botAuth.ok) adminAuth = verifyAdminSession(request)` となっていた。
+   - ブラウザ（人間）からの入力では `x-bot-secret` ヘッダーが存在しないため `botAuth` は当然失敗し `botAuth.error = 'Unauthorized (invalid bot secret)'` が生成される。
+   - ユーザーが未ログイン（またはセッション切れ・一般権限）だった場合、`adminAuth` も失敗するが、エラーレスポンスが `botAuth.error || adminAuth.error` となっていたため、**無関係なBot用エラー（invalid bot secret）がフロントエンドに誤返却**されていた。
+   - さらに、画面側（`/balancer/record`）に未ログイン・非管理者の警告表示が一切なく、ユーザーがログイン状態に気づけないUI構造になっていた。
+2. **改修内容**:
+   - `04_PORTAL/src/app/api/match/record/route.ts`:
+     - `x-bot-secret` ヘッダーが存在する場合のみ `verifyBotSecret`（Bot認証）を実施。
+     - ヘッダーがない（ブラウザ等）場合は `verifyAdminSession`（管理者セッション認証）のみを実施し、失敗時は「管理者セッションが無効または未ログインです。/login から管理者としてログインしてください。」と正確な日本語で返却。
+   - `04_PORTAL/src/app/balancer/record/page.tsx`:
+     - `useCurrentUser` を導入し、未ログインまたは非管理者（一般権限）の場合に画面上部へ「⚠️ 試合結果の保存には管理者権限が必要です [管理者ログイン]」バナーを常時表示。
+     - 送信時にも未ログイン・非管理者を即時ガードし、トースト案内。
+     - `fetch('/api/match/record')` に `credentials: 'include'` を明示。
+3. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`: `npx tsc --noEmit` ➔ PASS、`npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. Bot経由（APIヘッダー認証）とブラウザ経由（Cookieセッション認証）の両方を許容するAPIでは、必ず「ヘッダーの有無」で判定分岐させ、ブラウザアクセスに対してBot専用のエラー（invalid bot secret等）を絶対に誤返却するな。
+> 2. 管理者専用のデータ登録画面では、保存ボタンを押して401エラーになるまで放置せず、画面ロード時にログイン権限を判定して「要ログインバナー」を最上部に先回り表示せよ。
+> 3. `fetch` で認証Cookie（HttpOnly）を送る際は、同一オリジンであっても `credentials: 'include'` を明記し、ブラウザ環境差異によるCookie欠落事故を未然に防げ。
+
+- `[要検証]`: `/login` でDiscord管理者ログインした直後の `/balancer/record` 正常保存確認
+- `[継続ウォッチ]`: 週末定期カスタムでの結果記録時の管理者権限トラブル発生件数
+- `[発信候補]`: 「BotとWeb両対応APIでありがちな認証エラー誤認（Bot secretエラー）を防ぐNext.js設計」
+
+
+
 ### 🎯 【note収益化ドラフト ＆ AIコーチ試合後戦術監査 ＆ TODOダッシュボード清掃】
 
 **概要**:

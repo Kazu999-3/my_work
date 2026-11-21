@@ -14,12 +14,20 @@ import { performMatchNotifications } from '../../../../lib/matchRecord/notifier'
 export async function POST(request: Request) {
   try {
     // ===== 1. 認証 =====
-    const botAuth = verifyBotSecret(request);
-    if (!botAuth.ok) {
+    const hasBotSecret = !!request.headers.get('x-bot-secret');
+    if (hasBotSecret) {
+      const botAuth = verifyBotSecret(request);
+      if (!botAuth.ok) {
+        return NextResponse.json(
+          { error: botAuth.error || 'Unauthorized (invalid bot secret)' },
+          { status: 401 }
+        );
+      }
+    } else {
       const adminAuth = await verifyAdminSession(request);
       if (!adminAuth.ok) {
         return NextResponse.json(
-          { error: botAuth.error || adminAuth.error || 'Unauthorized' },
+          { error: adminAuth.error || '管理者セッションが無効または未ログインです。/login から管理者としてログインしてください。' },
           { status: 401 }
         );
       }
