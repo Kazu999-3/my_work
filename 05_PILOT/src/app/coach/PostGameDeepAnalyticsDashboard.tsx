@@ -16,6 +16,7 @@ import type { PathMapReport } from '@/lib/pathMap';
 import PathMapCard from './PathMapCard';
 import type { TrollAnalysisResult } from '@/lib/trollDetector';
 import type { WhatIfAnalysisReport } from '@/lib/whatIfAnalyzer';
+import type { PostgameBibleAuditReport } from '@/lib/postgameBibleAudit';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -104,6 +105,7 @@ interface PostGameData {
   ddragon_patch?: string | null;
   allies_troll_analysis?: TrollAnalysisResult | null;
   what_if_analysis?: WhatIfAnalysisReport | null;
+  tactical_bible_audit?: PostgameBibleAuditReport | null;
 }
 
 interface PostGameDashboardProps {
@@ -130,7 +132,7 @@ const COMPARE_ROWS: { key: keyof MatchStats; label: string; unit?: string; lower
   { key: 'control_wards_bought', label: 'コントロールワード購入' },
 ];
 
-type DetailTab = 'lane' | 'target' | 'tempo' | 'jg' | 'map' | 'note';
+type DetailTab = 'lane' | 'target' | 'tempo' | 'jg' | 'map' | 'bible' | 'note';
 
 const signed = (v: number) => (v > 0 ? `+${v.toLocaleString()}` : v.toLocaleString());
 const diffColor = (v: number | null) => (v == null || v === 0 ? 'text-stone-300' : v > 0 ? 'text-emerald-400' : 'text-rose-400');
@@ -228,6 +230,7 @@ export default function PostGameDeepAnalyticsDashboard({
     { key: 'lane', label: '⚔️ 対面比較' },
     { key: 'target', label: '🎯 目標ランク比較' },
     { key: 'tempo', label: '⏱️ テンポ・ビルド' },
+    ...(data.tactical_bible_audit ? [{ key: 'bible' as const, label: '📘 戦術バイブル (D原則)' }] : []),
     ...(data.jg_analysis ? [{ key: 'jg' as const, label: '🌲 JG分析' }] : []),
     ...(data.path_map && data.path_map.tracks.length > 0 ? [{ key: 'map' as const, label: '🗺️ 道筋マップ' }] : []),
     { key: 'note', label: '📝 振り返りメモ' },
@@ -626,6 +629,75 @@ export default function PostGameDeepAnalyticsDashboard({
         </div>
 
       </div>
+      )}
+
+      {/* 📘 戦術バイブル原則監査（D原則） */}
+      {activeTab === 'bible' && data.tactical_bible_audit && (
+        <div className="space-y-3">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-primary-950/40 via-stone-900 to-stone-950 border border-primary-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-black text-white">戦術バイブル遵守度</span>
+                <span className={`px-2 py-0.5 rounded-md text-[11px] font-black font-mono border ${
+                  data.tactical_bible_audit.overallGrade === 'S'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : data.tactical_bible_audit.overallGrade === 'A'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : 'bg-stone-800 text-stone-300 border-stone-700'
+                }`}>
+                  GRADE {data.tactical_bible_audit.overallGrade}
+                </span>
+              </div>
+              <p className="text-xs text-stone-300 leading-relaxed">
+                {data.tactical_bible_audit.summary}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {data.tactical_bible_audit.items.map((item) => (
+              <div
+                key={item.code}
+                className={`p-3 rounded-xl border flex flex-col justify-between text-xs ${
+                  item.status === 'passed'
+                    ? 'bg-stone-950/80 border-emerald-500/30'
+                    : item.status === 'warning'
+                    ? 'bg-stone-950/80 border-amber-500/30'
+                    : 'bg-stone-950/80 border-rose-500/30'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <span className="text-[10px] font-black font-mono px-1.5 py-0.5 rounded bg-stone-900 border border-stone-800 text-primary-400">
+                      {item.code}
+                    </span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      item.status === 'passed'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        : item.status === 'warning'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {item.status === 'passed' ? '達成' : item.status === 'warning' ? '要調整' : '未達'}
+                    </span>
+                  </div>
+                  <div className="font-black text-stone-200 text-xs mb-1">
+                    {item.name}
+                  </div>
+                  <div className="text-[11px] font-mono text-stone-400 mb-1.5">
+                    {item.scoreText}
+                  </div>
+                  <p className="text-[11px] text-stone-400 leading-relaxed">
+                    {item.detail}
+                  </p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-stone-800/80 text-[10px] font-bold text-stone-300">
+                  判定: {item.verdict}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* 15分テンポ逆再生・帰還テンポ・ビルド監査（旧「テンポ」タブ） */}

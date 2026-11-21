@@ -13,6 +13,7 @@ import { detectAlliesTroll } from '@/lib/trollDetector';
 import { analyzeWhatIfTimeline } from '@/lib/whatIfAnalyzer';
 import { buildPathMap } from '@/lib/pathMap';
 import { getLatestPatch } from '@/lib/ddragonClient';
+import { auditTacticalBible, type PostgameBibleAuditReport } from '@/lib/postgameBibleAudit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -291,6 +292,15 @@ export async function GET(request: NextRequest) {
       matchDetails: match
     }) : null;
 
+    let tactical_bible_audit: PostgameBibleAuditReport | null = null;
+    if (timeline) {
+      try {
+        tactical_bible_audit = auditTacticalBible(match, timeline, puuid, tempo);
+      } catch (e: any) {
+        console.warn('[postgame-deep-analytics] tactical bible audit error:', e);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       selected_match_id: targetMatchId,
@@ -316,6 +326,7 @@ export async function GET(request: NextRequest) {
       jg_analysis,
       allies_troll_analysis,
       what_if_analysis,
+      tactical_bible_audit,
       path_map,
       ddragon_patch,
     });
