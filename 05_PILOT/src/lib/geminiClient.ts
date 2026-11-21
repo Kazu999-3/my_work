@@ -271,3 +271,134 @@ export async function callGeminiWithRetry(prompt: string, options: GeminiOptions
   return callGemini(prompt, options);
 }
 
+/**
+ * Google Gemini File API にメディア（動画、音声等）をアップロードし、ACTIVE状態になるのを待ってURIを返す
+ */
+export async function uploadToGeminiFileApi(
+  buffer: Buffer,
+  mimeType: string,
+  displayName = 'upload_media'
+): Promise<{ uri: string; name: string }> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_FREE;
+  if (!apiKey) throw new Error('GEMINI_API_KEY が未設定です');
+
+  // 1. Resumable Upload 開始
+  const initRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'X-Goog-Upload-Protocol': 'resumable',
+      'X-Goog-Upload-Command': 'start',
+      'X-Goog-Upload-Header-Content-Length': buffer.length.toString(),
+      'X-Goog-Upload-Header-Content-Type': mimeType,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ file: { display_name: displayName } }),
+  });
+
+  const uploadUrl = initRes.headers.get('x-goog-upload-url');
+  if (!uploadUrl) {
+    throw new Error(`File API アップロードURL取得失敗: ${initRes.status}`);
+  }
+
+  // 2. バイト転送
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Length': buffer.length.toString(),
+      'X-Goog-Upload-Offset': '0',
+      'X-Goog-Upload-Command': 'upload, finalize',
+    },
+    body: new Uint8Array(buffer),
+  });
+
+  const uploadData = await uploadRes.json();
+  const fileName = uploadData.file?.name;
+  const fileUri = uploadData.file?.uri;
+  if (!fileName || !fileUri) {
+    throw new Error(`File API アップロード応答不正: ${JSON.stringify(uploadData)}`);
+  }
+
+  // 3. 処理完了待ち (動画の場合 PROCESSING になる)
+  let state = uploadData.file.state;
+  let attempts = 0;
+  while (state === 'PROCESSING' && attempts < 15) {
+    await new Promise((r) => setTimeout(r, 2000));
+    attempts++;
+    const checkRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
+    if (checkRes.ok) {
+      const checkData = await checkRes.json();
+      state = checkData.state;
+    }
+  }
+
+  if (state !== 'ACTIVE') {
+    throw new Error(`File API 処理タイムアウトまたは失敗 (state=${state})`);
+  }
+
+  return { uri: fileUri, name: fileName };
+}
+
+/**
+ * アップロード済みメディアファイル (File API URI) を含むマルチモーダルプロンプトで Gemini を呼び出す
+ */
+export async function callGeminiWithMedia(
+  fileUri: string,
+  mimeType: string,
+  prompt: string,
+  options: GeminiOptions = {}
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_FREE;
+  if (!apiKey) throw new Error('GEMINI_API_KEY が未設定です');
+
+  const models = options.model ? [options.model] : FALLBACK_MODELS;
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const body: any = {
+        contents: [
+          {
+            parts: [
+              { file_data: { mime_type: mimeType, file_uri: fileUri } },
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: options.temperature ?? 0.2,
+          maxOutputTokens: options.maxOutputTokens ?? 4096,
+          ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
+        },
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 60000),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.warn(`[Gemini Media ${model}] エラー status: ${res.status}`, errText);
+        lastError = new Error(formatGeminiError(res.status, errText));
+        continue;
+      }
+
+      const data = await res.json();
+      const text = (data.candidates?.[0]?.content?.parts || [])
+        .filter((p: any) => typeof p?.text === 'string' && !p.thought)
+        .map((p: any) => p.text)
+        .join('');
+
+      if (text) return text;
+    } catch (e: any) {
+      console.warn(`[Gemini Media ${model}] 呼び出し失敗:`, e.message);
+      lastError = e;
+    }
+  }
+
+  throw lastError || new Error('全Geminiモデルでのメディア解析に失敗しました');
+}
+

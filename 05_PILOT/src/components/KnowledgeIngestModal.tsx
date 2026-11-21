@@ -442,10 +442,24 @@ export default function KnowledgeIngestModal({
                     </div>
                   </div>
 
+                  {preview.weakness && (
+                    <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-500/30 text-amber-300 text-[11px]">
+                      <span className="font-bold mr-1">🎯 突くべき隙:</span>
+                      <span>{preview.weakness}</span>
+                    </div>
+                  )}
+
                   {preview.trap && (
                     <div className="p-2 rounded-lg bg-rose-950/30 border border-rose-500/30 text-rose-300 text-[11px]">
                       <span className="font-bold mr-1">⚠️ 地雷行動:</span>
                       <span>{preview.trap}</span>
+                    </div>
+                  )}
+
+                  {preview.power_spike && (
+                    <div className="p-2 rounded-lg bg-indigo-950/30 border border-indigo-500/30 text-indigo-300 text-[11px]">
+                      <span className="font-bold mr-1">⚡ パワースパイク:</span>
+                      <span>{preview.power_spike}</span>
                     </div>
                   )}
 
