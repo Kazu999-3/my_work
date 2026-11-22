@@ -168,7 +168,7 @@ function LeaderboardContent() {
                 レーン別MMR順位（TOP/JG/MID/ADC/SUP）・メンバー名簿・デュオ相性・メタ統計（採用率/勝率の高いチャンピオン集計）・レーン別勝率
                 <span className="ml-2">
                   <Link href="/guide#portal-mmr" className="text-primary-700 hover:underline font-bold">
-                    📖 MMRの見方・帯基準(1450)ガイド
+                    📖 推定MMRランクの見方・帯基準(1450)ガイド
                   </Link>
                 </span>
               </p>
@@ -176,18 +176,18 @@ function LeaderboardContent() {
           </div>
         </div>
 
-        {/* 💡 KTMレーティング・順位表の見方（折りたたみ） */}
+        {/* 💡 推定MMRランク・順位表の見方（折りたたみ） */}
         <details className="bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl text-xs group shadow-2xs">
           <summary className="p-3.5 sm:p-4 cursor-pointer flex items-center gap-2 font-bold text-primary-700 dark:text-primary-400 list-none select-none">
             <Info className="h-4 w-4 shrink-0" />
-            <span>💡 KTMレーティング・順位表の仕組みについて（クリックで展開）</span>
+            <span>💡 推定MMRランク・順位表の仕組みについて（クリックで展開）</span>
             <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-300 group-open:rotate-180 text-muted" />
           </summary>
           <div className="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border/50">
             <div className="bg-surface-subtle dark:bg-stone-800/40 p-3 rounded-xl border border-border/60 space-y-1">
-              <span className="font-black text-primary-700 dark:text-primary-400 block">SoloQランク vs KTMカスタムMMR</span>
+              <span className="font-black text-primary-700 dark:text-primary-400 block">SoloQランク vs 推定MMRランク</span>
               <p className="text-muted leading-relaxed">
-                SoloQランクはRiot公式のソロランク指標、KTMカスタムMMRは本サーバーのカスタム戦績から算出される独自レーティングです。チーム分けにはKTMカスタムMMRが使われます。
+                SoloQランクはRiot公式のソロランク指標、推定MMRランクは本サーバーのカスタム戦績から算出される内部推定値です。チーム分けや帯分けにはこの推定MMRランクが使われます。
               </p>
             </div>
             <div className="bg-surface-subtle dark:bg-stone-800/40 p-3 rounded-xl border border-border/60 space-y-1">

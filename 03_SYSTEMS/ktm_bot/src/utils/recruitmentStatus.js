@@ -29,7 +29,7 @@ export const DAY_DEFS = {
     label: '土曜',
     name: '土曜・実力均等カスタム',
     shortName: '土曜・実力均等カスタム',
-    rule: 'チーム戦力をMMRで五分五分に自動調整！初心者・低ランクでも安心して参加できるエンジョイ本戦（MMR変動あり）',
+    rule: 'チーム戦力を推定MMRランクで五分五分に自動調整！中初級帯でも安心して参加できるエンジョイ本戦（推定MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -548,7 +548,7 @@ export function buildRecruitmentContent(target, notificationRoleId) {
   if (target.dayKey === 'sat') {
     return `📢 **【${def.shortName}】${label} 21:00〜** ${mention}
 
-🔰 **「低ランクだけど迷惑かけない…？」**
+🔰 **「中初級帯だけど迷惑かけない…？」**
 ➔ **まったく気にせず押してください！**
 KTMバランサーがチーム戦力を【五分五分】に自動調整するため、誰が入ってもフェアで楽しい試合になります！
 （20人集まれば「初中級部屋」「上級部屋」の2部屋同時開催！）

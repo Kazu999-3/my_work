@@ -152,7 +152,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
                   <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
                   <SortableHeader label="SoloQランク" sortKey="highest_rank" className="px-2" />
-                  <SortableHeader label="KTMカスタムMMR" sortKey="mmr" className="px-2 text-center" />
+                  <SortableHeader label="推定MMRランク" sortKey="mmr" className="px-2 text-center" />
                   <SortableHeader label="第1希望" sortKey="primary_lane" className="px-2 text-center w-24" />
                   <th className="px-2 py-3 font-medium text-center w-28">詳細設定</th>
                 </tr>

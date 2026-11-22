@@ -192,7 +192,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
       return Response.json({
         type: 7, // メッセージ更新
         data: {
-          content: `🔥 **【ナイスファイト！】**\n今回は格上との対戦も考慮してチーム分けを調整します。思い切って挑んでみてください！応援しています！\n*(※常に格上挑戦をOKにしたい場合は、ポータルのマイページから「⚔️挑戦したい」に変更も可能です)*`,
+          content: `🔥 **【ナイスファイト！】**\n今回は格上との対戦も考慮してチーム分けを調整します。思い切って挑んでみてください！応援しています！\n*(※常に格上対面をOKにしたい場合は、ポータルのマイページから「⚔️ 格上対面もOK」に変更も可能です)*`,
           components: []
         }
       });
@@ -376,7 +376,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
                 if (higherOpponents.length >= 1) {
                   const oppSample = higherOpponents.slice(0, 3).map(o => o.name).join('さん、') + 'さん';
                   await sendInteractionFollowup(appId, token, {
-                    content: `🛡️ **【格上との対面に関する確認】**\n現在エントリーしているメンバーの中に、あなたよりMMRが大きく上の方（${oppSample} 等）がいます。\nあなたの設定は **「🛡️守ってほしい（格上対面NG）」** になっています。\n\nより安心してカスタムを楽しめるよう、以下の対応が可能です。ご希望の対応を選んでください：`,
+                    content: `🛡️ **【格上との対面に関する確認】**\n現在エントリーしているメンバーの中に、あなたより推定MMRランクが大きく上の方（${oppSample} 等）がいます。\nあなたの設定は **「🛡️ 格上対面を避ける」** になっています。\n\nより安心してカスタムを楽しめるよう、以下の対応が可能です。ご希望の対応を選んでください：`,
                     flags: 64,
                     components: [
                       {

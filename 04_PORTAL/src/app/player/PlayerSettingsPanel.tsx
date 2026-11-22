@@ -238,6 +238,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   };
 
   const roleLabel = (id: string) => ROLES.find((r) => r.id === id)?.name || id;
+  const isUpperTier = getPlayerTierBand(player?.mmr) === "UPPER";
   const weightLabel = weight === 1 ? "絶対このレーン" : weight === 3 ? "どこでもOK" : "できれば";
   const higherLabel = allowHigher ? "格上対面OK" : "格上との対面を避ける";
   const tierLabel =
@@ -619,9 +620,9 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          カード2: ⚔️ 格上との関わり方（2軸グリッド）
+          カード2: ⚔️ 格上との関わり方（2つの質問に単純化）
          ═══════════════════════════════════════════════════════════════ */}
-      <section className="rounded-3xl border border-border bg-background/70 dark:bg-surface/60 p-4 sm:p-6 space-y-4 shadow-xs">
+      <section className="rounded-3xl border border-border bg-background/70 dark:bg-surface/60 p-4 sm:p-6 space-y-6 shadow-xs">
         <div className="space-y-1 border-b border-border/70 pb-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-base sm:text-lg font-black text-foreground flex items-center gap-2">
@@ -629,104 +630,149 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
             </h3>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-surface border border-border text-muted-strong">
               現在の帯:{" "}
-              {getPlayerTierBand(player?.mmr) === "UPPER"
-                ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
-                : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
+              {isUpperTier
+                ? `上位帯 (推定MMRランク ${TIER_BAND_THRESHOLD}+)`
+                : `中初級帯 (推定MMRランク <${TIER_BAND_THRESHOLD})`}
             </span>
           </div>
           <p className="text-xs text-muted-strong">
-            同じ試合で実力が上の人と対面するか（縦軸）と、上の帯の部屋に繰り上がるか（横軸）をマス目で同時に選べます。
+            定期カスタムは推定MMRランク {TIER_BAND_THRESHOLD} を境に「上位帯」と「中初級帯」に分かれます。対面相手や上の帯への参加希望を個別に設定できます。
           </p>
         </div>
 
-        <div className="text-[11px] text-muted-strong leading-relaxed bg-surface-subtle/70 rounded-xl px-3 py-2 border border-border/60">
-          💡 定期カスタムは Portal MMR {TIER_BAND_THRESHOLD} を境に「上位帯」と「中初級帯」に分かれます。
-          <strong> 縦軸（対面保護）</strong>は同じ試合の中で誰と対面になるか、<strong>横軸（帯の繰り上げ）</strong>は中初級帯の人が上の帯の試合に入るかどうかを決めます。
-        </div>
-
-        {/* 2軸グリッド（PC: 2行×3列マトリクス / 狭幅375px: 縦軸ごとに3択ボタン） */}
+        {/* 質問1（対面） */}
         <div className="space-y-3">
-          {/* PC向け横軸ヘッダー */}
-          <div className="hidden md:grid md:grid-cols-12 gap-2 px-1 text-[11px] font-black text-foreground-subtle">
-            <div className="col-span-3 flex items-end pb-1">縦：対面 ＼ 横：上の帯</div>
-            <div className="col-span-3 text-center bg-surface-subtle rounded-xl py-1.5 px-2 border border-border/60">
-              🌟 混ざってもいい
-              <span className="block text-[10px] font-normal text-muted-strong">上の帯へ積極的に繰り上げ</span>
-            </div>
-            <div className="col-span-3 text-center bg-surface-subtle rounded-xl py-1.5 px-2 border border-border/60">
-              🤝 人不足ならOK
-              <span className="block text-[10px] font-normal text-muted-strong">上の帯が10人未満の時だけ（既定）</span>
-            </div>
-            <div className="col-span-3 text-center bg-surface-subtle rounded-xl py-1.5 px-2 border border-border/60">
-              🔒 自分の帯のみ
-              <span className="block text-[10px] font-normal text-muted-strong">上の帯には繰り上がらない</span>
-            </div>
+          <div className="space-y-1">
+            <label className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
+              <span>Q1. 同じ試合で、実力が上の人と対面（縦レーンの相手）になるのを避けたいですか？</span>
+            </label>
+            <p className="text-[11px] text-muted-strong">
+              同じ試合の中で誰と対面になるかの希望です（対面保護）。
+            </p>
           </div>
 
-          {(
-            [
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
               {
                 allow: false,
-                rowTitle: "🛡️ 格上対面を避ける",
-                rowDesc: "同じ試合でMMRが大きく上の人とは別レーンにします",
+                title: "🛡️ 格上対面を避ける（別レーンに回す）",
+                desc: "同じ試合で実力が大きく上の人とは別レーンにします",
               },
               {
                 allow: true,
-                rowTitle: "⚔️ 格上対面もOK",
-                rowDesc: "同じ試合で実力が上の人と対面になっても構いません",
+                title: "⚔️ 格上対面もOK",
+                desc: "同じ試合で実力が上の人と対面になっても構いません",
               },
-            ] as const
-          ).map((row) => (
-            <div
-              key={`ah-row-${String(row.allow)}`}
-              className="grid grid-cols-1 md:grid-cols-12 gap-2 items-stretch rounded-2xl border border-border bg-surface p-3"
-            >
-              <div className="md:col-span-3 flex flex-col justify-center pr-1">
-                <div className="text-xs sm:text-sm font-black text-foreground">{row.rowTitle}</div>
-                <div className="text-[10px] text-muted-strong leading-snug mt-0.5">{row.rowDesc}</div>
-              </div>
-
-              <div className="md:col-span-9 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {(
-                  [
-                    { v: "mix_ok", title: "🌟 混ざってもいい", desc: "上の帯へ積極的に参加" },
-                    { v: "fill_only", title: "🤝 人不足ならOK", desc: "10人未満の時だけ参加（既定）" },
-                    { v: "never", title: "🔒 自分の帯のみ", desc: "自分の帯にのみ参加" },
-                  ] as const
-                ).map((col) => {
-                  const isSelected = allowHigher === row.allow && tierPromotionPref === col.v;
-                  return (
-                    <button
-                      key={`cell-${String(row.allow)}-${col.v}`}
-                      type="button"
-                      onClick={() => {
-                        setAllowHigher(row.allow);
-                        setTierPromotionPref(col.v);
-                      }}
-                      aria-pressed={isSelected}
-                      className={`min-h-[56px] p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+            ].map((opt) => {
+              const isSelected = allowHigher === opt.allow;
+              return (
+                <button
+                  key={`q1-${String(opt.allow)}`}
+                  type="button"
+                  onClick={() => setAllowHigher(opt.allow)}
+                  aria-pressed={isSelected}
+                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+                    isSelected
+                      ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm ring-1 ring-primary-500/50"
+                      : "bg-surface border-border text-muted hover:bg-surface-hover font-bold"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm">{opt.title}</span>
+                    <span
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                         isSelected
-                          ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm"
-                          : "bg-background/70 border-border text-muted hover:bg-surface-hover font-bold"
+                          ? "border-stone-950 bg-stone-950 text-white text-[10px]"
+                          : "border-border bg-background"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1 text-xs">
-                        <span>{col.title}</span>
-                        {isSelected && (
-                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-black/15 shrink-0">
-                            ✓ 選択中
-                          </span>
-                        )}
-                      </div>
-                      <span className={`text-[10px] mt-1 leading-snug ${isSelected ? "text-stone-900" : "text-muted-strong"}`}>
-                        {col.desc}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                      {isSelected && "✓"}
+                    </span>
+                  </div>
+                  <span className={`text-[11px] leading-snug ${isSelected ? "text-stone-900" : "text-muted-strong"}`}>
+                    {opt.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 質問2（帯の繰り上げ） */}
+        <div className={`space-y-3 pt-4 border-t border-border/70 ${isUpperTier ? "opacity-60" : ""}`}>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
+                <span>Q2. 上の帯の試合に混ざって参加しますか？</span>
+              </label>
+              {isUpperTier && (
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  ※ 上位帯の方は対象外です（上に上がる帯がありません）
+                </span>
+              )}
             </div>
-          ))}
+            <p className="text-[11px] text-muted-strong">
+              中初級帯の人が、上位帯（推定MMRランク {TIER_BAND_THRESHOLD}+）の部屋へ繰り上がるかどうかの設定です。
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {
+                v: "mix_ok" as const,
+                title: "🌟 混ざってもいい",
+                desc: "上の帯へ積極的に参加",
+              },
+              {
+                v: "fill_only" as const,
+                title: "🤝 人不足ならOK（既定）",
+                desc: "上の帯が10人未満の時だけ参加",
+              },
+              {
+                v: "never" as const,
+                title: "🔒 自分の帯のみ",
+                desc: "上の帯には繰り上がらない",
+              },
+            ].map((opt) => {
+              const isSelected = tierPromotionPref === opt.v;
+              return (
+                <button
+                  key={`q2-${opt.v}`}
+                  type="button"
+                  disabled={isUpperTier}
+                  onClick={() => {
+                    if (!isUpperTier) setTierPromotionPref(opt.v);
+                  }}
+                  aria-pressed={isSelected}
+                  className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between gap-1.5 ${
+                    isUpperTier
+                      ? "cursor-not-allowed bg-surface/50 border-border text-muted"
+                      : isSelected
+                      ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm ring-1 ring-primary-500/50 cursor-pointer"
+                      : "bg-surface border-border text-muted hover:bg-surface-hover font-bold cursor-pointer"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm">{opt.title}</span>
+                    <span
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        isSelected
+                          ? isUpperTier
+                            ? "border-muted bg-muted/20 text-muted text-[10px]"
+                            : "border-stone-950 bg-stone-950 text-white text-[10px]"
+                          : "border-border bg-background"
+                      }`}
+                    >
+                      {isSelected && "✓"}
+                    </span>
+                  </div>
+                  <span className={`text-[11px] leading-snug ${isSelected && !isUpperTier ? "text-stone-900" : "text-muted-strong"}`}>
+                    {opt.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
