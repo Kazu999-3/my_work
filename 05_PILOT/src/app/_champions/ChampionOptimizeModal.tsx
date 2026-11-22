@@ -50,6 +50,9 @@ export default function ChampionOptimizeModal({
 
   const handleApply = async () => {
     if (!optimizedText) return;
+    if (!confirm(`${championName || championId} の教本にこの最適化版を反映しますか？（現在の教本本文が上書きされます）`)) {
+      return;
+    }
     setApplying(true);
     setError(null);
     try {

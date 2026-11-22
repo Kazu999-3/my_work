@@ -176,6 +176,13 @@ export default function OpsDashboardPage() {
 
   const retryAll = async () => {
     if (!stats || stats.needsAttention.failedTasks.length === 0) return;
+    if (
+      !confirm(
+        `失敗しているタスク（${stats.needsAttention.failedTasks.length}件）を再起票して再実行しますか？\n（対象外・待機中のタスクは見送られ、該当タスクはクラウドワーカーまたは定期実行で再処理されます）`
+      )
+    ) {
+      return;
+    }
     setRetrying(true);
     setRetryMessage('');
     try {

@@ -60,6 +60,13 @@ export default function WorkerStatusPanel() {
   // ⚡ 失敗タスクの一括リトライ実行
   const handleRetryFailedTasks = async () => {
     if (!data?.tasks.failedTaskIds || data.tasks.failedTaskIds.length === 0) return;
+    if (
+      !confirm(
+        `直近24時間の失敗タスク（${data.tasks.failedTaskIds.length}件）を一括再起票し、GitHub Actions を起動しますか？\n（失敗状態のタスクがすべて再実行待ちに戻ります）`
+      )
+    ) {
+      return;
+    }
     setActionBusy('retry');
     setActionMessage(null);
     try {
@@ -84,6 +91,11 @@ export default function WorkerStatusPanel() {
 
   // 🚀 タスクの手動トリガー実行（YouTube巡回・辞典合成等）
   const handleTriggerTask = async (taskType: string, label: string) => {
+    const detail =
+      taskType === 'dict_synthesizer'
+        ? '知見データを各チャンピオン教本へ一括コンパイル・更新します。'
+        : '監視中チャンネルの新着動画をスキャンし、解析キューへ追加します。';
+    if (!confirm(`${label}を起動しますか？（1件のタスクを起票し、${detail}）`)) return;
     setActionBusy(taskType);
     setActionMessage(null);
     try {

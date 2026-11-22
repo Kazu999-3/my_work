@@ -195,7 +195,7 @@ export default function DecomposeModal({
                   </div>
                 </div>
                 <span className="text-[10px] text-zinc-500">
-                  ※ 保存すると未承認知見（分割知見）として登録され、個別プレビュー・承認が可能になります
+                  ※ 実行すると元記事を完了とし、選択した知見が未承認リストを挟まず各教本へ直接統合されます
                 </span>
               </div>
 

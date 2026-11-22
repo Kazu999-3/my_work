@@ -1,5 +1,21 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【Pilot SPEC 19：致命的欠陥とデータ保護まわりの修正（05_PILOT）】
+
+**概要**:
+`05_PILOT/docs/specs/19-critical-safety-fixes-SPEC.md` に基づき、Hooks違反・ロード失敗上書き事故・未保存破棄・危険操作確認・説明矛盾を修正。
+1. **Hooksルール違反修正**:
+   - `05_PILOT/src/components/GlobalNavbar.tsx`: `/overlay`・`/login` の早期 `return null` をすべての `useState`/`useRef`/`useEffect` の後へ移動。
+2. **`dict-maintenance` のロード失敗保護 ＆ 未保存ガード**:
+   - `05_PILOT/src/app/admin/dict-maintenance/page.tsx`: 読み込み中表示・失敗時エラー表示＆再試行ボタンを追加し、ロード成功前（`!canSave`）の保存・ロールバックを全面無効化。チャンピオン切替・リンク離脱・`beforeunload` 時の未保存 dirty ガードを追加。
+3. **副作用操作への確認ステップ追加（QueueTab 様式統一）**:
+   - `dashboard/page.tsx`（失敗タスク再実行）、`WorkerStatusPanel.tsx`（一括再試行・新着巡回・辞典合成）、`dict-health/page.tsx`（確認済み/取消/AI再リサーチ起票）、`KnowledgeIngestModal.tsx`（キュークローズ確認＋`res.ok`検証＆失敗時リスト復旧＋エラー表示）。
+   - `ChampionOptimizeModal.tsx` / `LaneGuideOptimizeModal.tsx`: 「反映する」に最終確認を追加し、後者へ「現在の本文は上書きされ戻せない」警告文を追加。
+4. **`DecomposeModal` の説明矛盾解消**:
+   - `api/knowledge/review/route.ts`（`decompose_save` ➔ `autoApprove: true`）で「未承認リストを挟まず各教本へ直接統合」が実挙動であることを確認し、`DecomposeModal.tsx` の古い「未承認知見として登録」文言を実挙動に合わせて統一。
+5. **機械的実値検証（Verifier原則）**:
+   - `05_PILOT` にて `npx tsc --noEmit` / `npm run build` PASS（Exit code 0）。
+
 ### ⚡ 【SPEC 18（v4）：マイページのカスタム関連設定のデザイン刷新】
 
 **概要**:

@@ -48,6 +48,9 @@ export default function LaneGuideOptimizeModal({
 
   const handleApply = async () => {
     if (!optimizedBody.trim()) return;
+    if (!confirm(`${laneLabel} ガイドにこの最適化内容を反映しますか？\n（現在のガイド本文は上書きされ、元に戻せません）`)) {
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -219,7 +222,11 @@ export default function LaneGuideOptimizeModal({
         </div>
 
         {/* フッター */}
-        <div className="p-4 border-t border-zinc-800 bg-zinc-950/80 flex items-center justify-between gap-3 shrink-0">
+        <div className="p-4 border-t border-zinc-800 bg-zinc-950/80 space-y-2.5 shrink-0">
+          <p className="text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-1.5">
+            ⚠️ 反映すると現在のガイド本文は上書きされ、元に戻せません。比較タブで差分をご確認のうえ反映してください。
+          </p>
+          <div className="flex items-center justify-between gap-3">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer transition"
@@ -243,6 +250,7 @@ export default function LaneGuideOptimizeModal({
               </>
             )}
           </button>
+          </div>
         </div>
       </div>
     </div>

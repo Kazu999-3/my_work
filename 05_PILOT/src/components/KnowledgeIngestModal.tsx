@@ -199,10 +199,21 @@ export default function KnowledgeIngestModal({
 
   // YouTubeキューからクローズ（行は残して manually_closed にする）
   const handleDeleteQueue = async (id: string) => {
+    if (!confirm("この動画を解析キューからクローズしますか？（記録は残り、監視で再登録されなくなります）")) return;
+    const prevList = queueList;
+    setQueueList((prev) => prev.filter((item) => item.id !== id));
+    setError(null);
     try {
-      await fetch(`/api/youtube/queue?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-      setQueueList(prev => prev.filter(item => item.id !== id));
-    } catch {}
+      const res = await fetch(`/api/youtube/queue?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setQueueList(prevList);
+        setError(data?.error || `キューのクローズに失敗しました（HTTP ${res.status}）`);
+      }
+    } catch (err: any) {
+      setQueueList(prevList);
+      setError(`通信エラーによりクローズに失敗しました: ${err?.message || ""}`);
+    }
   };
 
   return (

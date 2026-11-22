@@ -164,6 +164,13 @@ function DictHealthDashboardContent() {
   };
 
   const handleVerify = async (champion: string, action: 'verify' | 'unverify' | 'enqueue_update') => {
+    const confirmMsg =
+      action === 'verify'
+        ? `${champion} の教本を「確認済み」にしますか？（優先更新対象から外れます）`
+        : action === 'unverify'
+        ? `${champion} の確認済みを「取消」しますか？（ステータスが未確認に戻ります）`
+        : `${champion} のAI再リサーチキューを起票しますか？（解析タスクが1件追加されます）`;
+    if (!confirm(confirmMsg)) return;
     setActionLoading(champion + '_' + action);
 
     // オプティミスティックUI反映

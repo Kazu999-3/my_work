@@ -29,6 +29,8 @@ function DictMaintenanceContent() {
   const [selectedChampId, setSelectedChampId] = useState(initialChampParam);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadSuccess, setLoadSuccess] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   // データState
@@ -40,6 +42,7 @@ function DictMaintenanceContent() {
   const [countersText, setCountersText] = useState("");
   const [mustBanText, setMustBanText] = useState("");
   const [revisions, setRevisions] = useState<any[]>([]);
+  const [savedSnapshot, setSavedSnapshot] = useState<string>("");
 
   // プレビュー切り替え
   const [activeTab, setActiveTab] = useState<"global" | "roles" | "facts" | "history">("global");
@@ -62,42 +65,48 @@ function DictMaintenanceContent() {
   // データロード
   const loadChampionData = async (champId: string) => {
     setLoading(true);
+    setLoadError(null);
+    setLoadSuccess(false);
     setSaveSuccess(null);
     try {
       const res = await fetch(`/api/admin/dict-maintenance?champion=${encodeURIComponent(champId)}`);
       const resData = await res.json();
       if (res.ok && resData.success && resData.data) {
         const d = resData.data;
-        // roles
-        setRoles(d.roles && d.roles.length > 0 ? d.roles : currentChamp.roles || ["TOP"]);
+        const nextRoles = d.roles && d.roles.length > 0 ? d.roles : currentChamp.roles || ["TOP"];
+        const nextTitle = d.globalGuide ? (d.globalGuide.title || `${champId} 基本戦略・トレンド`) : `${champId} 基本戦略・トレンド`;
+        const nextStrategy = d.globalGuide ? (d.globalGuide.strategy || "") : "";
+        const nextStrengths = d.facts ? (Array.isArray(d.facts.strengths) ? d.facts.strengths.join("\n") : (d.facts.strengths || "")) : "";
+        const nextWeaknesses = d.facts ? (Array.isArray(d.facts.weaknesses) ? d.facts.weaknesses.join("\n") : (d.facts.weaknesses || "")) : "";
+        const nextCounters = d.facts ? (Array.isArray(d.facts.counter_champions) ? d.facts.counter_champions.join("\n") : (d.facts.counter_champions || "")) : "";
+        const nextMustBan = d.facts ? (Array.isArray(d.facts.must_ban_champions) ? d.facts.must_ban_champions.join("\n") : (d.facts.must_ban_champions || "")) : "";
 
-        // globalGuide
-        if (d.globalGuide) {
-          setGlobalTitle(d.globalGuide.title || `${champId} 基本戦略・トレンド`);
-          setGlobalStrategy(d.globalGuide.strategy || "");
-        } else {
-          setGlobalTitle(`${champId} 基本戦略・トレンド`);
-          setGlobalStrategy("");
-        }
-
-        // facts
-        if (d.facts) {
-          setStrengthsText(Array.isArray(d.facts.strengths) ? d.facts.strengths.join("\n") : (d.facts.strengths || ""));
-          setWeaknessesText(Array.isArray(d.facts.weaknesses) ? d.facts.weaknesses.join("\n") : (d.facts.weaknesses || ""));
-          setCountersText(Array.isArray(d.facts.counter_champions) ? d.facts.counter_champions.join("\n") : (d.facts.counter_champions || ""));
-          setMustBanText(Array.isArray(d.facts.must_ban_champions) ? d.facts.must_ban_champions.join("\n") : (d.facts.must_ban_champions || ""));
-        } else {
-          setStrengthsText("");
-          setWeaknessesText("");
-          setCountersText("");
-          setMustBanText("");
-        }
-
-        // revisions
+        setRoles(nextRoles);
+        setGlobalTitle(nextTitle);
+        setGlobalStrategy(nextStrategy);
+        setStrengthsText(nextStrengths);
+        setWeaknessesText(nextWeaknesses);
+        setCountersText(nextCounters);
+        setMustBanText(nextMustBan);
         setRevisions(d.revisions || []);
+        setSavedSnapshot(
+          JSON.stringify({
+            roles: nextRoles,
+            globalTitle: nextTitle,
+            globalStrategy: nextStrategy,
+            strengthsText: nextStrengths,
+            weaknessesText: nextWeaknesses,
+            countersText: nextCounters,
+            mustBanText: nextMustBan,
+          })
+        );
+        setLoadSuccess(true);
+      } else {
+        setLoadError(resData?.error || `データの読み込みに失敗しました（HTTP ${res.status}）`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("データロード失敗:", err);
+      setLoadError(`通信エラーによりデータを読み込めませんでした: ${err?.message || "不明なエラー"}`);
     } finally {
       setLoading(false);
     }
@@ -108,6 +117,28 @@ function DictMaintenanceContent() {
       loadChampionData(selectedChampId);
     }
   }, [selectedChampId]);
+
+  const canSave = !loading && loadSuccess && !loadError;
+  const currentSnapshot = JSON.stringify({
+    roles,
+    globalTitle,
+    globalStrategy,
+    strengthsText,
+    weaknessesText,
+    countersText,
+    mustBanText,
+  });
+  const isDirty = loadSuccess && savedSnapshot !== "" && currentSnapshot !== savedSnapshot;
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   // レーントグル
   const toggleRole = (r: string) => {
@@ -131,6 +162,7 @@ function DictMaintenanceContent() {
 
   // レーン保存
   const handleSaveRoles = async () => {
+    if (!canSave) return;
     try {
       const res = await fetch("/api/champions/roles", {
         method: "POST",
@@ -139,6 +171,7 @@ function DictMaintenanceContent() {
       });
       const data = await res.json();
       if (data.success) {
+        setSavedSnapshot(currentSnapshot);
         setSaveSuccess("所属レーンを正常に保存しました");
         setTimeout(() => setSaveSuccess(null), 3000);
       } else {
@@ -151,6 +184,7 @@ function DictMaintenanceContent() {
 
   // 統合マスター教本の保存
   const handleSaveGlobalGuide = async () => {
+    if (!canSave) return;
     try {
       const res = await fetch("/api/admin/dict-maintenance", {
         method: "POST",
@@ -177,6 +211,7 @@ function DictMaintenanceContent() {
 
   // 基本戦術情報の保存
   const handleSaveFacts = async () => {
+    if (!canSave) return;
     try {
       const parseLines = (t: string) => t.split("\n").map((s) => s.trim()).filter(Boolean);
       const res = await fetch("/api/admin/dict-maintenance", {
@@ -193,6 +228,7 @@ function DictMaintenanceContent() {
       });
       const data = await res.json();
       if (data.success) {
+        setSavedSnapshot(currentSnapshot);
         setSaveSuccess("基本戦術情報を正常保存しました");
         setTimeout(() => setSaveSuccess(null), 3000);
       } else {
@@ -205,6 +241,7 @@ function DictMaintenanceContent() {
 
   // ロールバック
   const handleRollback = async (revId: number) => {
+    if (!canSave) return;
     if (!confirm("過去バージョンに復元しますか？（現在の内容は上書きされます）")) return;
     try {
       const res = await fetch("/api/admin/dict-maintenance", {
@@ -238,6 +275,11 @@ function DictMaintenanceContent() {
           action={
             <Link
               href={`/?c=${encodeURIComponent(currentChamp.id)}`}
+              onClick={(e) => {
+                if (isDirty && !confirm("未保存の変更があります。保存せずに辞典メインへ戻りますか？（編集内容は破棄されます）")) {
+                  e.preventDefault();
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold transition border border-zinc-700"
             >
               <ArrowLeft size={14} />
@@ -269,6 +311,13 @@ function DictMaintenanceContent() {
                 <button
                   key={c.id}
                   onClick={() => {
+                    if (c.id.toLowerCase() === currentChamp.id.toLowerCase()) return;
+                    if (
+                      isDirty &&
+                      !confirm(`未保存の変更があります。保存せずに ${c.jpName} へ切り替えますか？（現在の編集内容は破棄されます）`)
+                    ) {
+                      return;
+                    }
                     setSelectedChampId(c.id);
                     router.push(`/admin/dict-maintenance?c=${encodeURIComponent(c.id)}`);
                   }}
@@ -313,8 +362,18 @@ function DictMaintenanceContent() {
             </div>
 
             <div className="flex items-center gap-2">
+              {isDirty && (
+                <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-black">
+                  ● 未保存の変更あり
+                </span>
+              )}
               <Link
                 href={`/?c=${encodeURIComponent(currentChamp.id)}`}
+                onClick={(e) => {
+                  if (isDirty && !confirm("未保存の変更があります。保存せずに辞典画面へ移動しますか？（編集内容は破棄されます）")) {
+                    e.preventDefault();
+                  }
+                }}
                 className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold border border-zinc-700 transition flex items-center gap-1.5"
                 title="辞典画面でプレビュー"
               >
@@ -323,6 +382,35 @@ function DictMaintenanceContent() {
               </Link>
             </div>
           </div>
+
+          {/* 読み込み中 / ロード失敗バナー */}
+          {loading && (
+            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-2">
+              <RotateCcw size={14} className="animate-spin" />
+              <span>{currentChamp.jpName} の教本データを読み込み中です...（読み込み完了まで保存は無効化されます）</span>
+            </div>
+          )}
+
+          {loadError && (
+            <div className="p-3.5 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/40 text-xs font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                <div>
+                  <div>{loadError}</div>
+                  <div className="text-[11px] text-rose-200/80 font-normal mt-0.5">
+                    ※ 既存データの誤上書きを防ぐため、読み込みが成功するまで保存ボタンは無効化されています。
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => loadChampionData(currentChamp.id)}
+                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shrink-0 cursor-pointer"
+              >
+                再試行
+              </button>
+            </div>
+          )}
 
           {/* 保存完了バナー */}
           {saveSuccess && (
@@ -401,7 +489,8 @@ function DictMaintenanceContent() {
 
                 <button
                   onClick={handleSaveGlobalGuide}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  disabled={!canSave}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Save size={14} />
                   <span>教本をDBへ保存</span>
@@ -492,7 +581,8 @@ function DictMaintenanceContent() {
               <div className="pt-2">
                 <button
                   onClick={handleSaveRoles}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                  disabled={!canSave}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save size={14} />
                   <span>所属レーンをDBへ保存</span>
@@ -513,7 +603,8 @@ function DictMaintenanceContent() {
                 </div>
                 <button
                   onClick={handleSaveFacts}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  disabled={!canSave}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Save size={14} />
                   <span>基本情報を保存</span>

@@ -38,11 +38,6 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
 
 export default function GlobalNavbar() {
   const pathname = usePathname();
-
-  // 透過HUDおよび未認証ログイン画面ではナビゲーションバーを非表示にする
-  if (pathname === '/overlay' || pathname === '/login') {
-    return null;
-  }
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
@@ -60,6 +55,11 @@ export default function GlobalNavbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 透過HUDおよび未認証ログイン画面ではナビゲーションバーを非表示にする（Hooks呼び出し順を守るため早期returnはフックの後に配置）
+  if (pathname === '/overlay' || pathname === '/login') {
+    return null;
+  }
 
   return (
     <>
