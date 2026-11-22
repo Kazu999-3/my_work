@@ -1,5 +1,18 @@
 ## 📅 2026-11-22（日）
 
+### 📄 【Pilot 指示文22：未提出の報告2件（F-2・B-11）のファイル提出】
+
+**概要**:
+`05_PILOT/docs/specs/22-missing-reports-instruction.md` に基づき、コード変更は行わず調査報告2本をファイルとして作成・提出。
+1. **報告1（F-2）「編集・統合履歴」モーダル両案の影響範囲**:
+   - ファイル: `05_PILOT/docs/reports/F2-revision-history-options-report.md`
+   - 要約: 履歴データ（`knowledge_revisions` テーブル＋`/api/admin/revisions`）が稼働・蓄積中であることを確認した上で、案(a)復活（2ファイル・小規模、パレット内他ツール露出に注意）と案(b)削除（4〜5ファイル・小〜中規模）の影響、および `/admin/dict-maintenance`「改定履歴」タブ（直近10件＋復元用）との関係（完全には代替しない点）を整理。
+2. **報告2（B-11）review 単件承認の誤操作リスク**:
+   - ファイル: `05_PILOT/docs/reports/B11-single-approval-risk-report.md`
+   - 要約: `handleKeyDown` の既存ガード（`INPUT`/`TEXTAREA`/モーダル中）が効かない場面（フォーカス外の `A` 打鍵・隣接キー誤爆・クリックミス）、`removeFromList` 楽観的消去が Undo として使えない点、確認追加時の負担（+1ステップ/件、約191件で+191回）、および代替案4種を整理。
+3. **機械的実値検証（Verifier原則）**:
+   - `05_PILOT` にて `npm run build`（全28ルート）PASS（Exit code 0）。
+
 ### ⚡ 【Portal 指示文20 & Pilot 指示文21：残件・SUP修正・報告・細部の仕上げ】
 
 **概要**:
