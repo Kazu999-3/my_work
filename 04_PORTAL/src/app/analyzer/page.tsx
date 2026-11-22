@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Sparkles, Target, AlertTriangle, RefreshCw, Swords } from 'lucide-react';
 import { PlayerCompareView } from './PlayerCompareView';
 import AnalyzerSearchPanel from './_analyzer/AnalyzerSearchPanel';
@@ -175,16 +176,30 @@ export default function PlayerAnalyzerPage() {
         <div className="w-12 h-12 bg-primary-100 text-primary-800 rounded-2xl flex items-center justify-center mx-auto text-xl font-black">
           🔒
         </div>
-        <h2 className="text-lg font-black text-foreground">管理者ログインが必要です</h2>
-        <p className="text-xs text-muted-strong font-medium">
-          LoLディープアナライザーは管理者限定の統合診断ツールです。ログインしてください。
+        <h2 className="text-lg font-black text-foreground">このページは管理者限定です</h2>
+        <p className="text-xs text-muted-strong font-medium leading-relaxed">
+          LoLディープアナライザーは運営・管理者専用の個人分析ツールのため、一般メンバーの方はご利用いただけません。
         </p>
-        <a
-          href="/ktm-admin"
-          className="inline-flex items-center justify-center px-6 py-2.5 bg-stone-900 text-white font-bold text-xs rounded-xl hover:bg-stone-800 transition"
-        >
-          管理者ログインへ
-        </a>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+          <Link
+            href="/"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 text-white font-bold text-xs rounded-xl hover:bg-primary-500 transition"
+          >
+            🏠 ホームへ戻る
+          </Link>
+          <Link
+            href="/mypage"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-surface-subtle text-foreground font-bold text-xs rounded-xl border border-border hover:bg-surface-hover transition"
+          >
+            👤 マイページへ
+          </Link>
+          <Link
+            href="/ktm-admin"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-stone-900 text-white font-bold text-xs rounded-xl hover:bg-stone-800 transition"
+          >
+            管理者ログイン
+          </Link>
+        </div>
       </div>
     );
   }

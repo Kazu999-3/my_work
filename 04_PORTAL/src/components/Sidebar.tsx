@@ -30,7 +30,8 @@ import {
   Library,
   Download,
   Inbox,
-  Sparkles
+  Sparkles,
+  Map
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PushOptIn from './PushOptIn';
@@ -228,16 +229,18 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'festival-pick', label: 'お祭りピック', shortLabel: 'お祭りピック', icon: Sparkles, href: '/festival/pick', color: 'text-amber-500', activeBg: 'bg-amber-500/15', group: 'play' },
   // みんなの記録
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'records' },
-  { id: 'casino', label: '勝敗予想', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'records' },
+  { id: 'casino', label: 'カジノ（勝敗予想）', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'records' },
   // 交流
   { id: 'mentorship', label: '教えて先輩', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15', group: 'social' },
   // 困ったとき
   { id: 'guide', label: '使い方ガイド', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', group: 'help' },
 ];
 
-// 🛡️ 管理者向け。外部分析・仕様ガイドは管理画面のタブ・リンクから開く（2026-10-20 に1項目へまとめた）
+// 🛡️ 管理者向け。
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
-  { id: 'ktm-admin', label: '管理画面', shortLabel: '管理画面', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'admin', activePrefixes: ['/analyzer', '/admin'] },
+  { id: 'ktm-admin', label: '管理画面', shortLabel: '管理画面', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'admin', activePrefixes: ['/admin'] },
+  { id: 'replay-paths', label: 'リプレイ道筋マップ', shortLabel: '道筋マップ', icon: Map, href: '/replay-paths', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', group: 'admin' },
+  { id: 'analyzer', label: 'LoLディープアナライザー', shortLabel: '個人分析', icon: TrendingUp, href: '/analyzer', color: 'text-primary-600', activeBg: 'bg-primary-500/15', group: 'admin' },
 ];
 
 function isItemActive(item: MenuItem, pathname: string): boolean {

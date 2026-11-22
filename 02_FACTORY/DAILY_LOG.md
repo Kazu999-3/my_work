@@ -1,5 +1,24 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【SPEC 15：導線とページ名の是正（サイドバー・マイページ着地・トップ次回案内・カジノ認証表示）】
+
+**概要**:
+SPEC 15（`04_PORTAL/docs/specs/15-navigation-naming-SPEC.md`）に基づき、入口の名前・表示条件・着地先の不一致を是正。
+1. **`/mypage` の着地先是正**:
+   - `04_PORTAL/src/app/mypage/page.tsx`: 既定タブを `settings` から `summary`（選手カルテ総合タブ）へ変更。
+2. **サイドバー導線（`Sidebar.tsx`）**:
+   - カジノ項目を「カジノ（勝敗予想）」として全員に常時表示。
+   - 管理者専用項目（`isAdminUser` 時のみ）へ `リプレイ道筋マップ` (`/replay-paths`) と `LoLディープアナライザー` (`/analyzer`) を追加。
+3. **`/analyzer` 行き止まり解消 & トップページ補強**:
+   - `04_PORTAL/src/app/analyzer/page.tsx`: 一般メンバー向けに「管理者限定ツールのため利用対象外」の明示と、ホーム・マイページへの戻りボタンを配備。
+   - `04_PORTAL/src/app/page.tsx`: 冒頭に KTM コミュニティの説明、ヘッダー下に「📅 次回カスタムのご案内」カード（未定時のDiscord確認先明記）、カジノカード名の統一を実施。
+4. **`/casino` ログイン表示 & `/replay-paths` 案内**:
+   - `04_PORTAL/src/app/casino/page.tsx` & `UserStatusPanel.tsx`: `userLoading` 中は確認中表示とし、ログイン済みユーザーへの「Discordでログイン」誤表示を防止。
+   - `04_PORTAL/src/app/replay-paths/page.tsx`: ページ概要説明を追加（専用キーの具体共有先は保留指示通り一般案内を維持）。
+5. **機械的実値検証（Verifier原則）**:
+   - `npx eslint src` ➔ PASS（エラー0件）。
+   - `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
 ### ⚡ 【SPEC 14：ポータル全ページの用語・表記の統一と注釈・ガイド導線の整備】
 
 **概要**:

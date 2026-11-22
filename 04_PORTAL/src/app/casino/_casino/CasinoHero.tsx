@@ -20,7 +20,7 @@ export default function CasinoHero({ betStats }: {
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground flex items-center justify-center gap-3">
             <Coins className="text-primary-600" size={32} />
-            勝敗予想ベット ＆ KTMショップ ＆ コイン長者番付
+            カジノ（勝敗予想 ＆ ショップ）
           </h1>
           <p className="text-foreground-subtle text-xs md:text-sm max-w-xl mx-auto font-medium">
             勝敗予想ベットでコインを増やして、宝くじ・スクラッチ・保険・激闘チケットと交換しよう🔥（※ゲーム内のチップもすべて「1チップ＝1コイン」として遊べます）

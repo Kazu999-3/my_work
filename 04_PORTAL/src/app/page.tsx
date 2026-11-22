@@ -40,7 +40,7 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-xs text-muted font-bold mt-1">
-                週末定期カスタム対戦の公平なチーム分け ＆ 師弟マッチング・個人戦績カルテ
+                League of Legends の週末定期カスタム対戦コミュニティ「KTM」の公式ポータルです。公平なチーム分け・戦績確認・先輩後輩マッチングを行えます。
               </p>
             </div>
           </div>
@@ -57,6 +57,32 @@ export default function HomePage() {
         </header>
 
         {/* 2026-10-16: 「月刊KTMスポーツ速報」(MatchNewsTicker) はユーザー判断で非表示。AI記事は Discord の試合結果投稿で引き続き使う */}
+
+        {/* 📅 次回カスタムのご案内（SPEC 15: 日程未定時も確認先を明示） */}
+        <div className="bg-surface/90 backdrop-blur-md border border-primary-edge-soft rounded-2xl p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-500/15 border border-primary-edge/40 flex items-center justify-center text-lg shrink-0">
+              📅
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm font-black text-foreground">次回カスタムのご案内</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-subtle border border-border text-muted-strong">
+                  主に週末夜に開催
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-strong font-medium mt-0.5">
+                最新の開催日時・参加募集は Discord のカスタム案内チャンネルをご確認ください（開催未定の日は Discord にて随時告知されます）。
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/balancer"
+            className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shrink-0 text-center shadow-xs"
+          >
+            チーム分けバランサーへ →
+          </Link>
+        </div>
 
         {/* 4大コア機能カード */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -171,7 +197,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                  勝敗予想 ＆ KTMショップ
+                  カジノ（勝敗予想 ＆ ショップ）
                 </h2>
                 <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
                   カスタム対戦の勝敗にコインで勝敗予想ベットして配当を獲得！貯まったコインで宝くじ・スクラッチくじ・保険などと交換できます。

@@ -87,8 +87,10 @@ function ReplayPathsViewer() {
                 <KeyRound className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">閲覧用の専用キーが必要です</h2>
-                <p className="text-xs text-muted-strong">共有された専用キーを入力してください。</p>
+                <h2 className="text-base font-bold text-foreground">リプレイ道筋マップ（閲覧用専用キー）</h2>
+                <p className="text-xs text-muted-strong mt-0.5 leading-relaxed">
+                  カスタム試合のリプレイデータから、各チャンピオンの移動経路をマップ上で振り返るページです。閲覧には共有された専用キーが必要です。
+                </p>
               </div>
             </div>
 

@@ -19,7 +19,7 @@ function MyPageContent() {
         const data = await res.json();
         if (res.ok && data.ok && data.player) {
           const playerName = data.player.name || data.player.discord_id;
-          const targetTab = searchParams.get("tab") || "settings";
+          const targetTab = searchParams.get("tab") || "summary";
           router.replace(`/player/${encodeURIComponent(playerName)}?tab=${targetTab}`);
         } else {
           setError(data.error || "ログインが必要です。");
@@ -38,7 +38,7 @@ function MyPageContent() {
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 text-primary-500 animate-spin" />
-          <p className="text-muted text-sm font-bold">マイページ（公式カルテ）を読み込み中...</p>
+          <p className="text-muted text-sm font-bold">マイページを読み込み中...</p>
         </div>
       </div>
     );

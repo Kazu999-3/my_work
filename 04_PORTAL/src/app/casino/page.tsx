@@ -28,7 +28,7 @@ import TipModal from './_casino/TipModal';
 // 2026-10-07: 1,635行から分割（表示・動作は分割前と同じ）。ボタンの無かった模擬対戦の生成処理を削除、
 // ジャックポットの仮の初期値（12,800）を削除。
 export default function CasinoPage() {
-  const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
+  const { user, loading: userLoading, loginWithDiscord, logout, refreshUser } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<CasinoTab>('bet');
   const [activeMiniGame, setActiveMiniGame] = useState<MiniGameType>('slot');
   const {
@@ -342,7 +342,7 @@ export default function CasinoPage() {
         <LuckyDayBanner />
 
         <UserStatusPanel
-          user={user} lastRescueMonth={lastRescueMonth} userStreak={userStreak} userMaxStreak={userMaxStreak} inventory={inventory}
+          user={user} userLoading={userLoading} lastRescueMonth={lastRescueMonth} userStreak={userStreak} userMaxStreak={userMaxStreak} inventory={inventory}
           handleClaimBonus={handleClaimBonus} setTipToPlayer={setTipToPlayer} setIsTipModalOpen={setIsTipModalOpen} logout={logout}
           handleAnnounceTicket={handleAnnounceTicket} loginWithDiscord={loginWithDiscord}
         />

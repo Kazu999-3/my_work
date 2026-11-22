@@ -4,8 +4,9 @@ import { Flame, Gift, LogIn } from 'lucide-react';
 
 // ログイン状態（残高・おみくじ・破産救済・チップ・連勝・所持チケット）／未ログイン時の案内
 // 2026-10-07: app/casino/page.tsx（1,635行）から分割。表示内容・動作は分割前と同じ。
-export default function UserStatusPanel({ user, lastRescueMonth, userStreak, userMaxStreak, inventory, handleClaimBonus, setTipToPlayer, setIsTipModalOpen, logout, handleAnnounceTicket, loginWithDiscord }: {
+export default function UserStatusPanel({ user, userLoading, lastRescueMonth, userStreak, userMaxStreak, inventory, handleClaimBonus, setTipToPlayer, setIsTipModalOpen, logout, handleAnnounceTicket, loginWithDiscord }: {
   user: any;
+  userLoading?: boolean;
   lastRescueMonth: string | null;
   userStreak: number;
   userMaxStreak: number;
@@ -19,7 +20,11 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
 }) {
   return (
     <>
-        {user ? (
+        {userLoading ? (
+          <div className="p-5 rounded-3xl bg-surface border border-border animate-pulse text-xs text-muted font-bold">
+            ログイン状態を確認中...
+          </div>
+        ) : user ? (
           <div className="p-5 rounded-3xl bg-primary-500/10 border-2 border-primary-edge-strong/30 space-y-4 shadow-sm">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
