@@ -783,7 +783,7 @@ export default function ReviewPage() {
                       <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                         <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-amber-300">J / K</kbd><span>次 / 前のカード</span></div>
                         <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-cyan-300">Space</kbd><span>選択トグル</span></div>
-                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-emerald-300">A</kbd><span>即時承認（統合）</span></div>
+                        <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-emerald-300">A</kbd><span>承認（統合）※確認あり</span></div>
                         <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-rose-300">X</kbd><span>却下 / 破棄</span></div>
                         <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-purple-300">D</kbd><span>ナレッジ分解</span></div>
                         <div className="flex items-center gap-1.5"><kbd className="font-mono bg-zinc-800 px-1 py-0.2 rounded text-zinc-200">P / Enter</kbd><span>プレビュー確認</span></div>
@@ -798,7 +798,7 @@ export default function ReviewPage() {
                       <ul className="space-y-1.5 leading-relaxed">
                         <li>
                           <span className="font-bold text-amber-300 bg-amber-950/60 px-1 rounded mr-1">FOCUS（黄色枠）</span>
-                          現在キーボード操作の対象になっているカードです。AやXキーで即時操作できます。
+                          現在キーボード操作の対象になっているカードです。AやXキーで直接操作できます。
                         </li>
                         <li>
                           <span className="font-bold text-purple-300 bg-purple-950/60 px-1 rounded mr-1">分解 (D)</span>

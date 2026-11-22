@@ -813,7 +813,7 @@ export default function ReviewItemCard({
                 onClick={() => onApprove()}
                 disabled={busy}
                 className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition shadow-md shadow-purple-950/50"
-                title="確認なしで裏で各チャンピオンに自動分解し、教本へ直接統合 (A)"
+                title="確認のあと、各チャンピオンに自動分解し、教本へ直接統合 (A)"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
                 <span>⚡ 自動分解して承認</span>
