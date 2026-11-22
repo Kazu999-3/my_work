@@ -228,6 +228,14 @@ export default function CasinoPage() {
       toast.error('1コイン以上の賭け金を指定してください。');
       return;
     }
+    const teamLabel = betTeam === 'BLUE' ? '🟦 BLUEチーム' : '🟥 REDチーム';
+    if (
+      !confirm(
+        `【ベット確認】\n対象: ${teamLabel}\n金額: ${betAmount.toLocaleString()} コイン\n\n※確定後は取り消しできません（予想が外れた場合、賭けコインは戻りません）。よろしいですか？`
+      )
+    ) {
+      return;
+    }
 
     try {
       setIsSubmitting(true);

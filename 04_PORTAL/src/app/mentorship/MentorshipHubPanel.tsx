@@ -47,6 +47,11 @@ export default function MentorshipHubPanel() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [targetRequestProfile, setTargetRequestProfile] = useState<MentorshipProfile | null>(null);
 
+  // 先輩引き受け確認モーダル管理
+  const [claimTargetProfile, setClaimTargetProfile] = useState<MentorshipProfile | null>(null);
+  const [claimMessageInput, setClaimMessageInput] = useState('');
+  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
+
   // 🚀 キックオフガイドモーダル管理
   const [isKickoffModalOpen, setIsKickoffModalOpen] = useState(false);
   const [selectedKickoffMatch, setSelectedKickoffMatch] = useState<MentorshipMatch | null>(null);
@@ -323,65 +328,50 @@ export default function MentorshipHubPanel() {
     }
   };
 
-  // 申請モーダルを開く または 弟子カードの場合は師匠引き受け
+  // オファーモーダルを開く または 後輩カードの場合は先輩引き受けモーダルを開く
   const handleOffer = async (targetProfile: MentorshipProfile) => {
-    // 弟子カードに対して「師匠を引き受ける」を押した場合
     if (targetProfile.role_type === 'PUPIL') {
-      if (
-        !confirm(
-          `🎉 ${targetProfile.player_name} さんのサポートを引き受けますか？\n（あなたの先輩登録が自動完了し、先輩・後輩ペアが即時成立します！初めて組む相手なら +300コイン）`
-        )
-      ) {
-        return;
-      }
-
-      // ⚠️ 2026-09-29 追加: 引き受け時のひとことを送れるようにした。
-      // **サーバー側(CLAIM_MENTOR)は元から `message` を受け取る実装だったのに、
-      // 画面からは一度も渡していなかった**ため、マッチのメッセージが全員
-      // 「指導を引き受けました！よろしくお願いします！」の決め打ちになっていた。
-      // さらに師匠プロフィールが自動作成される場合の bio も決め打ちで、
-      // **立候補した師匠全員が同じ自己紹介文**になり、弟子側は「どんな人が
-      // 引き受けてくれたのか」が全く分からない状態だった（師弟マッチングの要が機能していない）。
-      // 弟子からの申請(APPLY)は最初からメッセージを書けたので、非対称でもあった。
-      // 空欄でもこれまで通り成立する（必須にはしない）。
-      const claimMessage = prompt(
-        `${targetProfile.player_name} さんへのひとこと（任意）\n` +
-          `指導方針や得意分野を書くと、相手が安心できます。\n` +
-          `例: 「JGのルート設計を中心に見ます。週末の夜なら通話できます」`,
-        ''
-      );
-      // prompt のキャンセル(null)は「引き受け自体をやめる」と解釈する
-      if (claimMessage === null) return;
-
-      try {
-        const res = await fetch('/api/mentorship/matches', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'CLAIM_MENTOR',
-            targetProfileId: targetProfile.id,
-            message: claimMessage.trim(),
-          }),
-        });
-        const data = await res.json();
-        if (data.ok) {
-          toast.success(data.message || '🎉 師弟ペアが成立しました！');
-          if (data.threadUrl) {
-            window.open(data.threadUrl, '_blank');
-          }
-          fetchMatches();
-          fetchProfiles();
-        } else {
-          toast.error(data.error || '師匠引き受けに失敗しました');
-        }
-      } catch (err) {
-        toast.error('通信エラーが発生しました');
-      }
+      setClaimTargetProfile(targetProfile);
+      setClaimMessageInput('');
       return;
     }
 
     setTargetRequestProfile(targetProfile);
     setIsRequestModalOpen(true);
+  };
+
+  // 先輩引き受け確定送信
+  const handleConfirmClaimMentor = async () => {
+    if (!claimTargetProfile || isSubmittingClaim) return;
+    setIsSubmittingClaim(true);
+    try {
+      const res = await fetch('/api/mentorship/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CLAIM_MENTOR',
+          targetProfileId: claimTargetProfile.id,
+          message: claimMessageInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(data.message || '🎉 先輩・後輩ペアが成立しました！');
+        if (data.threadUrl) {
+          window.open(data.threadUrl, '_blank');
+        }
+        setClaimTargetProfile(null);
+        setClaimMessageInput('');
+        fetchMatches();
+        fetchProfiles();
+      } else {
+        toast.error(data.error || '先輩の引き受けに失敗しました');
+      }
+    } catch (err) {
+      toast.error('通信エラーが発生しました');
+    } finally {
+      setIsSubmittingClaim(false);
+    }
   };
 
   // 申請を送信
@@ -860,10 +850,10 @@ export default function MentorshipHubPanel() {
                     <Sparkles size={13} className="text-secondary-600" />
                     {myProposals.length > 1
                       ? isUserMentor
-                        ? `あなたへ後輩からの相談リクエストが届いています！（${myProposals.length}名）`
+                        ? `あなたへ後輩からの相談オファーが届いています！（${myProposals.length}名）`
                         : `あなたへのお見合い便が届いています！（${myProposals.length}名の先輩をご紹介）`
                       : isUserMentor
-                        ? '後輩から「教えてほしい」リクエストが届いています！'
+                        ? '後輩から「教えてほしい」オファーが届いています！'
                         : 'あなたへのお見合い便が届いています！'}
                   </div>
                   {myProposals[0]?.proposedAt && (() => {
@@ -879,12 +869,15 @@ export default function MentorshipHubPanel() {
                 <h3 className="text-base md:text-lg font-black text-foreground">
                   {myProposals.length > 1
                     ? isUserMentor
-                      ? '後輩たちから「話してみたい」のリクエストが届きました！相談に乗る後輩を選んでみてください✨'
+                      ? '後輩たちから「話してみたい」のオファーが届きました！相談に乗る後輩を選んでみてください✨'
                       : '相性の良い先輩がピックアップされました！気になる先輩を選んでみてください✨'
                     : isUserMentor
-                      ? `${myProposals[0].partnerName?.endsWith('さん') ? myProposals[0].partnerName : `${myProposals[0].partnerName} さん`} から相談リクエストが届きました！`
+                      ? `${myProposals[0].partnerName?.endsWith('さん') ? myProposals[0].partnerName : `${myProposals[0].partnerName} さん`} から相談オファーが届きました！`
                       : `おすすめの先輩：${myProposals[0].partnerName?.endsWith('さん') ? myProposals[0].partnerName : `${myProposals[0].partnerName} さん`}`}
                 </h3>
+                <p className="text-[11px] text-muted mt-1">
+                  ※ 登録された希望レーンや目標をもとに、AIが相性の良い相手を自動でマッチングして届けています（お見合い便）。
+                </p>
               </div>
 
               {myProposals.length > 1 && (
@@ -1038,7 +1031,7 @@ export default function MentorshipHubPanel() {
             >
               <span>🙋‍♂️ 教えて！ (後輩)</span>
               <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full font-mono">
-                {isLoading ? '取得中' : profiles.filter((p) => p.role_type === 'PUPIL').length}
+                {isLoading ? '読込中...' : profiles.filter((p) => p.role_type === 'PUPIL').length}
               </span>
             </button>
 
@@ -1054,7 +1047,7 @@ export default function MentorshipHubPanel() {
             >
               <span>🧑‍🏫 教えるよ！ (先輩)</span>
               <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full font-mono">
-                {isLoading ? '取得中' : profiles.filter((p) => p.role_type === 'MENTOR').length}
+                {isLoading ? '読込中...' : profiles.filter((p) => p.role_type === 'MENTOR').length}
               </span>
             </button>
 
@@ -1070,7 +1063,7 @@ export default function MentorshipHubPanel() {
             >
               <span>🤝 相談ペア・活動状況</span>
               <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full font-mono">
-                {isLoading ? '取得中' : matches.length}
+                {isLoading ? '読込中...' : matches.length}
               </span>
             </button>
           </div>
@@ -1121,7 +1114,7 @@ export default function MentorshipHubPanel() {
               title="直近60日以内にカスタム参加や活動があるメンバーのみを表示します"
             >
               <span>{activeOnly ? '🟢' : '⚪'}</span>
-              <span>アクティブのみ (60日以内)</span>
+              <span>アクティブのみ (直近60日に活動)</span>
             </button>
               <span className="text-[11px] font-bold text-faint shrink-0 mr-1">レーン:</span>
               {LANE_FILTERS.map((f) => (
@@ -1343,7 +1336,7 @@ export default function MentorshipHubPanel() {
               {fetchError}
             </p>
           </div>
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
             <button
               type="button"
               onClick={() => {
@@ -1355,6 +1348,9 @@ export default function MentorshipHubPanel() {
               <RefreshCw size={14} />
               再読み込み
             </button>
+            <p className="text-[11px] text-muted">
+              数秒待ってから再読み込みしてください。解消しない場合はページを更新するか、Discordで運営までお知らせください。
+            </p>
           </div>
         </div>
       ) : isLoading ? (
@@ -1601,7 +1597,7 @@ export default function MentorshipHubPanel() {
 
           {matches.length === 0 && (
             <div className="col-span-full py-12 text-center text-faint text-xs font-bold bg-surface rounded-2xl border border-border">
-              まだ成立した師弟ペアはありません。掲示板で相手を探してみましょう！
+              まだ成立した先輩・後輩ペアはありません。「教えて！ (後輩)」や「教えるよ！ (先輩)」タブから気になる相手にオファーを送ってみましょう！
             </div>
           )}
         </div>
@@ -1644,15 +1640,15 @@ export default function MentorshipHubPanel() {
                   {searchQuery || laneFilter !== 'ALL'
                     ? '検索条件に一致するカードが見つかりませんでした'
                     : activeTab === 'PUPIL'
-                    ? '現在募集中の後輩（弟子）カードはありません'
-                    : '現在登録されている先輩（師匠）カードはありません'}
+                    ? '現在募集中の後輩カードはありません'
+                    : '現在登録されている先輩カードはありません'}
                 </h3>
                 <p className="text-xs text-muted-strong max-w-md mx-auto leading-relaxed">
                   {searchQuery || laneFilter !== 'ALL'
                     ? 'レーン絞り込みを解除するか、別のキーワードで検索してみてください。'
                     : activeTab === 'PUPIL'
-                    ? '「このチャンプを教えてほしい！」という目標をカードに登録してみましょう（初回+500コイン獲得！）。'
-                    : '得意なチャンピオンやレーンを登録して、教わりたい後輩を募集してみましょう！'}
+                    ? `「このチャンプを教えてほしい！」という目標をカードに登録してみましょう（初回登録で +${MENTORSHIP_FIRST_PROFILE_BONUS_COINS}${COIN_UNIT}獲得！）。`
+                    : '得意なチャンピオンやレーンを登録して、教わりたい後輩からのオファーを募集してみましょう！'}
                 </p>
               </div>
               <div className="pt-2">
@@ -1665,7 +1661,7 @@ export default function MentorshipHubPanel() {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success-600 hover:bg-success-700 text-white font-black text-xs transition shadow-sm cursor-pointer"
                 >
                   <Plus size={14} />
-                  {activeTab === 'PUPIL' ? '弟子カードを登録する' : '師匠カードを登録する'}
+                  {activeTab === 'PUPIL' ? '後輩カードを登録する' : '先輩カードを登録する'}
                 </button>
               </div>
             </div>
@@ -1722,6 +1718,72 @@ export default function MentorshipHubPanel() {
       />
 
       {/* ⭐ 匿名レビューモーダル */}
+
+      {/* 先輩引き受け確認モーダル */}
+      {claimTargetProfile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          onClick={() => {
+            if (!isSubmittingClaim) {
+              setClaimTargetProfile(null);
+              setClaimMessageInput('');
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-foreground">
+                🎉 {claimTargetProfile.player_name} さんのサポートを引き受けますか？
+              </h3>
+              <p className="text-xs text-muted leading-relaxed">
+                あなたの先輩登録が自動完了し、先輩・後輩ペアが即時成立します（初めて組む相手なら +300{COIN_UNIT}）。
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-foreground">
+                {claimTargetProfile.player_name} さんへのひとこと（任意）
+              </label>
+              <textarea
+                value={claimMessageInput}
+                onChange={(e) => setClaimMessageInput(e.target.value)}
+                rows={3}
+                disabled={isSubmittingClaim}
+                placeholder="指導方針や得意分野を書くと、相手が安心できます。例: 「JGのルート設計を中心に見ます。週末の夜なら通話できます」"
+                className="w-full rounded-xl border border-border bg-surface-subtle px-3 py-2 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-[11px] text-muted">
+                ※ 空欄のままでも引き受けできます。「キャンセル」を押すと引き受け自体を中止します。
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isSubmittingClaim}
+                onClick={() => {
+                  setClaimTargetProfile(null);
+                  setClaimMessageInput('');
+                }}
+                className="px-4 py-2 rounded-xl border border-border bg-surface hover:bg-surface-subtle text-xs font-bold text-foreground transition cursor-pointer disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingClaim}
+                onClick={handleConfirmClaimMentor}
+                className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-black transition shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingClaim ? '送信中...' : '引き受けてペアを成立させる'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* トップへ戻る */}
       <ScrollToTopButton />

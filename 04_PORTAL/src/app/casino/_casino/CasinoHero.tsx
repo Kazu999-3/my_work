@@ -40,8 +40,8 @@ export default function CasinoHero({ betStats }: {
             <div className="flex flex-wrap items-center justify-center gap-2.5 relative z-10">
               <span className="text-xl animate-bounce">💎</span>
               <span className="tracking-wide">サーバー共有ジャックポット金庫:</span>
-              <span className="text-amber-700 dark:text-amber-300 font-mono text-lg md:text-xl font-black drop-shadow-xs">
-                {betStats.jackpot ? `${betStats.jackpot.amount.toLocaleString()} コイン` : '—'}
+              <span className="text-amber-700 dark:text-amber-300 font-mono text-lg md:text-xl font-black drop-shadow-xs" title="未読込または現在0コイン時は「—」と表示されます">
+                {betStats.jackpot ? `${betStats.jackpot.amount.toLocaleString()} コイン` : '— (集計中)'}
               </span>
               <span className="text-[10px] text-amber-900 dark:text-amber-200 font-bold bg-amber-500/25 px-2.5 py-0.5 rounded-full border border-amber-500/40 shadow-xs animate-pulse">
                 🔥 ペンタキルで総取り！

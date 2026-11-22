@@ -156,7 +156,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
                 <Sliders size={13} className="text-primary-600" />
                 設定の3大要素
               </div>
-              <p>・<strong className="text-foreground-soft">メイン</strong>: 最優先で配属（Pity消費）</p>
+              <p>・<strong className="text-foreground-soft">メイン</strong>: 最優先で配属（待機優先度Pity＝譲り合いポイントを使用）</p>
               <p>・<strong className="text-foreground-soft">サブ</strong>: 2番目に得意なレーン</p>
               <p>・<strong className="text-foreground-soft">NGレーン</strong>: <span className="text-danger-600 font-bold">絶対に避けたい位置を最大2つ除外</span></p>
             </div>
@@ -322,7 +322,14 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>❓</span> 初心者やランクの低い人でも楽しめますか？
             </h4>
             <p className="text-[11px] text-muted leading-relaxed">
-              はい！参加ボタンを押した人は全員出場が基本で、バランサーが両チームの実力を五分五分に組みます。格上と当たるのが不安な人は、マイページで「格上との対面」を「🛡️守ってほしい」にしておくと、格上と対面しにくいように配置されます。
+              はい！参加ボタンを押した人は全員出場が基本で、バランサーが両チームの実力を五分五分に組みます。定期カスタムでは実力（MMR 1450）を境に「上位帯」と「中初級帯」の2つの帯（グループ）に分けて編成し、上の帯が不足した時だけ繰り上げ希望者を補充します。格上（実力が大きく上の相手）と当たるのが不安な人は、マイページで「同じ試合での対面保護」を「🛡️守ってほしい」に、「上の帯への繰り上げ参加」を「🔒 自分の帯のみ」にしておけます。
+              <button
+                type="button"
+                onClick={() => onSelectTab && onSelectTab('portal')}
+                className="ml-1.5 text-primary-700 font-bold hover:underline cursor-pointer"
+              >
+                （詳しくはこちら：ポータル機能ガイド ＞）
+              </button>
             </p>
           </div>
 

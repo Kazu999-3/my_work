@@ -439,6 +439,9 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                               </button>
                             );
                           })()}
+                          <p className="text-[11px] text-muted-strong text-center font-medium pt-1">
+                            ※ 確定後の取り消しはできません。予想が外れた場合、賭けたコインは戻りません。
+                          </p>
                         </>
                       )}
                     </form>
@@ -556,6 +559,10 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
               </div>
             </div>
           </div>
+
+          <p className="text-[11px] text-muted-strong text-center pt-2">
+            ※ コインはKTMコミュニティ内でのみ使える遊び用のポイントです。現金や金銭的価値のあるものとは一切交換できません。
+          </p>
     </>
   );
 }

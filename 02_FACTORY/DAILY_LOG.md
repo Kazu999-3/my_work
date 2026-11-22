@@ -1,5 +1,27 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【SPEC 16：各ページの操作性と分かりやすさ改善（カジノ・お祭り・ガイド・先輩後輩）】
+
+**概要**:
+SPEC 16（`04_PORTAL/docs/specs/16-page-usability-SPEC.md`）に基づき、操作ミス防止・用語補足・検索/一覧の視認性・エラー時の導線を改善。
+1. **`/casino` & `/casino/rules`**:
+   - `04_PORTAL/src/app/casino/page.tsx`: ベット送信前にチーム名・ベット額・確定後の変更/返金不可を確認する確認ダイアログを追加。
+   - `04_PORTAL/src/app/casino/_casino/BetTab.tsx`: ボタン直下の確定注意書きと最下部の仮想通貨免責注記を追加。
+   - `04_PORTAL/src/app/casino/_casino/CasinoHero.tsx`: 統計未集計時の `— (集計中)` 表記とツールチップを追加。
+   - `04_PORTAL/src/app/casino/rules/page.tsx`: `期待値` / `ハウスエッジ（胴元取り分）` の平易な注釈、テーブル外の強調ルールボックス、バカラ表見出しの日本語整理を実施。
+2. **`/festival/pick`**:
+   - `04_PORTAL/src/app/festival/pick/_parts/ChampionPoolView.tsx`: 候補除外ボタンを `候補除外(❌)` に変更しBANとの誤認を防止。
+   - `04_PORTAL/src/app/festival/pick/page.tsx`: `今週のお題` ボタンへ `🛡️ 運営用` バッジ付与、`必要: N体` の内訳 `(人数×候補数)` 表示、`★`・スライダーと `1v1〜5v5`・ブラウザ保存仕様・①②③ステップ導線を追記。
+3. **`/guide`**:
+   - `04_PORTAL/src/app/guide/page.tsx`: タイトルから `＆ リリースノート` を削除し、検索プレースホルダーを `Riot ID（サモナー名#タグ）で戦績検索...` に具体化。
+   - `04_PORTAL/src/app/guide/tabs/GuideQuickStartTab.tsx`: `Pity` の補足、初心者FAQのMMR 1450基準・繰り上げ補足・ポータルガイドタブへの遷移ボタンを追加。
+4. **`/mentorship`（`MentorshipHubPanel.tsx`）**:
+   - `prompt()` による引き受け入力を専用React確認モーダル（キャンセル時の中止明記）へ置換。
+   - `お見合い便` バナーにAI相性マッチングによる送信理由を明記し、用語を `先輩・後輩` / `オファー` へ統一。
+   - タブ件数の `取得中` を `読込中...` に統一、`アクティブのみ (直近60日に活動)` 表現とエラー時再試行案内、空状態のオファー導線を改善。
+5. **機械的実値検証（Verifier原則）**:
+   - `npx tsc --noEmit` / `npx eslint src` / `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
 ### ⚡ 【SPEC 15：導線とページ名の是正（サイドバー・マイページ着地・トップ次回案内・カジノ認証表示）】
 
 **概要**:

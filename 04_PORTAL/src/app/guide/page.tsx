@@ -91,7 +91,7 @@ function GuideContent() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground dark:text-stone-100">
-                KTM 総合使い方ガイド ＆ リリースノート
+                KTM 総合使い方ガイド
               </h1>
               <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 border border-primary-edge dark:border-primary-edge-strong text-primary-800 dark:text-primary-300 text-[10px] font-extrabold">
                 公式ガイド
@@ -109,7 +109,7 @@ function GuideContent() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-faint w-3.5 h-3.5" />
             <input
               type="text"
-              placeholder="サモナー名で戦績検索..."
+              placeholder="Riot ID（サモナー名#タグ）で戦績検索..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
               className="w-full bg-background dark:bg-stone-800/80 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-primary-edge-strong transition-colors placeholder-stone-400"

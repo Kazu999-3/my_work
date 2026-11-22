@@ -286,6 +286,7 @@ export default function FestivalPickPage() {
               className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer"
               title={`日曜お祭りカスタムの今週のお題: ${sundayTheme?.title || '未定'}（クリックで設定・確認）`}
             >
+              <span className="text-[9px] bg-black/25 px-1.5 py-0.5 rounded font-black">🛡️ 運営用</span>
               <span className="text-sm">🎪</span>
               <span className="truncate max-w-xs sm:max-w-none">
                 今週: {sundayTheme?.title?.replace(/^[^\w\s\u3000-\u30FF\u4E00-\u9FA5]+/, "").trim() || "未定"}
@@ -577,7 +578,7 @@ export default function FestivalPickPage() {
                 </span>
               </button>
               <div className="flex items-center justify-between text-[10px] px-1 text-muted">
-                <span>必要: {playerCount * picksPerPlayer}体</span>
+                <span>必要: {playerCount * picksPerPlayer}体 ({playerCount}人×{picksPerPlayer}択)</span>
                 <span
                   className={
                     activeCount >= playerCount * picksPerPlayer
@@ -590,7 +591,15 @@ export default function FestivalPickPage() {
                     : `残り ${activeCount}体 (不足)`}
                 </span>
               </div>
+              <p className="text-[10px] text-muted-strong px-1 leading-snug">
+                ※ <strong>★</strong>＝標準おすすめ。スライダー/1v1〜5v5で参加人数を決め、必要数（人数×候補数）以上の候補を残して抽選します。一時保存はこのブラウザのみ有効です。
+              </p>
             </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-border/60 text-[10px] text-muted-strong flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span><strong>①</strong> 上の「テーマおまかせダイス」や一覧の「候補除外(❌ / BANとは別)」でプールを絞る</span>
+            <span><strong>②</strong> 「1枚プレビュー」「設定共有」でメンバーへ共有</span>
+            <span><strong>③</strong> 「1体/5体抽選（簡易ランダム）」「人数別ドラフト」「大会式ドラフト(5v5交互ピック)」から方式を選んで実行</span>
           </div>
         </div>
 

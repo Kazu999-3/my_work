@@ -123,13 +123,25 @@ export default function CasinoRulesPage() {
             還元率（RTP）の読み方
           </h2>
           <p className="text-xs md:text-sm text-foreground-subtle leading-relaxed">
-            RTP は「賭けたコインのうち、長期的に平均して手元へ戻ってくる割合」です。
-            RTP 96% なら、100コイン賭けるごとに平均4コインずつ減っていきます。
+            RTP は「賭けたコインのうち、長期的に平均して手元へ戻ってくる割合」、<strong>期待値</strong>は「1回の賭けで平均して増減する見込み額」、<strong>ハウスエッジ</strong>は「100% − RTP（運営・金庫側の取り分割合）」です。
+            RTP 96%（ハウスエッジ 4%）なら、100コイン賭けるごとに平均4コインずつ減っていきます（1回の期待値は 96コイン）。
             <strong className="text-foreground">
               どのゲームも RTP は100%未満なので、長く遊べば遊ぶほど必ず減ります。
             </strong>
             短期的には大きく増えることもありますが、それは運によるブレです。
           </p>
+        </div>
+
+        {/* 重要ルール（ベット上限・取り消し不可など） */}
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 space-y-1.5">
+          <h2 className="text-sm font-black text-foreground flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600" />
+            重要ルール（ベット上限・確定後の扱い）
+          </h2>
+          <ul className="text-xs md:text-sm text-foreground-subtle list-disc pl-5 space-y-1">
+            <li><strong className="text-foreground">ベット上限・下限:</strong> 勝敗予想ベットは1回 1〜10,000 コイン、各ミニゲームはゲーム設定のベット枠（最小10コイン〜）で遊べます。</li>
+            <li><strong className="text-foreground">確定後は取り消し不可:</strong> ベット確定後のキャンセルはできません。予想が外れた場合、賭けたコインは戻りません。</li>
+          </ul>
         </div>
 
         {/* ラッキーデー（2026-10-17 導入。ルールページへの記載が漏れていたため 2026-10-20 に追加） */}
@@ -289,7 +301,7 @@ export default function CasinoRulesPage() {
                   <th className={TH}>勝率</th>
                   <th className={TH}>配当</th>
                   <th className={TH}>RTP</th>
-                  <th className={TH}>ハウスエッジ</th>
+                  <th className={TH}>ハウスエッジ（胴元取り分）</th>
                 </tr>
               </thead>
               <tbody>

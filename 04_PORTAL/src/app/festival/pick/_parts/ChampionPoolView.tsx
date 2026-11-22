@@ -129,7 +129,7 @@ export default function ChampionPoolView({
                         onClick={() => handleExcludeGroup(champIds)}
                         className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-[11px] font-bold border border-border transition cursor-pointer"
                       >
-                        地域一括 ❌
+                        地域一括 候補除外(❌)
                       </button>
                       <button
                         type="button"
@@ -228,7 +228,7 @@ export default function ChampionPoolView({
                         onClick={() => handleExcludeGroup(allIds)}
                         className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-[11px] font-bold border border-border transition cursor-pointer"
                       >
-                        全除外 ❌
+                        全 候補除外(❌)
                       </button>
                       <button
                         type="button"
@@ -323,7 +323,7 @@ export default function ChampionPoolView({
                         onClick={() => handleExcludeGroup(champIds)}
                         className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-[11px] font-bold border border-border transition cursor-pointer"
                       >
-                        クラス一括 ❌
+                        クラス一括 候補除外(❌)
                       </button>
                       <button
                         type="button"
@@ -473,7 +473,7 @@ export default function ChampionPoolView({
                                 onClick={() => handleExcludeGroup(champIds)}
                                 className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-xs font-bold border border-border transition cursor-pointer"
                               >
-                                一括 ❌
+                                一括 候補除外(❌)
                               </button>
                               <button
                                 type="button"
