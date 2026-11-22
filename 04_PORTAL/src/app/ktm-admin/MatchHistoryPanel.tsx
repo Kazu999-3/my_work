@@ -15,7 +15,7 @@ export type { Match, Participant };
 
 function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
   if (!b) return delta !== undefined ? `MMR変動: ${delta > 0 ? '+' : ''}${delta}` : '';
-  if ((b as any).isExhibition) return 'お祭りカスタム（戦績ノーカウント）: 変動0';
+  if ((b as any).isExhibition) return 'お祭りカスタム（戦績対象外）: 変動0';
   if ((b as any).note) return (b as any).note;
 
   const parts: string[] = [];
@@ -407,7 +407,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           <History className="h-6 w-6 text-success-700" />
         </div>
         <div>
-          <h2 className="text-2xl font-extrabold text-foreground">直近の試合履歴</h2>
+          <h2 className="text-2xl font-extrabold text-foreground">試合履歴</h2>
+          <p className="text-xs text-muted-strong mt-0.5">
+            KDA＝(キル+アシスト)÷デス（3.0以上で好成績）。MMR変動は格上/格下補正・早期投了緩和などを反映しています。
+            <a href="/guide#portal-mmr" className="ml-2 text-primary-700 hover:underline font-bold">📖 用語・MMRの見方</a>
+          </p>
           <p className="text-faint font-medium text-sm">
             {loading ? '戦績データを取得中...' : matches.length > 0 ? `最新${matches.length}件の試合結果とMMR変動履歴` : '試合結果とMMR変動履歴'}
           </p>
@@ -776,7 +780,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         ? 'text-amber-400'
                         : match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'
                     }`}>
-                      {isFestival ? 'お祭りカスタム (出席記録)' : `${match.winning_team} WIN`}
+                      {isFestival ? 'お祭りカスタム（戦績対象外）' : `${match.winning_team}勝利`}
                     </span>
                     {!isFestival && hasKillData ? (
                       <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
@@ -820,7 +824,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                               ? 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-600'
                               : 'bg-black/10 hover:bg-black/20 border-border text-faint hover:text-foreground'
                           }`}
-                          title={isFestival ? "お祭り（レート非干渉）モード中。クリックで公式戦に戻します" : "クリックしてお祭り（レート非干渉）に変更"}
+                          title={isFestival ? "お祭りカスタム（戦績対象外）モード中。クリックで公式戦に戻します" : "クリックしてお祭りカスタム（戦績対象外）に変更"}
                         >
                           <PartyPopper className={`h-3 w-3 ${isFestival ? 'text-amber-500' : 'text-muted-strong'}`} />
                           <span>{togglingMatchId === match.id ? '切替中...' : (isFestival ? 'お祭り' : '公式戦')}</span>
@@ -1292,7 +1296,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     type="button"
                     className={`px-3 py-2 rounded-lg font-bold transition text-xs ${isEventMatch(editingMatch) ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
                   >
-                    🎪 お祭り (除外)
+                    🎪 お祭りカスタム（戦績対象外）
                   </button>
                 </div>
               </div>

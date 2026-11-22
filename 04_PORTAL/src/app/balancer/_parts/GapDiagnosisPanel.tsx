@@ -53,7 +53,7 @@ export default function GapDiagnosisPanel({ handicapIds, handleInputChange, togg
               ))}
             </div>
             <p className="text-[10px] text-muted-strong">
-              観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加は<strong className="text-primary-700">チーム分けの計算上のみMMRを{HANDICAP_MMR_PENALTY}下げて</strong>格差を緩和します（実際のMMR・戦績は変わりません）。結果とDiscord通知にも🎗️で明示されます。
+              観戦に回した人は待機優先度 (Pity) が溜まり次回は優先出場します。ハンデ参加は<strong className="text-primary-700">チーム分けの計算上のみMMRを{HANDICAP_MMR_PENALTY}下げて</strong>格差を緩和します（実際のMMR・戦績は変わりません）。結果とDiscord通知にも🎗️で明示されます。
             </p>
           </div>
   );

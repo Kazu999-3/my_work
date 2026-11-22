@@ -244,11 +244,11 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                       }`}
                                       title={
                                         p.allow_lower_support
-                                          ? `格下サポートON (${strict ? 'メイン・サブ除外/完全オフ' : 'メイン除外/オフレーン'})`
-                                          : `クリックで下位帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
+                                          ? `中初級帯サポート許可中 (${strict ? 'メイン・サブ除外/完全オフレーン' : 'メイン除外/オフレーン'})`
+                                          : `クリックで中初級帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
                                       }
                                     >
-                                      {p.allow_lower_support ? '下位帯サポ: 許可中 ✓' : '下位帯サポ: 不可'}
+                                      {p.allow_lower_support ? '中初級帯サポ: 許可中 ✓' : '中初級帯サポ: 不可'}
                                     </button>
                                   </div>
                                 ) : (
@@ -275,7 +275,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             })()}
                           </div>
                         </td>
-                        <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNRANKED'}</td>
+                        <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank && p.highest_rank !== 'UNRANKED' ? p.highest_rank.split(' ')[0] : 'ランクなし'}</td>
                         <td className="px-2 py-1.5 text-center">
                           {(() => {
                             const repMmr = p.mmr || 1200;
@@ -533,7 +533,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             </span>
                           );
                         })()}
-                        <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
+                        <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank && p.highest_rank !== 'UNRANKED' ? p.highest_rank.split(' ')[0] : 'ランクなし'}</span>
                         {/* 格上との対面OKの人だけ印を付ける（保護ありが大多数のため。2026-10-17） */}
                         {p.allow_higher && (
                           <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-danger-100 text-danger-700 border-danger-edge-soft" title="格上との対面: ⚔️挑戦したい（保護なし）">⚔️挑戦</span>
@@ -555,7 +555,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* 第1希望 */}
                         <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1.5 py-0.5">
-                          <span className="text-[10px] text-faint font-bold">1st:</span>
+                          <span className="text-[10px] text-faint font-bold">第1希望:</span>
                           <RoleIcon role={prefs.primary || 'ALL'} className="w-3.5 h-3.5" />
                           <select value={prefs.primary || 'ALL'} onChange={e => handleInputChange(p.id,'primary_role',e.target.value)} className="bg-transparent text-foreground outline-none cursor-pointer text-[11px] font-bold">
                             {['ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle">{r}</option>)}
@@ -563,7 +563,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         </div>
                         {/* 第2希望 */}
                         <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1.5 py-0.5">
-                          <span className="text-[10px] text-faint font-bold">2nd:</span>
+                          <span className="text-[10px] text-faint font-bold">第2希望:</span>
                           <RoleIcon role={prefs.secondary || '-'} className="w-3.5 h-3.5" />
                           <select value={prefs.secondary || '-'} disabled={prefs.primary === 'ALL'} onChange={e => handleInputChange(p.id,'secondary_role',e.target.value)} className="bg-transparent text-foreground outline-none cursor-pointer text-[11px] disabled:opacity-40">
                             {['-','ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle">{r}</option>)}
@@ -572,7 +572,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         {/* NGレーン */}
                         {(p.ng_lane_1 || p.ng_lane_2) && (
                           <div className="flex items-center gap-1 text-danger-700 text-xs font-bold bg-danger-50 border border-danger-edge-soft/60 px-1.5 py-0.5 rounded">
-                            <span className="text-[10px] font-black opacity-70">NG:</span>
+                            <span className="text-[10px] font-black opacity-70">回避:</span>
                             {p.ng_lane_1 && <span className="flex items-center gap-0.5"><RoleIcon role={p.ng_lane_1} className="w-3 h-3" />{p.ng_lane_1}</span>}
                             {p.ng_lane_2 && <span className="flex items-center gap-0.5"><RoleIcon role={p.ng_lane_2} className="w-3 h-3" />{p.ng_lane_2}</span>}
                           </div>

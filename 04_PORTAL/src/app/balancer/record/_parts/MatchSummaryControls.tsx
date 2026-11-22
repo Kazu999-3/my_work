@@ -47,7 +47,7 @@ export default function MatchSummaryControls({
               : 'bg-surface text-muted-strong border border-border hover:bg-black/5'
           }`}
         >
-          BLUE WIN
+          BLUE勝利
         </button>
         <button
           type="button"
@@ -58,7 +58,7 @@ export default function MatchSummaryControls({
               : 'bg-surface text-muted-strong border border-border hover:bg-black/5'
           }`}
         >
-          RED WIN
+          RED勝利
         </button>
       </div>
 

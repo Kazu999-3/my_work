@@ -31,7 +31,7 @@ export default function TeamStatsTable({
   return (
     <div>
       <h4 className={`font-bold ${titleColor} mb-4 text-xl tracking-wider`}>
-        {isBlue ? '🟦 BLUE TEAM' : '🟥 RED TEAM'}
+        {isBlue ? '🟦 BLUEチーム' : '🟥 REDチーム'}
       </h4>
       <div className="space-y-3">
         {indices.map((index) => {

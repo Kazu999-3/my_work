@@ -38,7 +38,7 @@ export default function CoinGuide() {
           <div className="p-4 rounded-2xl bg-background border border-border space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-primary-700">① 初回ログイン</span>
-              <span className="text-xs font-mono font-black text-success-600">+1,000 pt</span>
+              <span className="text-xs font-mono font-black text-success-600">+1,000 コイン</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
               Discordで初めてログインすると、全員に初期所持金として自動付与！
@@ -48,7 +48,7 @@ export default function CoinGuide() {
           <div className="p-4 rounded-2xl bg-background border border-border space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-primary-700">② 試合に参加</span>
-              <span className="text-xs font-mono font-black text-success-600">+100 pt</span>
+              <span className="text-xs font-mono font-black text-success-600">+100 コイン</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
               カスタム試合に参加するだけで、勝敗に関係なく全員に参加賞を付与！
@@ -58,7 +58,7 @@ export default function CoinGuide() {
           <div className="p-4 rounded-2xl bg-background border border-border space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-primary-700">③ 試合に勝利</span>
-              <span className="text-xs font-mono font-black text-success-600">+150 pt (計250)</span>
+              <span className="text-xs font-mono font-black text-success-600">+150 コイン (計250)</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
               試合に勝利したチームのメンバー全員に勝利ボーナスを追加付与！
@@ -68,7 +68,7 @@ export default function CoinGuide() {
           <div className="p-4 rounded-2xl bg-background border border-border space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-primary-700">④ 募集を主催</span>
-              <span className="text-xs font-mono font-black text-success-600">+200 pt</span>
+              <span className="text-xs font-mono font-black text-success-600">+200 コイン</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
               Discordで `/recruit` を打って募集を立てた主催者に感謝ボーナス！
@@ -78,10 +78,10 @@ export default function CoinGuide() {
           <div className="p-4 rounded-2xl bg-background border border-border space-y-1.5 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-primary-700">⑤ 勝敗予想が的中</span>
-              <span className="text-xs font-mono font-black text-primary-600">賭け金 × 2倍 配当</span>
+              <span className="text-xs font-mono font-black text-primary-600">投票比率連動 (1.15〜10.0倍)</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
-              カスタムの勝利チームを予想して的中すると、賭けたコインがザクザク倍増して戻ってきます！
+              カスタムの勝利チームを予想して的中すると、投票比率に応じた倍率（パリミュチュエル方式）でコインが払い戻されます！
             </p>
           </div>
         </div>

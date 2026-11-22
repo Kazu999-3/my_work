@@ -165,7 +165,12 @@ function LeaderboardContent() {
                 </span>
               </div>
               <p className="text-[11px] text-muted-strong font-medium mt-0.5">
-                ロール別実力ランキング・全選手名簿・デュオ相性・メタ統計・レーン別勝率
+                レーン別MMR順位（TOP/JG/MID/ADC/SUP）・メンバー名簿・デュオ相性・メタ統計（採用率/勝率の高いチャンピオン集計）・レーン別勝率
+                <span className="ml-2">
+                  <Link href="/guide#portal-mmr" className="text-primary-700 hover:underline font-bold">
+                    📖 MMRの見方・帯基準(1450)ガイド
+                  </Link>
+                </span>
               </p>
             </div>
           </div>
@@ -245,7 +250,7 @@ function LeaderboardContent() {
             <div className="flex flex-wrap items-center justify-between gap-3 bg-surface/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted">最低ピック数:</span>
+                  <span className="text-xs font-bold text-muted">最低試合数:</span>
                   {[1, 2, 3, 5].map((cnt) => (
                     <button
                       key={cnt}
@@ -256,7 +261,7 @@ function LeaderboardContent() {
                           : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                       }`}
                     >
-                      {cnt}回以上
+                      {cnt}戦以上
                     </button>
                   ))}
                 </div>
@@ -306,7 +311,7 @@ function LeaderboardContent() {
                           勝率 {metaSortKey === 'winRate' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
                         <th className="p-3 cursor-pointer hover:text-primary-700 whitespace-nowrap" onClick={() => toggleMetaSort('avgKda')}>
-                          平均KDA {metaSortKey === 'avgKda' && (metaSortDir === 'desc' ? '▼' : '▲')}
+                          <span title="(キル+アシスト)÷デスの平均値（3.0以上で好成績の目安）">平均KDA</span> {metaSortKey === 'avgKda' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
                         {showMetaPlayers && (
                           <th className="p-3 min-w-[200px]">主な使用者 (試合数・勝率)</th>
@@ -340,7 +345,7 @@ function LeaderboardContent() {
                                       key={p.name}
                                       href={`/player/${encodeURIComponent(p.name)}`}
                                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-subtle hover:bg-primary-100 hover:border-primary-edge border border-border text-foreground-soft text-[11px] transition-colors"
-                                      title={`${p.name} のカルテを見る`}
+                                      title={`${p.name} の選手カルテを見る`}
                                     >
                                       <span className="font-bold">{p.name}</span>
                                       <span className="text-[10px] text-muted-strong font-mono">
@@ -524,7 +529,7 @@ function LeaderboardContent() {
                                 {player.mmr}
                               </div>
                               <div className="inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-black border border-primary-edge-soft/60 bg-primary-100/60 dark:bg-primary-950/40 text-primary-900 dark:text-primary-300">
-                                {player.rankBadge?.name || 'UNRANKED'}
+                                {player.rankBadge?.name && player.rankBadge.name !== 'UNRANKED' ? player.rankBadge.name : 'ランクなし'}
                               </div>
                             </div>
                           </Link>

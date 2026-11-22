@@ -96,7 +96,7 @@ export function LaneMatchupRow({
         {pB?.name && handicapNames.has(pB.name) && (
           <span
             className="text-[9px] bg-primary-100 border border-primary-edge text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0"
-            title="ハンデ参加（オフロール等の制約付き）"
+            title="ハンデ参加（計算上のみMMRを150下げて格差を緩和・実MMR不変）"
           >
             🎗️ハンデ
           </span>
@@ -178,7 +178,7 @@ export function LaneMatchupRow({
         {pR?.name && handicapNames.has(pR.name) && (
           <span
             className="text-[9px] bg-primary-100 border border-primary-edge text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0"
-            title="ハンデ参加（オフロール等の制約付き）"
+            title="ハンデ参加（計算上のみMMRを150下げて格差を緩和・実MMR不変）"
           >
             🎗️ハンデ
           </span>

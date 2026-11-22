@@ -16,14 +16,14 @@ export default function CasinoHero({ betStats }: {
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary-500/20 text-primary-900 text-xs font-black tracking-wider border border-primary-edge-strong/30">
             <Sparkles size={14} className="text-primary-600" />
-            KTM Sovereign Casino & Shop
+            KTM カジノ ＆ ショップ
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground flex items-center justify-center gap-3">
             <Coins className="text-primary-600" size={32} />
-            勝敗予想 ＆ KTMショップ ＆ 長者番付
+            勝敗予想ベット ＆ KTMショップ ＆ コイン長者番付
           </h1>
           <p className="text-foreground-subtle text-xs md:text-sm max-w-xl mx-auto font-medium">
-            勝敗予想でコインを増やして、宝くじ・スクラッチ・保険・激闘チケットと交換しよう🔥
+            勝敗予想ベットでコインを増やして、宝くじ・スクラッチ・保険・激闘チケットと交換しよう🔥（※ゲーム内のチップもすべて「1チップ＝1コイン」として遊べます）
           </p>
 
           <Link
@@ -31,7 +31,7 @@ export default function CasinoHero({ betStats }: {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface/70 hover:bg-surface border border-border text-foreground-subtle hover:text-foreground text-xs font-black transition-colors"
           >
             <Info size={13} />
-            ルール ＆ 確率一覧を見る
+            ルール・還元率(RTP)・期待値を見る
           </Link>
 
           {/* ジャックポット金庫バナー */}
@@ -47,6 +47,9 @@ export default function CasinoHero({ betStats }: {
                 🔥 ペンタキルで総取り！
               </span>
             </div>
+            <p className="text-[10px] font-medium text-amber-900/80 dark:text-amber-200/80 relative z-10">
+              各ゲームやベットの5%が積立！カスタム公式戦で勝利側がペンタキルを達成すると全額総取りできます。
+            </p>
             {betStats.jackpot?.lastWinner && (
               <div className="text-[10px] text-muted-strong font-medium relative z-10 flex items-center gap-1">
                 <span>👑 直近の総取り当選者:</span>

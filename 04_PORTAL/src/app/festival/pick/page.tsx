@@ -309,7 +309,7 @@ export default function FestivalPickPage() {
               type="button"
               onClick={() => setShowTournamentDraftModal(true)}
               className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-rose-600 hover:from-blue-500 hover:to-rose-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer"
-              title="プロ大会形式（B1 ➔ R1,R2 ➔ B2,B3...）で5v5のチャンピオンピックをシミュレート"
+              title="プロ大会形式（Blue 1体目 ➔ Red 1・2体目 ➔ Blue 2・3体目...）で5v5のチャンピオンピックをシミュレート"
             >
               <Trophy className="w-3.5 h-3.5 text-amber-300" />
               <span>⚔️ 大会式ドラフト (5v5)</span>
@@ -397,7 +397,10 @@ export default function FestivalPickPage() {
             <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-1">
               <span className="font-black text-rose-600 block">⚔️ 大会式ドラフト (5v5)</span>
               <p className="text-muted leading-relaxed">
-                プロ大会（LCK/LPL等）の公式ピック順（B1➔R1,R2➔B2,B3...）に従って、5v5のフルドラフトピックをシミュレートします。
+                プロ大会（韓国LCK/中国LPL等）の公式ピック順（B1=Blue1体目 ➔ R1,R2=Red1,2体目 ➔ B2,B3...）に従って、5v5のフルドラフトピックをシミュレートします。
+                <span className="block text-[10px] text-muted-strong mt-0.5">
+                  ※ 必要:18体＝10人分の最低ピック枠（余裕込み）、★＝複数候補からのおすすめピック枠
+                </span>
               </p>
             </div>
             <div className="bg-surface-subtle p-3 rounded-xl border border-border space-y-1">

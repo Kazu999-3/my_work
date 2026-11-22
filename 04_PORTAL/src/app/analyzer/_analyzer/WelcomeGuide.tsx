@@ -22,7 +22,7 @@ export default function WelcomeGuide({ report, targetTier, setSummonerInput, loa
           </div>
           <div className="space-y-1.5 max-w-md mx-auto">
             <h3 className="text-base font-black text-foreground">
-              サモナー名を入力して深層アナライズを開始
+              Riot ID（サモナー名#タグ）を入力して分析を開始
             </h3>
             <p className="text-xs text-muted-strong font-medium leading-relaxed">
               上の検索バーに「サモナー名#タグ」を入力して実行してください。一度検索したサモナーは入力補助履歴に自動保存され、ワンクリックで再解析できます。

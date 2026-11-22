@@ -274,7 +274,7 @@ export default function KtmBaccaratGame({
       <div className="text-center space-y-1">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-900 text-xs font-black border border-primary-edge-strong/30">
           <Sparkles size={12} className="text-primary-600" />
-          KTM Sovereign Baccarat
+          KTM バカラ
         </div>
         <p className="text-xs text-muted-strong font-medium">本格8デッキ / PLAYER・BANKER×1.95倍 / TIE×8.0倍</p>
       </div>

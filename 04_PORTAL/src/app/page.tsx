@@ -73,7 +73,7 @@ export default function HomePage() {
                 </div>
                 <span className="text-[11px] font-black text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-500/20 border border-primary-edge dark:border-primary-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-primary-600 dark:text-primary-400" />
-                  公式カルテ
+                  マイページ
                 </span>
               </div>
               <div>
@@ -81,13 +81,13 @@ export default function HomePage() {
                   マイページ ＆ 希望レーン設定
                 </h2>
                 <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
-                  あなた専用の戦績カルテ。希望レーン・NGレーンの変更、プレイスタイル診断、所持コイン管理が可能です。
+                  あなたの設定と戦績を確認できる専用ページ。希望レーン・NGレーンの変更、プレイスタイル診断、所持コイン管理が可能です。
                 </p>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-xs font-black text-primary-700 dark:text-primary-400 group-hover:translate-x-1 transition-transform border-t border-border/80 dark:border-border pt-3">
-              <span>マイカルテを開く</span>
+              <span>マイページを開く</span>
               <ChevronRight className="w-4 h-4" />
             </div>
           </Link>
@@ -143,7 +143,7 @@ export default function HomePage() {
                   チーム分けバランサー (5v5 Custom)
                 </h2>
                 <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
-                  参加メンバーの代表MMRと希望レーンに基づき、対面実力格差が最も小さくなる均等なチーム編成を自動生成します。
+                  参加メンバーの代表MMR（カスタム内の総合実力値）と希望レーンに基づき、対面実力格差が最も小さくなる均等なチーム編成を自動生成します。
                 </p>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function HomePage() {
                   勝敗予想 ＆ KTMショップ
                 </h2>
                 <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
-                  カスタム対戦の勝敗にコインをベットして配当を獲得！貯まったコインで宝くじ・スクラッチくじ・保険などと交換できます。
+                  カスタム対戦の勝敗にコインで勝敗予想ベットして配当を獲得！貯まったコインで宝くじ・スクラッチくじ・保険などと交換できます。
                 </p>
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function HomePage() {
             {[
               {
                 title: '順位表 ＆ 名簿',
-                sub: 'ロール別MMR・長者番付',
+                sub: 'ロール別MMR・コイン長者番付',
                 href: '/leaderboard',
                 icon: <Trophy className="w-5 h-5 text-primary-600 dark:text-primary-400" />,
                 borderHover: 'hover:border-primary-edge',
@@ -246,8 +246,13 @@ export default function HomePage() {
         </div>
 
         {/* フッター */}
-        <footer className="text-center text-[11px] text-muted-strong font-bold border-t border-border/80 dark:border-border pt-6">
-          <p>© 2026 KTM Custom Portal. All Rights Reserved.</p>
+        <footer className="text-center text-[11px] text-muted-strong font-bold border-t border-border/80 dark:border-border pt-6 space-y-1.5">
+          <p>
+            <Link href="/guide#portal-mmr" className="text-primary-700 hover:underline">
+              📖 用語解説・MMRの見方ガイドはこちら
+            </Link>
+          </p>
+          <p>© 2026 KTM カスタムポータル. All Rights Reserved.</p>
         </footer>
 
       </div>

@@ -356,7 +356,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
     <div className="space-y-4">
       <div className="bg-surface border border-border rounded-2xl p-4 space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h3 className="text-lg font-black text-foreground">🗺️ リプレイの道筋（試作）</h3>
+          <h3 className="text-lg font-black text-foreground">🗺️ リプレイ道筋マップ</h3>
           <div className="flex items-center gap-2 flex-wrap">
             {isAdmin && (
               <>
@@ -364,7 +364,7 @@ export default function ReplayPathsPanel({ isAdmin: propIsAdmin, viewKey, onKeyE
                   type="button"
                   onClick={handleCopyShareUrl}
                   className="text-xs px-2.5 py-1 rounded-lg border border-teal-500/30 text-teal-700 bg-teal-500/5 hover:bg-teal-500/10 cursor-pointer flex items-center gap-1 font-bold"
-                  title="合言葉付きの閲覧専用URLをクリップボードにコピー"
+                  title="専用キー付きの閲覧専用URLをクリップボードにコピー"
                 >
                   {copied ? <Check className="h-3.5 w-3.5 text-teal-600" /> : <Link className="h-3.5 w-3.5" />}
                   {copied ? "リンクをコピー完了！" : "共有URLをコピー"}

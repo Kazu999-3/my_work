@@ -39,7 +39,7 @@ function ReplayPathsViewer() {
 
   const handleKeyError = () => {
     setIsAuthorized(false);
-    setErrorMsg("合言葉が正しくないか、有効期限が切れています。");
+    setErrorMsg("専用キーが正しくないか、有効期限が切れています。");
     localStorage.removeItem("ktm_replay_view_key");
   };
 
@@ -73,7 +73,7 @@ function ReplayPathsViewer() {
             }}
             className="text-[11px] text-muted-strong hover:text-danger-600 transition cursor-pointer"
           >
-            合言葉をリセット
+            専用キーをリセット
           </button>
         )}
       </header>
@@ -87,15 +87,15 @@ function ReplayPathsViewer() {
                 <KeyRound className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">閲覧用の合言葉が必要です</h2>
-                <p className="text-xs text-muted-strong">共有された合言葉、またはURLのキーを入力してください。</p>
+                <h2 className="text-base font-bold text-foreground">閲覧用の専用キーが必要です</h2>
+                <p className="text-xs text-muted-strong">共有された専用キーを入力してください。</p>
               </div>
             </div>
 
             <form onSubmit={handleKeySubmit} className="space-y-3 pt-2">
               <input
                 type="password"
-                placeholder="合言葉を入力"
+                placeholder="専用キーを入力"
                 value={inputKey}
                 onChange={(e) => setInputKey(e.target.value)}
                 autoFocus

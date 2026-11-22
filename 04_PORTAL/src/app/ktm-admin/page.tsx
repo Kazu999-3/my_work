@@ -78,8 +78,8 @@ export default function KtmAdminPage() {
       }
       if (data.processed > 0) {
         const rebuildNote = data.rebuild?.success
-          ? '（MMR自動リビルド完了⚡）'
-          : (data.rebuild ? '（※MMR自動リビルド失敗）' : '');
+          ? '（MMR再計算完了⚡）'
+          : (data.rebuild ? '（※MMR再計算失敗）' : '');
         setMessage({
           type: "success",
           text: `🎉 新メンバー ${data.processed} 名の自己紹介を取り込み、名簿登録・ロール付与・個別案内部屋を開通しました！${rebuildNote}`
@@ -212,7 +212,7 @@ export default function KtmAdminPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 font-bold border border-primary-edge text-xs transition"
-              title="Sovereign OS パイロット管制塔（ワーカー・募集監査・総合ヘルス）を開く"
+              title="KTM 管理画面 パイロット管制塔（ワーカー・募集監査・総合ヘルス）を開く"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">パイロット管制塔</span>

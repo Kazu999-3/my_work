@@ -28,7 +28,7 @@ export function WinRatePredictorCard({ balanceResult }: WinRatePredictorCardProp
     <div className="p-4 rounded-2xl border border-border bg-surface shadow-xs">
       <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-black text-foreground">🔮 Elo勝率予測 ＆ 接戦度診断</span>
+          <span className="text-xs font-black text-foreground">🔮 実力予測 (Elo) ＆ 接戦度診断（90点以上で接戦目安）</span>
           {isCloseMatch ? (
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-success-100 text-success-800 border border-success-edge">
               🔥 超接戦（名勝負の予感！）

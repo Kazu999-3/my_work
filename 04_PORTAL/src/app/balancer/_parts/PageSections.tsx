@@ -168,10 +168,46 @@ export function MatchingGlossary() {
             希望外レーンに回された人に貯まり次回優先される「希望優先度」と、希望レーンが連続した際に席を譲り合うための「譲り合い度」で自動調整されます。
           </p>
         </div>
-        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border md:col-span-2 space-y-1">
-          <span className="font-black text-amber-700 dark:text-amber-400 block">🎟️ 試合出場優先度（待機救済）</span>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-amber-700 dark:text-amber-400 block">🎟️ 待機優先度 (Pity / 試合出場優先度)</span>
           <p className="text-muted leading-relaxed">
             10人以上集まった際に「見学・待機枠」に回った人に貯まるポイント。次回、最優先で10人の出場枠へ選出されます（※初参加の方は0ポイントでも100%最優先で自動選出されます）。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">🏟️ 帯分け（上位帯 / 中初級帯）＆ 繰り上げ</span>
+          <p className="text-muted leading-relaxed">
+            実力差を抑えるため代表MMR 1450 を境に「上位帯」と「中初級帯」に分けて編成します。上位帯が10人未満の時は、中初級帯で繰り上げ許可している人からMMRが近い順に自動補充されます。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-secondary-700 block">🔽 中初級帯サポート（格下参加）</span>
+          <p className="text-muted leading-relaxed">
+            責任者が許可した上位帯の特定メンバーのみ、人手不足時などに中初級帯へ参加できます。その際は希望レーンを外したオフレーン限定（MMR 1550以上は第1・第2希望とも除外）となります。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">⚖️ ハンデ参加</span>
+          <p className="text-muted leading-relaxed">
+            極端な実力差を和らげるため、チーム分け計算上のみMMRを150下げて編成する仕組みです（実際のMMRや戦績には影響しません）。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">🔮 実力予測 (Elo) ＆ 接戦度（100点満点）</span>
+          <p className="text-muted leading-relaxed">
+            両チームのMMR差から勝率を予測する統計計算（Elo方式）と、試合の拮抗度合いを示すスコアです。90点以上は白熱した接戦の目安です。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">⚔️ KDA（キル / デス / アシスト比率）</span>
+          <p className="text-muted leading-relaxed">
+            「(キル + アシスト) ÷ デス」で求める活躍指標です。デス数が少ないほど高くなり、3.0以上で好成績、5.0以上で圧巻の活躍の目安となります。
+          </p>
+        </div>
+        <div className="bg-surface-subtle p-3.5 rounded-xl border border-border space-y-1">
+          <span className="font-black text-primary-700 block">🏆 BO3（2本先取制）＆ 🚫 NGレーン</span>
+          <p className="text-muted leading-relaxed">
+            <strong>BO3</strong>は最大3戦行い先に2勝した方が勝利となる形式です。<strong>NGレーン</strong>は絶対に入りたくないレーンを最大2つまで除外できる設定です。
           </p>
         </div>
       </div>

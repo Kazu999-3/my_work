@@ -79,7 +79,7 @@ export default function TipModal({ user, setTipToPlayer, setIsTipModalOpen, acti
                     🪙 チップ金額 (コイン)
                   </label>
                   <span className="text-[10px] text-muted-strong font-bold">
-                    所持: {user?.coins != null ? user.coins.toLocaleString() : '—'}pt
+                    所持: {user?.coins != null ? user.coins.toLocaleString() : '—'} コイン
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">

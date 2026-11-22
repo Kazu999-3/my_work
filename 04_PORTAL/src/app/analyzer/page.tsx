@@ -201,13 +201,13 @@ export default function PlayerAnalyzerPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 border border-primary-edge/30 text-primary-300 text-xs font-black">
               <Sparkles size={14} className="text-primary-400" />
-              <span>ソロキュー（ランク戦）実測マッチ履歴連動・深層アナライズ</span>
+              <span>ソロキュー（ランク戦）実測マッチ履歴連動・LoLディープアナライザー</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-              <span>LoL パーソナル深層アナライザー (SoloQ専属)</span>
+              <span>LoLディープアナライザー (SoloQ専属)</span>
             </h1>
             <p className="text-xs md:text-sm text-faint font-medium max-w-2xl leading-relaxed">
-              ノーマルやカスタムを完全排除。ソロキュー（ランク戦）の実測マッチデータのみから「実力・ボトルネック・実測パワースパイク・勝敗分岐点」を完全客観診断。
+              ノーマルやカスタムを完全排除。ソロキュー（ランク戦）の実測マッチデータのみから「実力・課題点(ボトルネック)・強い時間帯(パワースパイク)・勝敗分岐点」を完全客観診断。
             </p>
           </div>
         </div>

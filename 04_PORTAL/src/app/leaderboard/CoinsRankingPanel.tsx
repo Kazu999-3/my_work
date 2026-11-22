@@ -179,7 +179,7 @@ export default function CoinsRankingPanel() {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-3xl animate-bounce">👑</span>
                 <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full bg-primary-500 text-white shadow-xs">
-                  🏆 長者番付 第1位
+                  🏆 コイン長者番付 第1位
                 </span>
               </div>
               <div className="space-y-1.5 my-2">

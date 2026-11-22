@@ -62,7 +62,7 @@ export default function TableSplitPanel({
                   )}
                   {t.downwardSupportIds.length > 0 && (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary-500/15 text-secondary-700 border border-secondary-edge-soft">
-                      🔽 サポ +{t.downwardSupportIds.length}
+                      🔽 中初級帯サポ +{t.downwardSupportIds.length}
                     </span>
                   )}
                   {t.shortageCount > 0 && (
@@ -110,7 +110,7 @@ export default function TableSplitPanel({
                               className="text-[9px] font-bold px-1 rounded bg-secondary-500/15 text-secondary-700 shrink-0"
                               title={strict ? "メイン・サブ除外（完全オフレーン）" : "メイン除外（オフレーン）"}
                             >
-                              {strict ? "🔽 完全オフ" : "🔽 オフ"}
+                              {strict ? "🔽 完全オフレーン" : "🔽 オフレーン"}
                             </span>
                           )}
                         </div>

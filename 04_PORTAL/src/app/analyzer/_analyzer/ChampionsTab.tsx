@@ -104,7 +104,7 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
                   <div className="space-y-3">
                     <h4 className="font-black text-xs text-success-900 flex items-center gap-1.5">
                       <CheckCircle2 size={14} className="text-success-600" />
-                      <span>カモにできる相手 (有利マッチアップ)</span>
+                      <span>得意な対面相手 (有利マッチアップ)</span>
                     </h4>
                     <div className="space-y-2">
                       {(!selectedChampion.favoredMatchups || selectedChampion.favoredMatchups.length === 0) && (

@@ -213,7 +213,7 @@ export function useOcrImageProcessor({
 
         let summaryMsg = `📸 画像解析完了: 勝者 [${resolvedWinner}] を自動判定！`;
         if (aliasHitCount > 0) {
-          summaryMsg += ` (学習済みエイリアス ${aliasHitCount}名適用)`;
+          summaryMsg += ` (学習済み別名登録 ${aliasHitCount}名適用)`;
         }
         if (preservedBalancerCount > 0) {
           summaryMsg += ` (バランサー登録者 ${preservedBalancerCount}名を優先保護)`;

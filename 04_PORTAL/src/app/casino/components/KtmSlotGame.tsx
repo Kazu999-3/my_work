@@ -113,7 +113,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-primary-200 via-primary-400 to-primary-500">
-              KTM HEXTECH SLOTS
+              KTMスロット
             </h2>
             <p className="text-xs text-faint">
               3つの絵柄を揃えて一攫千金！ジェム揃いで最大 **50倍** ジャックポット！

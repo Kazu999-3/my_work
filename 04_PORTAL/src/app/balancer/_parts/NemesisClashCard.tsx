@@ -22,7 +22,7 @@ export default function NemesisClashCard({ clashData, loadingClash }: NemesisCla
           <h3 className="text-xs font-black text-foreground flex items-center gap-1.5">
             対戦データ（ライバル・直接対決・名コンビ）
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 border border-primary-edge">
-              Nemesis Clash
+              因縁対決
             </span>
           </h3>
         </div>

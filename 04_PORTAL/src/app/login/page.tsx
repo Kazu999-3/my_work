@@ -61,7 +61,7 @@ function LoginContent() {
             <Shield size={32} />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-foreground">
-            Sovereign Portal 管理認証
+            KTM カスタムポータル 管理認証
           </h1>
           <p className="text-xs text-muted-strong max-w-xs mx-auto leading-relaxed">
             管理機能へは、管理者の Discord アカウントでログインして入ります。
@@ -94,7 +94,7 @@ function LoginContent() {
           <div className="p-3 rounded-xl bg-danger-50 border border-danger-edge-soft text-danger-800 text-xs font-bold flex items-center gap-2 text-left">
             <AlertTriangle size={15} className="shrink-0 text-danger-600" />
             {authError
-              ? `Discord ログインに失敗しました（${authError}）。もう一度お試しください。`
+              ? 'Discord ログインを完了できませんでした。恐れ入りますがもう一度お試しください。'
               : `${user?.displayName || user?.username || 'このアカウント'} は管理者として登録されていません。管理者の Discord アカウントでログインしてください。`}
           </div>
         )}

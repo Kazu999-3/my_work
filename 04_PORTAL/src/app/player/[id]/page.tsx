@@ -872,7 +872,7 @@ export default function PlayerMyPage() {
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-400 text-stone-950 font-black whitespace-nowrap">YOU</span>
                   <span className="text-xs font-bold text-primary-800 flex items-center gap-1 bg-primary-100/80 px-2.5 py-0.5 rounded-lg whitespace-nowrap">
                     <Coins size={13} className="text-primary-600" />
-                    <span>所持コイン: <strong>{(player.coins ?? 1000).toLocaleString()}</strong> pt</span>
+                    <span>所持コイン: <strong>{(player.coins ?? 1000).toLocaleString()}</strong> コイン</span>
                   </span>
                 </div>
                 <p className="text-xs text-muted">
@@ -907,8 +907,8 @@ export default function PlayerMyPage() {
                   {claimingDaily
                     ? '受取中...'
                     : claimedDailyToday
-                    ? '本日デイリー受取済み (+100pt)'
-                    : '🎁 今日のボーナス受取 (+100pt)'}
+                    ? '本日デイリー受取済み (+100コイン)'
+                    : '🎁 今日のボーナス受取 (+100コイン)'}
                 </span>
               </button>
 
@@ -975,7 +975,7 @@ export default function PlayerMyPage() {
                     </span>
                     <span className="text-white font-bold font-mono text-xs truncate max-w-[120px] sm:max-w-none">{player.ign || "未登録"}</span>
                     <span className="text-primary-300 font-extrabold text-[10px] bg-primary-400/20 px-1.5 py-0.5 rounded border border-primary-edge/30 shrink-0">
-                      {player.highest_rank || "UNRANKED"}
+                      {player.highest_rank && player.highest_rank !== "UNRANKED" ? player.highest_rank : "ランクなし"}
                     </span>
                     {opggUrl && (
                       <a
@@ -1057,17 +1057,22 @@ export default function PlayerMyPage() {
               <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
               <div className="flex gap-4 sm:gap-6">
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">カスタム第一希望</span>
+                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">カスタム第1希望</span>
                   <span className="text-foreground font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
-                    {player.role_preferences?.primary || "ALL"}
+                    {(player.role_preferences?.primary || "ALL") === "ALL" ? "おまかせ(ALL)" : player.role_preferences?.primary}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">カスタム第二希望</span>
+                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">カスタム第2希望</span>
                   <span className="text-foreground-subtle font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
-                    {player.role_preferences?.secondary || "ALL"}
+                    {(player.role_preferences?.secondary || "ALL") === "ALL" ? "おまかせ(ALL)" : player.role_preferences?.secondary}
                   </span>
                 </div>
+              </div>
+              <div className="text-[10px] text-muted-strong pt-1 md:pt-0">
+                <Link href="/guide#portal-mmr" className="text-primary-700 hover:underline font-bold">
+                  📖 MMR・KDA(3.0以上で好成績)・勝率の見方ガイド
+                </Link>
               </div>
             </div>
           </div>
@@ -1446,7 +1451,7 @@ export default function PlayerMyPage() {
                             ソロキュー公式ステータス (Riot連携)
                           </h4>
                           <span className="text-xs font-black px-2 py-0.5 rounded-md bg-secondary-100 text-secondary-800 border border-secondary-edge">
-                            {player.highest_rank || "UNRANKED"}
+                            {player.highest_rank && player.highest_rank !== "UNRANKED" ? player.highest_rank : "ランクなし"}
                           </span>
                           <span className="text-xs text-muted-strong font-mono">
                             {player.ign || "IGN未登録"}
@@ -2103,7 +2108,7 @@ export default function PlayerMyPage() {
                         <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">最高到達ランク</span>
                         <div className="my-2">
                           <span className="text-2xl sm:text-3xl font-black text-primary-700">
-                            {player.highest_rank || "UNRANKED"}
+                            {player.highest_rank && player.highest_rank !== "UNRANKED" ? player.highest_rank : "ランクなし"}
                           </span>
                         </div>
                         <span className="text-[10px] font-bold text-muted-strong">ソロ/デュオ ランク基準</span>

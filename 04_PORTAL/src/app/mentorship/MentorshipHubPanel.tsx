@@ -104,7 +104,7 @@ export default function MentorshipHubPanel() {
         } else {
           const isUserMentor = myProposals.find((p: SecretProposal) => p.matchId === matchIdToUse)?.isMentor ?? myProposals[0]?.isMentor;
           const partnerRole = isUserMentor ? '後輩' : '先輩';
-          toast.success(`👍 「話してみたい」を記録しました！${partnerRole}へリクエストを届けました`);
+          toast.success(`👍 「話してみたい」を記録しました！${partnerRole}へオファーを届けました`);
         }
         setMyProposals([]);
         fetchMatches();
@@ -329,7 +329,7 @@ export default function MentorshipHubPanel() {
     if (targetProfile.role_type === 'PUPIL') {
       if (
         !confirm(
-          `🎉 ${targetProfile.player_name} さんの指導を引き受けますか？\n（あなたの師匠登録が自動完了し、師弟ペアが即時成立します！初めて組む相手なら +300🪙）`
+          `🎉 ${targetProfile.player_name} さんのサポートを引き受けますか？\n（あなたの先輩登録が自動完了し、先輩・後輩ペアが即時成立します！初めて組む相手なら +300コイン）`
         )
       ) {
         return;
@@ -466,7 +466,7 @@ export default function MentorshipHubPanel() {
 
   // 届いた申請を辞退
   const handleRejectRequest = async (matchId: string) => {
-    if (!confirm('この申請を見送りますか？')) return;
+    if (!confirm('このオファーを見送りますか？')) return;
     try {
       const res = await fetch('/api/mentorship/matches', {
         method: 'POST',
@@ -478,7 +478,7 @@ export default function MentorshipHubPanel() {
       });
       const data = await res.json();
       if (data.ok) {
-        toast.success('申請を見送りました');
+        toast.success('オファーを見送りました');
         fetchMatches();
       } else {
         toast.error(data.error || '処理に失敗しました');
@@ -794,7 +794,7 @@ export default function MentorshipHubPanel() {
                   title="未登録メンバーを含むお見合い候補を自動算出し、個別案内チャンネルへ案内を送信します"
                 >
                   <Sparkles size={13} className="text-secondary-600 dark:text-secondary-400" />
-                  <span>🤖 お見合い便</span>
+                  <span>🤖 お見合い便（AIおすすめ紹介）</span>
                 </button>
                 <button
                   type="button"
@@ -1150,7 +1150,7 @@ export default function MentorshipHubPanel() {
             <div className="flex items-center gap-2">
               <span className="text-xl animate-bounce">📨</span>
               <h3 className="text-sm font-black text-foreground">
-                あなた宛の師弟オファーが届いています！（{pendingReceived.length}件）
+                あなた宛の先輩・後輩オファーが届いています！（{pendingReceived.length}件）
               </h3>
             </div>
             <span className="text-[10px] font-bold bg-primary-500 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
@@ -1244,7 +1244,7 @@ export default function MentorshipHubPanel() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary-600 animate-bounce" />
                   <h3 className="text-sm font-black text-foreground dark:text-stone-100">
-                    🎯 あなたと相性抜群のバディ（AI相性分析）
+                    🎯 あなたと相性抜群の相手（AI相性分析）
                   </h3>
                 </div>
                 <span className="text-[10px] font-bold bg-surface/90 dark:bg-surface text-primary-900 dark:text-primary-300 border border-primary-edge dark:border-primary-edge-strong px-2 py-0.5 rounded-full">
@@ -1289,11 +1289,11 @@ export default function MentorshipHubPanel() {
               <div className="space-y-0.5 text-center sm:text-left">
                 <h4 className="text-xs font-black text-foreground">
                   {activeTab === 'PUPIL'
-                    ? '弟子としての自己紹介カードを登録して、相性の良い師匠を探そう！'
-                    : '師匠としての自己紹介カードを登録して、教えたい弟子を募集しよう！'}
+                    ? '後輩としての自己紹介カードを登録して、相性の良い先輩を探そう！'
+                    : '先輩としての自己紹介カードを登録して、教えたい後輩を募集しよう！'}
                 </h4>
                 <p className="text-[11px] text-muted font-medium">
-                  得意チャンプや目標を登録すると、あなたにぴったりのバディが自動表示されます（初回ボーナス +{MENTORSHIP_FIRST_PROFILE_BONUS_COINS}{COIN_UNIT}🎁）。
+                  得意チャンプや目標を登録すると、あなたにぴったりの相手が自動表示されます（初回ボーナス +{MENTORSHIP_FIRST_PROFILE_BONUS_COINS}{COIN_UNIT}🎁）。
                 </p>
               </div>
             </div>
@@ -1319,7 +1319,7 @@ export default function MentorshipHubPanel() {
               <Plus size={14} />
               <span>
                 {activeTab === 'PUPIL'
-                  ? '弟子カードを登録'
+                  ? '後輩カードを登録'
                   : !canBeMentor
                   ? '師匠カード（👑常連・経験者限定）'
                   : '師匠カードを登録'}

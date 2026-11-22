@@ -58,10 +58,10 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                     type="button"
                     onClick={() => handleClaimBonus('daily')}
                     className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer transform active:scale-95 animate-pulse"
-                    title="1日1回おみくじを引いてボーナスを獲得します（最大+300pt）"
+                    title="1日1回おみくじを引いてボーナスを獲得します（最大+300コイン）"
                   >
                     <span className="text-sm">🎰</span>
-                    <span>デイリーおみくじ (最大+300pt)</span>
+                    <span>デイリーおみくじ (最大+300コイン)</span>
                   </button>
                 )}
 
@@ -83,7 +83,7 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                         title="所持コインが100枚未満のときの救済措置（※月1回限定）"
                       >
                         <span className="text-sm">💸</span>
-                        <span>破産救済保険 (+300pt / 月1回)</span>
+                        <span>破産救済保険 (+300コイン / 月1回)</span>
                       </button>
                     );
                   })()
@@ -172,7 +172,7 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                       ) : item.id === 'victory_bonus_doubler' ? (
                         <div className="w-full py-1.5 px-2 rounded-xl bg-primary-500/15 border border-primary-edge-strong/30 text-primary-950 font-bold text-[11px] flex items-center justify-center gap-1">
                           <span>⚔️</span>
-                          <span>次回勝利時 +600pt 自動適用</span>
+                          <span>次回勝利時 +600コイン 自動適用</span>
                         </div>
                       ) : (
                         <button

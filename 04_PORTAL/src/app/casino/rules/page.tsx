@@ -145,7 +145,7 @@ export default function CasinoRulesPage() {
         {/* スロット */}
         <section className={CARD}>
           <h2 className={H2}>
-            🎰 Hextechスロット <RtpBadge rtp={0.93} />
+            🎰 KTMスロット <RtpBadge rtp={0.93} />
           </h2>
           <p className="text-xs text-muted mb-3">
             ベット額は 100 / 500 / 1000 コインの3択。3つのリールが揃うと配当が発生します。
@@ -183,8 +183,8 @@ export default function CasinoRulesPage() {
           </h2>
           <p className="text-xs text-muted mb-3">
             ボールを上から落とし、10段のピンをランダムに跳ねながら11個のポケットのいずれかに落ちます。
-            二項分布 B(10, 0.5) に基づく数学的公平性で設計されており、ベット額は 10 / 50 / 100 / 500 / 1000 コインから選択できます。
-            リスク設定を「低（堅実）」「中（バランス）」「高（ドパガキ一攫千金）」の3段階から切り替え可能です。
+            二項分布（コインの裏表を10回振るのと同等の数学的確率）に基づく公平性で設計されており、ベット額は 10 / 50 / 100 / 500 / 1000 コインから選択できます。
+            リスク設定を「低（堅実）」「中（バランス）」「高（ハイリスク・一攫千金）」の3段階から切り替え可能です。
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-xs md:text-sm border-collapse">
@@ -419,7 +419,7 @@ export default function CasinoRulesPage() {
               <strong>💎 全損保険チケット（100🪙）</strong>: 次回の勝敗予想が不的中になった際、インベントリから自動消費されて<strong>賭け金の50%を即時キャッシュバック</strong>します。
             </li>
             <li>
-              <strong>⚔️ 勝利ボーナス激闘チケット（150🪙）</strong>: 次回カスタムに選手として出場し勝利した際、通常ボーナス（+250pt）が<strong>【合計+600pt】へ大幅爆増</strong>します（差引純増 +450pt）。
+              <strong>⚔️ 勝利ボーナス激闘チケット（150コイン）</strong>: 次回カスタムに選手として出場し勝利した際、通常ボーナス（+250コイン）が<strong>【合計+600コイン】へ大幅増量</strong>します（差引純増 +450コイン）。
             </li>
           </ul>
         </section>
@@ -475,7 +475,7 @@ export default function CasinoRulesPage() {
           <p className="text-[11px] md:text-xs text-muted leading-relaxed">
             コインはKTM内でのみ使える遊び用のポイントで、現金や現金価値のあるものとは一切交換できません。
             抽選はすべてサーバー側で行われ、結果は確定するまでクライアントへ送信されません。
-            このページの数値は <span className="font-mono">scripts/casino_rtp_report.js</span> による実測値です
+            このページの数値は内部シミュレーターによる理論・実測検証値です
             （2026-09-22 時点）。
           </p>
         </div>

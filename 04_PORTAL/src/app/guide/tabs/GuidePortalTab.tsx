@@ -44,7 +44,7 @@ export default function GuidePortalTab() {
           🏆 リーダーボード
         </a>
         <a href="#portal-mentorship" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
-          🤝 師弟ハブ
+          🤝 先輩・後輩ハブ
         </a>
         <a href="#portal-festival" className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground font-medium transition cursor-pointer">
           🎭 お祭りピック
@@ -76,7 +76,7 @@ export default function GuidePortalTab() {
       {/* 機能別グリッド */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* 1. マイページ & プレイヤーカルテ */}
+        {/* 1. マイページ & 選手カルテ */}
         <div id="portal-mypage" className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group scroll-mt-20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -87,9 +87,9 @@ export default function GuidePortalTab() {
                 プレイヤー設定・戦績
               </span>
             </div>
-            <h3 className="text-base font-black text-foreground">マイページ ＆ プレイヤーカルテ</h3>
+            <h3 className="text-base font-black text-foreground">マイページ ＆ 選手カルテ</h3>
             <p className="text-muted text-xs leading-relaxed">
-              希望レーンやRiot ID連携、所持コイン・インベントリを管理。ロール別勝率と得意チャンピオン戦績を1画面で直感的に確認できます。
+              希望レーンやRiot ID（サモナー名#タグ）連携、所持コイン・インベントリを管理。ロール別勝率と得意チャンピオン戦績を1画面で直感的に確認できます。
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
               <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
@@ -408,9 +408,20 @@ export default function GuidePortalTab() {
             </p>
           </div>
 
-          <div className="bg-primary-50 rounded-2xl p-3.5 border border-primary-edge-soft text-[11px] text-primary-900 leading-relaxed">
-            💡 チーム分けバランサーはこのMMRを使って両チームの戦力が釣り合うように組みます。
-            レーンごとに管理しているのは「TOPは得意だがSUPは不慣れ」といった差を正しく反映するためです。
+          <div className="bg-primary-50 rounded-2xl p-3.5 border border-primary-edge-soft text-[11px] text-primary-900 leading-relaxed space-y-1.5">
+            <p>
+              💡 <strong>チーム分けバランサー</strong>はこのMMRを使って両チームの戦力が釣り合うように組みます。
+              レーンごとに管理しているのは「TOPは得意だがSUPは不慣れ」といった差を正しく反映するためです。
+            </p>
+            <p>
+              🏟️ <strong>帯分けと繰り上げ参加:</strong> 定期カスタムは代表MMR 1450 を境に「上位帯」「中初級帯」の2帯に分けて編成します。上位帯が10人未満の時は、マイページの「上の実力帯への繰り上げ参加」が有効な方からMMRが近い順に補充されます。
+            </p>
+            <p>
+              🎟️ <strong>待機優先度 (Pity):</strong> 見学枠に回った場合や希望外レーンになった場合にポイントが貯まり、次回優先して出場・希望レーンに割り当てられます。
+            </p>
+            <p>
+              ⚔️ <strong>KDAとは:</strong> 「(キル数 + アシスト数) ÷ デス数」で表す活躍度指標です。3.0以上で好成績、5.0以上で圧巻の活躍の目安です。
+            </p>
           </div>
         </div>
 
@@ -472,7 +483,7 @@ export default function GuidePortalTab() {
                 主な機能
               </div>
               <p>・📊 <strong>プレイヤー別リアルタイム戦績サマリー</strong>（勝率・レーン内訳表示）</p>
-              <p>・公式戦 vs お祭り（エキシビション）の種別フィルター切り替え</p>
+              <p>・公式戦 vs お祭りカスタム（戦績対象外）の種別フィルター切り替え</p>
               <p>・ロール別（TOP/JG/MID/ADC/SUP）フィルター</p>
               <p>・アコーディオンによる詳細スタッツ（KDA・与ダメージバー・装備）展開</p>
             </div>

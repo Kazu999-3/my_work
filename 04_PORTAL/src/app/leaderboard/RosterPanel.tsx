@@ -184,7 +184,7 @@ export default function RosterPanel() {
                   </div>
 
                   <span className="text-[10px] font-black text-primary-800 bg-primary-100/70 border border-primary-edge-soft/80 px-2 py-0.5 rounded-lg shrink-0">
-                    {player.highest_rank || "UNRANKED"}
+                    {player.highest_rank && player.highest_rank !== "UNRANKED" ? player.highest_rank : "ランクなし"}
                   </span>
                 </div>
 
@@ -220,7 +220,7 @@ export default function RosterPanel() {
               </div>
 
               <div className="mt-4 pt-3 border-t border-surface-subtle flex items-center justify-between text-[11px] text-muted-strong font-medium">
-                <span>カルテを見る</span>
+                <span>選手カルテを見る</span>
                 <span className="text-primary-600 font-black group-hover:translate-x-1 transition">→</span>
               </div>
             </Link>

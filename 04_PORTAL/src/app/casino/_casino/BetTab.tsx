@@ -66,7 +66,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                       <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse"></span>
                       <span>BLUE:</span>
                       <span className="font-mono text-sm">{betStats.blueRatio}%</span>
-                      <span className="text-[10px] text-muted-strong font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
+                      <span className="text-[10px] text-muted-strong font-normal">({betStats.blueAmount.toLocaleString()}コイン / {betStats.blueCount}人)</span>
                     </span>
 
                     {/* 形勢バッジ */}
@@ -79,7 +79,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                     </span>
 
                     <span className="text-danger-600 dark:text-danger-400 flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted-strong font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
+                      <span className="text-[10px] text-muted-strong font-normal">({betStats.redAmount.toLocaleString()}コイン / {betStats.redCount}人)</span>
                       <span className="font-mono text-sm">{betStats.redRatio}%</span>
                       <span>:RED</span>
                       <span className="w-2.5 h-2.5 rounded-full bg-danger-500 animate-pulse"></span>
@@ -100,7 +100,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
 
                   <div className="text-center">
                     <span className="text-[11px] text-muted-strong font-mono font-bold">
-                      総投票プール: <strong className="text-primary-700 dark:text-primary-400 font-black">{betStats.totalAmount.toLocaleString()} pt</strong> ({betStats.blueCount + betStats.redCount} 名参加中)
+                      総投票プール: <strong className="text-primary-700 dark:text-primary-400 font-black">{betStats.totalAmount.toLocaleString()} コイン</strong> ({betStats.blueCount + betStats.redCount} 名参加中)
                     </span>
                   </div>
                 </div>
@@ -494,8 +494,8 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                     <Trophy size={16} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-foreground">KTM 長者番付 TOP 10</h3>
-                    <p className="text-[11px] text-muted-strong">現在のコイン富豪ランキング</p>
+                    <h3 className="text-sm font-black text-foreground">KTM コイン長者番付 TOP 10</h3>
+                    <p className="text-[11px] text-muted-strong">現在のコイン所持額ランキング</p>
                   </div>
                 </div>
                 <span className="text-[10px] text-primary-700 bg-primary-100/70 font-bold px-2 py-0.5 rounded-full">
