@@ -271,7 +271,7 @@ function DictHealthDashboardContent() {
             <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-1">
               <span className="text-[11px] text-zinc-400 font-medium">現行パッチ</span>
               <div className="text-xl font-black text-amber-400 tracking-tight">
-                Patch {data.currentPatch}
+                パッチ {String(data.currentPatch).replace(/^1(\d)\./, '2$1.')}
               </div>
               <p className="text-[10px] text-zinc-500">西暦パッチSSoT</p>
             </div>
@@ -387,7 +387,7 @@ function DictHealthDashboardContent() {
                   </button>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">
-                      P{c.patch}
+                      P{String(c.patch).replace(/^1(\d)\./, '2$1.')}
                     </span>
                     {c.isOldPatch && (
                       <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800/50 font-bold">
@@ -530,7 +530,7 @@ function DictHealthDashboardContent() {
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-mono text-zinc-300 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800 text-[11px]">
-                              {c.patch}
+                              パッチ {String(c.patch).replace(/^1(\d)\./, '2$1.')}
                             </span>
                             {c.isOldPatch && (
                               <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800/50 font-bold">

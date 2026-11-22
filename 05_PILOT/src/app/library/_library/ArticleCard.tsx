@@ -20,7 +20,7 @@ export default function ArticleCard({ article: a, onOpen }: { article: ArticleIt
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {a.patch && (
                           <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-amber-300 font-mono text-[10px] font-bold border border-zinc-700">
-                            🏷️ Patch {a.patch}
+                            🏷️ パッチ {String(a.patch).replace(/^1(\d)\./, '2$1.')}
                           </span>
                         )}
                         <FreshnessBadge isOldPatch={a.is_old_patch} daysAgo={a.days_ago} freshness={a.freshness} showUnknownAsModerate />

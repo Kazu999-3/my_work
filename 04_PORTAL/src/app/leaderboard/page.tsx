@@ -303,7 +303,7 @@ function LeaderboardContent() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="bg-surface-subtle/80 text-foreground-subtle border-b border-border font-black">
-                        <th className="p-3">チャンピオン</th>
+                        <th className="p-3 sticky left-0 z-20 bg-surface shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)] min-w-[130px] sm:min-w-[160px]">チャンピオン</th>
                         <th className="p-3 cursor-pointer hover:text-primary-700 whitespace-nowrap" onClick={() => toggleMetaSort('games')}>
                           ピック数 {metaSortKey === 'games' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
@@ -321,13 +321,15 @@ function LeaderboardContent() {
                     <tbody className="divide-y divide-stone-100 text-foreground-subtle">
                       {sortedMetaData(metaData.filter(r => r.games >= metaMinGames)).map((row) => (
                         <tr key={row.champion} className="hover:bg-background transition">
-                          <td className="p-3 font-black text-foreground flex items-center gap-2 whitespace-nowrap">
-                            <img
-                              src={getChampIcon(row.champion)}
-                              alt={row.champion}
-                              className="w-7 h-7 rounded-lg border border-border shrink-0"
-                            />
-                            <span>{row.champion}</span>
+                          <td className="p-3 font-black text-foreground whitespace-nowrap sticky left-0 z-10 bg-surface shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)] align-middle">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={getChampIcon(row.champion)}
+                                alt={row.champion}
+                                className="w-7 h-7 rounded-lg border border-border shrink-0"
+                              />
+                              <span>{row.champion}</span>
+                            </div>
                           </td>
                           <td className="p-3 font-bold whitespace-nowrap">{row.games}試合</td>
                           <td className="p-3 font-black whitespace-nowrap">

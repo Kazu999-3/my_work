@@ -74,6 +74,20 @@ export default function NoteDraftsPage() {
     try {
       const saved = localStorage.getItem('sovereign_note_publish_status');
       let parsed: Record<string, NotePublishRecord> = saved ? JSON.parse(saved) : {};
+
+      // SPEC 20/21: 旧バージョンの固定ダミー既定値が localStorage に残っている場合は自動クリアする
+      for (const k of Object.keys(parsed)) {
+        const rec = parsed[k];
+        if (
+          rec &&
+          rec.publishedAt === '2026-10-28' &&
+          rec.views === '25' &&
+          rec.likes === '13' &&
+          (!rec.notes || rec.notes.includes('スキ率: 52% (25PV中13スキ)'))
+        ) {
+          parsed[k] = { ...rec, publishedAt: '', views: '', likes: '', notes: '' };
+        }
+      }
       
       // ドラフトのフロントマターから published 情報を取り込み（未実測の固定ダミー値は出さない）
       drafts.forEach((d) => {

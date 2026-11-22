@@ -137,7 +137,7 @@ export default function EarlyJunglePathingCard({
     );
   }
 
-  if (currentLane === 'ADC' || currentLane === 'SUPPORT' || currentLane === 'BOT') {
+  if (currentLane === 'ADC' || currentLane === 'SUP' || currentLane === 'SUPPORT' || currentLane === 'BOT') {
     return (
       <div className="bg-zinc-900/90 text-white rounded-2xl p-4 border border-zinc-800 space-y-3 shadow-md">
         <div className="flex items-center justify-between flex-wrap gap-2 border-b border-zinc-800 pb-2.5">

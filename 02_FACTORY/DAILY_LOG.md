@@ -1,5 +1,21 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【Portal 指示文20 & Pilot 指示文21：残件・SUP修正・報告・細部の仕上げ】
+
+**概要**:
+1. **Portal 指示文20（`04_PORTAL/src/app/leaderboard/page.tsx`）**:
+   - メタ統計表の先頭列（チャンピオン列）の `<th>` と `<td>` に `sticky left-0`・不透明背景 `bg-surface`・右シャドウを適用し、`<td>` 自体の `flex` 指定を内側 `<div>` へ移して複数行でも行高さいっぱいに不透明背景が伸びるよう修正。
+   - 修正後、`04_PORTAL` 本番ビルド（全64ルート PASS）および `http://localhost:3000/leaderboard?tab=meta`（375×812、横スクロール185px+）で固定位置・複数行セル（`JarvanIV` 行高 363.25px）の背景非透過・横スクロールなし（**○**）を確認。
+2. **Pilot 指示文21 A・C（`05_PILOT`）**:
+   - **A-1（SUP/SUPPORT 不整合修正）**: `coach/page.tsx` の `normalizeCoachLane` に `SUP` / `SUPPORT` / `UTILITY` ➔ `SUP` を追加（未知キーには `console.warn` を出力）、`MatchupBlueprintCard.tsx` のサポートキーを `SUP` 化（`SUPPORT`/`UTILITY` も `SUP` に正規化）、`EarlyJunglePathingCard.tsx` に `SUP` 判定を追加。
+     - ※ ローカルサーバーでの実ブラウザ確認は `/login` 合言葉認証ゲートのため未実施（`[要検証]`：型チェック・本番ビルドおよびコード上の整合性は確認済み）。
+   - **B（報告のみ・未実装）**: F-2「編集・統合履歴」モーダル復活(a)/削除(b)の影響範囲・作業量見込み、および B-11 単件承認の誤操作リスク・運用影響（+1ステップ/件）をユーザーへ報告済み。
+   - **C-4（パッチ表記統一と発生源報告）**: `ArticleCard.tsx`、`ArticleDetailModal.tsx`、`dict-health/page.tsx` に `16.x` ➔ `26.x` 正規化と `パッチ 26.x` 表記統一を適用。発生源（Data Dragon `16.x` 系 vs DB/フロントマター/カレンダー表記 `26.x` 系）を特定・報告。
+   - **C-5（件数差注記）**: `dashboard/page.tsx`（「全未承認」件数）と `review/page.tsx`（「最大200件・再解析重複除外表示」）に差の内訳を画面上へ注記。
+   - **C-6（note 公開メタ切り分け・是正）**: 本番の「スキ数 13 / PV数 25 / インプレッション 480回 / スキ率 52%」は実測値ではなく旧 `note/page.tsx` の固定既定値が `localStorage` に保存されたものと特定し、読み込み時に旧固定ダミー値を自動クリアする処理を追加。
+3. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL`（`npx tsc --noEmit` / `npm run build` 64ルート）＆ `05_PILOT`（`npx tsc --noEmit` / `npm run build` 28ルート）ともに PASS（Exit code 0）。
+
 ### ⚡ 【Pilot SPEC 20：表示の矛盾・空表示・導線の修正（05_PILOT）】
 
 **概要**:

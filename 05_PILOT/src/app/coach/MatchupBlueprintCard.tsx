@@ -44,7 +44,7 @@ const LANES = [
   { key: 'JUNGLE', label: 'JG', icon: '🌲' },
   { key: 'MID', label: 'MID', icon: '⚡' },
   { key: 'ADC', label: 'ADC', icon: '🏹' },
-  { key: 'SUPPORT', label: 'SUP', icon: '💖' },
+  { key: 'SUP', label: 'SUP', icon: '💖' },
 ] as const;
 
 export default function MatchupBlueprintCard({
@@ -64,7 +64,14 @@ export default function MatchupBlueprintCard({
 }) {
   const [myChamp, setMyChamp] = useState(initialMyChampion);
   const [enemyChamp, setEnemyChamp] = useState(initialEnemyChampion);
-  const [currentLane, setCurrentLane] = useState(initialLane);
+  const normalizeBlueprintLane = (l: string) => {
+    const up = (l || '').toUpperCase();
+    if (up === 'SUPPORT' || up === 'UTILITY') return 'SUP';
+    if (up === 'JG') return 'JUNGLE';
+    if (up === 'BOT') return 'ADC';
+    return up || 'TOP';
+  };
+  const [currentLane, setCurrentLane] = useState(() => normalizeBlueprintLane(initialLane));
   const [showAllWeakness, setShowAllWeakness] = useState(false);
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +85,7 @@ export default function MatchupBlueprintCard({
   }, [initialEnemyChampion]);
 
   useEffect(() => {
-    if (initialLane) setCurrentLane(initialLane);
+    if (initialLane) setCurrentLane(normalizeBlueprintLane(initialLane));
   }, [initialLane]);
 
   const handleMyChange = (val: string) => {

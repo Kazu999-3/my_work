@@ -23,10 +23,15 @@ const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?
 ];
 
 const normalizeCoachLane = (raw?: string | null): string => {
-  const up = (raw || '').toUpperCase();
-  if (up === 'JG') return 'JUNGLE';
-  if (up === 'BOT') return 'ADC';
-  if (['TOP', 'JUNGLE', 'MID', 'ADC', 'SUP'].includes(up)) return up;
+  const up = (raw || '').trim().toUpperCase();
+  if (!up) return 'TOP';
+  if (up === 'JG' || up === 'JUNGLE') return 'JUNGLE';
+  if (up === 'BOT' || up === 'BOTTOM' || up === 'ADC') return 'ADC';
+  if (up === 'SUP' || up === 'SUPPORT' || up === 'UTILITY') return 'SUP';
+  if (up === 'TOP' || up === 'MID' || up === 'MIDDLE') return up === 'MIDDLE' ? 'MID' : up;
+  if (typeof console !== 'undefined') {
+    console.warn(`[coach] 未知のレーンキー "${raw}" が指定されたため、既定値 TOP にフォールバックしました`);
+  }
   return 'TOP';
 };
 

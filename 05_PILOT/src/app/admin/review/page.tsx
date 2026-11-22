@@ -696,6 +696,7 @@ export default function ReviewPage() {
                   onChange={() => setSelected(selected.size === items.length ? new Set() : new Set(items.map((i) => i.id)))}
                 />
                 表示中を全選択（{selected.size}/{items.length}）
+                <span className="text-[10px] text-zinc-500 ml-1">※最大200件・重複除外表示</span>
               </label>
 
               {/* 🎯 チャンプ確定のみ全選択ボタン */}

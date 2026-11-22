@@ -28,7 +28,7 @@ export default function ArticleDetailModal({ detailArticle, detailLoading, copie
                   </span>
                   {detailArticle?.patch && (
                     <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-amber-300 font-mono text-[10px] font-bold border border-zinc-700">
-                      🏷️ Patch {detailArticle.patch}
+                      🏷️ パッチ {String(detailArticle.patch).replace(/^1(\d)\./, '2$1.')}
                     </span>
                   )}
                   <FreshnessBadge isOldPatch={detailArticle?.is_old_patch} daysAgo={detailArticle?.days_ago} freshness={detailArticle?.freshness} />
@@ -92,7 +92,7 @@ export default function ArticleDetailModal({ detailArticle, detailLoading, copie
                       <span className="text-base shrink-0">⚠️</span>
                       <div className="space-y-0.5">
                         <div className="font-bold text-rose-300">
-                          旧パッチ・過去環境のアーカイブです (推定 Patch {detailArticle.patch} / 公開: {detailArticle.published_at || '不明'})
+                          旧パッチ・過去環境のアーカイブです (推定 パッチ {String(detailArticle.patch).replace(/^1(\d)\./, '2$1.')} / 公開: {detailArticle.published_at || '不明'})
                         </div>
                         <p className="text-[11px] text-rose-300/80 leading-snug">
                           アイテム・ルーンの数値仕様やジャングルペットの仕様など、現在の最新シーズン仕様と乖離している可能性があります。普遍的なマクロや判断原則を中心に参考にしてください。

@@ -264,7 +264,10 @@ export default function OpsDashboardPage() {
                   >
                     <span>📝 記事承認（全未承認）</span>
                     {typeof stats.pendingReviews === 'number' && stats.pendingReviews > 0 && (
-                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-zinc-950 font-mono text-[10px] font-black">
+                      <span
+                        className="px-1.5 py-0.2 rounded-full bg-amber-500 text-zinc-950 font-mono text-[10px] font-black"
+                        title="DB上の全未承認件数です（/admin/review の一覧は最大200件・再解析重複除外で表示されます）"
+                      >
                         {stats.pendingReviews}件
                       </span>
                     )}
