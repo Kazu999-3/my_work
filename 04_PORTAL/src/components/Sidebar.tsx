@@ -109,7 +109,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
               </div>
               <div className="text-[11px] font-bold text-primary-700 dark:text-primary-300 flex items-center gap-1">
                 <span>🪙</span>
-                <span>{(user.coins ?? 1000).toLocaleString()} pt</span>
+                <span>{(user.coins ?? 1000).toLocaleString()} コイン</span>
               </div>
             </div>
           )}
@@ -131,7 +131,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
               onClick={handleQuickDailyClaim}
               disabled={claiming}
               className="px-2 py-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-primary-edge"
-              title="本日のデイリーボーナス (+100pt) を受け取る"
+              title="本日のデイリーボーナス (+100コイン) を受け取る"
             >
               <Gift size={12} className="shrink-0" />
               <span>{claiming ? '...' : '+100'}</span>
@@ -251,9 +251,10 @@ function isItemActive(item: MenuItem, pathname: string): boolean {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useCurrentUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
   const resolveItemHref = (item: MenuItem) => {
@@ -269,23 +270,45 @@ export default function Sidebar() {
     if (savedCollapsed === 'true') {
       setIsCollapsed(true);
     }
+  }, []);
 
-    // 厳格な管理者判定（Discord ID または API検証結果）
+  useEffect(() => {
+    if (userLoading) return;
+    let cancelled = false;
+
     const isOwnerId = user?.discordId === '697220229964759130';
     if (user && (user.isAdmin || isOwnerId)) {
       setIsAdminUser(true);
+      setAdminChecked(true);
+      return;
     }
 
-    // サーバー認証状態の確認
+    if (!user) {
+      setIsAdminUser(false);
+      setAdminChecked(true);
+      return;
+    }
+
+    // サーバー認証状態の確認（読み込み完了後に確定させる）
     fetch("/api/auth/verify", { method: "POST", credentials: "include", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
       .then((res) => res.json())
       .then((data) => {
-        if (data.valid) {
-          setIsAdminUser(true);
+        if (!cancelled) {
+          setIsAdminUser(!!data.valid);
+          setAdminChecked(true);
         }
       })
-      .catch(() => {});
-  }, [user]);
+      .catch(() => {
+        if (!cancelled) {
+          setIsAdminUser(false);
+          setAdminChecked(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, userLoading]);
 
   // モバイルドロワー開閉時の背景スクロール制御
   useEffect(() => {
@@ -358,7 +381,7 @@ export default function Sidebar() {
   const desktopSections: { title: string | null; items: MenuItem[] }[] = [
     { title: null, items: GENERAL_MENU_ITEMS.filter((i) => i.group === 'main') },
     ...MENU_GROUPS.map((g) => ({ title: g.title, items: GENERAL_MENU_ITEMS.filter((i) => i.group === g.key) })),
-    ...(isAdminUser ? [{ title: '管理者', items: ADMIN_EXTRA_ITEMS }] : []),
+    ...(adminChecked && isAdminUser ? [{ title: '管理者', items: ADMIN_EXTRA_ITEMS }] : []),
   ];
 
   // スマホ用ボトムバー（2026-10-20 ユーザー判断: ホーム／カスタム／教えて先輩／マイページ／メニュー）
@@ -454,7 +477,7 @@ export default function Sidebar() {
             </div>
           )}
           <UserAuthWidget collapsed={isCollapsed} />
-          {isAdminUser && (
+          {adminChecked && isAdminUser && (
             <>
               <TaskStatusDrawer collapsed={isCollapsed} />
               <NotificationBell collapsed={isCollapsed} />
@@ -589,7 +612,7 @@ export default function Sidebar() {
               ))}
 
               {/* 🛡️ 管理者専用セクション (管理者かつAdminタブ選択時のみ表示) */}
-              {isAdminUser && (
+              {adminChecked && isAdminUser && (
                 <div className="pt-2 border-t border-border dark:border-border">
                   <div className="text-[11px] font-extrabold uppercase tracking-wider text-primary-500 dark:text-primary-400 mb-2 px-1 flex items-center gap-1">
                     <Shield size={12} />

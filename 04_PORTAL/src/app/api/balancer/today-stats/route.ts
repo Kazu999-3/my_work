@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getCustomDayWindowJst5, aggregateTodayCustomStats } from '../../../../lib/balancer/todayStats';
 import { reportApiError } from '../../../../lib/apiHandler';
+import { getAuthSession } from '../../../../lib/authGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,11 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
+    const session = await getAuthSession();
+    if (!session) {
+      return NextResponse.json({ ok: false, error: 'ログインが必要です。' }, { status: 401 });
+    }
+
     if (!supabase) {
       return NextResponse.json({ ok: false, error: 'Database not configured' }, { status: 500 });
     }

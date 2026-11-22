@@ -78,7 +78,7 @@ export default function ProfitRankingTab({ myDiscordId }: { myDiscordId?: string
             ))}
           </div>
           <span className="text-muted-strong">
-            全員の合計: <span className="font-bold text-success-700">+{totals.gained.toLocaleString()}</span> ／ <span className="font-bold text-danger-700">−{totals.lost.toLocaleString()}</span>（{totals.plays.toLocaleString()}回）
+            全員の合計: <span className="font-bold text-success-700">+{totals.gained.toLocaleString()}コイン</span> ／ <span className="font-bold text-danger-700">−{totals.lost.toLocaleString()}コイン</span>（{totals.plays.toLocaleString()}回）
           </span>
         </div>
       </div>
@@ -101,8 +101,8 @@ export default function ProfitRankingTab({ myDiscordId }: { myDiscordId?: string
                 <tr key={`${r.name}-${i}`} className={`border-t border-border ${isMe ? 'bg-primary-500/10' : ''}`}>
                   <td className="p-1.5 sm:p-2 text-center font-bold text-muted-strong">{i + 1}</td>
                   <td className="p-1.5 sm:p-2 font-bold text-foreground sm:whitespace-nowrap max-w-[100px] sm:max-w-none truncate">{r.name}{isMe && <span className="ml-1 text-[10px] text-primary-700">（あなた）</span>}</td>
-                  <td className="p-1.5 sm:p-2 text-right font-mono font-bold text-success-700">+{c.gained.toLocaleString()}</td>
-                  <td className="p-1.5 sm:p-2 text-right font-mono font-bold text-danger-700">−{c.lost.toLocaleString()}</td>
+                  <td className="p-1.5 sm:p-2 text-right font-mono font-bold text-success-700">+{c.gained.toLocaleString()}コイン</td>
+                  <td className="p-1.5 sm:p-2 text-right font-mono font-bold text-danger-700">−{c.lost.toLocaleString()}コイン</td>
                   <td className="p-1.5 sm:p-2 text-right font-mono text-xs text-muted-strong">{c.plays.toLocaleString()}</td>
                 </tr>
               );

@@ -1,5 +1,22 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【Portal SPEC 19：SPEC 11〜18 実装後の残件まとめ（04_PORTAL）】
+
+**概要**:
+`04_PORTAL/docs/specs/19-leftover-fixes-SPEC.md` に基づき、残件対応・認証追加・サイドバー安定化・375px実表示検証・調査を実施。
+1. **通貨表記「コイン」統一**:
+   - `04_PORTAL/src/components/Sidebar.tsx`: ユーザーカードの `{...} pt` とデイリーボーナスツールチップの `+100pt` を `コイン` へ統一。
+   - `04_PORTAL/src/app/casino/_casino/ProfitRankingTab.tsx`: 合計・各行の得た/失った金額へ `コイン` 単位を明記。
+2. **`GET /api/balancer/today-stats` 認証追加**:
+   - `04_PORTAL/src/app/api/balancer/today-stats/route.ts`: `getAuthSession()` によるセッション確認を追加し、未ログイン時は `401` を返却（`TodayCustomStatsBar.tsx` は `!res.ok` 時に非表示フォールバック）。
+3. **サイドバー管理者セクション安定化**:
+   - `04_PORTAL/src/components/Sidebar.tsx`: `useCurrentUser()` の `loading` 完了後かつ `/api/auth/verify` 完了（`adminChecked`）まで管理者セクションを描画しないよう修正し、遷移中のちらつきを解消。
+4. **SPEC 17（375px）実ブラウザ検証 ＆ 次回カスタム調査**:
+   - `http://localhost:3000` を 375×812 で実測検証（`/festival/pick` ドラフトモーダル・`/balancer`・`/leaderboard` 勝率マトリクス・`/guide`・`/casino` は ○、`/leaderboard` メタ統計表の `<td>` sticky 漏れを × として特定、認証必須画面は確認不可理由を明記）。
+   - トップページ「次回カスタムのご案内」の具体日時データ有無を調査（既存API・DBに予定データなし）。
+5. **機械的実値検証（Verifier原則）**:
+   - `04_PORTAL` にて `npx tsc --noEmit` / `npx eslint src` / `npm run build`（全64ルート）PASS（Exit code 0）。
+
 ### ⚡ 【Pilot SPEC 19：致命的欠陥とデータ保護まわりの修正（05_PILOT）】
 
 **概要**:
