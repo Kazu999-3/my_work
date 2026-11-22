@@ -1,5 +1,40 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【健康診断＆セキュリティ：reference_items の不要な公開書き込みRLSポリシー削除】
+
+**概要**:
+毎朝の健康診断で検知された「🚨 RLS（書き込みの穴）: reference_items に公開キー/自己登録ユーザーが書き込めるポリシーが3件存在」に対応。
+1. **マイグレーション 139 の配備**:
+   - `04_PORTAL/supabase/migrations/139_drop_reference_items_admin_write_policies.sql`:
+     - `Allow delete for admin` / `Allow insert for admin` / `Allow update for admin` を DROP。
+     - 過去の `migration 86 / 87` と同様、アプリ側はサービスロール（`supabaseAdmin`）経由で書き込むため、クライアント/第三者からの不正改ざん経路を遮断。
+2. **自動適用**:
+   - master へのプッシュにより GitHub Actions（Supabase Migrations）で本番DBへ即時適用。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. SupabaseのRLS設計では、Supabase Authを利用しない独自認証システムの場合、authenticatedロール向けの書き込みポリシーが外部の自己登録者による改ざん口となるため徹底排除せよ。
+> 2. サーバーサイドAPI（サービスロール）経由でしか書き込まないテーブルは、INSERT/UPDATE/DELETEポリシーを持たせず、SELECTのみ許可するのが最も堅牢。
+> 3. 健康診断での静的ポリシー監査を定期化し、新規マイグレーション追加時に紛れ込んだレガシーポリシーの検知・即時撤退サイクルを維持せよ。
+
+- `[要検証]`: 明朝の健康診断での RLS 警告 0件達成確認
+- `[継続ウォッチ]`: reference_items へのサーバー側書き込み・参照の健全性
+- `[発信候補]`: 「Supabase Authを使わないNext.jsアプリにおけるRLSの落とし穴と最小特権設計」
+
+### ⚡ 【Portal CI復旧：指示文09 BalancerStadiumViewのRules of Hooks違反解消】
+
+**概要**:
+指示文09（`04_PORTAL/docs/specs/09-portal-ci-hooks-fix-instruction.md`）に基づき、2026-11-21から15回連続失敗していた GitHub Actions `portal-test` を完全復旧。
+1. **フック呼び出し順序の是正**:
+   - `04_PORTAL/src/app/balancer/components/BalancerStadiumView.tsx`:
+     - early return（`if (!result ...) return null;`）の後ろで呼ばれていた `useState` と `useMemo` を先頭（early returnの前）へ移動。
+     - 表示・文言・挙動の変更なし、他プロジェクトへの影響ゼロ。
+2. **機械的実値検証（Verifier原則）**:
+   - `npx tsc --noEmit` ➔ PASS（エラー0件）。
+   - `npx eslint src` ➔ PASS（Rules of Hooks違反解消、Exit code 0）。
+   - `npm test` ➔ 全188件 PASS。
+   - `npm run build` ➔ 全64ルート PASS。
+   - GitHub Actions CI（Run #44975828724） ➔ `portal-test` (1m26s), `bot-syntax` (15s), `pilot-test` (37s) 全て緑（PASS）。
+
 ### ⚡ 【バランサー画面：Discordボイスステータス操作バーの配備＆自由入力対応】
 
 **概要**:
