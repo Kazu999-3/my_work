@@ -1,80 +1,129 @@
 "use client";
 
-import React, { Fragment } from "react";
-import { toast } from '../../../components/Toaster';
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { supabase } from "../../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
-import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../../lib/mmr";
-import { getPlayerTier } from "../../../lib/playerTier";
-import { BalancerVcManager, updateVcStatus } from "../components/BalancerVcManager";
-import { BalancerBo3Manager } from "../components/BalancerBo3Manager";
-import { useCurrentUser } from "../../../hooks/useCurrentUser";
-import { Spinner } from "../../../components/Feedback";
-import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getGroup } from "./helpers";
+import React from "react";
+import { getDownwardOffroleRule, TIER_BAND_THRESHOLD, type TierBandSplitResult } from "../../../lib/balancer/tierBand";
+import type { TableSplit } from "./types";
 
-// 卓分割パネル（20人以上のとき代表MMRで2卓に分けて提示）
-// 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function TableSplitPanel({ selectedTable, setSelectedTable, tableSplit }: {
-  selectedTable: { label: string; ids: any[] } | null;
-  setSelectedTable: React.Dispatch<React.SetStateAction<{ label: string; ids: any[] } | null>>;
-  tableSplit: {
-    upper: { label: string; members: any[]; ids: any[] };
-    lower: { label: string; members: any[]; ids: any[] };
-    spectators?: { label: string; members: any[]; ids: any[] };
-    total: number;
-  };
+// 定期カスタム 2帯ロビー編成パネル（SPEC 10: MMR 1450 基準）
+export default function TableSplitPanel({
+  selectedTable,
+  setSelectedTable,
+  tableSplit,
+}: {
+  selectedTable: TableSplit | null;
+  setSelectedTable: React.Dispatch<React.SetStateAction<TableSplit | null>>;
+  tableSplit: TierBandSplitResult;
 }) {
-  const hasSpectators = (tableSplit.spectators?.members?.length ?? 0) > 0;
+  const promotedSet = new Set(tableSplit.promotedIds);
+  const supportSet = new Set(tableSplit.downwardSupportIds);
 
   return (
-          <div className="bg-surface border border-primary-edge-soft rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-black text-primary-700">🪑 参加者{tableSplit.total}人 — 2卓に分けられます</span>
-              <span className="text-[10px] text-muted-strong">代表MMR順に上位卓／下位卓へ自動仕分け（卓を選んでからチーム分けを実行）</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[tableSplit.upper, tableSplit.lower].map((t: any) => (
-                <div key={t.label} className={`rounded-xl border p-3 ${selectedTable?.label === t.label ? 'border-primary-edge-strong bg-primary-100' : 'border-border bg-black/[0.03]'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-foreground">{t.label} (10名)</span>
-                    <button
-                      onClick={() => setSelectedTable({ label: t.label, ids: t.ids })}
-                      className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition ${selectedTable?.label === t.label ? 'bg-primary-600 text-white' : 'bg-surface-subtle text-foreground-subtle hover:bg-surface-hover'}`}>
-                      {selectedTable?.label === t.label ? '選択中' : 'この卓を選ぶ'}
-                    </button>
-                  </div>
-                  <div className="text-[10px] text-faint space-y-0.5 max-h-40 overflow-y-auto">
-                    {t.members.map((m: any) => (
-                      <div key={m.id} className="flex justify-between gap-2">
-                        <span className="truncate">{m.name}</span>
+    <div className="bg-surface border border-primary-edge-soft rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-black text-primary-700">
+            🏟️ 帯分けロビー編成（参加 {tableSplit.total}人 / 基準 MMR {TIER_BAND_THRESHOLD}）
+          </span>
+          <span className="text-[10px] text-muted-strong">
+            上位帯不足時は格上許可ONからMMR近い順に自動繰り上げ ／ 格下サポートはオフレーン制限
+          </span>
+        </div>
+        {selectedTable && (
+          <button
+            type="button"
+            onClick={() => setSelectedTable(null)}
+            className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover text-foreground-subtle border border-border transition cursor-pointer"
+          >
+            選択解除（全員対象に戻す）
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[tableSplit.upper, tableSplit.lower].map((t) => {
+          const isSelected = selectedTable?.label === t.label;
+          const canSelect = t.members.length >= 10;
+          return (
+            <div
+              key={t.label}
+              className={`rounded-xl border p-3 transition ${
+                isSelected ? "border-primary-edge-strong bg-primary-100/60" : "border-border bg-black/[0.03]"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-black text-foreground">
+                    {t.label}（{t.members.length}名）
+                  </span>
+                  {t.promotedIds.length > 0 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success-500/15 text-success-700 border border-success-edge-soft">
+                      ⬆️ 繰り上げ +{t.promotedIds.length}
+                    </span>
+                  )}
+                  {t.downwardSupportIds.length > 0 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary-500/15 text-secondary-700 border border-secondary-edge-soft">
+                      🔽 サポ +{t.downwardSupportIds.length}
+                    </span>
+                  )}
+                  {t.shortageCount > 0 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-danger-100 text-danger-700 border border-danger-edge">
+                      あと{t.shortageCount}人不足
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!canSelect}
+                  onClick={() => setSelectedTable(isSelected ? null : { label: t.label, ids: t.ids, band: t.band })}
+                  className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition shrink-0 ${
+                    !canSelect
+                      ? "bg-surface-subtle text-muted-strong opacity-50 cursor-not-allowed"
+                      : isSelected
+                      ? "bg-primary-600 text-white cursor-pointer"
+                      : "bg-surface-subtle text-foreground-subtle hover:bg-surface-hover cursor-pointer"
+                  }`}
+                >
+                  {isSelected ? "選択中 ✓" : canSelect ? "この帯を選ぶ" : "10人未満"}
+                </button>
+              </div>
+
+              <div className="text-[10px] text-faint space-y-0.5 max-h-44 overflow-y-auto">
+                {t.members.length === 0 ? (
+                  <div className="text-muted-strong py-2 text-center">該当する参加者がいません</div>
+                ) : (
+                  t.members.map((m: any) => {
+                    const isPromoted = promotedSet.has(m.id) && t.band === "UPPER";
+                    const isSupporter = supportSet.has(m.id) && t.band === "LOWER";
+                    const strict = isSupporter && getDownwardOffroleRule(m.mmr) === "STRICT_OFFROLE";
+                    return (
+                      <div key={m.id} className="flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <span className="truncate text-foreground-soft font-medium">{m.name}</span>
+                          {isPromoted && (
+                            <span className="text-[9px] font-bold px-1 rounded bg-success-500/15 text-success-700 shrink-0">
+                              ⬆️ 繰上
+                            </span>
+                          )}
+                          {isSupporter && (
+                            <span
+                              className="text-[9px] font-bold px-1 rounded bg-secondary-500/15 text-secondary-700 shrink-0"
+                              title={strict ? "メイン・サブ除外（完全オフレーン）" : "メイン除外（オフレーン）"}
+                            >
+                              {strict ? "🔽 完全オフ" : "🔽 オフ"}
+                            </span>
+                          )}
+                        </div>
                         <span className="font-mono text-muted-strong shrink-0">{m.mmr || 1200}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {hasSpectators && (
-              <div className="rounded-xl border border-border bg-black/[0.02] p-3 text-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-foreground flex items-center gap-1.5 text-xs">
-                    <span>⏳</span> 待機・観戦枠（次戦交代候補）: {tableSplit.spectators!.members.length}名
-                  </span>
-                  <span className="text-[10px] text-muted-strong">※上位卓・下位卓の選考外となった中位メンバー</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {tableSplit.spectators!.members.map((m: any) => (
-                    <span key={m.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border text-[11px] text-foreground-subtle font-medium">
-                      <span>{m.name}</span>
-                      <span className="font-mono text-muted-strong text-[10px]">({m.mmr || 1200})</span>
-                    </span>
-                  ))}
-                </div>
+                    );
+                  })
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

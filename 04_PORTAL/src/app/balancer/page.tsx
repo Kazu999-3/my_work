@@ -5,7 +5,8 @@ import { X } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Spinner } from "../../components/Feedback";
 import dynamic from "next/dynamic";
-import { diagnoseMmrGaps, splitTables } from "../../lib/balancer/diagnosis";
+import { diagnoseMmrGaps } from "../../lib/balancer/diagnosis";
+import { buildTierBandLobbies, getPlayerTierBand } from "../../lib/balancer/tierBand";
 import { sortPlayers, filterPlayers } from "../../lib/balancer/playerList";
 import { buildFestivalResult } from "../../lib/balancer/teams";
 import { useBalancerAdminStats } from "./_parts/useBalancerAdminStats";
@@ -53,16 +54,22 @@ function buildParticipantPayloads({
   activePlayers,
   handicapIds,
   defaultHandicapPenalty,
+  selectedBand,
 }: {
   activePlayers: BalancerPlayer[];
   handicapIds: (string | number)[];
   defaultHandicapPenalty: number;
+  selectedBand?: 'UPPER' | 'LOWER';
 }): BalancerPayloadParticipant[] {
   return activePlayers.map((p) => {
     const pref1 = p.role_preferences?.primary;
     const customH = p.customHandicap || p.role_preferences?.customHandicap;
     const isHandicapped = handicapIds.includes(p.id) || Boolean(customH);
     const fixedRole = p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-' ? pref1 : null;
+    const forceOffroleForLowerBand =
+      selectedBand === 'LOWER' &&
+      Boolean(p.allow_lower_support) &&
+      getPlayerTierBand(p.mmr) === 'UPPER';
 
     return {
       name: p.name,
@@ -73,6 +80,7 @@ function buildParticipantPayloads({
       handicapMmrPenalty: customH?.mmrPenalty ?? (handicapIds.includes(p.id) ? defaultHandicapPenalty : 0),
       handicapRule: customH?.rule ?? (handicapIds.includes(p.id) ? 'ハンデ参加' : null),
       handicappedBy: customH?.by ?? null,
+      forceOffroleForLowerBand,
     };
   });
 }
@@ -158,10 +166,9 @@ export default function BalancerPage() {
     [players, handicapIds]
   );
 
-  // 卓分割: 参加者が20人以上のとき、代表MMR順で「上位卓/下位卓」に自動分割する。
-  // 卓分け=代表MMR(ktm_players.mmr)、卓の中のチーム分け=レーン別MMR、という役割分担。
+  // 帯分けロビー編成: MMR 1450基準の2帯（人数不足時は格上許可ONから自動繰り上げ）
   const [selectedTable, setSelectedTable] = useState<TableSplit | null>(null);
-  const tableSplit = useMemo(() => splitTables(players), [players]);
+  const tableSplit = useMemo(() => buildTierBandLobbies(players), [players]);
 
   const bo3 = useBo3Series(balanceResult, setBalanceResult, setMessage);
   const swap = useResultSwap({ balanceResult, setBalanceResult, setProposals, selectedProposalIdx, players });
@@ -256,6 +263,7 @@ export default function BalancerPage() {
         activePlayers,
         handicapIds,
         defaultHandicapPenalty: HANDICAP_MMR_PENALTY,
+        selectedBand: selectedTable?.band,
       });
 
       const res = await fetch('/api/balancer', {

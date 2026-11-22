@@ -33,6 +33,8 @@ export interface BalancerPlayer {
   customHandicap?: CustomHandicap;
   pity_count?: number;
   notes?: string;
+  tier_promotion_pref?: 'mix_ok' | 'fill_only' | 'never';
+  allow_lower_support?: boolean;
   [key: string]: unknown;
 }
 
@@ -91,11 +93,13 @@ export interface BalancerPayloadParticipant {
   handicapMmrPenalty: number;
   handicapRule: string | null;
   handicappedBy: string | null;
+  forceOffroleForLowerBand?: boolean;
 }
 
 export interface TableSplit {
   label: string;
   ids: (string | number)[];
+  band?: 'UPPER' | 'LOWER';
 }
 
 export type SelectionMode = 'fair' | 'low' | 'high';

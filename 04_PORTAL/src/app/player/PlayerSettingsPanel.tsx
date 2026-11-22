@@ -8,6 +8,7 @@ import {
   Coins, X
 } from "lucide-react";
 import ThemeToggle from "../../components/ThemeToggle";
+import { getPlayerTierBand, normalizeTierPromotionPref, TIER_BAND_THRESHOLD, type TierPromotionPref } from "../../lib/balancer/tierBand";
 
 interface PlayerSettingsPanelProps {
   player: any;
@@ -72,6 +73,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   // こだわり度（1:絶対 / 2:通常 / 3:柔軟）と格上許可。チーム分けで使う（2026-10-17 マイページから設定可能に）
   const [weight, setWeight] = useState<number>([1, 2, 3].includes(Number(player?.weight)) ? Number(player?.weight) : 2);
   const [allowHigher, setAllowHigher] = useState<boolean>(!!player?.allow_higher);
+  // 定期カスタムの帯繰り上げ設定（2026-11-22 SPEC 10）
+  const [tierPromotionPref, setTierPromotionPref] = useState<TierPromotionPref>(
+    normalizeTierPromotionPref(player?.tier_promotion_pref)
+  );
 
   // プレイスタイルロール状態
   const [playstyles, setPlaystyles] = useState<Record<string, boolean>>({
@@ -127,6 +132,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       setIgn(player.ign || "");
       setWeight([1, 2, 3].includes(Number(player.weight)) ? Number(player.weight) : 2);
       setAllowHigher(!!player.allow_higher);
+      setTierPromotionPref(normalizeTierPromotionPref(player.tier_promotion_pref));
     }
   }, [player]);
 
@@ -210,6 +216,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           ign: ign,
           weight,
           allow_higher: allowHigher,
+          tier_promotion_pref: tierPromotionPref,
         }),
       });
 
@@ -473,6 +480,62 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
               >
                 <div className="text-sm">{o.title}</div>
                 <div className={`text-[10px] mt-0.5 leading-snug ${allowHigher === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 🏟️ 定期カスタムの帯参加（上の帯への繰り上げ許可: SPEC 10） */}
+        <div className="space-y-2 pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
+              🏟️ 定期カスタムの帯参加（上の帯への繰り上げ）
+            </label>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface border border-border text-muted-strong">
+              現在の帯:{" "}
+              {getPlayerTierBand(player?.mmr) === "UPPER"
+                ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
+                : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {(
+              [
+                {
+                  v: "mix_ok",
+                  title: "🌟 混ざってもいい",
+                  desc: "上の帯と混ざる試合や繰り上げに積極的に参加します",
+                },
+                {
+                  v: "fill_only",
+                  title: "🤝 人足りなければOK",
+                  desc: "上の帯が10人未満で困っている時だけ繰り上げ参加します（既定）",
+                },
+                {
+                  v: "never",
+                  title: "🛡️ 絶対嫌（自分の帯のみ）",
+                  desc: "自分の実力帯の試合にのみ参加し、上の帯へは繰り上がりません",
+                },
+              ] as const
+            ).map((o) => (
+              <button
+                key={`tp-${o.v}`}
+                type="button"
+                onClick={() => setTierPromotionPref(o.v)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  tierPromotionPref === o.v
+                    ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
+                    : "bg-surface border-border text-muted hover:bg-background font-bold"
+                }`}
+              >
+                <div className="text-sm">{o.title}</div>
+                <div
+                  className={`text-[10px] mt-0.5 leading-snug ${
+                    tierPromotionPref === o.v ? "text-stone-900" : "text-muted-strong"
+                  }`}
+                >
+                  {o.desc}
+                </div>
               </button>
             ))}
           </div>

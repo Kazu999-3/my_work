@@ -8,6 +8,7 @@ import {
 } from '../../../lib/balancer';
 import { fetchAllRows } from '../../../lib/fetchAll';
 import { reportApiError } from '../../../lib/apiHandler';
+import { getDownwardExcludedRoles } from '../../../lib/balancer/tierBand';
 
 export async function POST(request: Request) {
   try {
@@ -150,6 +151,26 @@ export async function POST(request: Request) {
       const rawNg1 = dbPlayer.ng_lane_1 || '';
       const rawNg2 = dbPlayer.ng_lane_2 || '';
 
+      let pref1 = roleMap[rawPref1] || rawPref1;
+      let pref2 = roleMap[rawPref2] || rawPref2;
+      let ng1 = roleMap[rawNg1] || rawNg1;
+      let ng2 = roleMap[rawNg2] || rawNg2;
+
+      // SPEC 10: 上位帯プレイヤーが下位帯にサポート参加する場合はオフレーン制限を自動適用
+      if (input.forceOffroleForLowerBand) {
+        const excluded = getDownwardExcludedRoles({
+          mmr: dbPlayer.mmr,
+          role_preferences: { primary: pref1, secondary: pref2 },
+        });
+        if (excluded.length > 0) {
+          const mergedNg = Array.from(new Set([...excluded, ng1, ng2].filter(Boolean)));
+          ng1 = (mergedNg[0] as any) || '';
+          ng2 = (mergedNg[1] as any) || '';
+          if (excluded.includes(String(pref1))) pref1 = 'ALL';
+          if (excluded.includes(String(pref2))) pref2 = 'ALL';
+        }
+      }
+
       const statsKey = dbPlayer.name.toLowerCase();
       const pGames = playerStatsMap[statsKey]?.games || 0;
       const pWinRate = pGames > 0 
@@ -160,10 +181,10 @@ export async function POST(request: Request) {
         name: dbPlayer.name,
         discordId: dbPlayer.discord_id,
         rank: dbPlayer.highest_rank || 'UNRANKED',
-        pref1: roleMap[rawPref1] || rawPref1,
-        pref2: roleMap[rawPref2] || rawPref2,
-        ng1: roleMap[rawNg1] || rawNg1,
-        ng2: roleMap[rawNg2] || rawNg2,
+        pref1,
+        pref2,
+        ng1,
+        ng2,
         pity: dbPlayer.pity || 0,
         spectator_pity: dbPlayer.spectator_pity || 0,
         off_role_pity: dbPlayer.off_role_pity || 0,

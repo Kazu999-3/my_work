@@ -13,6 +13,7 @@ import { BalancerBo3Manager } from "../components/BalancerBo3Manager";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { Spinner } from "../../../components/Feedback";
 import { RoleIcon, getGroup } from "./helpers";
+import { getPlayerTierBand, normalizeTierPromotionPref, getDownwardOffroleRule, TIER_BAND_THRESHOLD } from "../../../lib/balancer/tierBand";
 
 // 参加者リスト（フィルター・表・行ごとの設定）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
@@ -214,6 +215,51 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                   title={exp.tip}
                                 >
                                   {exp.label}
+                                </span>
+                              );
+                            })()}
+
+                            {/* 🏟️ 帯＆繰り上げ・格下サポートバッジ (SPEC 10) */}
+                            {(() => {
+                              const band = getPlayerTierBand(p.mmr);
+                              if (band === 'UPPER') {
+                                const strict = getDownwardOffroleRule(p.mmr) === 'STRICT_OFFROLE';
+                                return isAdmin && p.is_active ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleInputChange(p.id, 'allow_lower_support', !p.allow_lower_support)}
+                                    className={`text-[9px] font-black px-1.5 py-0.5 rounded border transition cursor-pointer ${
+                                      p.allow_lower_support
+                                        ? 'bg-secondary-500/20 text-secondary-700 dark:text-secondary-300 border-secondary-edge-strong shadow-2xs'
+                                        : 'bg-surface-subtle text-muted border-border hover:border-secondary-edge'
+                                    }`}
+                                    title={
+                                      p.allow_lower_support
+                                        ? `格下サポート参加OK (${strict ? 'メイン・サブ除外/完全オフ' : 'メイン除外/オフレーン'})`
+                                        : `クリックで下位帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
+                                    }
+                                  >
+                                    {p.allow_lower_support ? '🔽 格下OK' : '上位帯'}
+                                  </button>
+                                ) : (
+                                  <span
+                                    className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50"
+                                    title={`上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`}
+                                  >
+                                    上位帯
+                                  </span>
+                                );
+                              }
+                              const tp = normalizeTierPromotionPref(p.tier_promotion_pref);
+                              const badge =
+                                tp === 'mix_ok'
+                                  ? { text: '🌟混', cls: 'bg-success-500/15 text-success-700 border-success-edge-soft', tip: '上の帯と混ざってもいい' }
+                                  : tp === 'never'
+                                  ? { text: '🛡️専', cls: 'bg-surface-subtle text-muted-strong border-border', tip: '自分の帯のみ参加（繰り上げNG）' }
+                                  : { text: '🤝補', cls: 'bg-primary-500/10 text-primary-700 border-primary-edge/40', tip: '上の帯が人不足なら繰り上げOK' };
+                              return (
+                                <span className={`text-[9px] font-bold px-1 py-0.2 rounded border ${badge.cls}`} title={badge.tip}>
+                                  {badge.text}
                                 </span>
                               );
                             })()}

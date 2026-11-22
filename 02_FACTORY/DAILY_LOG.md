@@ -1,5 +1,37 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【SPEC 10：定期カスタムの2帯分け（MMR 1450基準）・3択格上繰り上げ・格下オフレーンサポート実装】
+
+**概要**:
+SPEC 10（`04_PORTAL/docs/specs/10-tier-band-custom-SPEC.md`）に基づき、Portal MMR 基準の2帯編成とプロフィール設定を実装。
+1. **DBスキーマ拡張（マイグレーション 140）**:
+   - `04_PORTAL/supabase/migrations/140_tier_band_promotion_pref.sql`:
+     - 既存の `allow_higher`（同一試合内の対面格差ガード）とは別枠で、`tier_promotion_pref` 列（`'mix_ok' | 'fill_only' | 'never'`、既定 `'fill_only'`）を追加。
+2. **プロフィール設定（マイページ）UI ＆ API**:
+   - `04_PORTAL/src/app/player/PlayerSettingsPanel.tsx` & `04_PORTAL/src/app/api/player/preferences/route.ts`:
+     - 現在の所属帯表示（上位帯 1450+ / 中初級帯 <1450）と3択ボタン（「混ざってもいい」「人足りなければOK（既定）」「絶対嫌」）を配備。
+3. **2帯ロビー編成・格下オフレーン制限ロジック**:
+   - `04_PORTAL/src/lib/balancer/tierBand.ts` & `04_PORTAL/src/lib/__tests__/tierBand.test.ts`:
+     - 上位帯（1450+）が10人未満の時、`mix_ok` 優先かつ MMR 1450に近い順で下位帯から自動繰り上げ（`never` は除外）。
+     - 責任者がバランサー画面で `🔽 格下OK` フラグを立てた上位帯プレイヤーのみ下位帯サポートに参加可能とし、MMR 1450〜1549 は第1希望除外（A）、MMR 1550以上（+100）は第1・第2希望除外の完全オフレーン（B）を `/api/balancer` で自動強制。
+4. **バランサー画面UI統合**:
+   - `04_PORTAL/src/app/balancer/_parts/TableSplitPanel.tsx`, `PlayerListTable.tsx`, `page.tsx`, `usePlayerRoster.ts`, `types.ts`:
+     - 帯バッジ・繰り上げ意向アイコン・管理者向け「格下サポート許可」トグル・帯別ロビー選択パネルを配備。
+5. **機械的実値検証（Verifier原則）**:
+   - `npx tsc --noEmit` ➔ PASS（エラー0件）。
+   - `npx eslint src` ➔ PASS（エラー0件）。
+   - `npm test` ➔ 全193件 PASS（新規5件含む）。
+   - `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
+> **💡 再利用可能な3行ナレッジ**:
+> 1. 「同一試合内の対面保護（allow_higher）」と「ロビーの帯またぎ（tier_promotion_pref）」は意味が異なるため別カラムに分離し、デフォルト値変更による既存初心者保護の破壊を防げ。
+> 2. 格下サポート参加時のオフレーン制約（メイン除外／メイン・サブ除外）は、APIペイロードのフラグから既存のNGレーン（ng1/ng2）へ動的に合成することで、コアのチーム分けエンジンを変更せず安全に実現できる。
+> 3. 実力帯の閾値は DB 全員の実測MMR分布を確認した上で設定することで、上位帯の人数不足や偏りを最小限に抑えられる。
+
+- `[要検証]`: 次回カスタムでの2帯ロビー編成（MMR 1450基準）および格下サポート時のオフレーン配属の実戦検証
+- `[継続ウォッチ]`: 参加者のMMR上昇に伴う閾値1450付近の人口バランス推移
+- `[発信候補]`: 「実測MMR分布から設計するLoL内戦カスタムの2帯制と繰り上げ・オフレーン制約アルゴリズム」
+
 ### ⚡ 【健康診断＆セキュリティ：reference_items の不要な公開書き込みRLSポリシー削除】
 
 **概要**:

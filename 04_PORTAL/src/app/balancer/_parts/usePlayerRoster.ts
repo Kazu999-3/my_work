@@ -65,7 +65,8 @@ export function usePlayerRoster(isAdmin: boolean, setMessage: SetMessage) {
         name: p.name || p.ign || `Player-${index + 1}`,
         no: index + 1,
         is_fixed: false,
-        is_spectator_fixed: false
+        is_spectator_fixed: false,
+        allow_lower_support: false
       }));
 
       setPlayers(playersWithNo);
@@ -213,8 +214,8 @@ export function usePlayerRoster(isAdmin: boolean, setMessage: SetMessage) {
         return p;
       });
 
-      // is_fixed の変更はDBに保存しない一時フラグなので保存トリガーを引かない
-      if (field !== "is_fixed") {
+      // is_fixed / allow_lower_support の変更はDBに保存しない一時フラグなので保存トリガーを引かない
+      if (field !== "is_fixed" && field !== "allow_lower_support") {
         dirtyPlayerIdsRef.current.add(uid);
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = setTimeout(() => {
