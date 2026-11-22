@@ -315,6 +315,14 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
         <p className="text-xs sm:text-sm text-muted-strong font-medium mt-1">
           カスタム募集やチーム分けバランサーで優先される希望ロールと、絶対に入りたくないNGロールを自己設定できます。
         </p>
+        <p className="text-[11px] text-faint font-bold mt-1.5 bg-surface-subtle border border-border rounded-xl px-3 py-2">
+          💡 <strong>保存ルール:</strong> 「IGN・希望/NGレーン・カスタム参加の希望」は最下部の<strong>「設定を保存する」ボタンで反映</strong>されます（詳細設定内のプレイスタイル・外観テーマのみタップで即時反映）。
+          {player?.discord_id && (
+            <span className="block mt-0.5 text-muted-strong font-normal">
+              連携中の Discord ID: <code className="font-mono">{player.discord_id}</code>（確認方法: Discord設定 ＞ 詳細設定 ＞ 開発者モードON ＞ 自分のアイコン右クリックで「ユーザーIDをコピー」）
+            </span>
+          )}
+        </p>
       </div>
 
       {/* サモナーネーム（IGN）入力 */}
@@ -397,10 +405,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
         <label className="block text-xs font-black text-danger-700 dark:text-danger-400 uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Ban className="w-4 h-4" />
-            <span>🚫 NGレーン設定 (最大2つまで)</span>
+            <span>🚫 NGレーン設定（絶対に入りたくないレーン・最大2つ）</span>
           </span>
           <span className="text-[11px] text-muted-strong normal-case font-bold">
-            バランサーがこのレーンへの配置を回避します
+            2つ選んだ状態で3つ目を押すと古い方が自動で外れます
           </span>
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -446,7 +454,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 詳細設定（カスタム参加の希望・プレイスタイル・外観）
               </div>
               <div className="text-[10px] text-muted-strong">
-                こだわり度・対面保護・上の帯への繰り上げ・プレイスタイル・テーマを変更できます
+                希望レーンの強さ・対面保護・上の帯への繰り上げ・プレイスタイル・テーマを変更できます
               </div>
             </div>
           </div>
@@ -467,16 +475,21 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           <div className="space-y-6 pt-2">
             {/* ⚙️ カスタム参加の希望（混同しやすい2つの「格上」系設定を統合整理） */}
             <div className="space-y-4 p-4 rounded-2xl bg-black/[0.02] border border-border/80">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
-                  ⚙️ カスタム参加の希望
-                </h4>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface border border-border text-muted-strong">
-                  現在の帯:{" "}
-                  {getPlayerTierBand(player?.mmr) === "UPPER"
-                    ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
-                    : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
-                </span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
+                    ⚙️ カスタム参加の希望
+                  </h4>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface border border-border text-muted-strong">
+                    現在の帯:{" "}
+                    {getPlayerTierBand(player?.mmr) === "UPPER"
+                      ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
+                      : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-strong leading-relaxed">
+                  ※ 定期カスタムは実力差を抑えるため Portal MMR {TIER_BAND_THRESHOLD} を境に2つの帯で編成します。上位帯の方は通常上位帯へ配属され、下の帯にいる方が「繰り上げ設定」の対象になります。
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -551,7 +564,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                       },
                       {
                         v: "never",
-                        title: "🛡️ 自分の帯のみ",
+                        title: "🔒 自分の帯のみ",
                         desc: "自分の実力帯の試合にのみ参加し、上の帯へは繰り上がりません",
                       },
                     ] as const
@@ -664,7 +677,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           {saveSuccess && (
             <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black animate-fade-in">
               <CheckCircle2 className="w-4 h-4" />
-              <span>設定を正常に保存しました！次回のカスタムから即時反映されます。</span>
+              <span>設定を保存しました！次回のカスタム編成から反映されます。</span>
             </div>
           )}
           {error && (

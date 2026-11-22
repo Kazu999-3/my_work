@@ -14,7 +14,7 @@ import { usePlayerRoster } from "./_parts/usePlayerRoster";
 import { useBo3Series } from "./_parts/useBo3Series";
 import { useResultSwap } from "./_parts/useResultSwap";
 import { useResultActions } from "./_parts/useResultActions";
-import { ExperienceSummary, makeSortableHeader, getPlayerExperienceBadge, MatchingGlossary } from "./_parts/PageSections";
+import { ExperienceSummary, makeSortableHeader, getPlayerExperienceBadge, MatchingGlossary, UsageGuide } from "./_parts/PageSections";
 import BalanceResultModal from "./_parts/BalanceResultModal";
 import BalancerHeader from "./_parts/BalancerHeader";
 import GapDiagnosisPanel from "./_parts/GapDiagnosisPanel";
@@ -220,7 +220,7 @@ export default function BalancerPage() {
       fetchPlayers();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setMessage({ type: "error", text: "❌ Rebuild エラー: " + errMsg });
+      setMessage({ type: "error", text: "❌ MMR再計算エラー: " + errMsg });
     } finally {
       setRebuildingMmr(false);
     }
@@ -237,7 +237,7 @@ export default function BalancerPage() {
     if (activePlayers.length < 10) {
       setMessage({
         type: "error",
-        text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)`,
+        text: `チーム分けには最低10人の参加チェックが必要です。(現在 ${activePlayers.length}人)`,
       });
       return;
     }
@@ -303,7 +303,7 @@ export default function BalancerPage() {
     const allActive = players.filter((p: any) => p.is_active && !p.is_spectator_fixed);
     const activePlayers = selectedTable ? allActive.filter(p => selectedTable.ids.includes(p.id)) : allActive;
     if (activePlayers.length < 10) {
-      setMessage({ type: "error", text: `お祭りシャッフルには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
+      setMessage({ type: "error", text: `お祭りシャッフルには最低10人の参加チェックが必要です。(現在 ${activePlayers.length}人)` });
       return;
     }
     try { localStorage.setItem('balancer_active_ids', JSON.stringify(activePlayers.map(p => p.id))); } catch {}
@@ -451,6 +451,9 @@ export default function BalancerPage() {
 
         {/* 📊 当日の定期カスタム勝率（SPEC 11: JST 5:00起点・参加者全員） */}
         <TodayCustomStatsBar currentUserName={currentUser?.playerName || currentUser?.displayName} />
+
+        {/* ⚡ 3秒でわかるチーム分け手順（SPEC 12: 一般向け手順＆帯分け説明） */}
+        <UsageGuide />
 
         {/* ⚠️ MMR整合性ズレ警告バナー（ズレ検知時のみ自動出現） */}
         {integrityData?.hasDiscrepancy && (

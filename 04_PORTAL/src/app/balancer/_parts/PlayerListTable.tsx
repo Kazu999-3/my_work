@@ -248,7 +248,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                           : `クリックで下位帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
                                       }
                                     >
-                                      {p.allow_lower_support ? '格下ON ✓' : '格下OFF'}
+                                      {p.allow_lower_support ? '下位帯サポ: 許可中 ✓' : '下位帯サポ: 不可'}
                                     </button>
                                   </div>
                                 ) : (
@@ -263,12 +263,12 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                               const tp = normalizeTierPromotionPref(p.tier_promotion_pref);
                               const badge =
                                 tp === 'mix_ok'
-                                  ? { text: '🌟混', cls: 'bg-success-500/15 text-success-700 border-success-edge-soft', tip: '上の帯と混ざってもいい' }
+                                  ? { text: '中初級帯(混成OK)', cls: 'bg-success-500/15 text-success-700 border-success-edge-soft', tip: '上の帯と混ざってもいい' }
                                   : tp === 'never'
-                                  ? { text: '🛡️専', cls: 'bg-surface-subtle text-muted-strong border-border', tip: '自分の帯のみ参加（繰り上げNG）' }
-                                  : { text: '🤝補', cls: 'bg-primary-500/10 text-primary-700 border-primary-edge/40', tip: '上の帯が人不足なら繰り上げOK' };
+                                  ? { text: '中初級帯(帯固定)', cls: 'bg-surface-subtle text-muted-strong border-border', tip: '自分の帯のみ参加（繰り上げNG）' }
+                                  : { text: '中初級帯(不足時繰上)', cls: 'bg-primary-500/10 text-primary-700 border-primary-edge/40', tip: '上の帯が人不足なら繰り上げOK' };
                               return (
-                                <span className={`text-[9px] font-bold px-1 py-0.2 rounded border ${badge.cls}`} title={badge.tip}>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${badge.cls}`} title={badge.tip}>
                                   {badge.text}
                                 </span>
                               );
@@ -322,19 +322,19 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         <td className="px-2 py-1.5 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             {/* 設定済みの小型インジケーター */}
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-wrap justify-center">
                               {prefs.secondary && prefs.secondary !== '-' && prefs.secondary !== 'ALL' && (
-                                <span className="px-1 py-0.5 rounded bg-surface-subtle border border-border text-foreground-soft font-mono text-[9px] font-bold" title={`第2希望: ${prefs.secondary}`}>
-                                  2:{prefs.secondary}
+                                <span className="px-1.5 py-0.5 rounded bg-surface-subtle border border-border text-foreground-soft font-mono text-[9px] font-bold" title={`第2希望: ${prefs.secondary}`}>
+                                  第2:{prefs.secondary}
                                 </span>
                               )}
                               {(p.ng_lane_1 || p.ng_lane_2) && (
-                                <span className="px-1 py-0.5 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[9px]" title={`NG: ${[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join(', ')}`}>
-                                  NG
+                                <span className="px-1.5 py-0.5 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[9px]" title={`絶対に入りたくない回避レーン: ${[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join(', ')}`}>
+                                  回避:{[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join('/')}
                                 </span>
                               )}
                               {p.allow_higher && (
-                                <span className="text-xs" title="格上挑戦: 許可">⚔️</span>
+                                <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-surface-subtle border border-border" title="同じ試合での格上対面もOK">⚔️対面OK</span>
                               )}
                             </div>
                             <button

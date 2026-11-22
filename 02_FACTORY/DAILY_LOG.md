@@ -1,5 +1,24 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【SPEC 12 改訂版v2：プロフィール・バランサー・結果登録のUX監査指摘フル解消】
+
+**概要**:
+SPEC 12 改訂版v2（`04_PORTAL/docs/specs/12-balancer-profile-review-SPEC.md`）に基づき、UX監査の指摘事項をすべて解消。
+1. **プロフィール設定（`PlayerSettingsPanel.tsx`）**:
+   - 保存ルール（ボタン保存 vs 即時反映）の総括説明と Discord ID 確認案内を冒頭に追加。
+   - NGレーンの意味・3つ目選択時の挙動、「現在の帯」のMMR 1450基準と繰り上げの仕組みを追記。
+   - アコーディオン要約文から内部呼称「こだわり度」を撤去し、`never` アイコンを `🔒` にして対面保護 (`🛡️`) との重複感を解消。
+2. **バランサー画面（`BalancerHeader.tsx`, `QuickActionBar.tsx`, `PageSections.tsx`, `PlayerListTable.tsx`, `page.tsx`, `useInitialPrefsEditor.ts`）**:
+   - 「チーム分け実行」「🎲 お祭りランダム」ボタンを下部追従バーに一本化し、ヘッダーの重複ボタンを削除。
+   - 冒頭の目的説明、一般向け「3秒でわかるチーム分け手順 (`UsageGuide`)」、接戦度 `/100点` 表記、開発者英語（Active / Rebuild）の日本語化を完了。
+   - 格下スイッチを `下位帯サポ: 許可中 ✓ / 不可`、下位帯バッジを `中初級帯(混成OK / 不足時繰上 / 帯固定)`、略語を `第2:.. / 回避:..` へ改善。
+3. **結果登録画面（`record/page.tsx`, `TeamStatsTable.tsx`, `MatchSummaryControls.tsx`）**:
+   - K/D/A 欄に `キル / デス / アシスト` ラベルと `💎 ペンタ:0` 表記を追加。
+   - 試合時間・最終戦の補足、OCR未取得項目の注意書き、保存無効理由の案内、「陣営入替」の確認ダイアログ、解析中テキストの自然化を実施。
+4. **機械的実値検証（Verifier原則）**:
+   - `npx tsc --noEmit` / `npx eslint src` ➔ PASS（エラー0件）。
+   - `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
 ### ⚡ 【指示文13：格下サポートフラグ（allow_lower_support）のDB永続化とスイッチUI改善】
 
 **概要**:

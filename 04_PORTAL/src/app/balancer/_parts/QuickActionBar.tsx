@@ -51,8 +51,9 @@ export default function QuickActionBar({
                 ? "bg-success-500/15 text-success-600 dark:text-success-400 border border-success-500/30"
                 : "bg-danger-500/15 text-danger-600 dark:text-danger-400 border border-danger-500/30"
             }`}
+            title="1試合の必要人数10人に対する参加チェック数"
           >
-            {activeCount}/10<span className="hidden sm:inline"> 人</span> {canBalance ? "✅" : `(あと${10 - activeCount})`}
+            {activeCount}/10<span className="hidden sm:inline">人(1試合枠)</span> {canBalance ? "✅" : `(あと${10 - activeCount})`}
           </strong>
         </div>
         {spectatorCount > 0 && (
@@ -92,7 +93,7 @@ export default function QuickActionBar({
           }`}
           title="完全ランダムでお祭りチーム分け（MMRなし）"
         >
-          <span>🎲 お祭り</span>
+          <span>🎲 お祭りランダム<span className="hidden md:inline font-normal text-[10px] opacity-85"> (MMR無視)</span></span>
         </button>
 
         <button

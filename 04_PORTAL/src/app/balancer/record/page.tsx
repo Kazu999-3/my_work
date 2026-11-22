@@ -239,6 +239,9 @@ function CustomRecordPageContent() {
 
   // BLUE ⇄ RED 陣営入替
   const handleSwapTeams = () => {
+    if (typeof window !== 'undefined' && !window.confirm('入力済みのプレイヤー名・スコア・勝敗選択を BLUE と RED で丸ごと入れ替えます。よろしいですか？')) {
+      return;
+    }
     setStats((prev) => {
       const next = [...prev];
       for (let i = 0; i < 5; i++) {
@@ -433,7 +436,7 @@ function CustomRecordPageContent() {
             {analyzing ? (
               <div className="flex flex-col items-center gap-2 py-4">
                 <RefreshCw className="h-10 w-10 text-success-600 animate-spin" />
-                <span className="text-sm font-bold text-success-700 animate-pulse">Gemini APIで対戦結果画像を解析中...</span>
+                <span className="text-sm font-bold text-success-700 animate-pulse">対戦結果画像を解析中...</span>
               </div>
             ) : (
               <div
@@ -456,6 +459,9 @@ function CustomRecordPageContent() {
                 <p className="text-xs text-muted-strong mb-1">または、ここにファイルをドラッグ＆ドロップ / クリックして選択</p>
                 <p className="text-[11px] text-primary font-semibold">
                   💡 対戦後リザルト画面のほか、インゲーム観戦スコアボード（TAB画面）のスクショもそのまま貼り付け可能です
+                </p>
+                <p className="text-[10px] text-muted-strong mt-1">
+                  ※ スクショから読み取れない項目（視界スコア・詳細ダメージ等）は未入力（0）のまま記録されます。試合識別用の試合IDは保存時に自動発行されます。
                 </p>
               </div>
             )}
@@ -492,6 +498,7 @@ function CustomRecordPageContent() {
             isFinalMatch={isFinalMatch}
             onChangeIsFinalMatch={setIsFinalMatch}
             submitting={submitting}
+            missingNamesCount={stats.filter((s) => !s.name?.trim()).length}
             onSubmit={handleSubmit}
           />
         </div>

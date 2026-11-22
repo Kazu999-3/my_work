@@ -34,7 +34,7 @@ export function useInitialPrefsEditor(players: any[], setPlayers: Dispatch<SetSt
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存に失敗しました');
       setPlayers(prev => prev.map((p: any) => ({ ...p, initial_prefs: initialDraft[p.id] || p.initial_prefs })));
-      setMessage({ type: 'success', text: `✅ 初期レーン（凍結値）を${updates.length}人分保存しました。反映にはRebuildを実行してください。` });
+      setMessage({ type: 'success', text: `✅ 初期レーン（凍結値）を${updates.length}人分保存しました。反映にはMMR再計算を実行してください。` });
       setShowInitialPrefs(false);
     } catch (e: any) {
       setMessage({ type: 'error', text: '❌ ' + e.message });

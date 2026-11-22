@@ -64,9 +64,12 @@ export function UsageGuide() {
 
       {isGuideOpen && (
         <div className="mt-2.5 pt-2.5 border-t border-primary-edge/40 text-xs text-foreground-soft space-y-1.5 leading-relaxed animate-fade-in font-bold">
-          <p>① 参加するメンバーにチェックを入れる（10人〜）</p>
-          <p>② 希望レーン（TOP/JG/MID/ADC/SUP）を選ぶ</p>
-          <p>③ 下の「⚔️ チーム分け実行」を押すだけ！</p>
+          <p>① 参加するメンバーにチェックを入れる（1試合10人〜）</p>
+          <p>② 希望レーン（TOP/JG/MID/ADC/SUP）やNGレーンを確認する</p>
+          <p>③ 画面下の「⚔️ チーム分け実行」を押すだけ！</p>
+          <p className="text-[11px] font-medium text-muted-strong pt-1 border-t border-primary-edge/30">
+            💡 <strong>帯分けの仕組み:</strong> 定期カスタムは実力（Portal MMR 1450）を基準に「上位帯」と「中初級帯」に分かれます。上位帯が10人未満の時は、マイページで繰り上げ許可しているメンバーから自動で補充されます。
+          </p>
         </div>
       )}
     </div>

@@ -50,10 +50,13 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
   return (
         <div className="flex flex-col gap-3 border-b border-border pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex flex-col gap-1">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
                 <Users className="h-6 w-6 md:h-8 md:w-8 text-primary-700" /> チーム分けバランサー
               </h1>
+              <p className="text-xs text-muted-strong font-medium">
+                参加メンバーの実力（MMR）と希望レーンから、公平な5v5チームを自動編成するページです。参加チェックや希望レーンの変更は誰でも行えます。（MMR 1450基準で上位帯・中初級帯に分けて編成し、不足時は繰り上げ調整されます）
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {saving && <span className="flex items-center gap-1 text-primary-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
@@ -63,7 +66,7 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
                   {predStats && predStats.total > 0 && (
                     <span className="flex items-center gap-1 text-primary-700" title={`直近${predStats.total}戦の平均接戦度（100点満点）`}>
                       <span>🎯 接戦度:</span>
-                      <span className="font-mono font-black text-foreground">{predStats.avgCloseness}点</span>
+                      <span className="font-mono font-black text-foreground">{predStats.avgCloseness}/100点</span>
                     </span>
                   )}
                   {predStats && satStats && predStats.total > 0 && satStats.tallied > 0 && (
@@ -217,27 +220,6 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
                 </label>
               )}
 
-              {/* 🎪 日曜お祭りランダム（控えめなサブボタン化） */}
-              <button
-                type="button"
-                onClick={handleFestivalRandomBalance}
-                disabled={balancing || !canBalance}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-foreground-soft hover:text-foreground bg-surface-subtle hover:bg-surface-hover border border-border disabled:opacity-40 disabled:cursor-not-allowed transition"
-                title="MMRを無視して完全ランダムにチーム分け（日曜お祭り用）"
-              >
-                🎲 お祭り
-              </button>
-
-              {/* メインアクション：チーム分け実行 */}
-              <button onClick={handleBalance} disabled={balancing || !canBalance}
-                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black transition text-sm ${
-                  balancing || !canBalance
-                    ? 'bg-surface-subtle text-muted-strong border border-border cursor-not-allowed'
-                    : 'bg-primary-600 hover:bg-primary-500 text-white shadow-md shadow-primary-500/20 cursor-pointer'
-                }`}>
-                {balancing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Swords className="h-4 w-4" />}
-                {balancing ? 'AIが編成中...' : 'チーム分け実行'}
-              </button>
             </div>
           </div>
 

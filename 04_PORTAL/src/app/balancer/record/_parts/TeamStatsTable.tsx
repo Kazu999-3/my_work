@@ -95,30 +95,39 @@ export default function TeamStatsTable({
                 </button>
 
                 {/* KDA & ペンタキル入力 */}
-                <div className="flex-1 min-w-0 flex flex-wrap gap-1 justify-end items-center">
-                  <input
-                    type="number"
-                    value={s.kills}
-                    onChange={(e) => onStatChange(index, 'kills', e.target.value)}
-                    className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm"
-                    placeholder="K"
-                  />
-                  <span className="text-muted-strong self-center text-xs">/</span>
-                  <input
-                    type="number"
-                    value={s.deaths}
-                    onChange={(e) => onStatChange(index, 'deaths', e.target.value)}
-                    className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm"
-                    placeholder="D"
-                  />
-                  <span className="text-muted-strong self-center text-xs">/</span>
-                  <input
-                    type="number"
-                    value={s.assists}
-                    onChange={(e) => onStatChange(index, 'assists', e.target.value)}
-                    className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm"
-                    placeholder="A"
-                  />
+                <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 justify-end items-end">
+                  <label className="flex flex-col items-center gap-0.5">
+                    <span className="text-[9px] font-bold text-muted-strong">キル</span>
+                    <input
+                      type="number"
+                      value={s.kills}
+                      onChange={(e) => onStatChange(index, 'kills', e.target.value)}
+                      className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm"
+                      placeholder="0"
+                    />
+                  </label>
+                  <span className="text-muted-strong pb-1.5 text-xs">/</span>
+                  <label className="flex flex-col items-center gap-0.5">
+                    <span className="text-[9px] font-bold text-danger-600">デス</span>
+                    <input
+                      type="number"
+                      value={s.deaths}
+                      onChange={(e) => onStatChange(index, 'deaths', e.target.value)}
+                      className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm"
+                      placeholder="0"
+                    />
+                  </label>
+                  <span className="text-muted-strong pb-1.5 text-xs">/</span>
+                  <label className="flex flex-col items-center gap-0.5">
+                    <span className="text-[9px] font-bold text-muted-strong">アシスト</span>
+                    <input
+                      type="number"
+                      value={s.assists}
+                      onChange={(e) => onStatChange(index, 'assists', e.target.value)}
+                      className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm"
+                      placeholder="0"
+                    />
+                  </label>
                   <button
                     type="button"
                     onClick={() => {
@@ -126,14 +135,14 @@ export default function TeamStatsTable({
                       const next = cur >= 2 ? 0 : cur + 1;
                       onStatChange(index, 'penta_kills', String(next));
                     }}
-                    className={`ml-1.5 px-2 py-1 rounded text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    className={`ml-1 px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
                       (s.penta_kills || 0) > 0
                         ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
                         : 'bg-black/5 text-muted-strong hover:text-foreground border border-border'
                     }`}
-                    title="ペンタキル達成（ジャックポット総取り対象）"
+                    title="ペンタキル達成回数（タップで0→1→2と切り替え・ジャックポット総取り対象）"
                   >
-                    💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
+                    💎 ペンタ:{(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                   </button>
                 </div>
               </div>

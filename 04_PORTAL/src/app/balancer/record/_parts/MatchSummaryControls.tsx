@@ -11,6 +11,7 @@ interface MatchSummaryControlsProps {
   isFinalMatch: boolean;
   onChangeIsFinalMatch: (checked: boolean) => void;
   submitting: boolean;
+  missingNamesCount?: number;
   onSubmit: () => void;
 }
 
@@ -22,10 +23,15 @@ export default function MatchSummaryControls({
   isFinalMatch,
   onChangeIsFinalMatch,
   submitting,
+  missingNamesCount = 0,
   onSubmit,
 }: MatchSummaryControlsProps) {
   const parsedSec = parseDurationText(durationText);
   const isEarlySurrender = parsedSec !== undefined && parsedSec < 18 * 60;
+  const missingReasons: string[] = [];
+  if (!winningTeam) missingReasons.push('勝利チーム（BLUE / RED）の選択');
+  if (missingNamesCount > 0) missingReasons.push(`未入力のプレイヤー名（あと${missingNamesCount}人）`);
+  const isSaveDisabled = submitting || !winningTeam || missingNamesCount > 0;
 
   return (
     <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -67,11 +73,11 @@ export default function MatchSummaryControls({
           placeholder="28:14"
           className="w-20 px-2 py-1.5 rounded-md bg-surface border border-border text-sm font-mono text-foreground"
         />
-        <div className="flex flex-col gap-0.5 max-w-48 leading-tight">
+        <div className="flex flex-col gap-0.5 max-w-56 leading-tight">
           <span className="text-[10px] text-muted-strong">
             {durationText && parsedSec === undefined
               ? '「分:秒」で入力（例 28:14）'
-              : '試合時間（18分未満は敗北緩和）'}
+              : '18分未満の早期終了は敗北側のMMR減少が半分に緩和されます'}
           </span>
           {isEarlySurrender && (
             <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse">
@@ -82,32 +88,42 @@ export default function MatchSummaryControls({
       </label>
 
       {/* 🏁 最終戦チェックボックス（解散時にVCステータスを自動クリア） */}
-      <label className="flex items-center gap-2 cursor-pointer select-none bg-black/3 hover:bg-black/5 px-3 py-2 rounded-lg border border-border transition">
+      <label className="flex items-start gap-2 cursor-pointer select-none bg-black/3 hover:bg-black/5 px-3 py-2 rounded-lg border border-border transition max-w-64">
         <input
           type="checkbox"
           checked={isFinalMatch}
           onChange={(e) => onChangeIsFinalMatch(e.target.checked)}
-          className="w-4 h-4 rounded text-secondary-600 focus:ring-secondary-500 cursor-pointer"
+          className="w-4 h-4 mt-0.5 rounded text-secondary-600 focus:ring-secondary-500 cursor-pointer shrink-0"
         />
-        <span className="text-xs font-bold text-foreground">
-          🏁 本日の最終戦（解散するためVCステータスをクリア）
+        <span className="text-xs font-bold text-foreground leading-snug">
+          🏁 本日の最終戦
+          <span className="block text-[10px] font-normal text-muted-strong mt-0.5">
+            ONにすると保存時にDiscordのVC横吹き出しステータスを自動で消去します
+          </span>
         </span>
       </label>
 
-      {/* 保存送信ボタン */}
-      <button
-        onClick={onSubmit}
-        disabled={submitting || !winningTeam}
-        type="button"
-        className={`px-8 py-4 rounded-xl font-black text-lg transition flex items-center gap-3 cursor-pointer ${
-          submitting || !winningTeam
-            ? 'bg-black/5 text-faint cursor-not-allowed'
-            : 'bg-gradient-to-r from-success-500 to-secondary-600 text-white hover:from-success-400 hover:to-secondary-500 shadow-xl shadow-success-900/30'
-        }`}
-      >
-        {submitting ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Target className="h-6 w-6" />}
-        試合結果を保存してMMR更新
-      </button>
+      {/* 保存送信ボタン ＋ 不足項目案内 */}
+      <div className="flex flex-col items-center md:items-end gap-1.5">
+        <button
+          onClick={onSubmit}
+          disabled={isSaveDisabled}
+          type="button"
+          className={`px-8 py-4 rounded-xl font-black text-lg transition flex items-center gap-3 ${
+            isSaveDisabled
+              ? 'bg-black/5 text-faint cursor-not-allowed'
+              : 'bg-gradient-to-r from-success-500 to-secondary-600 text-white hover:from-success-400 hover:to-secondary-500 shadow-xl shadow-success-900/30 cursor-pointer'
+          }`}
+        >
+          {submitting ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Target className="h-6 w-6" />}
+          試合結果を保存してMMR更新
+        </button>
+        {missingReasons.length > 0 && (
+          <p className="text-[11px] font-bold text-danger-700">
+            ⚠️ 保存するには「{missingReasons.join('」と「')}」が必要です
+          </p>
+        )}
+      </div>
     </div>
   );
 }
