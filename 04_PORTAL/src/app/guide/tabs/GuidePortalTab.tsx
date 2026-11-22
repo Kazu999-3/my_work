@@ -381,7 +381,7 @@ export default function GuidePortalTab() {
           <div className="bg-background rounded-2xl p-4 border border-border/80 space-y-2.5">
             <div className="font-bold text-foreground-soft text-xs">🏅 MMRとティアの対応</div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[320px] text-xs">
+              <table className="w-full min-w-0 sm:min-w-[320px] text-xs">
                 <thead>
                   <tr className="text-left text-[11px] text-muted-strong">
                     <th className="py-1.5 pr-3 font-black">ティア</th>

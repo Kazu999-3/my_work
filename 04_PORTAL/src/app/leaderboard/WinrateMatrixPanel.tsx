@@ -229,7 +229,7 @@ export default function WinrateMatrixPanel() {
             <tr>
               <th
                 onClick={() => handleHeaderClick('name')}
-                className="px-4 py-3 text-left text-xs font-bold text-muted-strong hover:text-foreground cursor-pointer tracking-wider w-48 sticky left-0 z-20 bg-surface"
+                className="px-2.5 sm:px-4 py-3 text-left text-xs font-bold text-muted-strong hover:text-foreground cursor-pointer tracking-wider w-32 sm:w-48 sticky left-0 z-20 bg-surface shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]"
               >
                 PLAYER {renderSortIndicator('name')}
               </th>
@@ -263,12 +263,12 @@ export default function WinrateMatrixPanel() {
               const tierStyle = getRankBadgeStyle(ktmTier.name);
               return (
                 <tr key={player.name} className="group hover:bg-black/2 transition-colors rounded-2xl">
-                  <td className="px-4 py-3 align-middle rounded-l-2xl border-y border-l border-black/10 bg-surface sticky left-0 z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-xs font-bold text-foreground-subtle border border-black/10">
+                  <td className="px-2.5 sm:px-4 py-3 align-middle rounded-l-2xl border-y border-l border-black/10 bg-surface sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 shrink-0 rounded-full bg-black/5 flex items-center justify-center text-xs font-bold text-foreground-subtle border border-black/10">
                         {idx + 1}
                       </div>
-                      <div className="font-bold text-foreground-soft">{player.name}</div>
+                      <div className="font-bold text-foreground-soft text-xs sm:text-sm truncate max-w-[78px] sm:max-w-none">{player.name}</div>
                     </div>
                   </td>
                   <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'TOP' ? 'bg-secondary-50' : 'bg-black/2'}`}>

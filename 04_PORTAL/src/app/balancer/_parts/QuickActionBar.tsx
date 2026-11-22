@@ -40,7 +40,7 @@ export default function QuickActionBar({
   onOpenResultModal?: () => void;
 }) {
   return (
-    <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/90 text-foreground backdrop-blur-xl border border-border/80 rounded-2xl p-2.5 px-3 sm:p-3 sm:px-5 shadow-2xl flex items-center justify-between gap-2 sm:gap-4 transition-all">
+    <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/90 text-foreground backdrop-blur-xl border border-border/80 rounded-2xl p-2.5 px-3 sm:p-3 sm:px-5 shadow-2xl flex flex-wrap items-center justify-between gap-2 sm:gap-4 transition-all">
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex items-center gap-1.5">
           <Users className="w-4 h-4 text-primary-500 hidden sm:block" />

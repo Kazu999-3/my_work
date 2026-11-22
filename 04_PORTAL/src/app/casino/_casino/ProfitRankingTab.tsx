@@ -84,14 +84,14 @@ export default function ProfitRankingTab({ myDiscordId }: { myDiscordId?: string
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface/80">
-        <table className="w-full text-sm min-w-[420px]">
-          <thead className="text-xs text-muted-strong bg-black/5">
+        <table className="w-full text-xs sm:text-sm sm:min-w-[420px]">
+          <thead className="text-[11px] sm:text-xs text-muted-strong bg-black/5">
             <tr>
-              <th className="p-2 w-10 text-center">順位</th>
-              <th className="p-2 text-left">名前</th>
-              <th className={`p-2 text-right ${order === 'gained' ? 'text-success-700' : ''}`}>得たコイン</th>
-              <th className={`p-2 text-right ${order === 'lost' ? 'text-danger-700' : ''}`}>失ったコイン</th>
-              <th className="p-2 text-right">回数</th>
+              <th className="p-1.5 sm:p-2 w-8 sm:w-10 text-center">順位</th>
+              <th className="p-1.5 sm:p-2 text-left">名前</th>
+              <th className={`p-1.5 sm:p-2 text-right ${order === 'gained' ? 'text-success-700' : ''}`}>得たコイン</th>
+              <th className={`p-1.5 sm:p-2 text-right ${order === 'lost' ? 'text-danger-700' : ''}`}>失ったコイン</th>
+              <th className="p-1.5 sm:p-2 text-right">回数</th>
             </tr>
           </thead>
           <tbody>
@@ -99,11 +99,11 @@ export default function ProfitRankingTab({ myDiscordId }: { myDiscordId?: string
               const isMe = !!myDiscordId && r.discordId === myDiscordId;
               return (
                 <tr key={`${r.name}-${i}`} className={`border-t border-border ${isMe ? 'bg-primary-500/10' : ''}`}>
-                  <td className="p-2 text-center font-bold text-muted-strong">{i + 1}</td>
-                  <td className="p-2 font-bold text-foreground whitespace-nowrap">{r.name}{isMe && <span className="ml-1 text-[10px] text-primary-700">（あなた）</span>}</td>
-                  <td className="p-2 text-right font-mono font-bold text-success-700">+{c.gained.toLocaleString()}</td>
-                  <td className="p-2 text-right font-mono font-bold text-danger-700">−{c.lost.toLocaleString()}</td>
-                  <td className="p-2 text-right font-mono text-xs text-muted-strong">{c.plays.toLocaleString()}</td>
+                  <td className="p-1.5 sm:p-2 text-center font-bold text-muted-strong">{i + 1}</td>
+                  <td className="p-1.5 sm:p-2 font-bold text-foreground sm:whitespace-nowrap max-w-[100px] sm:max-w-none truncate">{r.name}{isMe && <span className="ml-1 text-[10px] text-primary-700">（あなた）</span>}</td>
+                  <td className="p-1.5 sm:p-2 text-right font-mono font-bold text-success-700">+{c.gained.toLocaleString()}</td>
+                  <td className="p-1.5 sm:p-2 text-right font-mono font-bold text-danger-700">−{c.lost.toLocaleString()}</td>
+                  <td className="p-1.5 sm:p-2 text-right font-mono text-xs text-muted-strong">{c.plays.toLocaleString()}</td>
                 </tr>
               );
             })}

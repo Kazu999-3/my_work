@@ -320,7 +320,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center pt-3 border-t border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center pt-3 border-t border-border">
                 <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                   <div className="text-[10px] text-stone-400 font-bold">勝率</div>
                   <div className="text-sm font-black text-foreground">
@@ -372,7 +372,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center pt-3 border-t border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center pt-3 border-t border-border">
                 <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                   <div className="text-[10px] text-stone-400 font-bold">勝率</div>
                   <div className="text-sm font-black text-foreground">

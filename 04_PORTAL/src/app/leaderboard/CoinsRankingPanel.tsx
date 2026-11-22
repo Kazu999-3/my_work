@@ -241,7 +241,7 @@ export default function CoinsRankingPanel() {
 
       {/* コントロールバー（検索・ソート） */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-surface/80 backdrop-blur-sm border border-border/90 rounded-2xl p-3 shadow-2xs">
-        <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:min-w-[240px]">
           <Search size={16} className="text-faint" />
           <input
             type="text"

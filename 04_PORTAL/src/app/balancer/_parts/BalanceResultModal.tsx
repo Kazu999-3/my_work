@@ -426,14 +426,14 @@ export default function BalanceResultModal({
           {/* チーム表示ヘッダー */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center border-b border-border pb-3">
-              <div className="col-span-5 bg-gradient-to-r from-secondary-100 dark:from-secondary-950/40 to-transparent p-3 rounded-xl border-l-4 border-secondary-edge-strong flex justify-between items-center">
+              <div className="md:col-span-5 bg-gradient-to-r from-secondary-100 dark:from-secondary-950/40 to-transparent p-3 rounded-xl border-l-4 border-secondary-edge-strong flex justify-between items-center">
                 <span className="text-base font-black text-secondary-700 dark:text-secondary-400">BLUE TEAM</span>
                 <span className="text-xs font-mono font-bold text-secondary-600 dark:text-secondary-300">
                   合計MMR: {balanceResult.teamBlueMMR ?? 0}
                 </span>
               </div>
-              <div className="col-span-1 flex justify-center text-muted-strong font-black">VS</div>
-              <div className="col-span-5 bg-gradient-to-l from-danger-100 dark:from-danger-950/40 to-transparent p-3 rounded-xl border-r-4 border-danger-edge-strong flex justify-between items-center">
+              <div className="md:col-span-1 flex justify-center text-muted-strong font-black">VS</div>
+              <div className="md:col-span-5 bg-gradient-to-l from-danger-100 dark:from-danger-950/40 to-transparent p-3 rounded-xl border-r-4 border-danger-edge-strong flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-danger-600 dark:text-danger-300">
                   合計MMR: {balanceResult.teamRedMMR ?? 0}
                 </span>

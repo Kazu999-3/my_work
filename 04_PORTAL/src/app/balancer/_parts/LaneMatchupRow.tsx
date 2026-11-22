@@ -62,13 +62,13 @@ export function LaneMatchupRow({
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDropPlayer(e, 'teamBlue', role)}
         onClick={() => { if (pB?.name) handleSelectSwapPlayer('teamBlue', role, pB.name); }}
-        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer select-none ${
+        className={`md:col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer select-none ${
           dragOverSlot === bKey
             ? 'border-secondary-edge-strong bg-secondary-100 border-dashed'
             : 'bg-secondary-50 dark:bg-secondary-950/20 border-secondary-edge-soft hover:bg-secondary-100 dark:hover:bg-secondary-900/30'
         } ${swapSource?.name === pB?.name ? 'ring-2 ring-primary-500 bg-primary-100 animate-pulse' : ''}`}
       >
-        <div className="flex-1 min-w-[5.5rem]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex-1 min-w-0 sm:min-w-[5.5rem]" onClick={(e) => e.stopPropagation()}>
           {renderSwapSelect('teamBlue', role, pB?.name || '')}
         </div>
         {pB?.name && (
@@ -132,7 +132,7 @@ export function LaneMatchupRow({
       </div>
 
       {/* 中央ロール ＆ MMR差 */}
-      <div className="col-span-1 flex flex-col items-center py-1">
+      <div className="md:col-span-1 flex flex-col items-center py-1">
         <div className="w-8 h-8 rounded-full bg-surface-subtle border border-border flex items-center justify-center shadow-lg">
           <RoleIcon role={role} className="w-4 h-4" />
         </div>
@@ -161,7 +161,7 @@ export function LaneMatchupRow({
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDropPlayer(e, 'teamRed', role)}
         onClick={() => { if (pR?.name) handleSelectSwapPlayer('teamRed', role, pR.name); }}
-        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer select-none ${
+        className={`md:col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer select-none ${
           dragOverSlot === rKey
             ? 'border-danger-edge-strong bg-danger-100 border-dashed'
             : 'bg-danger-50 dark:bg-danger-950/20 border-danger-edge-soft hover:bg-danger-100 dark:hover:bg-danger-900/30'
@@ -225,7 +225,7 @@ export function LaneMatchupRow({
             ⇄
           </button>
         )}
-        <div className="flex-1 min-w-[5.5rem]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex-1 min-w-0 sm:min-w-[5.5rem]" onClick={(e) => e.stopPropagation()}>
           {renderSwapSelect('teamRed', role, pR?.name || '')}
         </div>
       </div>

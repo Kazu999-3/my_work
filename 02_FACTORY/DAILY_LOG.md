@@ -1,5 +1,26 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【SPEC 17：狭幅レイアウトの修正（全14件：375px相当での崩壊・はみ出し是正）】
+
+**概要**:
+SPEC 17（`04_PORTAL/docs/specs/17-responsive-layout-SPEC.md`）に基づき、375px相当の狭幅でのレイアウト崩れ14件をレスポンシブ修正（デスクトップ幅の既存レイアウトは維持）。
+1. **優先度・致命的（1件）**:
+   - `04_PORTAL/src/app/festival/pick/FestivalTournamentDraftModal.tsx`: 狭幅（`lg` 未満）では上部折りたたみバー（BLUE/RED ピック枠開閉）＋縦積みに切り替え、中央チャンピオン選択プールへ全幅・十分な高さを確保（`lg` 以上は従来どおり3カラム維持）。
+2. **優先度・中（3件）**:
+   - `04_PORTAL/src/app/balancer/_parts/BalanceResultModal.tsx` & `LaneMatchupRow.tsx`: `col-span-5` / `col-span-1` に `md:` 接頭辞を付与し狭幅で1カラム縦積み化。`LaneMatchupRow` の選択枠を `min-w-0 sm:min-w-[5.5rem]` へ調整。
+   - `04_PORTAL/src/app/leaderboard/WinrateMatrixPanel.tsx`: 先頭プレイヤー列を `w-32 sm:w-48`・右境界シャドウ付き `sticky left-0` に調整し、375pxでも横スクロール中の行識別とデータ閲覧性を両立。
+3. **優先度・軽微（10件）**:
+   - `QuickActionBar.tsx`: `flex-wrap` 追加で下部バーの要素圧迫を緩和。
+   - `player/[id]/page.tsx`: 戦績テーブル2件を `sm:min-w-[420px]` 化、背景装飾円を `w-[min(400px,70vw)]` 化。
+   - `PlayerSettingsPanel.tsx` & `PlayerCompareView.tsx`: `grid-cols-3` を `grid-cols-1 sm:grid-cols-3` 化。
+   - `leaderboard/page.tsx`: 主な使用者列を `min-w-[140px] sm:min-w-[200px]` へ緩和。
+   - `CoinsRankingPanel.tsx`: 検索欄を `w-full sm:w-auto sm:flex-1 sm:min-w-[240px]` に調整。
+   - `ProfitRankingTab.tsx` & `GuidePortalTab.tsx`: 狭幅での最小幅・余白・折り返しを調整し横スクロールを抑制。
+   - `OnboardingChannelsPanel.tsx`: 狭幅で不要な `whitespace-nowrap` を `sm:whitespace-nowrap` に緩和。
+4. **機械的実値検証（Verifier原則）**:
+   - `npx tsc --noEmit` / `npx eslint src` / `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+   - ※ 実ブラウザでの375px実機/ビューポート表示確認は未実施（`[要検証]`）。
+
 ### ⚡ 【SPEC 16：各ページの操作性と分かりやすさ改善（カジノ・お祭り・ガイド・先輩後輩）】
 
 **概要**:

@@ -496,7 +496,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 <label className="block text-xs font-black text-foreground-subtle">
                   🎚️ 希望レーンの強さ
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { v: 1, title: "絶対このレーン", desc: "希望レーン以外はできるだけ避けたい" },
                     { v: 2, title: "できれば", desc: "なるべく希望レーン（標準）" },

@@ -853,7 +853,7 @@ export default function PlayerMyPage() {
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary-300/40">
       {/* 背景ネオンデコレーション */}
       <div className="absolute top-0 left-1/4 w-[min(500px,60vw)] h-[500px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute top-1/3 right-1/4 w-[min(400px,70vw)] h-[400px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
       <div className="max-w-[1600px] w-full mx-auto space-y-6">
         
@@ -2217,7 +2217,7 @@ export default function PlayerMyPage() {
                       </p>
                     ) : (
                       <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-                        <table className="w-full min-w-[420px] text-sm">
+                        <table className="w-full sm:min-w-[420px] text-sm">
                           <thead>
                             <tr className="text-left text-[11px] uppercase tracking-wide text-muted-strong">
                               <th className="py-2 pr-3 font-black">メンバー</th>
@@ -2367,7 +2367,7 @@ export default function PlayerMyPage() {
 
                       return (
                         <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-                          <table className="w-full min-w-[420px] text-sm">
+                          <table className="w-full sm:min-w-[420px] text-sm">
                             <thead>
                               <tr className="text-left text-[11px] uppercase tracking-wide text-muted-strong border-b border-black/10">
                                 <th className="py-2.5 pr-3 font-black">対面相手</th>

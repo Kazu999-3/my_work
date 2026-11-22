@@ -77,6 +77,7 @@ export default function FestivalTournamentDraftModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<ChampionRole | "ALL">("ALL");
   const [copied, setCopied] = useState(false);
+  const [isMobileTeamsOpen, setIsMobileTeamsOpen] = useState(false);
 
   // ピック済みチャンピオンのID集合
   const pickedChampIds = useMemo(() => {
@@ -409,9 +410,25 @@ export default function FestivalTournamentDraftModal({
         </div>
 
         {/* ── メイン対戦ドラフト画面（左BLUE 5枠 / 中央プール / 右RED 5枠） ── */}
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0">
+          {/* 📱 狭幅向け: BLUE / RED ピック状況 折りたたみバー */}
+          <div className="order-1 lg:hidden flex items-center justify-between gap-2 px-3 py-2 bg-[#111524] border-b border-stone-800 shrink-0">
+            <div className="flex items-center gap-2 text-[11px] font-mono font-bold">
+              <span className="text-blue-400">BLUE {bluePicks.filter(Boolean).length}/5</span>
+              <span className="text-stone-500">vs</span>
+              <span className="text-rose-400">RED {redPicks.filter(Boolean).length}/5</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMobileTeamsOpen((prev) => !prev)}
+              className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-[11px] font-bold border border-stone-700 transition cursor-pointer"
+            >
+              {isMobileTeamsOpen ? "チーム枠を閉じる ▲" : "チーム枠を見る ▼"}
+            </button>
+          </div>
+
           {/* 🔵 左側: BLUE チーム (B1〜B5) */}
-          <div className="w-64 sm:w-72 md:w-80 bg-blue-950/20 border-r border-blue-500/30 flex flex-col p-3 gap-2 shrink-0 overflow-y-auto">
+          <div className={`${isMobileTeamsOpen ? "flex" : "hidden"} lg:flex order-2 lg:order-none w-full lg:w-80 bg-blue-950/20 border-b lg:border-b-0 lg:border-r border-blue-500/30 flex-col p-3 gap-2 shrink-0 lg:overflow-y-auto`}>
             <div className="flex items-center justify-between border-b border-blue-500/40 pb-2">
               <span className="text-sm font-black text-blue-400 tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-blue-500/50 shadow-md animate-pulse" />
@@ -442,7 +459,7 @@ export default function FestivalTournamentDraftModal({
           </div>
 
           {/* ⚔️ 中央: チャンピオン選択プール ＆ 検索 */}
-          <div className="flex-1 flex flex-col bg-[#0f121c] p-3 sm:p-4 min-w-0 overflow-hidden">
+          <div className="order-4 lg:order-none flex-1 flex flex-col bg-[#0f121c] p-3 sm:p-4 min-w-0 min-h-[380px] lg:min-h-0 lg:overflow-hidden">
             {/* 検索・ロールフィルターバー */}
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-800 shrink-0">
               {/* 検索入力 */}
@@ -547,7 +564,7 @@ export default function FestivalTournamentDraftModal({
           </div>
 
           {/* 🔴 右側: RED チーム (R1〜R5) */}
-          <div className="w-64 sm:w-72 md:w-80 bg-rose-950/20 border-l border-rose-500/30 flex flex-col p-3 gap-2 shrink-0 overflow-y-auto">
+          <div className={`${isMobileTeamsOpen ? "flex" : "hidden"} lg:flex order-3 lg:order-none w-full lg:w-80 bg-rose-950/20 border-b lg:border-b-0 lg:border-l border-rose-500/30 flex-col p-3 gap-2 shrink-0 lg:overflow-y-auto`}>
             <div className="flex items-center justify-between border-b border-rose-500/40 pb-2">
               <span className="text-[10px] text-rose-300 font-mono font-bold bg-rose-900/50 px-2 py-0.5 rounded border border-rose-500/40">
                 確定: {redPicks.filter(Boolean).length} / 5

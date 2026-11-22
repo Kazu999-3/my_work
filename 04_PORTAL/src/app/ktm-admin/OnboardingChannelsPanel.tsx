@@ -904,7 +904,7 @@ export default function OnboardingChannelsPanel() {
                       )}
                       {r.lastCustomNudgeAt && now - new Date(r.lastCustomNudgeAt).getTime() <= 4 * DAY && (
                         <span
-                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 whitespace-nowrap"
+                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 sm:whitespace-nowrap"
                           title={`直近に定期カスタムの案内を送信済み（${ago(r.lastCustomNudgeAt)}）- 対面抽出から自動除外中`}
                         >
                           📨 案内済({ago(r.lastCustomNudgeAt)})
@@ -924,19 +924,19 @@ export default function OnboardingChannelsPanel() {
                     {/* スマホでは「最後の試合・入った日」の列を隠すので、名前の下にまとめて出す */}
                     <div className="sm:hidden text-[11px] text-muted-strong">試合: {r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'} ／ 入: {r.joinedAt ? ago(r.joinedAt) : '-'}</div>
                   </td>
-                  <td className="p-2 text-foreground-subtle whitespace-nowrap">{ago(r.lastMessageAt)}</td>
-                  <td className="p-2">
+                  <td className="p-1.5 sm:p-2 text-foreground-subtle sm:whitespace-nowrap text-xs sm:text-sm">{ago(r.lastMessageAt)}</td>
+                  <td className="p-1.5 sm:p-2">
                     {r.unread ? (
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap bg-danger-100 text-danger-700 border-danger-edge-soft">● 未読</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border sm:whitespace-nowrap bg-danger-100 text-danger-700 border-danger-edge-soft">● 未読</span>
                     ) : r.needsReply ? (
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap bg-primary-100 text-primary-700 border-primary-edge-soft">既読・未返信</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border sm:whitespace-nowrap bg-primary-100 text-primary-700 border-primary-edge-soft">既読・未返信</span>
                     ) : (
                       <span className="text-faint text-xs">-</span>
                     )}
                     {r.needsReply && (
                       <button
                         onClick={() => dismissReply(r.channelId)}
-                        className="ml-1.5 text-[11px] text-muted-strong underline hover:text-foreground whitespace-nowrap"
+                        className="ml-1.5 text-[11px] text-muted-strong underline hover:text-foreground sm:whitespace-nowrap"
                         title="この発言には返信しなくてよいので、要返信から外します（本人が新しく発言すれば戻ります）"
                       >
                         返信不要

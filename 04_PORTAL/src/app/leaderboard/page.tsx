@@ -314,7 +314,7 @@ function LeaderboardContent() {
                           <span title="(キル+アシスト)÷デスの平均値（3.0以上で好成績の目安）">平均KDA</span> {metaSortKey === 'avgKda' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
                         {showMetaPlayers && (
-                          <th className="p-3 min-w-[200px]">主な使用者 (試合数・勝率)</th>
+                          <th className="p-3 min-w-[140px] sm:min-w-[200px]">主な使用者 (試合数・勝率)</th>
                         )}
                       </tr>
                     </thead>
