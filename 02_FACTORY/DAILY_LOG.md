@@ -1,5 +1,17 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【Pilot 指示文23：F-2・B-11 のユーザー決定の実施（05_PILOT）】
+
+**概要**:
+`05_PILOT/docs/specs/23-f2-b11-decisions-instruction.md` に基づき、ユーザー決定事項2件を実装。
+1. **決定1（F-2）：`ChampionHeroBanner` へ「編集・統合履歴」ボタンのみ配置**:
+   - `05_PILOT/src/app/_champions/ChampionHeroBanner.tsx`: `CD表` トグルボタン横に「編集・統合履歴」ボタンを追加し、既存 prop `setIsRevisionModalOpen(true)` を接続（`ToolPaletteModal`・`RevisionHistoryModal`・`/api/admin/revisions` は未変更）。
+2. **決定2（B-11）：単件承認の確認（③＋①）**:
+   - `05_PILOT/src/app/admin/review/page.tsx`: `approveOne(item, { fromKeyboard })` にて、③複数チャンピオン自動分解統合（`!isPreviewing && item.isMultiChampion && !item.is_atomic`）および①キーボード `A` 経由の承認時に `confirm()` を表示（両方該当時は1回のみ確認）。通常の単件クリック承認は確認なしの即時承認を維持。
+3. **機械的実値検証（Verifier原則）**:
+   - `05_PILOT` にて `npx tsc --noEmit` / `npm run build`（全28ルート）PASS（Exit code 0）。
+   - ※ ローカルブラウザでのログイン後の実操作確認は `/login` 合言葉認証ゲートのため未実施（`[要検証]`）。
+
 ### 📄 【Pilot 指示文22：未提出の報告2件（F-2・B-11）のファイル提出】
 
 **概要**:

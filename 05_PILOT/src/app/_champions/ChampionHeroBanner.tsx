@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { getChampIcon, getChampSplash } from "@/lib/ddragonClient";
-import { Swords, ChevronDown, ChevronUp, Timer, Star, Bot, ExternalLink } from "lucide-react";
+import { Swords, ChevronDown, ChevronUp, Timer, Star, Bot, ExternalLink, History } from "lucide-react";
 import type { ChampionDetail, DetailTab } from "./types";
 
 // ヒーローバナー＆基本情報＋アクションボタン群＋CD早見表
@@ -171,6 +171,17 @@ export default function ChampionHeroBanner({ favorites, activeTab, setActiveTab,
                     <Timer size={14} className="text-amber-400" />
                     <span>{showCdTable ? "CD表を閉じる" : "CD表"}</span>
                     {showCdTable ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+
+                  {/* 📜 編集・統合履歴モーダルを開く */}
+                  <button
+                    type="button"
+                    onClick={() => setIsRevisionModalOpen(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+                    title="各項目の編集・統合履歴を確認"
+                  >
+                    <History size={14} className="text-amber-400" />
+                    <span>編集・統合履歴</span>
                   </button>
 
                   {/* レーンセレクター（対象チャンピオンの所属レーンのみ表示） */}

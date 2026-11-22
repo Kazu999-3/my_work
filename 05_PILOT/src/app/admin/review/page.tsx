@@ -220,11 +220,25 @@ export default function ReviewPage() {
   };
 
   // 1件承認（楽観的UI更新で即座に一覧から消去して二重承認を根絶）
-  const approveOne = async (item: ReviewItem | null) => {
+  // 1件承認（通常クリックは即時承認、複数チャンプ自動分解またはキーボードA経由時は確認あり）
+  const approveOne = async (item: ReviewItem | null, options?: { fromKeyboard?: boolean }) => {
     if (!item) return;
+    const isPreviewing = previewModalItem?.id === item.id;
+    // ✂️ 複数チャンプ記事の場合、中身確認不要の自動分解＆教本直接統合を実行（2026-10-28）
+    const isAutoDecompose = !isPreviewing && item.isMultiChampion && !item.is_atomic;
+
+    if (isAutoDecompose) {
+      if (!confirm(`「${item.title}」を承認しますか？（複数チャンピオンの教本へ自動で分解・統合されます）`)) {
+        return;
+      }
+    } else if (options?.fromKeyboard) {
+      if (!confirm(`「${item.title}」を承認して統合しますか？`)) {
+        return;
+      }
+    }
+
     setModalError(null);
     const edit = edits[item.id] || defaultEdit(item);
-    const isPreviewing = previewModalItem?.id === item.id;
 
     // ⚡ 楽観的消去: ユーザーの操作感（Vibe）最優先で0秒消去
     removeFromList([item.id]);
@@ -244,9 +258,6 @@ export default function ReviewPage() {
       shouldIncludeLaneGuide = true;
       finalLaneSectionText = (finalLaneSectionText || (previewData?.laneGuidePreview?.sectionText || '')) + routedLinesBlock(routedToLaneLines);
     }
-
-    // ✂️ 複数チャンプ記事の場合、中身確認不要の自動分解＆教本直接統合を実行（2026-10-28）
-    const isAutoDecompose = !isPreviewing && item.isMultiChampion && !item.is_atomic;
 
     const result = await post(
       isAutoDecompose
@@ -613,10 +624,10 @@ export default function ReviewPage() {
         return;
       }
 
-      // A: 即時承認（統合）
+      // A: 確認付き承認（統合）
       if (key === 'a') {
         e.preventDefault();
-        approveOne(currentItem);
+        approveOne(currentItem, { fromKeyboard: true });
         return;
       }
 
