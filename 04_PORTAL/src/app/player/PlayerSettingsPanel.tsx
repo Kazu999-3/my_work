@@ -5,7 +5,7 @@ import {
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
   Save, CheckCircle2, AlertTriangle, RefreshCw, Moon,
   Swords, Users, Snowflake, Coffee, BookOpen, Sparkles,
-  Coins, X, ChevronDown, ChevronUp, SlidersHorizontal
+  Coins, X
 } from "lucide-react";
 import ThemeToggle from "../../components/ThemeToggle";
 import { getPlayerTierBand, normalizeTierPromotionPref, TIER_BAND_THRESHOLD, type TierPromotionPref } from "../../lib/balancer/tierBand";
@@ -70,7 +70,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   const [secondaryRole, setSecondaryRole] = useState<string>(toAll(prefs.secondary));
   const [ngRoles, setNgRoles] = useState<string[]>(prefs.ng_roles || [player?.ng_lane_1, player?.ng_lane_2].filter(Boolean));
   const [ign, setIgn] = useState<string>(player?.ign || "");
-  // こだわり度（1:絶対 / 2:通常 / 3:柔軟）と格上許可。チーム分けで使う（2026-10-17 マイページから設定可能に）
+  // 希望レーンの強さ（1:絶対このレーン / 2:できれば / 3:どこでもOK）と対面保護・帯繰り上げ設定
   const [weight, setWeight] = useState<number>([1, 2, 3].includes(Number(player?.weight)) ? Number(player?.weight) : 2);
   const [allowHigher, setAllowHigher] = useState<boolean>(!!player?.allow_higher);
   // 定期カスタムの帯繰り上げ設定（2026-11-22 SPEC 10）
@@ -94,8 +94,6 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // SPEC 12: 詳細設定（あとで変えるもの）は初期状態・閉
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // 初参加（通算0戦）判定 & ウェルカムバナー表示状態
   const isNewPlayer = (player?.total_games ?? 0) === 0 && (player?.stats?.total?.g ?? 0) === 0;
@@ -201,6 +199,68 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
     }
   };
 
+  // SPEC 18 (v4): レーンごとの4択（「第1希望」「第2希望」「どちらでも」「NG」）の整合性制御
+  // 別のレーンを第1希望にした場合、元の第1希望は自動で「どちらでも」(ALL) に戻す
+  type LaneChoice = "PRIMARY" | "SECONDARY" | "ANY" | "NG";
+  const getLaneChoice = (roleId: string): LaneChoice => {
+    if (primaryRole === roleId) return "PRIMARY";
+    if (secondaryRole === roleId) return "SECONDARY";
+    if (ngRoles.includes(roleId)) return "NG";
+    return "ANY";
+  };
+
+  const setLaneChoice = (roleId: string, choice: LaneChoice) => {
+    if (choice === "PRIMARY") {
+      setPrimaryRole(roleId);
+      if (secondaryRole === roleId) setSecondaryRole("ALL");
+      if (ngRoles.includes(roleId)) setNgRoles(ngRoles.filter((r) => r !== roleId));
+      return;
+    }
+    if (choice === "SECONDARY") {
+      setSecondaryRole(roleId);
+      if (primaryRole === roleId) setPrimaryRole("ALL");
+      if (ngRoles.includes(roleId)) setNgRoles(ngRoles.filter((r) => r !== roleId));
+      return;
+    }
+    if (choice === "NG") {
+      if (roleId === "ALL") return;
+      if (primaryRole === roleId) setPrimaryRole("ALL");
+      if (secondaryRole === roleId) setSecondaryRole("ALL");
+      if (!ngRoles.includes(roleId)) {
+        toggleNgRole(roleId);
+      }
+      return;
+    }
+    // ANY（どちらでも）
+    if (primaryRole === roleId) setPrimaryRole("ALL");
+    if (secondaryRole === roleId) setSecondaryRole("ALL");
+    if (ngRoles.includes(roleId)) setNgRoles(ngRoles.filter((r) => r !== roleId));
+  };
+
+  const roleLabel = (id: string) => ROLES.find((r) => r.id === id)?.name || id;
+  const weightLabel = weight === 1 ? "絶対このレーン" : weight === 3 ? "どこでもOK" : "できれば";
+  const higherLabel = allowHigher ? "格上対面OK" : "格上との対面を避ける";
+  const tierLabel =
+    tierPromotionPref === "mix_ok"
+      ? "上の帯に混ざってもいい"
+      : tierPromotionPref === "never"
+      ? "自分の帯のみ"
+      : "人不足なら上の帯OK";
+  const isUnsetCustom =
+    !prefs.primary &&
+    !prefs.secondary &&
+    ngRoles.length === 0 &&
+    primaryRole === "ALL" &&
+    secondaryRole === "ALL";
+  const hasUnsavedChanges =
+    primaryRole !== toAll(prefs.primary) ||
+    secondaryRole !== toAll(prefs.secondary) ||
+    JSON.stringify(ngRoles) !== JSON.stringify(prefs.ng_roles || [player?.ng_lane_1, player?.ng_lane_2].filter(Boolean)) ||
+    ign !== (player?.ign || "") ||
+    weight !== ([1, 2, 3].includes(Number(player?.weight)) ? Number(player?.weight) : 2) ||
+    allowHigher !== !!player?.allow_higher ||
+    tierPromotionPref !== normalizeTierPromotionPref(player?.tier_promotion_pref);
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -237,8 +297,20 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
     }
   };
 
+  // 読み込み中（スケルトン）状態
+  if (!player) {
+    return (
+      <div className="bg-surface/80 dark:bg-background/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 animate-pulse">
+        <div className="h-6 w-56 rounded-xl bg-black/10 dark:bg-white/10" />
+        <div className="h-16 rounded-2xl bg-black/5 dark:bg-white/5" />
+        <div className="h-64 rounded-2xl bg-black/5 dark:bg-white/5" />
+        <div className="h-48 rounded-2xl bg-black/5 dark:bg-white/5" />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-surface/80 dark:bg-background/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-8">
+    <div className="bg-surface/80 dark:bg-background/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-4 sm:p-8 shadow-xl space-y-6">
       {/* 🔰 初参加メンバー限定ウェルカムバナー */}
       {showWelcome && (
         <div className="relative overflow-hidden rounded-2xl border-2 border-primary-500/40 bg-gradient-to-br from-primary-500/15 via-secondary-500/10 to-transparent p-5 sm:p-6 shadow-lg shadow-primary-500/5 animate-fade-in">
@@ -271,7 +343,6 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 </p>
               </div>
 
-              {/* 3大安心ハイライト */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                 <div className="flex items-center gap-2.5 bg-surface/90 dark:bg-background/90 border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs">
                   <Coins className="w-4 h-4 text-amber-500 shrink-0" />
@@ -298,392 +369,491 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 </div>
               </div>
 
-              {/* 最初のアクション案内 */}
               <div className="pt-1 flex items-center gap-2 text-xs text-primary-800 dark:text-primary-300 font-bold">
-                <span>👉 まずは下の画面で「希望レーン」と「プレイスタイル」を設定してみましょう！</span>
+                <span>👉 まずは下の「🎯 レーンのこと」から設定してみましょう！</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div>
-        <h2 className="text-xl font-black text-foreground dark:text-white flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary-600" />
-          <span>アカウント設定 ＆ 希望・NGレーン設定</span>
-        </h2>
-        <p className="text-xs sm:text-sm text-muted-strong font-medium mt-1">
-          カスタム募集やチーム分けバランサーで優先される希望ロールと、絶対に入りたくないNGロールを自己設定できます。
-        </p>
-        <p className="text-[11px] text-faint font-bold mt-1.5 bg-surface-subtle border border-border rounded-xl px-3 py-2">
-          💡 <strong>保存ルール:</strong> 「IGN・希望/NGレーン・カスタム参加の希望」は最下部の<strong>「設定を保存する」ボタンで反映</strong>されます（詳細設定内のプレイスタイル・外観テーマのみタップで即時反映）。
-          {player?.discord_id && (
-            <span className="block mt-0.5 text-muted-strong font-normal">
-              連携中の Discord ID: <code className="font-mono">{player.discord_id}</code>（確認方法: Discord設定 ＞ 詳細設定 ＞ 開発者モードON ＞ 自分のアイコン右クリックで「ユーザーIDをコピー」）
-            </span>
-          )}
-        </p>
-      </div>
-
-      {/* サモナーネーム（IGN）入力 */}
-      <div className="bg-background dark:bg-surface border border-border rounded-2xl p-4 sm:p-5 space-y-2">
-        <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
-          ゲーム内サモナーネーム (IGN#TAG)
-        </label>
-        <input
-          type="text"
-          value={ign}
-          onChange={(e) => setIgn(e.target.value)}
-          placeholder="例: Hide on bush#KR1"
-          className="w-full bg-surface dark:bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-xs"
-        />
-        <p className="text-[11px] text-faint font-medium">
-          ※ LoLクライアント内の Riot ID と タグライン（#JP1など）を入力すると、OP.GGやカルテへの自動連携が有効になります。
-        </p>
-      </div>
-
-      {/* 第1希望レーン */}
+      {/* ヘッダー ＆ 「今のあなたの設定」ライブ要約 */}
       <div className="space-y-3">
-        <label className="block text-xs font-black text-primary-800 dark:text-primary-400 uppercase tracking-wider flex items-center justify-between">
-          <span>⭐ 第1希望レーン (Primary Role)</span>
-          <span className="text-[11px] text-muted-strong normal-case font-bold">最優先で割り当てられます</span>
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
-          {ROLES.map((r) => {
-            const Icon = r.icon;
-            const isSelected = primaryRole === r.id;
-            return (
-              <button
-                key={`pri-${r.id}`}
-                type="button"
-                onClick={() => setPrimaryRole(r.id)}
-                className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-primary-500 text-stone-950 font-black shadow-md border-primary-edge-strong scale-[1.02]"
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold"
-                }`}
-              >
-                <Icon className="w-6 h-6 mb-1.5" />
-                <span className="text-xs">{r.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 第2希望レーン */}
-      <div className="space-y-3">
-        <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider flex items-center justify-between">
-          <span>🥈 第2希望レーン (Secondary Role)</span>
-          <span className="text-[11px] text-muted-strong normal-case font-bold">第1希望が埋まった際の次候補</span>
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
-          {ROLES.map((r) => {
-            const Icon = r.icon;
-            const isSelected = secondaryRole === r.id;
-            return (
-              <button
-                key={`sec-${r.id}`}
-                type="button"
-                onClick={() => setSecondaryRole(r.id)}
-                className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 font-black shadow-md border-stone-900 dark:border-stone-200 scale-[1.02]"
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold"
-                }`}
-              >
-                <Icon className="w-6 h-6 mb-1.5" />
-                <span className="text-xs">{r.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* NGレーン設定 */}
-      <div className="space-y-3 pt-4 border-t border-border dark:border-border">
-        <label className="block text-xs font-black text-danger-700 dark:text-danger-400 uppercase tracking-wider flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <Ban className="w-4 h-4" />
-            <span>🚫 NGレーン設定（絶対に入りたくないレーン・最大2つ）</span>
-          </span>
-          <span className="text-[11px] text-muted-strong normal-case font-bold">
-            2つ選んだ状態で3つ目を押すと古い方が自動で外れます
-          </span>
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-          {ROLES.filter((r) => r.id !== "ALL").map((r) => {
-            const Icon = r.icon;
-            const isNg = ngRoles.includes(r.id);
-            return (
-              <button
-                key={`ng-${r.id}`}
-                type="button"
-                onClick={() => toggleNgRole(r.id)}
-                className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                  isNg
-                    ? "bg-danger-500 text-white font-black shadow-md border-danger-edge-strong scale-[1.02]"
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold"
-                }`}
-              >
-                <Ban className={`w-4 h-4 ${isNg ? "text-white" : "text-faint"}`} />
-                <Icon className="w-4 h-4" />
-                <span className="text-xs">{r.name}</span>
-              </button>
-            );
-          })}
-        </div>
-        {ngRoles.length > 0 && (
-          <p className="text-[11px] text-danger-600 dark:text-danger-400 font-bold">
-            現在設定中のNGレーン: {ngRoles.join(", ")}
+        <div>
+          <h2 className="text-xl font-black text-foreground dark:text-white flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary-600" />
+            <span>カスタム参加設定 ＆ アカウント設定</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-strong font-medium mt-1">
+            上から順に設定するだけで、定期カスタムのチーム分けと帯編成に反映されます。
           </p>
+        </div>
+
+        {/* 未設定（空）状態の案内 */}
+        {isUnsetCustom && (
+          <div className="rounded-2xl border border-primary-500/40 bg-primary-500/10 px-4 py-3 text-xs text-primary-900 dark:text-primary-200 font-bold">
+            ✨ まだ希望レーンが設定されていません（現在はすべて「おまかせ(ALL)」）。まずは「🎯 レーンのこと」から設定してみてください。
+          </div>
         )}
+
+        {/* 今のあなたの設定（要約文） */}
+        <div className="rounded-2xl border border-border bg-surface-subtle/80 px-4 py-3 space-y-1">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-[11px] font-black text-foreground-subtle uppercase tracking-wider">
+              📋 今のあなたの設定
+            </span>
+            <span
+              className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                hasUnsavedChanges
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40"
+                  : "bg-success-500/15 text-success-700 dark:text-success-300 border-success-500/30"
+              }`}
+            >
+              {hasUnsavedChanges ? "未保存の変更あり（最下部の保存ボタンで反映）" : "保存済み"}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm font-black text-foreground leading-relaxed">
+            第1希望: {roleLabel(primaryRole)} ／ 第2希望: {roleLabel(secondaryRole)} ／ NG:{" "}
+            {ngRoles.length > 0 ? ngRoles.map(roleLabel).join("・") : "なし"} ／ レーンの強さ: {weightLabel} ／{" "}
+            {higherLabel} ／ {tierLabel}
+          </p>
+          <p className="text-[11px] text-muted-strong">
+            💡 「🎯 レーンのこと」「⚔️ 格上との関わり方」および下の IGN は、最下部の<strong>「設定を保存する」ボタン</strong>で保存されます（プレイスタイル・外観テーマのみタップで即時反映）。
+          </p>
+        </div>
       </div>
 
-      {/* ⚙️ あとで変えるもの（詳細設定：初期状態・閉 / SPEC 12） */}
-      <div className="pt-4 border-t border-border dark:border-border space-y-4">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced((v) => !v)}
-          className="w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-surface-subtle hover:bg-surface-hover border border-border transition cursor-pointer text-left"
-        >
-          <div className="flex items-center gap-2.5">
-            <SlidersHorizontal className="w-4 h-4 text-primary-600 shrink-0" />
-            <div>
-              <div className="text-xs font-black text-foreground">
-                詳細設定（カスタム参加の希望・プレイスタイル・外観）
+      {/* ═══════════════════════════════════════════════════════════════
+          カード1: 🎯 レーンのこと
+         ═══════════════════════════════════════════════════════════════ */}
+      <section className="rounded-3xl border border-border bg-background/70 dark:bg-surface/60 p-4 sm:p-6 space-y-5 shadow-xs">
+        <div className="space-y-1 border-b border-border/70 pb-3">
+          <h3 className="text-base sm:text-lg font-black text-foreground flex items-center gap-2">
+            <span>🎯 レーンのこと</span>
+          </h3>
+          <p className="text-xs text-muted-strong">
+            どのレーンで遊びたいか・避けたいかの設定です。チーム分けバランサーで優先的に割り振られます。
+          </p>
+        </div>
+
+        {/* 軸で選ぶUI: 縦軸=レーン / 横軸=希望の強さ */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="text-xs font-black text-foreground-subtle">
+              希望レーン表（縦：レーン ／ 横：希望）
+            </div>
+            <div className="text-[11px] text-muted-strong font-bold">
+              第1・第2希望は各1つ／NGは最大2つ（別レーンを選ぶと前のレーンは「どちらでも」に戻ります）
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {/* PC向け列ヘッダー */}
+            <div className="hidden sm:grid sm:grid-cols-12 gap-2 px-3 text-[11px] font-black text-muted-strong">
+              <div className="col-span-4">レーン</div>
+              <div className="col-span-2 text-center">⭐ 第1希望</div>
+              <div className="col-span-2 text-center">🥈 第2希望</div>
+              <div className="col-span-2 text-center">➖ どちらでも</div>
+              <div className="col-span-2 text-center">🚫 NG</div>
+            </div>
+
+            {ROLES.filter((r) => r.id !== "ALL").map((r) => {
+              const Icon = r.icon;
+              const choice = getLaneChoice(r.id);
+              const buttons: { key: LaneChoice; label: string; activeCls: string }[] = [
+                {
+                  key: "PRIMARY",
+                  label: "第1希望",
+                  activeCls: "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm",
+                },
+                {
+                  key: "SECONDARY",
+                  label: "第2希望",
+                  activeCls: "bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-200 font-black shadow-sm",
+                },
+                {
+                  key: "ANY",
+                  label: "どちらでも",
+                  activeCls: "bg-surface-subtle text-foreground border-border-strong font-black",
+                },
+                {
+                  key: "NG",
+                  label: "NG",
+                  activeCls: "bg-danger-500 text-white border-danger-edge-strong font-black shadow-sm",
+                },
+              ];
+
+              return (
+                <div
+                  key={`lane-row-${r.id}`}
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center rounded-2xl border border-border bg-surface p-2.5 sm:px-3 sm:py-2"
+                >
+                  <div className="sm:col-span-4 flex items-center justify-between sm:justify-start gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`p-1.5 rounded-xl border ${r.color}`}>
+                        <Icon className="w-4 h-4" />
+                      </span>
+                      <span className="text-xs sm:text-sm font-black text-foreground">{r.name}</span>
+                    </div>
+                    <span className="sm:hidden text-[10px] font-black px-2 py-0.5 rounded-full bg-surface-subtle border border-border text-foreground-subtle">
+                      選択中:{" "}
+                      {choice === "PRIMARY"
+                        ? "第1希望"
+                        : choice === "SECONDARY"
+                        ? "第2希望"
+                        : choice === "NG"
+                        ? "NG"
+                        : "どちらでも"}
+                    </span>
+                  </div>
+
+                  <div className="sm:col-span-8 grid grid-cols-4 gap-1.5">
+                    {buttons.map((b) => {
+                      const isSelected = choice === b.key;
+                      return (
+                        <button
+                          key={`${r.id}-${b.key}`}
+                          type="button"
+                          onClick={() => setLaneChoice(r.id, b.key)}
+                          aria-pressed={isSelected}
+                          className={`min-h-[40px] px-1.5 py-1.5 rounded-xl border text-[11px] sm:text-xs transition cursor-pointer flex items-center justify-center gap-1 ${
+                            isSelected
+                              ? b.activeCls
+                              : "bg-background/60 border-border text-muted hover:bg-surface-hover font-bold"
+                          }`}
+                        >
+                          {isSelected && <span aria-hidden="true">✓</span>}
+                          <span>{b.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* おまかせ(ALL) の切り替え行 */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center rounded-2xl border border-dashed border-border bg-surface-subtle/50 p-2.5 sm:px-3 sm:py-2">
+              <div className="sm:col-span-4 flex items-center gap-2">
+                <span className="p-1.5 rounded-xl border text-muted border-stone-500/40 bg-stone-500/10">
+                  <Shuffle className="w-4 h-4" />
+                </span>
+                <div>
+                  <span className="text-xs font-black text-foreground block">おまかせ(ALL)</span>
+                  <span className="text-[10px] text-muted-strong">空いているレーンどこでもOK</span>
+                </div>
               </div>
-              <div className="text-[10px] text-muted-strong">
-                希望レーンの強さ・対面保護・上の帯への繰り上げ・プレイスタイル・テーマを変更できます
+              <div className="sm:col-span-8 grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPrimaryRole("ALL")}
+                  aria-pressed={primaryRole === "ALL"}
+                  className={`min-h-[40px] px-2 py-1.5 rounded-xl border text-[11px] sm:text-xs transition cursor-pointer ${
+                    primaryRole === "ALL"
+                      ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm"
+                      : "bg-surface border-border text-muted hover:bg-surface-hover font-bold"
+                  }`}
+                >
+                  {primaryRole === "ALL" ? "✓ 第1希望をおまかせ中" : "第1希望をおまかせにする"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSecondaryRole("ALL")}
+                  aria-pressed={secondaryRole === "ALL"}
+                  className={`min-h-[40px] px-2 py-1.5 rounded-xl border text-[11px] sm:text-xs transition cursor-pointer ${
+                    secondaryRole === "ALL"
+                      ? "bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-200 font-black shadow-sm"
+                      : "bg-surface border-border text-muted hover:bg-surface-hover font-bold"
+                  }`}
+                >
+                  {secondaryRole === "ALL" ? "✓ 第2希望をおまかせ中" : "第2希望をおまかせにする"}
+                </button>
               </div>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 shrink-0">
-            {showAdvanced ? (
-              <>
-                閉じる <ChevronUp className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                開く <ChevronDown className="w-4 h-4" />
-              </>
-            )}
-          </span>
-        </button>
 
-        {showAdvanced && (
-          <div className="space-y-6 pt-2">
-            {/* ⚙️ カスタム参加の希望（混同しやすい2つの「格上」系設定を統合整理） */}
-            <div className="space-y-4 p-4 rounded-2xl bg-black/[0.02] border border-border/80">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
-                    ⚙️ カスタム参加の希望
-                  </h4>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface border border-border text-muted-strong">
-                    現在の帯:{" "}
-                    {getPlayerTierBand(player?.mmr) === "UPPER"
-                      ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
-                      : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
-                  </span>
-                </div>
-                <p className="text-[10px] text-muted-strong leading-relaxed">
-                  ※ 定期カスタムは実力差を抑えるため Portal MMR {TIER_BAND_THRESHOLD} を境に2つの帯で編成します。上位帯の方は通常上位帯へ配属され、下の帯にいる方が「繰り上げ設定」の対象になります。
-                </p>
-              </div>
+          <p className="text-[11px] text-muted-strong leading-relaxed">
+            💡 例：第1希望を「ジャングル」、NGを「サポート」にすると、JGが優先され、SUPには原則割り当てられません（NGは2つ選んだ状態で3つ目を押すと古い方が自動で外れます）。
+          </p>
+        </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-black text-foreground-subtle">
-                  🎚️ 希望レーンの強さ
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {[
-                    { v: 1, title: "絶対このレーン", desc: "希望レーン以外はできるだけ避けたい" },
-                    { v: 2, title: "できれば", desc: "なるべく希望レーン（標準）" },
-                    { v: 3, title: "どこでもOK", desc: "チームのためならどこでも入ります" },
-                  ].map((o) => (
-                    <button
-                      key={`w-${o.v}`}
-                      type="button"
-                      onClick={() => setWeight(o.v)}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                        weight === o.v
-                          ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
-                          : "bg-surface border-border text-muted hover:bg-background font-bold"
-                      }`}
-                    >
-                      <div className="text-sm">{o.title}</div>
-                      <div className={`text-[10px] mt-0.5 leading-snug ${weight === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-border/60">
-                <label className="block text-xs font-black text-foreground-subtle">
-                  🛡️ 同じ試合での対面保護（チーム分け時の対面格差）
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { v: false, title: "🛡️ 格上との対面を避ける", desc: "同じ試合の中で、MMRが大きく上の人とはなるべく別レーンにします" },
-                    { v: true, title: "⚔️ 格上対面もOK", desc: "同じ試合の中で、実力が上の人と対面になっても構いません" },
-                  ].map((o) => (
-                    <button
-                      key={`ah-${String(o.v)}`}
-                      type="button"
-                      onClick={() => setAllowHigher(o.v)}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                        allowHigher === o.v
-                          ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
-                          : "bg-surface border-border text-muted hover:bg-background font-bold"
-                      }`}
-                    >
-                      <div className="text-sm">{o.title}</div>
-                      <div className={`text-[10px] mt-0.5 leading-snug ${allowHigher === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-border/60">
-                <label className="block text-xs font-black text-foreground-subtle">
-                  🏟️ 上の実力帯への繰り上げ参加（ロビーの帯分け）
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {(
-                    [
-                      {
-                        v: "mix_ok",
-                        title: "🌟 混ざってもいい",
-                        desc: "上の帯と混ざる試合や、繰り上げに積極的に参加します",
-                      },
-                      {
-                        v: "fill_only",
-                        title: "🤝 人足りなければOK",
-                        desc: "上の帯が10人未満で不足した時だけ、繰り上げ参加します（既定）",
-                      },
-                      {
-                        v: "never",
-                        title: "🔒 自分の帯のみ",
-                        desc: "自分の実力帯の試合にのみ参加し、上の帯へは繰り上がりません",
-                      },
-                    ] as const
-                  ).map((o) => (
-              <button
-                key={`tp-${o.v}`}
-                type="button"
-                onClick={() => setTierPromotionPref(o.v)}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                  tierPromotionPref === o.v
-                    ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
-                    : "bg-surface border-border text-muted hover:bg-background font-bold"
-                }`}
-              >
-                <div className="text-sm">{o.title}</div>
-                <div
-                  className={`text-[10px] mt-0.5 leading-snug ${
-                    tierPromotionPref === o.v ? "text-stone-900" : "text-muted-strong"
+        {/* 希望レーンの強さ（ボタン形式） */}
+        <div className="space-y-2 pt-3 border-t border-border/70">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <label className="block text-xs font-black text-foreground-subtle">
+              🎚️ 希望レーンの強さ
+            </label>
+            <span className="text-[11px] text-muted-strong font-bold">
+              例：「絶対このレーン」にすると他メンバーと被っても希望レーンを優先します
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { v: 1, title: "絶対このレーン", desc: "希望レーン以外はできるだけ避けたい" },
+              { v: 2, title: "できれば", desc: "なるべく希望レーン（標準）" },
+              { v: 3, title: "どこでもOK", desc: "チームのためならどこでも入ります" },
+            ].map((o) => {
+              const isSelected = weight === o.v;
+              return (
+                <button
+                  key={`w-${o.v}`}
+                  type="button"
+                  onClick={() => setWeight(o.v)}
+                  aria-pressed={isSelected}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm"
+                      : "bg-surface border-border text-muted hover:bg-background font-bold"
                   }`}
                 >
-                  {o.desc}
-                </div>
-              </button>
-            ))}
+                  <div className="flex items-center justify-between gap-1 text-sm">
+                    <span>{o.title}</span>
+                    {isSelected && <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-black/15">選択中</span>}
+                  </div>
+                  <div className={`text-[10px] mt-0.5 leading-snug ${isSelected ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 🎯 プレイスタイル設定 */}
-      <div className="space-y-3 pt-4 border-t border-border dark:border-border">
-        <label className="block text-xs font-black text-secondary-700 dark:text-secondary-400 uppercase tracking-wider flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-secondary-500" />
-            <span>🎯 プレイスタイル ＆ 志向性ロール設定（複数選択OK）</span>
-          </span>
-          <span className="text-[11px] text-muted-strong normal-case font-bold">
-            タップで即時反映・Discordロールが自動で切り替わります
-          </span>
-        </label>
-        <p className="text-[11px] text-muted-strong">
-          今の気分や参加スタイルに合わせて自由にON/OFFできます。Discordサーバー内の募集や交流でアイコンが表示されます。
-        </p>
-        {notInServer && (
-          <p className="text-[11px] font-bold rounded-lg border px-3 py-2 bg-danger-100 text-danger-700 border-danger-edge-soft">
-            KTM の Discord サーバーに参加していないため、プレイスタイルは設定できません（サーバーに参加すると使えます）
+      {/* ═══════════════════════════════════════════════════════════════
+          カード2: ⚔️ 格上との関わり方（2軸グリッド）
+         ═══════════════════════════════════════════════════════════════ */}
+      <section className="rounded-3xl border border-border bg-background/70 dark:bg-surface/60 p-4 sm:p-6 space-y-4 shadow-xs">
+        <div className="space-y-1 border-b border-border/70 pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-base sm:text-lg font-black text-foreground flex items-center gap-2">
+              <span>⚔️ 格上との関わり方</span>
+            </h3>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-surface border border-border text-muted-strong">
+              現在の帯:{" "}
+              {getPlayerTierBand(player?.mmr) === "UPPER"
+                ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
+                : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
+            </span>
+          </div>
+          <p className="text-xs text-muted-strong">
+            同じ試合で実力が上の人と対面するか（縦軸）と、上の帯の部屋に繰り上がるか（横軸）をマス目で同時に選べます。
           </p>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-          {PLAYSTYLE_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = !!playstyles[item.key];
-            const isToggling = togglingPlaystyle === item.key;
-            return (
-              <button
-                key={`ps-${item.key}`}
-                type="button"
-                onClick={() => togglePlaystyle(item.key)}
-                disabled={isToggling || notInServer}
-                className={`flex items-start gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                  isActive
-                    ? `${item.activeColor} border font-black shadow-md scale-[1.01]`
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold opacity-75 hover:opacity-100"
-                }`}
-              >
-                <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${isActive ? "bg-black/10 dark:bg-white/10" : "bg-black/5 dark:bg-white/5 text-faint"}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-black tracking-tight">{item.label}</span>
-                    {isActive ? (
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 text-foreground dark:text-white">ON</span>
-                    ) : (
-                      <span className="text-[10px] text-faint font-bold">OFF</span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-muted-strong mt-0.5 leading-snug line-clamp-2">
-                    {item.desc}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
         </div>
-      </div>
 
-      {/* 🌙 外観・ダークモード設定 */}
-      <div className="bg-background/80 dark:bg-surface/80 border border-border/80 dark:border-border rounded-3xl p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="text-[11px] text-muted-strong leading-relaxed bg-surface-subtle/70 rounded-xl px-3 py-2 border border-border/60">
+          💡 定期カスタムは Portal MMR {TIER_BAND_THRESHOLD} を境に「上位帯」と「中初級帯」に分かれます。
+          <strong> 縦軸（対面保護）</strong>は同じ試合の中で誰と対面になるか、<strong>横軸（帯の繰り上げ）</strong>は中初級帯の人が上の帯の試合に入るかどうかを決めます。
+        </div>
+
+        {/* 2軸グリッド（PC: 2行×3列マトリクス / 狭幅375px: 縦軸ごとに3択ボタン） */}
+        <div className="space-y-3">
+          {/* PC向け横軸ヘッダー */}
+          <div className="hidden md:grid md:grid-cols-12 gap-2 px-1 text-[11px] font-black text-foreground-subtle">
+            <div className="col-span-3 flex items-end pb-1">縦：対面 ＼ 横：上の帯</div>
+            <div className="col-span-3 text-center bg-surface-subtle rounded-xl py-1.5 px-2 border border-border/60">
+              🌟 混ざってもいい
+              <span className="block text-[10px] font-normal text-muted-strong">上の帯へ積極的に繰り上げ</span>
+            </div>
+            <div className="col-span-3 text-center bg-surface-subtle rounded-xl py-1.5 px-2 border border-border/60">
+              🤝 人不足ならOK
+              <span className="block text-[10px] font-normal text-muted-strong">上の帯が10人未満の時だけ（既定）</span>
+            </div>
+            <div className="col-span-3 text-center bg-surface-subtle rounded-xl py-1.5 px-2 border border-border/60">
+              🔒 自分の帯のみ
+              <span className="block text-[10px] font-normal text-muted-strong">上の帯には繰り上がらない</span>
+            </div>
+          </div>
+
+          {(
+            [
+              {
+                allow: false,
+                rowTitle: "🛡️ 格上対面を避ける",
+                rowDesc: "同じ試合でMMRが大きく上の人とは別レーンにします",
+              },
+              {
+                allow: true,
+                rowTitle: "⚔️ 格上対面もOK",
+                rowDesc: "同じ試合で実力が上の人と対面になっても構いません",
+              },
+            ] as const
+          ).map((row) => (
+            <div
+              key={`ah-row-${String(row.allow)}`}
+              className="grid grid-cols-1 md:grid-cols-12 gap-2 items-stretch rounded-2xl border border-border bg-surface p-3"
+            >
+              <div className="md:col-span-3 flex flex-col justify-center pr-1">
+                <div className="text-xs sm:text-sm font-black text-foreground">{row.rowTitle}</div>
+                <div className="text-[10px] text-muted-strong leading-snug mt-0.5">{row.rowDesc}</div>
+              </div>
+
+              <div className="md:col-span-9 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {(
+                  [
+                    { v: "mix_ok", title: "🌟 混ざってもいい", desc: "上の帯へ積極的に参加" },
+                    { v: "fill_only", title: "🤝 人不足ならOK", desc: "10人未満の時だけ参加（既定）" },
+                    { v: "never", title: "🔒 自分の帯のみ", desc: "自分の帯にのみ参加" },
+                  ] as const
+                ).map((col) => {
+                  const isSelected = allowHigher === row.allow && tierPromotionPref === col.v;
+                  return (
+                    <button
+                      key={`cell-${String(row.allow)}-${col.v}`}
+                      type="button"
+                      onClick={() => {
+                        setAllowHigher(row.allow);
+                        setTierPromotionPref(col.v);
+                      }}
+                      aria-pressed={isSelected}
+                      className={`min-h-[56px] p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-sm"
+                          : "bg-background/70 border-border text-muted hover:bg-surface-hover font-bold"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 text-xs">
+                        <span>{col.title}</span>
+                        {isSelected && (
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-black/15 shrink-0">
+                            ✓ 選択中
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-[10px] mt-1 leading-snug ${isSelected ? "text-stone-900" : "text-muted-strong"}`}>
+                        {col.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          カード3: 🎨 その他の設定（カスタムのチーム分け以外）
+         ═══════════════════════════════════════════════════════════════ */}
+      <section className="rounded-3xl border border-border bg-background/70 dark:bg-surface/60 p-4 sm:p-6 space-y-6 shadow-xs">
+        <div className="space-y-1 border-b border-border/70 pb-3">
+          <h3 className="text-base sm:text-lg font-black text-foreground flex items-center gap-2">
+            <span>🎨 その他の設定</span>
+          </h3>
+          <p className="text-xs text-muted-strong">
+            アカウント名（Riot ID）やDiscordのプレイスタイル、画面の明るさなど、チーム分け以外の設定です。
+          </p>
+        </div>
+
+        {/* サモナーネーム（IGN）入力 */}
+        <div className="bg-surface border border-border rounded-2xl p-4 space-y-2">
+          <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
+            ゲーム内サモナーネーム (IGN#TAG)
+          </label>
+          <input
+            type="text"
+            value={ign}
+            onChange={(e) => setIgn(e.target.value)}
+            placeholder="例: Hide on bush#KR1"
+            className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-xs"
+          />
+          <p className="text-[11px] text-faint font-medium">
+            ※ Riot ID とタグライン（#JP1など）を入力すると戦績連携が有効になります（変更後は最下部の「設定を保存する」で保存）。
+            {player?.discord_id && (
+              <span className="block mt-0.5 text-muted-strong">
+                連携中 Discord ID: <code className="font-mono">{player.discord_id}</code>
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* プレイスタイルロール設定（タップで即時反映） */}
+        <div className="space-y-3 pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="flex items-center gap-1.5 text-xs font-black text-secondary-700 dark:text-secondary-400">
+              <Sparkles className="w-4 h-4 text-secondary-500" />
+              <span>プレイスタイル ＆ 志向性ロール（複数選択OK）</span>
+            </span>
+            <span className="text-[11px] text-muted-strong font-bold">
+              {loadingPlaystyle ? "読み込み中..." : "タップで即時反映・Discordロールと連動"}
+            </span>
+          </div>
+          {notInServer && (
+            <p className="text-[11px] font-bold rounded-lg border px-3 py-2 bg-danger-100 text-danger-700 border-danger-edge-soft">
+              KTM の Discord サーバーに参加していないため、プレイスタイルは設定できません（サーバーに参加すると使えます）
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+            {PLAYSTYLE_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = !!playstyles[item.key];
+              const isToggling = togglingPlaystyle === item.key;
+              return (
+                <button
+                  key={`ps-${item.key}`}
+                  type="button"
+                  onClick={() => togglePlaystyle(item.key)}
+                  disabled={isToggling || notInServer}
+                  className={`flex items-start gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                    isActive
+                      ? `${item.activeColor} border font-black shadow-sm`
+                      : "bg-surface border-border text-muted hover:bg-background font-bold opacity-85 hover:opacity-100"
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${isActive ? "bg-black/10 dark:bg-white/10" : "bg-black/5 dark:bg-white/5 text-faint"}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-black tracking-tight">{item.label}</span>
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10">
+                        {isActive ? "ON" : "OFF"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-strong mt-0.5 leading-snug line-clamp-2">
+                      {item.desc}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 外観・テーマ設定 */}
+        <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center font-black">
+            <div className="w-9 h-9 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center font-black shrink-0">
               <Moon size={18} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-foreground dark:text-white">外観・テーマ設定</h3>
-              <p className="text-[11px] text-muted-strong">ライトモード・スレート調ダークモード・OS自動連動を切り替えられます</p>
+              <h4 className="text-sm font-black text-foreground dark:text-white">外観・テーマ設定</h4>
+              <p className="text-[11px] text-muted-strong">ライトモード・ダークモード・OS自動連動を即時切り替えできます</p>
             </div>
           </div>
           <ThemeToggle variant="full" />
         </div>
-      </div>
-          </div>
-        )}
-      </div>
+      </section>
 
-      {/* 保存ボタン & 通知 */}
-      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border dark:border-border">
-        <div>
+      {/* 保存ボタン & 通知（エラー時は選択を保持して再試行可能） */}
+      <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border">
+        <div className="w-full sm:w-auto">
           {saveSuccess && (
-            <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black animate-fade-in">
-              <CheckCircle2 className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black transition-opacity">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>設定を保存しました！次回のカスタム編成から反映されます。</span>
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2 text-danger-700 dark:text-danger-400 text-xs font-black animate-fade-in">
-              <AlertTriangle className="w-4 h-4" />
-              <span>{error}</span>
+            <div className="flex flex-wrap items-center gap-2 text-danger-700 dark:text-danger-400 text-xs font-black">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{error}（入力中の選択はそのまま残っています）</span>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="px-2.5 py-1 rounded-lg bg-danger-600 hover:bg-danger-700 text-white text-[11px] font-black cursor-pointer"
+              >
+                再試行する
+              </button>
             </div>
           )}
         </div>
@@ -707,7 +877,6 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           )}
         </button>
       </div>
-
     </div>
   );
 }
