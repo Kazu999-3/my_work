@@ -84,10 +84,16 @@ export default function OverlayPage() {
           if (mounted) {
             setData(json);
             setLastUpdated(Date.now());
+            setConnError(json?.error || null);
           }
+        } else if (mounted) {
+          setConnError(`サーバー応答エラー (HTTP ${res.status})`);
         }
       } catch (err) {
-        if (mounted) setData({ inGame: false });
+        if (mounted) {
+          setData({ inGame: false });
+          setConnError('HUDサーバーに接続できません');
+        }
       }
     };
 
@@ -129,6 +135,7 @@ export default function OverlayPage() {
   // 対面が決まったら、その人の直近試合の実測（初手ワード・1stリコール）を1回だけ取得する
   const enemyRiotId = data.inGame ? data.enemyPlayer?.riotId || null : null;
   const [habit, setHabit] = useState<HabitState>({ status: 'idle' });
+  const [connError, setConnError] = useState<string | null>(null);
   useEffect(() => {
     if (!enemyRiotId) {
       setHabit({ status: 'idle' });
@@ -161,13 +168,28 @@ export default function OverlayPage() {
   // ゲーム未起動時の待機画面
   if (!data.inGame) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-transparent select-none">
-        <div className="flex items-center gap-2.5 rounded-full border border-cyan-500/30 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-cyan-200 shadow-[0_4px_24px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20 backdrop-blur-md">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-          </span>
-          <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">KTM HUD: 試合待機中 (127.0.0.1:2999)</span>
+      <div className="flex h-screen w-screen items-center justify-center bg-transparent select-none p-4">
+        <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-cyan-500/30 bg-slate-950/90 px-5 py-4 text-xs text-cyan-200 shadow-[0_4px_24px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20 backdrop-blur-md max-w-sm text-center">
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="relative flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${connError ? 'bg-rose-400' : 'bg-cyan-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${connError ? 'bg-rose-500' : 'bg-cyan-500'}`}></span>
+            </span>
+            <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {connError ? `KTM HUD: 接続エラー (${connError})` : 'KTM HUD: 試合待機中 (127.0.0.1:2999)'}
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400">
+            {connError
+              ? 'ローカルサーバーとの通信を確認してください。再接続を自動試行しています。'
+              : 'LoLを起動して試合（またはプラクティス）に入ると自動でHUDへ切り替わります。'}
+          </p>
+          <a
+            href="/"
+            className="mt-1 px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] font-bold border border-zinc-700 transition"
+          >
+            ← 辞典トップへ戻る
+          </a>
         </div>
       </div>
     );

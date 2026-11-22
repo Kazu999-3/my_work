@@ -68,6 +68,9 @@ function LoginForm() {
         {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
         ログイン
       </button>
+      <p className="text-[11px] text-zinc-400 text-center leading-relaxed pt-1">
+        ※ 合言葉はコミュニティ内の案内（Discord等）で共有されています。分からない場合は運営メンバーまでお問い合わせください。
+      </p>
     </form>
   );
 }

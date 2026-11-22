@@ -262,10 +262,10 @@ export default function OpsDashboardPage() {
                     href="/admin/review"
                     className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
                   >
-                    <span>📝 記事承認</span>
+                    <span>📝 記事承認（全未承認）</span>
                     {typeof stats.pendingReviews === 'number' && stats.pendingReviews > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-zinc-950 font-mono text-[10px] font-black">
-                        {stats.pendingReviews}
+                        {stats.pendingReviews}件
                       </span>
                     )}
                   </Link>

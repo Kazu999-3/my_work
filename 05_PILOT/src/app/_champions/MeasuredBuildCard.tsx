@@ -45,7 +45,7 @@ export default function MeasuredBuildCard({ build }: { build: MeasuredBuild }) {
         </div>
       </div>
       <p className="text-[10px] text-zinc-500 leading-relaxed">
-        実測: 直近30日のランク戦 {build.samples}試合（{build.tiers.join("・")} 前後、パッチ {build.patches.join("・")}）／ この構成での勝率 {build.winRate}%
+        実測: 直近30日のランク戦 {build.samples}試合（{build.tiers.join("・")} 前後、パッチ {build.patches.map((p) => String(p).replace(/^1(\d)\./, "2$1.")).join("・")}）／ この構成での勝率 {build.winRate}%
       </p>
     </div>
   );

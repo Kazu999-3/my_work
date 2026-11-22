@@ -29,6 +29,14 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
 }) {
   return (
           <div className="space-y-3">
+            {/* 一覧の目的ヘッダー */}
+            <div className="px-1">
+              <h1 className="text-lg sm:text-xl font-black text-white">👑 チャンピオン辞典</h1>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                全チャンピオンの最新ビルド・有利不利・立ち回りバイブルを一覧から検索して確認できます。
+              </p>
+            </div>
+
             {/* 検索 ＆ フィルターバー */}
             <div className="flex flex-col xl:flex-row items-center justify-between gap-2.5 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm relative">
               <div className="flex items-center gap-2 w-full xl:w-auto flex-1">
@@ -126,7 +134,28 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
               <span>通称エイリアス・お気に入り・レーン所属カスタム対応</span>
             </div>
 
-            {/* コンパクトなチャンピオンカードグリッド */}
+            {/* コンパクトなチャンピオンカードグリッド / 0件時 */}
+            {filteredChampions.length === 0 ? (
+              <div className="py-14 px-4 text-center bg-zinc-900 rounded-2xl border border-zinc-800 space-y-3">
+                <p className="text-sm font-black text-zinc-200">
+                  条件に一致するチャンピオンが見つかりませんでした（0件）
+                </p>
+                <p className="text-xs text-zinc-400">
+                  検索ワードやロール・お気に入り絞り込みを解除すると全チャンピオンを表示できます。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setRoleFilter("ALL");
+                    setShowFavoritesOnly(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-black cursor-pointer transition"
+                >
+                  絞り込み条件をリセット
+                </button>
+              </div>
+            ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredChampions.map((c) => {
                 const isFav = favorites.includes(c.id);
@@ -245,6 +274,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
                 );
               })}
             </div>
+            )}
           </div>
   );
 }

@@ -22,6 +22,22 @@ const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?
   { key: 'analyzer', label: '📊 スタッツ分析', Icon: BarChart3 },
 ];
 
+const normalizeCoachLane = (raw?: string | null): string => {
+  const up = (raw || '').toUpperCase();
+  if (up === 'JG') return 'JUNGLE';
+  if (up === 'BOT') return 'ADC';
+  if (['TOP', 'JUNGLE', 'MID', 'ADC', 'SUP'].includes(up)) return up;
+  return 'TOP';
+};
+
+const DEFAULT_MATCHUP_BY_LANE: Record<string, { my: string; enemy: string }> = {
+  TOP: { my: 'Darius', enemy: 'Aatrox' },
+  JUNGLE: { my: 'JarvanIV', enemy: 'LeeSin' },
+  MID: { my: 'Zed', enemy: 'Ahri' },
+  ADC: { my: 'Jinx', enemy: 'Lucian' },
+  SUP: { my: 'Thresh', enemy: 'Nautilus' },
+};
+
 function CoachPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -46,22 +62,51 @@ function CoachPageContent() {
   const qMy = searchParams.get('my') || searchParams.get('champion');
   const qEnemy = searchParams.get('enemy');
   const qLane = searchParams.get('lane');
+  const initialLane = normalizeCoachLane(qLane);
+  const initialPair = DEFAULT_MATCHUP_BY_LANE[initialLane] || DEFAULT_MATCHUP_BY_LANE.TOP;
 
-  // 対面設計図用ステート（URLパラメータを最優先で初期値に採用し、初期描画時のチラつき・余計なフェッチを完全防止）
-  const [myChamp, setMyChamp] = useState(() => qMy || 'Darius');
-  const [enemyChamp, setEnemyChamp] = useState(() => qEnemy || 'Aatrox');
-  const [lane, setLane] = useState(() => (qLane ? qLane.toUpperCase() : 'TOP'));
+  // 対面設計図用ステート（URLパラメータを最優先で初期値に採用し、レーン指定時はそのレーンの代表対面と連動）
+  const [myChamp, setMyChamp] = useState(() => qMy || initialPair.my);
+  const [enemyChamp, setEnemyChamp] = useState(() => qEnemy || initialPair.enemy);
+  const [lane, setLane] = useState(() => initialLane);
+  const [isSampleView, setIsSampleView] = useState(() => !qMy && !qEnemy);
 
-  // URLのチャンピオン指定が後から変わった時だけ反映
+  // URLのチャンピオン指定・レーン指定が後から変わった時に反映
   useEffect(() => {
-    if (qMy && qMy !== myChamp) setMyChamp(qMy);
+    if (qMy && qMy !== myChamp) {
+      setMyChamp(qMy);
+      setIsSampleView(false);
+    }
   }, [qMy]);
   useEffect(() => {
-    if (qEnemy && qEnemy !== enemyChamp) setEnemyChamp(qEnemy);
+    if (qEnemy && qEnemy !== enemyChamp) {
+      setEnemyChamp(qEnemy);
+      setIsSampleView(false);
+    }
   }, [qEnemy]);
   useEffect(() => {
-    if (qLane && qLane.toUpperCase() !== lane) setLane(qLane.toUpperCase());
+    if (qLane) {
+      const normalized = normalizeCoachLane(qLane);
+      if (normalized !== lane) {
+        setLane(normalized);
+        if (!qMy && !qEnemy) {
+          const pair = DEFAULT_MATCHUP_BY_LANE[normalized] || DEFAULT_MATCHUP_BY_LANE.TOP;
+          setMyChamp(pair.my);
+          setEnemyChamp(pair.enemy);
+        }
+      }
+    }
   }, [qLane]);
+
+  const handleLaneChange = (nextLane: string) => {
+    const normalized = normalizeCoachLane(nextLane);
+    setLane(normalized);
+    if (isSampleView) {
+      const pair = DEFAULT_MATCHUP_BY_LANE[normalized] || DEFAULT_MATCHUP_BY_LANE.TOP;
+      setMyChamp(pair.my);
+      setEnemyChamp(pair.enemy);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
@@ -163,14 +208,22 @@ function CoachPageContent() {
               </button>
             </div>
 
+            {isSampleView && (
+              <div className="px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 flex items-center justify-between gap-2 flex-wrap">
+                <span>
+                  👀 <strong>サンプル表示中:</strong> 初期例（{myChamp} vs {enemyChamp} / {lane === 'JUNGLE' ? 'JG' : lane}）を表示しています。自分のチャンピオンを選ぶと実戦向けに切り替わります。
+                </span>
+              </div>
+            )}
+
             {/* 対面設計図カード */}
             <MatchupBlueprintCard
               myChampion={myChamp}
               enemyChampion={enemyChamp}
               lane={lane}
-              onMyChampionChange={setMyChamp}
-              onEnemyChampionChange={setEnemyChamp}
-              onLaneChange={setLane}
+              onMyChampionChange={(v) => { setMyChamp(v); setIsSampleView(false); }}
+              onEnemyChampionChange={(v) => { setEnemyChamp(v); setIsSampleView(false); }}
+              onLaneChange={handleLaneChange}
             />
 
             <PreGameBottom />

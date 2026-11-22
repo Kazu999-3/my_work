@@ -75,15 +75,15 @@ export default function NoteDraftsPage() {
       const saved = localStorage.getItem('sovereign_note_publish_status');
       let parsed: Record<string, NotePublishRecord> = saved ? JSON.parse(saved) : {};
       
-      // ドラフトのフロントマターから published 情報を取り込み
+      // ドラフトのフロントマターから published 情報を取り込み（未実測の固定ダミー値は出さない）
       drafts.forEach((d) => {
         if (d.meta?.status === 'published' && !parsed[d.id]?.isPublished) {
           parsed[d.id] = {
             isPublished: true,
-            publishedAt: d.meta.published_at || '2026-10-28',
-            views: d.meta.page_views || '25',
-            likes: d.meta.likes || '13',
-            notes: `インプレッション: ${d.meta.impressions || '480'}回 / スキ率: 52% (25PV中13スキ)`
+            publishedAt: d.meta.published_at || '',
+            views: d.meta.page_views || '',
+            likes: d.meta.likes || '',
+            notes: d.meta.impressions ? `インプレッション: ${d.meta.impressions}回` : '',
           };
         }
       });
@@ -452,6 +452,16 @@ export default function NoteDraftsPage() {
         </div>
       </div>
 
+      {/* ページ見出し・目的説明 */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-4 pb-1">
+        <div className="border-b border-zinc-800 pb-3">
+          <h1 className="text-lg sm:text-xl font-black text-white">📝 note下書きファクトリー</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            実戦データや解析知見をもとに作成したnote記事・Xスレッドの下書きを確認・コピーし、公開状況を管理できます。
+          </p>
+        </div>
+      </div>
+
       {/* 🖥️ 2カラムメインコンテナ (PC: 左に記事一覧 / 右に本文プレビュー) */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex gap-6 items-start">
         {/* 📚 左サイドバー: 記事一覧リスト (PCのみ常時表示) */}
@@ -696,7 +706,7 @@ export default function NoteDraftsPage() {
 
                 {currentDraft.meta?.patch && (
                   <span className="px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-300 border border-purple-800/60 text-[11px] font-bold">
-                    🛡️ パッチ {currentDraft.meta.patch}
+                    🛡️ パッチ {String(currentDraft.meta.patch).replace(/^1(\d)\./, '2$1.')}
                   </span>
                 )}
 

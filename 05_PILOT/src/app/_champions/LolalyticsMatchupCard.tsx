@@ -99,9 +99,14 @@ export default function LolalyticsMatchupCard({
 
         {/* 苦手な対面 TOP 5 */}
         <div className="bg-zinc-950/70 border border-rose-950/60 rounded-xl p-3">
-          <div className="flex items-center gap-1.5 mb-2.5 text-xs font-black text-rose-400">
-            <ShieldAlert size={13} />
-            <span>苦手な対面 TOP 5（カウンター警戒）</span>
+          <div className="flex items-center justify-between gap-1.5 mb-2.5 text-xs font-black text-rose-400 flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <ShieldAlert size={13} />
+              <span>勝率が低い対面 TOP 5（ワースト順）</span>
+            </span>
+            <span className="text-[10px] font-normal text-zinc-400">
+              ※高勝率帯では50%超になる場合があります
+            </span>
           </div>
           <div className="space-y-1.5">
             {difficult.map((opp) => (

@@ -74,7 +74,7 @@ export default function QueueTab() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState('all');
   const [channel, setChannel] = useState('');
   const [sort, setSort] = useState<'date_added' | 'published_at'>('date_added');
   const [searchInput, setSearchInput] = useState('');

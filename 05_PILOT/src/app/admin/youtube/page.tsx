@@ -10,7 +10,6 @@ import WorkerStatusPanel from './WorkerStatusPanel';
 import ChampionScoutPanel from './ChampionScoutPanel';
 import BookmarkletPanel from './BookmarkletPanel';
 import DeepDivePanel from './DeepDivePanel';
-import DictSynthPanel from './DictSynthPanel';
 
 type Tab = 'queue' | 'channel' | 'playlist';
 
@@ -42,8 +41,6 @@ function YoutubeAdminContent() {
         <ChampionScoutPanel />
 
         <DeepDivePanel />
-
-        <DictSynthPanel />
 
         <div className="flex gap-2 overflow-x-auto border-b border-zinc-800 pb-2">
           {TABS.map((t) => (

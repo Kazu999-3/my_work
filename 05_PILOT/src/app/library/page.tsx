@@ -24,6 +24,7 @@ function LibraryApp() {
   const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState(initialQ);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // 🧭 カテゴリ切り替え ('lol' | 'general')
   const [activeCategory, setActiveCategory] = useState<LibraryCategory>('lol');
@@ -63,6 +64,7 @@ function LibraryApp() {
     matchup: boolean = matchupOnly
   ) => {
     if (append) setLoadingMore(true); else setLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch(
         `/api/library?q=${encodeURIComponent(query)}&category=${cat}&channel=${encodeURIComponent(chan)}&sort=${sort}&limit=60&offset=${offset}&lane=${lane}&matchupOnly=${matchup}`
@@ -75,9 +77,12 @@ function LibraryApp() {
         if (data.counts) setCounts(data.counts);
         if (data.channels) setChannels(data.channels);
         if (data.laneCounts) setLaneCounts(data.laneCounts);
+      } else {
+        setFetchError(data?.error || `攻略ライブラリの取得に失敗しました（HTTP ${res.status}）`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("ライブラリ取得エラー:", e);
+      setFetchError(`通信エラーにより攻略ライブラリを取得できませんでした: ${e?.message || ""}`);
     } finally {
       if (append) setLoadingMore(false); else setLoading(false);
     }
@@ -218,6 +223,13 @@ function LibraryApp() {
     <div className="min-h-screen bg-[#101012] text-zinc-100 flex flex-col font-sans">
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-4">
+        <div className="border-b border-zinc-800 pb-3">
+          <h1 className="text-lg sm:text-xl font-black text-white">📚 攻略ライブラリ</h1>
+          <p className="text-xs text-zinc-400 mt-1">
+            YouTube・X・コーチングノートから収集・構造化した戦術知見のアーカイブです。レーンやチャンネル、キーワードで検索して確認できます。
+          </p>
+        </div>
+
         <LibraryControls
           activeCategory={activeCategory}
           counts={counts}
@@ -238,11 +250,45 @@ function LibraryApp() {
           onMatchupToggle={handleMatchupToggle}
         />
 
-        {/* 記事一覧グリッド */}
+        {/* 記事一覧グリッド / エラー・空状態 */}
         {loading ? (
           <div className="py-24 text-center text-amber-400 flex items-center justify-center gap-2">
             <RefreshCw size={20} className="animate-spin" />
             <span className="text-sm font-bold">攻略ライブラリを検索中...</span>
+          </div>
+        ) : fetchError ? (
+          <div className="py-16 px-4 text-center bg-rose-950/20 rounded-2xl border border-rose-800/50 space-y-3">
+            <p className="text-sm font-black text-rose-300">⚠️ 攻略ライブラリの取得に失敗しました</p>
+            <p className="text-xs text-zinc-400">{fetchError}</p>
+            <button
+              type="button"
+              onClick={() => fetchArticles()}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black cursor-pointer transition"
+            >
+              <RefreshCw size={13} />
+              <span>再試行</span>
+            </button>
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="py-16 px-4 text-center bg-zinc-900 rounded-2xl border border-zinc-800 space-y-3">
+            <p className="text-sm font-black text-zinc-200">条件に一致する攻略知見が見つかりませんでした（0件）</p>
+            <p className="text-xs text-zinc-400">
+              検索キーワードやレーン・チャンネルの絞り込みを解除すると全件を表示できます。
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setActiveCategory("lol");
+                setSelectedChannel("");
+                setSelectedLane("ALL");
+                setMatchupOnly(false);
+                fetchArticles("", "lol", "", selectedSort, false, 0, "ALL", false);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-black cursor-pointer transition"
+            >
+              絞り込み条件をリセット
+            </button>
           </div>
         ) : (
           <div className="space-y-4">

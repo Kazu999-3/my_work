@@ -1,5 +1,26 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【Pilot SPEC 20：表示の矛盾・空表示・導線の修正（05_PILOT）】
+
+**概要**:
+`05_PILOT/docs/specs/20-display-consistency-fixes-SPEC.md` に基づき、表示矛盾・空表示・導線・パッチ表記統一（`パッチ 26.x`）を全12項目実施。
+1. **レーンキー統一・コーチ導線・サンプル明示**:
+   - `05_PILOT/src/app/coach/page.tsx` & `MatchupBlueprintCard.tsx`: `JG` ➔ `JUNGLE`、`BOT` ➔ `ADC` 正規化とレーン別代表対面連動を実装し、初期表示時の「👀 サンプル表示中」バナーを追加。
+2. **`/library` 0件問題 ＆ `/admin/youtube` 空問題の原因特定と修正**:
+   - `05_PILOT/src/app/api/library/route.ts`: PostgREST で `.or()` を2回呼び出していた箇所を単一 `.or()` ＋ JS側 `reanalysis_of` フィルタへ修正し、クエリ競合・サイレント失敗を解消。
+   - `05_PILOT/src/app/library/page.tsx`: 取得エラー表示（再試行）と 0件表示（条件リセット）を分離し、見出し・目的説明を追加。
+   - `05_PILOT/src/app/admin/youtube/QueueTab.tsx`: 初期フィルタが `'pending'` 固定（0件時に空表示）だったため `'all'` へ変更。
+3. **数字矛盾4件の解消**:
+   - `dashboard/page.tsx`（`記事承認（全未承認）` 明記）、`dict-health/page.tsx`（`verified` 以外は `前回確認: ...（AI更新後・再確認待ち）` として `0/173` との矛盾解消、日本語名 `jpName` 検索追加、アイコン `alt` による名前二重表示解消）、`LolalyticsMatchupCard.tsx`（`勝率が低い対面 TOP 5（ワースト順）`＋50%超注記）。
+4. **その他（`lane-guides`・`note`・`login`・`overlay`・`admin/youtube`・パッチ統一）**:
+   - `lane-guides/page.tsx`: 取得失敗時エラー＋再試行、重複章統合、`※該当言及なし` 章の折りたたみ。
+   - `note/page.tsx` & `login/page.tsx` & `ChampionListView.tsx` & `page.tsx`: 固定ダミーメタ撤去、見出し・目的・合言葉一般案内・`?c=` 不在時告知・0件リセットを追加。
+   - `overlay/page.tsx`: 待機画面へ「辞典トップへ戻る」導線と「接続エラー vs LoL未起動」の区別表示を追加。
+   - `admin/youtube/page.tsx`: 重複 `<DictSynthPanel />` を撤去し上部 `WorkerStatusPanel` へ一本化。
+   - パッチ表記を `パッチ 26.x` へ統一（`note/page.tsx`, `MatchupBlueprintCard.tsx`, `MeasuredBuildCard.tsx`）。
+5. **機械的実値検証（Verifier原則）**:
+   - `05_PILOT` にて `npx tsc --noEmit` / `npm run build`（全28ルート）PASS（Exit code 0）。
+
 ### ⚡ 【Portal SPEC 19：SPEC 11〜18 実装後の残件まとめ（04_PORTAL）】
 
 **概要**:

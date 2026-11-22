@@ -221,8 +221,12 @@ function DictHealthDashboardContent() {
 
   const filteredChampions = useMemo(() => {
     if (!data?.champions) return [];
+    const q = search.trim().toLowerCase();
     return data.champions.filter((c) => {
-      const matchSearch = !search || c.champion.toLowerCase().includes(search.toLowerCase());
+      const matchSearch =
+        !q ||
+        c.champion.toLowerCase().includes(q) ||
+        (c.jpName || '').toLowerCase().includes(q);
       const matchStatus = statusFilter === 'ALL' || c.status === statusFilter;
       return matchSearch && matchStatus;
     });
@@ -494,7 +498,11 @@ function DictHealthDashboardContent() {
                               : <ChevronDown className="w-3.5 h-3.5 text-zinc-500 group-hover:text-amber-400 shrink-0" />}
                             <ChampAvatar champion={c.champion} size="md" />
                             <div>
-                              <div className="font-bold text-zinc-200 group-hover:text-amber-300">{c.champion}</div>
+                              <div className="font-bold text-zinc-200 group-hover:text-amber-300">
+                                {c.jpName && c.jpName.toLowerCase() !== c.champion.toLowerCase()
+                                  ? `${c.jpName} (${c.champion})`
+                                  : c.champion}
+                              </div>
                               <div className="text-[10px] text-zinc-500">
                                 {c.hasContent ? '知見データあり' : '⚠️ 空データ'}
                               </div>
@@ -535,9 +543,15 @@ function DictHealthDashboardContent() {
                         <td className="py-2.5 px-3 hidden md:table-cell">
                           <div className="text-[10px] text-zinc-400 space-y-0.5">
                             {c.lastVerifiedAt ? (
-                              <div className="text-emerald-400 font-medium">
-                                検証: {new Date(c.lastVerifiedAt).toLocaleDateString('ja-JP')} ({c.lastVerifiedBy || 'admin'})
-                              </div>
+                              c.status === 'verified' ? (
+                                <div className="text-emerald-400 font-medium">
+                                  検証: {new Date(c.lastVerifiedAt).toLocaleDateString('ja-JP')} ({c.lastVerifiedBy || 'admin'})
+                                </div>
+                              ) : (
+                                <div className="text-amber-300 font-medium">
+                                  前回確認: {new Date(c.lastVerifiedAt).toLocaleDateString('ja-JP')}（AI更新後・再確認待ち）
+                                </div>
+                              )
                             ) : (
                               <div className="text-zinc-500">未検証</div>
                             )}

@@ -329,7 +329,7 @@ function DictMaintenanceContent() {
                 >
                   <img
                     src={getChampIcon(c.id)}
-                    alt={c.jpName}
+                    alt=""
                     className="w-7 h-7 rounded-lg object-cover shrink-0 border border-zinc-700"
                   />
                   <div className="min-w-0 flex-1">
@@ -349,7 +349,7 @@ function DictMaintenanceContent() {
             <div className="flex items-center gap-3">
               <img
                 src={getChampIcon(currentChamp.id)}
-                alt={currentChamp.jpName}
+                alt=""
                 className="w-12 h-12 rounded-xl object-cover border border-amber-500/40 shadow-md"
               />
               <div>

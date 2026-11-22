@@ -118,15 +118,14 @@ export async function GET(req: NextRequest) {
       allRowsCount = enrichedRows.length;
     } else {
       // 🛡️ Egress 防衛: 一覧では巨大な本文 (content) を取得しない (15MB ➔ 0.15MB へ99%削減)
+      // ※ PostgRESTで .or() を複数回呼ぶと条件が上書き/競合するため、reanalysis_of の除外は取得後にJSで安全に判定する
       let query = supabase
         .from('personal_knowledge')
-        .select('id, title, champion, source_url, tags, genre, created_at')
+        .select('id, title, champion, source_url, tags, genre, created_at, reanalysis_of, review_status')
         // 削除済み(__DELETED__)は出さない。ただしタグが ['__DELETED__'] だけの行は、旧ポータルの統合処理
         // （レーンガイド・辞典への統合）がタグを丸ごと置き換えて片付けた記事なので「統合済み」として出す（2026-10-07 ユーザー要望）。
         // 人が削除した記事は __USER_DELETED__ も付く（下の setDeleted）ため、ここには含まれない
         .or('tags.is.null,tags.not.cs.{__DELETED__},tags.eq.{__DELETED__}')
-        // 承認画面の「再解析」で作った版は、採用（承認）されるまでライブラリに出さない（元の記事と二重に見えるため。2026-10-19）
-        .or('reanalysis_of.is.null,review_status.eq.approved')
         .order('created_at', { ascending: false });
 
       if (q) {
@@ -145,7 +144,9 @@ export async function GET(req: NextRequest) {
       const { data, error } = await query.limit(2000);
       if (error) throw error;
 
-      const allRows = data || [];
+      const allRows = (data || []).filter(
+        (r: any) => r.reanalysis_of == null || r.review_status === 'approved'
+      );
       allRowsCount = allRows.length;
 
       // 各記事のチャンネル名、公開日、鮮度、レーン、対面情報を解決

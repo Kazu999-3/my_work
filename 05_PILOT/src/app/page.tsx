@@ -166,6 +166,21 @@ function PilotApp() {
 
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4">
+        {rawChampParam && !selectedDetail && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 flex items-center justify-between gap-2 flex-wrap">
+            <span>
+              ⚠️ 指定されたチャンピオン「<strong>{rawChampParam}</strong>」は見つかりませんでした。下のリストから選択してください。
+            </span>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold cursor-pointer"
+            >
+              URLパラメータをクリア
+            </button>
+          </div>
+        )}
+
         {/* 🎯 対面相性チェッカー (Matchup Picker) */}
         {showMatchupPicker && (
           <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-200">

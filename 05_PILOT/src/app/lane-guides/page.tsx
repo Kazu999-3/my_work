@@ -30,13 +30,16 @@ function LaneGuidesApp() {
   const [activeLane, setActiveLane] = useState<string>('JG');
   const [activeSectionFilter, setActiveSectionFilter] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
 
   const fetchGuides = useCallback(async (selectJgDefault = false) => {
+    setLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch('/api/lane-guides');
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setGuides(data.guides || []);
         setLanes(data.lanes || []);
         if (data.totalCanonicalChampions) setTotalCanonical(data.totalCanonicalChampions);
@@ -44,9 +47,12 @@ function LaneGuidesApp() {
           const hasJg = data.guides.some((g: LaneGuide) => g.lane === 'JG');
           setActiveLane(hasJg ? 'JG' : data.guides[0].lane);
         }
+      } else {
+        setFetchError(data?.error || `レーンガイドの取得に失敗しました（HTTP ${res.status}）`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('レーンガイド取得エラー:', e);
+      setFetchError(`通信エラーによりレーンガイドを取得できませんでした: ${e?.message || ''}`);
     } finally {
       setLoading(false);
     }
@@ -60,21 +66,40 @@ function LaneGuidesApp() {
     return guides.find((g) => g.lane === activeLane) || null;
   }, [guides, activeLane]);
 
-  // 章（セクション）ごとの構造化パース
+  // 章（セクション）ごとの構造化パース（同一章タイトルの重複は統合）
   const sections = useMemo(() => {
     if (!currentGuide?.body) return [];
     const raw = currentGuide.body;
-    // '## ' で分割
     const parts = raw.split(/\n(?=##\s+)/);
-    return parts.map((part, index) => {
+    const merged: { title: string; content: string; id: string; raw: string; index: number }[] = [];
+    const byChapterKey = new Map<string, number>();
+
+    parts.forEach((part, index) => {
       const lines = part.split('\n');
       const firstLine = lines[0] || '';
       const isHeading = firstLine.startsWith('## ');
       const title = isHeading ? firstLine.replace(/^##\s+/, '').trim() : (index === 0 ? 'イントロダクション' : `セクション ${index + 1}`);
       const content = isHeading ? lines.slice(1).join('\n').trim() : part.trim();
-      const id = `section-${index}-${title.toLowerCase().replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')}`;
-      return { title, content, id, raw: part, index };
+      const chapterMatch = title.match(/^第\s*(\d+)\s*章/);
+      const dedupeKey = chapterMatch ? `ch-${chapterMatch[1]}` : `title-${title}`;
+
+      if (byChapterKey.has(dedupeKey)) {
+        const existingIdx = byChapterKey.get(dedupeKey)!;
+        if (content) {
+          merged[existingIdx].content = merged[existingIdx].content
+            ? `${merged[existingIdx].content}\n\n${content}`
+            : content;
+        }
+        return;
+      }
+
+      const nextIndex = merged.length;
+      const id = `section-${nextIndex}-${title.toLowerCase().replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-')}`;
+      byChapterKey.set(dedupeKey, nextIndex);
+      merged.push({ title, content, id, raw: part, index: nextIndex });
     });
+
+    return merged;
   }, [currentGuide?.body]);
 
   // 目次（TOC）抽出
@@ -256,27 +281,52 @@ function LaneGuidesApp() {
               </div>
 
               {/* 章ごとの構造化カード一覧 */}
-              {displayedSections.map((sec) => (
-                <section
-                  key={sec.id}
-                  id={sec.id}
-                  className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700/80 rounded-2xl p-5 sm:p-6 shadow-sm transition space-y-3 scroll-mt-20"
-                >
-                  <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
-                    <h2 className="text-sm sm:text-base font-black text-amber-400 flex items-center gap-2">
-                      <span className="w-1.5 h-4 bg-amber-500 rounded-full inline-block" />
-                      <span>{sec.title}</span>
-                    </h2>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-950 text-zinc-500 font-mono border border-zinc-800">
-                      CHAPTER #{sec.index + 1}
-                    </span>
-                  </div>
+              {displayedSections.map((sec) => {
+                const lines = sec.content.split('\n').map((l) => l.trim()).filter(Boolean);
+                const emptyMentionCount = lines.filter((l) => l.includes('※該当言及なし')).length;
+                const substantiveLines = lines.filter((l) => !l.includes('※該当言及なし') && !l.startsWith('###'));
+                const isMostlyEmpty = emptyMentionCount >= 3 && substantiveLines.length === 0;
 
-                  <div className="text-xs sm:text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap font-sans space-y-3">
-                    <InlineBold text={sec.content} />
-                  </div>
-                </section>
-              ))}
+                return (
+                  <section
+                    key={sec.id}
+                    id={sec.id}
+                    className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700/80 rounded-2xl p-5 sm:p-6 shadow-sm transition space-y-3 scroll-mt-20"
+                  >
+                    <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 gap-2">
+                      <h2 className="text-sm sm:text-base font-black text-amber-400 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-amber-500 rounded-full inline-block" />
+                        <span>{sec.title}</span>
+                      </h2>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isMostlyEmpty && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-bold">
+                            該当なし {emptyMentionCount}件
+                          </span>
+                        )}
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-950 text-zinc-500 font-mono border border-zinc-800">
+                          CHAPTER #{sec.index + 1}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isMostlyEmpty ? (
+                      <details className="text-xs text-zinc-400">
+                        <summary className="cursor-pointer font-bold text-zinc-400 hover:text-zinc-200 select-none">
+                          現在この章に該当する言及はありません（{emptyMentionCount}項目を折りたたんでいます・クリックで展開）
+                        </summary>
+                        <div className="mt-3 text-xs text-zinc-400 leading-relaxed whitespace-pre-wrap font-sans space-y-2 border-t border-zinc-800/70 pt-3">
+                          <InlineBold text={sec.content} />
+                        </div>
+                      </details>
+                    ) : (
+                      <div className="text-xs sm:text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap font-sans space-y-3">
+                        <InlineBold text={sec.content} />
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
 
               {/* 🧭 ガイド末尾の深掘り・AI相談フッター */}
               <div className="bg-gradient-to-r from-amber-500/10 via-zinc-900 to-cyan-500/10 border border-zinc-800 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -308,6 +358,19 @@ function LaneGuidesApp() {
                 </div>
               </div>
             </div>
+          </div>
+        ) : fetchError ? (
+          <div className="py-16 px-4 text-center bg-rose-950/20 rounded-2xl border border-rose-800/50 space-y-3">
+            <p className="text-sm font-black text-rose-300">⚠️ レーン攻略バイブルの取得に失敗しました</p>
+            <p className="text-xs text-zinc-400">{fetchError}</p>
+            <button
+              type="button"
+              onClick={() => fetchGuides(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black cursor-pointer transition"
+            >
+              <RefreshCw size={13} />
+              <span>再試行</span>
+            </button>
           </div>
         ) : (
           <div className="py-20 text-center text-zinc-500 bg-zinc-900 rounded-2xl border border-zinc-800">

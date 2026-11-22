@@ -43,7 +43,7 @@ const LANES = [
   { key: 'TOP', label: 'TOP', icon: '🛡️' },
   { key: 'JUNGLE', label: 'JG', icon: '🌲' },
   { key: 'MID', label: 'MID', icon: '⚡' },
-  { key: 'ADC', label: 'BOT', icon: '🏹' },
+  { key: 'ADC', label: 'ADC', icon: '🏹' },
   { key: 'SUPPORT', label: 'SUP', icon: '💖' },
 ] as const;
 
@@ -311,7 +311,7 @@ export default function MatchupBlueprintCard({
             </h3>
             {(rejected.current_patch || rejected.source_patch) && (
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-800 text-amber-300 border border-zinc-700 ml-auto">
-                Patch {rejected.current_patch || rejected.source_patch}
+                パッチ {String(rejected.current_patch || rejected.source_patch).replace(/^1(\d)\./, '2$1.')}
               </span>
             )}
           </div>
