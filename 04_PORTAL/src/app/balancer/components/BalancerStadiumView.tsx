@@ -28,6 +28,9 @@ export default function BalancerStadiumView({
   onOpenAdminModal,
   isAdmin,
 }: BalancerStadiumViewProps) {
+  const [briefingOpen, setBriefingOpen] = useState(true);
+  const briefing: TacticalBriefing | null = useMemo(() => generatePreMatchBriefing(result), [result]);
+
   if (!result || !result.teamBlue || !result.teamRed) return null;
 
   const blue = result.teamBlue || [];
@@ -43,9 +46,6 @@ export default function BalancerStadiumView({
   const myRole = getPlayerRole(myBlueEntry) || getPlayerRole(myRedEntry) || null;
 
   const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
-
-  const [briefingOpen, setBriefingOpen] = useState(true);
-  const briefing: TacticalBriefing | null = useMemo(() => generatePreMatchBriefing(result), [result]);
 
   return (
     <div className="bg-gradient-to-b from-stone-900 to-stone-950 border-2 border-primary-edge-strong/60 rounded-3xl p-4 sm:p-6 shadow-xl text-white space-y-5 animate-in fade-in">
