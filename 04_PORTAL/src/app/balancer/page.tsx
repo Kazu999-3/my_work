@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { X } from "lucide-react";
+import { X, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Spinner } from "../../components/Feedback";
 import dynamic from "next/dynamic";
@@ -21,6 +21,7 @@ import GapDiagnosisPanel from "./_parts/GapDiagnosisPanel";
 import TableSplitPanel from "./_parts/TableSplitPanel";
 import PlayerListTable from "./_parts/PlayerListTable";
 import QuickActionBar from "./_parts/QuickActionBar";
+import TodayCustomStatsBar from "./_parts/TodayCustomStatsBar";
 import { BalancerVcManager } from "./components/BalancerVcManager";
 import CustomSubNav from "../../components/CustomSubNav";
 import ScrollToTopButton from "../../components/ScrollToTopButton";
@@ -169,6 +170,8 @@ export default function BalancerPage() {
   // 帯分けロビー編成: MMR 1450基準の2帯（人数不足時は格上許可ONから自動繰り上げ）
   const [selectedTable, setSelectedTable] = useState<TableSplit | null>(null);
   const tableSplit = useMemo(() => buildTierBandLobbies(players), [players]);
+  // SPEC 12: 運営ツール（VC操作・帯分け・格差診断）は初期状態・閉
+  const [showOpsTools, setShowOpsTools] = useState(false);
 
   const bo3 = useBo3Series(balanceResult, setBalanceResult, setMessage);
   const swap = useResultSwap({ balanceResult, setBalanceResult, setProposals, selectedProposalIdx, players });
@@ -446,8 +449,8 @@ export default function BalancerPage() {
           inactiveCount={inactiveCount} canBalance={canBalance}
         />
 
-        {/* 🔊 Discord VCステータス操作バー */}
-        <BalancerVcManager onMessage={setMessage} />
+        {/* 📊 当日の定期カスタム勝率（SPEC 11: JST 5:00起点・参加者全員） */}
+        <TodayCustomStatsBar currentUserName={currentUser?.playerName || currentUser?.displayName} />
 
         {/* ⚠️ MMR整合性ズレ警告バナー（ズレ検知時のみ自動出現） */}
         {integrityData?.hasDiscrepancy && (
@@ -466,15 +469,68 @@ export default function BalancerPage() {
           </div>
         )}
 
-        {/* 格差診断: 対面が組めない外れ値を警告し、観戦orハンデ参加を選ばせる。
-            個人名を挙げる内容なので主催者(管理者)にだけ表示する。 */}
-        {isAdmin && gapDiagnosis && (
-          <GapDiagnosisPanel handicapIds={handicapIds} handleInputChange={handleInputChange} toggleHandicap={toggleHandicap} gapDiagnosis={gapDiagnosis} HANDICAP_MMR_PENALTY={HANDICAP_MMR_PENALTY} />
-        )}
+        {/* 🛡️ 運営ツール（SPEC 12: VCステータス・帯分け・格差診断を折りたたみ集約 / 初期状態・閉） */}
+        {isAdmin && (
+          <div className="rounded-xl border border-border bg-surface/80 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowOpsTools((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-surface-subtle hover:bg-surface-hover transition cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <Shield className="w-4 h-4 text-primary-600 shrink-0" />
+                <span className="text-xs font-black text-foreground">🛡️ 運営ツール</span>
+                <span className="text-[10px] text-muted-strong">
+                  （VCステータス操作・帯分けロビー編成・格差診断）
+                </span>
+                {selectedTable && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 border border-primary-edge">
+                    対象: {selectedTable.label}
+                  </span>
+                )}
+                {gapDiagnosis && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-danger-100 text-danger-700 border border-danger-edge">
+                    ⚠️ 格差注意 {gapDiagnosis.orphans.length}名
+                  </span>
+                )}
+              </div>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 shrink-0">
+                {showOpsTools ? (
+                  <>
+                    閉じる <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    開く <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </span>
+            </button>
 
-        {/* 卓分割パネル: 20人以上のとき、代表MMRで2卓に分けて提示（主催者の判断用） */}
-        {isAdmin && tableSplit && (
-          <TableSplitPanel selectedTable={selectedTable} setSelectedTable={setSelectedTable} tableSplit={tableSplit} />
+            {showOpsTools && (
+              <div className="p-3 space-y-3 border-t border-border">
+                <BalancerVcManager onMessage={setMessage} />
+
+                {gapDiagnosis && (
+                  <GapDiagnosisPanel
+                    handicapIds={handicapIds}
+                    handleInputChange={handleInputChange}
+                    toggleHandicap={toggleHandicap}
+                    gapDiagnosis={gapDiagnosis}
+                    HANDICAP_MMR_PENALTY={HANDICAP_MMR_PENALTY}
+                  />
+                )}
+
+                {tableSplit && (
+                  <TableSplitPanel
+                    selectedTable={selectedTable}
+                    setSelectedTable={setSelectedTable}
+                    tableSplit={tableSplit}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {/* メッセージ */}

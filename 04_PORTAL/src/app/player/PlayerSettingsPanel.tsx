@@ -5,7 +5,7 @@ import {
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
   Save, CheckCircle2, AlertTriangle, RefreshCw, Moon,
   Swords, Users, Snowflake, Coffee, BookOpen, Sparkles,
-  Coins, X
+  Coins, X, ChevronDown, ChevronUp, SlidersHorizontal
 } from "lucide-react";
 import ThemeToggle from "../../components/ThemeToggle";
 import { getPlayerTierBand, normalizeTierPromotionPref, TIER_BAND_THRESHOLD, type TierPromotionPref } from "../../lib/balancer/tierBand";
@@ -94,6 +94,8 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // SPEC 12: 詳細設定（あとで変えるもの）は初期状態・閉
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // 初参加（通算0戦）判定 & ウェルカムバナー表示状態
   const isNewPlayer = (player?.total_games ?? 0) === 0 && (player?.stats?.total?.g ?? 0) === 0;
@@ -430,94 +432,130 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
         )}
       </div>
 
-      {/* 🎚️ こだわり度・格上許可（チーム分けに反映） */}
-      <div className="space-y-4 pt-4 border-t border-border dark:border-border">
-        <div className="space-y-2">
-          <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
-            🎚️ 希望レーンの強さ
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { v: 1, title: "絶対このレーン", desc: "希望レーン以外はできるだけ避けたい" },
-              { v: 2, title: "できれば", desc: "なるべく希望レーン（標準）" },
-              { v: 3, title: "どこでもOK", desc: "チームのためならどこでも入ります" },
-            ].map((o) => (
-              <button
-                key={`w-${o.v}`}
-                type="button"
-                onClick={() => setWeight(o.v)}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                  weight === o.v
-                    ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
-                    : "bg-surface border-border text-muted hover:bg-background font-bold"
-                }`}
-              >
-                <div className="text-sm">{o.title}</div>
-                <div className={`text-[10px] mt-0.5 leading-snug ${weight === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
-              </button>
-            ))}
+      {/* ⚙️ あとで変えるもの（詳細設定：初期状態・閉 / SPEC 12） */}
+      <div className="pt-4 border-t border-border dark:border-border space-y-4">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-surface-subtle hover:bg-surface-hover border border-border transition cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <SlidersHorizontal className="w-4 h-4 text-primary-600 shrink-0" />
+            <div>
+              <div className="text-xs font-black text-foreground">
+                詳細設定（カスタム参加の希望・プレイスタイル・外観）
+              </div>
+              <div className="text-[10px] text-muted-strong">
+                こだわり度・対面保護・上の帯への繰り上げ・プレイスタイル・テーマを変更できます
+              </div>
+            </div>
           </div>
-        </div>
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 shrink-0">
+            {showAdvanced ? (
+              <>
+                閉じる <ChevronUp className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                開く <ChevronDown className="w-4 h-4" />
+              </>
+            )}
+          </span>
+        </button>
 
-        <div className="space-y-2">
-          <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
-            ⚔️ 格上との対面
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              { v: false, title: "🛡️ 守ってほしい", desc: "MMRが大きく上の人とは、なるべくレーンで当たらないようにします" },
-              { v: true, title: "⚔️ 挑戦したい", desc: "格上の人ともレーンで当たってかまいません" },
-            ].map((o) => (
-              <button
-                key={`ah-${String(o.v)}`}
-                type="button"
-                onClick={() => setAllowHigher(o.v)}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                  allowHigher === o.v
-                    ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
-                    : "bg-surface border-border text-muted hover:bg-background font-bold"
-                }`}
-              >
-                <div className="text-sm">{o.title}</div>
-                <div className={`text-[10px] mt-0.5 leading-snug ${allowHigher === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+        {showAdvanced && (
+          <div className="space-y-6 pt-2">
+            {/* ⚙️ カスタム参加の希望（混同しやすい2つの「格上」系設定を統合整理） */}
+            <div className="space-y-4 p-4 rounded-2xl bg-black/[0.02] border border-border/80">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
+                  ⚙️ カスタム参加の希望
+                </h4>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface border border-border text-muted-strong">
+                  現在の帯:{" "}
+                  {getPlayerTierBand(player?.mmr) === "UPPER"
+                    ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
+                    : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
+                </span>
+              </div>
 
-        {/* 🏟️ 定期カスタムの帯参加（上の帯への繰り上げ許可: SPEC 10） */}
-        <div className="space-y-2 pt-2 border-t border-border/60">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
-              🏟️ 定期カスタムの帯参加（上の帯への繰り上げ）
-            </label>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface border border-border text-muted-strong">
-              現在の帯:{" "}
-              {getPlayerTierBand(player?.mmr) === "UPPER"
-                ? `上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`
-                : `中初級帯 (MMR <${TIER_BAND_THRESHOLD})`}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {(
-              [
-                {
-                  v: "mix_ok",
-                  title: "🌟 混ざってもいい",
-                  desc: "上の帯と混ざる試合や繰り上げに積極的に参加します",
-                },
-                {
-                  v: "fill_only",
-                  title: "🤝 人足りなければOK",
-                  desc: "上の帯が10人未満で困っている時だけ繰り上げ参加します（既定）",
-                },
-                {
-                  v: "never",
-                  title: "🛡️ 絶対嫌（自分の帯のみ）",
-                  desc: "自分の実力帯の試合にのみ参加し、上の帯へは繰り上がりません",
-                },
-              ] as const
-            ).map((o) => (
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-foreground-subtle">
+                  🎚️ 希望レーンの強さ
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { v: 1, title: "絶対このレーン", desc: "希望レーン以外はできるだけ避けたい" },
+                    { v: 2, title: "できれば", desc: "なるべく希望レーン（標準）" },
+                    { v: 3, title: "どこでもOK", desc: "チームのためならどこでも入ります" },
+                  ].map((o) => (
+                    <button
+                      key={`w-${o.v}`}
+                      type="button"
+                      onClick={() => setWeight(o.v)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        weight === o.v
+                          ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
+                          : "bg-surface border-border text-muted hover:bg-background font-bold"
+                      }`}
+                    >
+                      <div className="text-sm">{o.title}</div>
+                      <div className={`text-[10px] mt-0.5 leading-snug ${weight === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-border/60">
+                <label className="block text-xs font-black text-foreground-subtle">
+                  🛡️ 同じ試合での対面保護（チーム分け時の対面格差）
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { v: false, title: "🛡️ 格上との対面を避ける", desc: "同じ試合の中で、MMRが大きく上の人とはなるべく別レーンにします" },
+                    { v: true, title: "⚔️ 格上対面もOK", desc: "同じ試合の中で、実力が上の人と対面になっても構いません" },
+                  ].map((o) => (
+                    <button
+                      key={`ah-${String(o.v)}`}
+                      type="button"
+                      onClick={() => setAllowHigher(o.v)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        allowHigher === o.v
+                          ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
+                          : "bg-surface border-border text-muted hover:bg-background font-bold"
+                      }`}
+                    >
+                      <div className="text-sm">{o.title}</div>
+                      <div className={`text-[10px] mt-0.5 leading-snug ${allowHigher === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-border/60">
+                <label className="block text-xs font-black text-foreground-subtle">
+                  🏟️ 上の実力帯への繰り上げ参加（ロビーの帯分け）
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {(
+                    [
+                      {
+                        v: "mix_ok",
+                        title: "🌟 混ざってもいい",
+                        desc: "上の帯と混ざる試合や、繰り上げに積極的に参加します",
+                      },
+                      {
+                        v: "fill_only",
+                        title: "🤝 人足りなければOK",
+                        desc: "上の帯が10人未満で不足した時だけ、繰り上げ参加します（既定）",
+                      },
+                      {
+                        v: "never",
+                        title: "🛡️ 自分の帯のみ",
+                        desc: "自分の実力帯の試合にのみ参加し、上の帯へは繰り上がりません",
+                      },
+                    ] as const
+                  ).map((o) => (
               <button
                 key={`tp-${o.v}`}
                 type="button"
@@ -615,6 +653,9 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           </div>
           <ThemeToggle variant="full" />
         </div>
+      </div>
+          </div>
+        )}
       </div>
 
       {/* 保存ボタン & 通知 */}
