@@ -66,7 +66,7 @@ export function usePlayerRoster(isAdmin: boolean, setMessage: SetMessage) {
         no: index + 1,
         is_fixed: false,
         is_spectator_fixed: false,
-        allow_lower_support: false
+        allow_lower_support: Boolean(p.allow_lower_support)
       }));
 
       setPlayers(playersWithNo);
@@ -143,6 +143,7 @@ export function usePlayerRoster(isAdmin: boolean, setMessage: SetMessage) {
           ng_lane_2: p.ng_lane_2 || null,
           weight: p.weight,
           allow_higher: p.allow_higher,
+          allow_lower_support: Boolean(p.allow_lower_support),
           pity: p.pity,
           off_role_pity: p.off_role_pity,
           metadata: p.metadata,
@@ -214,8 +215,8 @@ export function usePlayerRoster(isAdmin: boolean, setMessage: SetMessage) {
         return p;
       });
 
-      // is_fixed / allow_lower_support の変更はDBに保存しない一時フラグなので保存トリガーを引かない
-      if (field !== "is_fixed" && field !== "allow_lower_support") {
+      // is_fixed の変更はDBに保存しない一時フラグなので保存トリガーを引かない
+      if (field !== "is_fixed") {
         dirtyPlayerIdsRef.current.add(uid);
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = setTimeout(() => {

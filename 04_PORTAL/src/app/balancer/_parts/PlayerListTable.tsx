@@ -225,22 +225,32 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                               if (band === 'UPPER') {
                                 const strict = getDownwardOffroleRule(p.mmr) === 'STRICT_OFFROLE';
                                 return isAdmin && p.is_active ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleInputChange(p.id, 'allow_lower_support', !p.allow_lower_support)}
-                                    className={`text-[9px] font-black px-1.5 py-0.5 rounded border transition cursor-pointer ${
-                                      p.allow_lower_support
-                                        ? 'bg-secondary-500/20 text-secondary-700 dark:text-secondary-300 border-secondary-edge-strong shadow-2xs'
-                                        : 'bg-surface-subtle text-muted border-border hover:border-secondary-edge'
-                                    }`}
-                                    title={
-                                      p.allow_lower_support
-                                        ? `格下サポート参加OK (${strict ? 'メイン・サブ除外/完全オフ' : 'メイン除外/オフレーン'})`
-                                        : `クリックで下位帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
-                                    }
-                                  >
-                                    {p.allow_lower_support ? '🔽 格下OK' : '上位帯'}
-                                  </button>
+                                  <div className="inline-flex items-center gap-1">
+                                    <span
+                                      className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50"
+                                      title={`上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`}
+                                    >
+                                      上位帯
+                                    </span>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={Boolean(p.allow_lower_support)}
+                                      onClick={() => handleInputChange(p.id, 'allow_lower_support', !p.allow_lower_support)}
+                                      className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                                        p.allow_lower_support
+                                          ? 'bg-secondary-600 text-white border-secondary-edge-strong shadow-xs hover:bg-secondary-500'
+                                          : 'bg-surface-subtle text-muted-strong border-border hover:border-secondary-edge hover:text-foreground'
+                                      }`}
+                                      title={
+                                        p.allow_lower_support
+                                          ? `格下サポートON (${strict ? 'メイン・サブ除外/完全オフ' : 'メイン除外/オフレーン'})`
+                                          : `クリックで下位帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
+                                      }
+                                    >
+                                      {p.allow_lower_support ? '格下ON ✓' : '格下OFF'}
+                                    </button>
+                                  </div>
                                 ) : (
                                   <span
                                     className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50"

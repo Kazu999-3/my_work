@@ -1,5 +1,22 @@
 ## 📅 2026-11-22（日）
 
+### ⚡ 【指示文13：格下サポートフラグ（allow_lower_support）のDB永続化とスイッチUI改善】
+
+**概要**:
+指示文13（`04_PORTAL/docs/specs/13-lower-support-flag-fix-instruction.md`）に基づき、格下サポートフラグの永続化と操作UIを修正。
+1. **DB・APIの永続化対応**:
+   - `04_PORTAL/supabase/migrations/141_add_allow_lower_support.sql`: `ktm_players.allow_lower_support`（boolean, default false）を追加。
+   - `04_PORTAL/src/app/api/players/list/route.ts`: 一覧取得 `select` に `tier_promotion_pref` および `allow_lower_support` を追加。
+   - `04_PORTAL/src/app/api/admin/players/save/route.ts`: 管理者専用保存列 `FULL_COLUMNS` に `allow_lower_support` / `tier_promotion_pref` を追加。
+2. **フロント状態管理 ＆ UI修正**:
+   - `04_PORTAL/src/app/balancer/_parts/usePlayerRoster.ts`: 初期ロード時の `false` 上書きを撤廃して DB 値をそのまま採用し、`handleSave` / `handleInputChange` で自動保存対象に復帰。
+   - `04_PORTAL/src/app/balancer/_parts/PlayerListTable.tsx`: 管理者（かつ上位帯・参加中）の行に対し、従来の `上位帯` ラベルに加えてクリック可能と一目で分かるスイッチ風ピル（`格下OFF` / `格下ON ✓`）を配備。管理者以外には従来通り `上位帯` ラベルのみ表示。
+3. **機械的実値検証（Verifier原則）**:
+   - `npx tsc --noEmit` ➔ PASS（エラー0件）。
+   - `npx eslint src` ➔ PASS（エラー0件）。
+   - `npm test` ➔ 全196件 PASS。
+   - `npm run build` ➔ 全64ルート PASS（Exit code 0）。
+
 ### ⚡ 【SPEC 11 & 12：本日のカスタム勝率（JST 5:00起点）配備 ＆ プロフィール/バランサーUI整理】
 
 **概要**:
