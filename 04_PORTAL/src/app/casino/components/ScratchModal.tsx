@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, Coins, X, FastForward } from 'lucide-react';
+import { Sparkles, Coins, X, CheckCircle2 } from 'lucide-react';
 
 export interface ScratchResultData {
   price: number;
@@ -21,24 +21,17 @@ interface ScratchModalProps {
 }
 
 export default function ScratchModal({ isOpen, onClose, resultData, onFinished }: ScratchModalProps) {
-  const [isScratching, setIsScratching] = useState(true);
-  const [scratchedCount, setScratchedCount] = useState(0);
+  const confettiFiredRef = useRef(false);
 
-  // onFinished を ref で保持し、親の再レンダリングによる useEffect ループ／タイマー中断を防止
-  const onFinishedRef = useRef(onFinished);
   useEffect(() => {
-    onFinishedRef.current = onFinished;
-  }, [onFinished]);
+    if (!isOpen || !resultData) {
+      confettiFiredRef.current = false;
+      return;
+    }
 
-  const hasRevealedRef = useRef(false);
-
-  const reveal = useCallback(() => {
-    if (hasRevealedRef.current) return;
-    hasRevealedRef.current = true;
-    setScratchedCount(3);
-    setIsScratching(false);
-
-    if (resultData && resultData.prize >= 250) {
+    // 2等以上なら自動で祝賀紙吹雪
+    if (!confettiFiredRef.current && resultData.prize >= 250) {
+      confettiFiredRef.current = true;
       try {
         confetti({
           particleCount: resultData.prize >= 800 ? 120 : 60,
@@ -48,45 +41,16 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
         });
       } catch {}
     }
-    onFinishedRef.current?.();
-  }, [resultData]);
-
-  useEffect(() => {
-    if (!isOpen || !resultData) return;
-
-    hasRevealedRef.current = false;
-    setIsScratching(true);
-    setScratchedCount(0);
-
-    const timer1 = setTimeout(() => setScratchedCount(1), 300);
-    const timer2 = setTimeout(() => setScratchedCount(2), 650);
-    const timer3 = setTimeout(() => {
-      reveal();
-    }, 1000);
-
-    // 安全策: 万一ブラウザ遅延やバックグラウンド移行時でも最大1.5秒で確実に結果確定
-    const safetyTimer = setTimeout(() => {
-      reveal();
-    }, 1500);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(safetyTimer);
-    };
-  }, [isOpen, resultData, reveal]);
+  }, [isOpen, resultData]);
 
   if (!isOpen || !resultData) return null;
 
-  const isWin = resultData.prize >= 250; // 2等以上（2026-10-17 当選額変更に合わせた）
-  const isJackpot = resultData.prize >= 800; // 1等以上
+  const isWin = resultData.prize >= 250;
+  const isJackpot = resultData.prize >= 800;
 
   const handleClose = () => {
-    if (isScratching) {
-      reveal();
-    }
     onClose();
+    if (onFinished) onFinished();
   };
 
   return (
@@ -98,7 +62,7 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
         }
       }}
     >
-      <div className="relative w-full max-w-sm rounded-3xl bg-surface border-2 border-primary-edge shadow-2xl p-6 text-center space-y-6 max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <div className="relative w-full max-w-sm rounded-3xl bg-surface border-2 border-primary-edge shadow-2xl p-6 text-center space-y-5 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         {/* 背景の装飾グロー */}
         <div
           className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-30 ${
@@ -106,7 +70,7 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
           }`}
         />
 
-        {/* 閉じるボタン（削り中でも安全に押下可能） */}
+        {/* 閉じるボタン（常時クリック可能） */}
         <button
           type="button"
           onClick={handleClose}
@@ -116,92 +80,58 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
           <X size={18} />
         </button>
 
+        {/* ヘッダー情報 */}
         <div className="space-y-1">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-edge-strong/30 text-primary-900 text-xs font-black">
             <Sparkles size={13} className="text-primary-600 animate-pulse" />
-            <span>🥠 闇のスクラッチくじ</span>
+            <span>🥠 闇のスクラッチくじ結果</span>
           </div>
-          <h3 className="text-xl font-black text-foreground">
-            {isScratching ? '銀色の膜を削っています...' : resultData.tier}
+          <h3 className="text-xl font-black text-foreground animate-in zoom-in-95 duration-200">
+            {resultData.tier}
           </h3>
         </div>
 
-        {/* スクラッチ削り窓（3マス - タップで即時開封可能） */}
-        <div
-          onClick={isScratching ? reveal : undefined}
-          className={`grid grid-cols-3 gap-2 p-3 rounded-2xl bg-black/10 border border-black/10 transition-colors ${
-            isScratching ? 'cursor-pointer hover:bg-black/15' : ''
-          }`}
-          title={isScratching ? 'クリックで即時開封！' : undefined}
-        >
+        {/* スクラッチ開封マス（3マス） - CSSアニメーションで瞬時に美しく開示 */}
+        <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-black/10 border border-black/10">
           {[0, 1, 2].map((idx) => {
-            const isRevealed = scratchedCount > idx;
             return (
               <div
                 key={idx}
-                className={`h-24 rounded-xl flex flex-col items-center justify-center transition-all duration-300 font-black ${
-                  isRevealed
-                    ? 'bg-gradient-to-br from-stone-900 to-black text-white scale-100 shadow-inner'
-                    : 'bg-stone-400 border border-stone-300 text-stone-600 scale-95 shadow-md animate-pulse'
-                }`}
+                style={{ animationDelay: `${idx * 150}ms` }}
+                className="h-24 rounded-xl flex flex-col items-center justify-center bg-gradient-to-br from-stone-900 via-stone-850 to-black text-white shadow-lg border border-white/10 animate-in zoom-in-50 duration-300"
               >
-                {isRevealed ? (
-                  <div className="space-y-1 animate-in zoom-in-75 duration-200">
-                    <span className="text-2xl">{resultData.icon}</span>
-                    <p className="text-[10px] text-primary-400 font-mono">+{resultData.prize}🪙</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-xs">🪙</span>
-                    <span className="text-[9px] uppercase tracking-wider font-mono">SCRATCH</span>
-                  </div>
-                )}
+                <div className="space-y-1 flex flex-col items-center justify-center">
+                  <span className="text-3xl filter drop-shadow-md">{resultData.icon}</span>
+                  <p className="text-[11px] text-primary-400 font-mono font-black">+{resultData.prize}🪙</p>
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* 判定結果 */}
-        <div className="space-y-2 min-h-[60px] flex flex-col items-center justify-center">
-          {isScratching ? (
-            <p className="text-xs text-muted font-bold animate-pulse">
-              銀の膜を削っています...（タップで即スキップ可）
-            </p>
-          ) : (
-            <div className="animate-in fade-in zoom-in duration-300 space-y-1">
-              <div className="text-3xl font-black font-mono text-primary-600 flex items-center justify-center gap-1.5">
-                <Coins size={24} className="text-primary-500" />
-                <span>+{resultData.prize.toLocaleString()} 🪙</span>
-              </div>
-              <p className="text-xs text-muted-strong font-bold">
-                {resultData.netChange > 0
-                  ? `🎉 おめでとうございます！ 純増 +${resultData.netChange.toLocaleString()}コインの利益！`
-                  : resultData.netChange === 0
-                  ? '⚖️ トントン！元金回収成功！'
-                  : `🍃 残念！参加賞として ${resultData.prize}コイン を獲得しました。`}
-              </p>
-            </div>
-          )}
+        {/* 判定結果と獲得コイン表示 */}
+        <div className="space-y-2 py-1 flex flex-col items-center justify-center animate-in fade-in duration-300">
+          <div className="text-3xl font-black font-mono text-primary-600 flex items-center justify-center gap-1.5">
+            <Coins size={24} className="text-primary-500" />
+            <span>+{resultData.prize.toLocaleString()} 🪙</span>
+          </div>
+          <p className="text-xs text-muted-strong font-bold leading-relaxed px-2">
+            {resultData.netChange > 0
+              ? `🎉 おめでとうございます！ 純増 +${resultData.netChange.toLocaleString()}コイン の利益獲得！`
+              : resultData.netChange === 0
+              ? '⚖️ トントン！元金全額回収成功！'
+              : `🍃 参加賞として ${resultData.prize}コイン を獲得しました！`}
+          </p>
         </div>
 
-        {/* アクションボタン: 削り中はスキップ、完了後は閉じる */}
+        {/* 完了ボタン（即座に確実に閉じる） */}
         <button
           type="button"
-          onClick={isScratching ? reveal : handleClose}
-          className={`w-full py-3 rounded-2xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
-            isScratching
-              ? 'bg-primary-500/15 hover:bg-primary-500/25 text-primary-900 dark:text-primary-200 border border-primary-edge-soft'
-              : 'bg-stone-900 hover:bg-primary-600 text-white'
-          }`}
+          onClick={handleClose}
+          className="w-full py-3.5 px-4 rounded-2xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white active:scale-[0.99]"
         >
-          {isScratching ? (
-            <>
-              <FastForward size={16} />
-              <span>タップして結果を見る</span>
-            </>
-          ) : (
-            <span>コインを受け取って閉じる ✨</span>
-          )}
+          <CheckCircle2 size={16} />
+          <span>コインを受け取って閉じる ✨</span>
         </button>
       </div>
     </div>

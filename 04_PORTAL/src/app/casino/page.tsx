@@ -484,6 +484,7 @@ export default function CasinoPage() {
         isOpen={isScratchOpen}
         onClose={() => {
           setIsScratchOpen(false);
+          setScratchData(null);
           fetchBetData();
           refreshUser();
         }}

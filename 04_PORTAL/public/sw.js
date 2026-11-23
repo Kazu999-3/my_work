@@ -1,7 +1,7 @@
 // KTM ポータル Service Worker（課題#48 PWA）
 // 目的: インストール可能化＋オフライン時の最低限のフォールバック。
 // APIや動的データはキャッシュせず、ナビゲーションのみネットワーク優先＋失敗時フォールバック。
-const CACHE = 'ktm-portal-v1';
+const CACHE = 'ktm-portal-v2';
 const OFFLINE_URLS = ['/'];
 
 self.addEventListener('install', (event) => {
