@@ -330,6 +330,9 @@ export default function BalanceResultModal({
             </div>
           )}
 
+          {/* 🔮 実力予測 (Elo) ＆ 接戦度診断（90点以上で接戦目安） */}
+          <WinRatePredictorCard balanceResult={balanceResult} />
+
           {/* 🎪 お祭りモード時: 対面レート差解消縛りルーレット */}
           {balanceResult.isFestivalMode && (
             <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-pink-500/10 border-2 border-purple-500/30 shadow-xs space-y-3">
@@ -442,18 +445,15 @@ export default function BalanceResultModal({
             })}
           </div>
 
-          {/* 📊 戦況分析 ＆ 因縁ハイライト (チーム対面表の直下に解説として配置) */}
+          {/* 📊 対戦データ ＆ 因縁ハイライト (チーム対面表の直下に解説として配置) */}
           <div className="pt-3 border-t border-border space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-foreground flex items-center gap-1.5 uppercase tracking-wider">
                 <Activity className="h-4 w-4 text-primary-600" />
-                <span>戦況分析 ＆ 因縁ハイライト</span>
+                <span>対戦データ ＆ 因縁ハイライト</span>
               </span>
-              <span className="text-[10px] text-muted font-bold">勝率予測 ＆ マッチアップ相性</span>
+              <span className="text-[10px] text-muted font-bold">ライバル対決 ＆ マッチアップ相性</span>
             </div>
-
-            {/* 🔮 Elo勝率予測 ＆ 接戦度カード */}
-            <WinRatePredictorCard balanceResult={balanceResult} />
 
             {/* ⚔️ 因縁マッチアップ ＆ 黄金デュオ速報（Nemesis Clash） */}
             <NemesisClashCard clashData={clashData} loadingClash={loadingClash} />
