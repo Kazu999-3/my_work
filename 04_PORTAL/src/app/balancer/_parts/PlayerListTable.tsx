@@ -148,13 +148,13 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-faint bg-surface-subtle border-b border-border">
                 <tr>
-                  <th className="px-2 py-3 font-medium text-center w-28">参加設定</th>
+                  <th className="px-2 py-3 font-medium text-center w-24">参加設定</th>
                   <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
-                  <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
-                  <SortableHeader label="SoloQランク" sortKey="highest_rank" className="px-2" />
-                  <SortableHeader label="推定MMRランク" sortKey="mmr" className="px-2 text-center" />
-                  <SortableHeader label="第1希望" sortKey="primary_lane" className="px-2 text-center w-24" />
-                  <th className="px-2 py-3 font-medium text-center w-28">詳細設定</th>
+                  <SortableHeader label="プレイヤー名" sortKey="name" className="px-2 min-w-[200px]" />
+                  <SortableHeader label="SoloQランク" sortKey="highest_rank" className="px-2 text-center w-28" />
+                  <SortableHeader label="推定MMRランク" sortKey="mmr" className="px-2 text-center w-36" />
+                  <SortableHeader label="第1希望" sortKey="primary_lane" className="px-2 text-center w-28" />
+                  <th className="px-2 py-3 font-medium text-center w-40">詳細設定</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
@@ -184,7 +184,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           'opacity-40 hover:opacity-100'
                         }`}
                       >
-                        <td className="px-2 py-1.5 text-center">
+                        <td className="px-2 py-1.5 text-center align-middle">
                           <div className="flex items-center justify-center gap-1.5 min-w-[76px] h-7 mx-auto">
                             <input type="checkbox" checked={p.is_active}
                               onChange={e => { const a = e.target.checked; handleInputChange(p.id,'is_active',a); if(!a){handleInputChange(p.id,'is_fixed',false);handleInputChange(p.id,'is_spectator_fixed',false);} }}
@@ -199,84 +199,97 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 text-center font-bold text-muted-strong text-xs">{p.no}</td>
-                        <td className="px-2 py-1.5 font-bold text-foreground text-xs max-w-[240px]">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <button onClick={() => setSelectedPlayer(p)} className="text-primary-700 hover:text-foreground p-0.5 hover:bg-surface-subtle rounded transition flex-shrink-0" title="プロフィール">
-                              <Info className="w-3.5 h-3.5" /></button>
-                            <span className="font-extrabold text-foreground truncate max-w-[130px]" title={p.name}>{p.name}</span>
-                            
-                            {/* 🔰/🌱/👑 参加者層バッジ */}
-                            {(() => {
-                              const exp = getPlayerExperienceBadge(p);
-                              return (
-                                <span
-                                  className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs ${exp.color}`}
-                                  title={exp.tip}
-                                >
-                                  {exp.label}
-                                </span>
-                              );
-                            })()}
+                        <td className="px-2 py-1.5 text-center font-bold text-muted-strong text-xs align-middle">{p.no}</td>
+                        <td className="px-2 py-1.5 font-bold text-foreground text-xs min-w-[200px] max-w-[260px] align-middle">
+                          <div className="flex flex-col justify-center gap-1">
+                            {/* 1行目: アイコン + プレイヤー名 + 参加者層バッジ（絶対に折り返さない） */}
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPlayer(p)}
+                                className="text-primary-700 hover:text-foreground p-0.5 hover:bg-surface-subtle rounded transition shrink-0 cursor-pointer"
+                                title="プロフィール"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="font-extrabold text-foreground truncate max-w-[130px]" title={p.name}>
+                                {p.name}
+                              </span>
+                              {(() => {
+                                const exp = getPlayerExperienceBadge(p);
+                                return (
+                                  <span
+                                    className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs shrink-0 whitespace-nowrap ${exp.color}`}
+                                    title={exp.tip}
+                                  >
+                                    {exp.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
 
-                            {/* 🏟️ 帯＆繰り上げ・格下サポートバッジ (SPEC 10) */}
-                            {(() => {
-                              const band = getPlayerTierBand(p.mmr);
-                              if (band === 'UPPER') {
-                                const strict = getDownwardOffroleRule(p.mmr) === 'STRICT_OFFROLE';
-                                return isAdmin && p.is_active ? (
-                                  <div className="inline-flex items-center gap-1">
+                            {/* 2行目: 帯＆繰り上げ・格下サポートバッジ */}
+                            <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                              {(() => {
+                                const band = getPlayerTierBand(p.mmr);
+                                if (band === 'UPPER') {
+                                  const strict = getDownwardOffroleRule(p.mmr) === 'STRICT_OFFROLE';
+                                  return isAdmin && p.is_active ? (
+                                    <div className="inline-flex items-center gap-1 flex-wrap">
+                                      <span
+                                        className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50 whitespace-nowrap shrink-0"
+                                        title={`上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`}
+                                      >
+                                        上位帯
+                                      </span>
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={Boolean(p.allow_lower_support)}
+                                        onClick={() => handleInputChange(p.id, 'allow_lower_support', !p.allow_lower_support)}
+                                        className={`inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.2 rounded-full border transition cursor-pointer whitespace-nowrap shrink-0 ${
+                                          p.allow_lower_support
+                                            ? 'bg-secondary-600 text-white border-secondary-edge-strong shadow-xs hover:bg-secondary-500'
+                                            : 'bg-surface-subtle text-muted-strong border-border hover:border-secondary-edge hover:text-foreground'
+                                        }`}
+                                        title={
+                                          p.allow_lower_support
+                                            ? `中初級帯サポート許可中 (${strict ? 'メイン・サブ除外/完全オフレーン' : 'メイン除外/オフレーン'})`
+                                            : `クリックで中初級帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
+                                        }
+                                      >
+                                        {p.allow_lower_support ? '中初級帯サポ: 許可中 ✓' : '中初級帯サポ: 不可'}
+                                      </button>
+                                    </div>
+                                  ) : (
                                     <span
-                                      className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50"
+                                      className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50 whitespace-nowrap"
                                       title={`上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`}
                                     >
                                       上位帯
                                     </span>
-                                    <button
-                                      type="button"
-                                      role="switch"
-                                      aria-checked={Boolean(p.allow_lower_support)}
-                                      onClick={() => handleInputChange(p.id, 'allow_lower_support', !p.allow_lower_support)}
-                                      className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full border transition cursor-pointer ${
-                                        p.allow_lower_support
-                                          ? 'bg-secondary-600 text-white border-secondary-edge-strong shadow-xs hover:bg-secondary-500'
-                                          : 'bg-surface-subtle text-muted-strong border-border hover:border-secondary-edge hover:text-foreground'
-                                      }`}
-                                      title={
-                                        p.allow_lower_support
-                                          ? `中初級帯サポート許可中 (${strict ? 'メイン・サブ除外/完全オフレーン' : 'メイン除外/オフレーン'})`
-                                          : `クリックで中初級帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
-                                      }
-                                    >
-                                      {p.allow_lower_support ? '中初級帯サポ: 許可中 ✓' : '中初級帯サポ: 不可'}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <span
-                                    className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50"
-                                    title={`上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`}
-                                  >
-                                    上位帯
+                                  );
+                                }
+                                const tp = normalizeTierPromotionPref(p.tier_promotion_pref);
+                                const badge =
+                                  tp === 'mix_ok'
+                                    ? { text: '中初級帯(混成OK)', cls: 'bg-success-500/15 text-success-700 border-success-edge-soft', tip: '上の帯と混ざってもいい' }
+                                    : tp === 'never'
+                                    ? { text: '中初級帯(帯固定)', cls: 'bg-surface-subtle text-muted-strong border-border', tip: '自分の帯のみ参加（繰り上げNG）' }
+                                    : { text: '中初級帯(不足時繰上)', cls: 'bg-primary-500/10 text-primary-700 border-primary-edge/40', tip: '上の帯が人不足なら繰り上げOK' };
+                                return (
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border whitespace-nowrap ${badge.cls}`} title={badge.tip}>
+                                    {badge.text}
                                   </span>
                                 );
-                              }
-                              const tp = normalizeTierPromotionPref(p.tier_promotion_pref);
-                              const badge =
-                                tp === 'mix_ok'
-                                  ? { text: '中初級帯(混成OK)', cls: 'bg-success-500/15 text-success-700 border-success-edge-soft', tip: '上の帯と混ざってもいい' }
-                                  : tp === 'never'
-                                  ? { text: '中初級帯(帯固定)', cls: 'bg-surface-subtle text-muted-strong border-border', tip: '自分の帯のみ参加（繰り上げNG）' }
-                                  : { text: '中初級帯(不足時繰上)', cls: 'bg-primary-500/10 text-primary-700 border-primary-edge/40', tip: '上の帯が人不足なら繰り上げOK' };
-                              return (
-                                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${badge.cls}`} title={badge.tip}>
-                                  {badge.text}
-                                </span>
-                              );
-                            })()}
+                              })()}
+                            </div>
                           </div>
                         </td>
-                        <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank && p.highest_rank !== 'UNRANKED' ? p.highest_rank.split(' ')[0] : 'ランクなし'}</td>
-                        <td className="px-2 py-1.5 text-center">
+                        <td className={`px-2 py-1.5 text-xs font-semibold text-center align-middle ${getColorFromRankName(p.highest_rank)}`}>
+                          {p.highest_rank && p.highest_rank !== 'UNRANKED' ? p.highest_rank.split(' ')[0] : 'ランクなし'}
+                        </td>
+                        <td className="px-2 py-1.5 text-center align-middle">
                           {(() => {
                             const repMmr = p.mmr || 1200;
                             const isProvisional = !p.total_games && !p.games;
@@ -290,57 +303,79 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                               ? `代表MMR: ${repMmr} / 最高レーン基準: ${ktmTier.name} (${highestLaneMmr})`
                               : `KTMランク: ${ktmTier.name} (MMR: ${repMmr})`;
                             return (
-                              <div className="flex items-center justify-center gap-1.5 flex-wrap" title={tooltip}>
-                                <div className="flex items-center gap-1">
+                              <div className="flex flex-col items-center justify-center gap-0.5" title={tooltip}>
+                                <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                                   <span className="font-mono text-xs font-black text-primary-800 dark:text-primary-300">{repMmr}</span>
                                   {isProvisional && (
                                     <span className="text-[9px] font-black px-1 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 shrink-0 cursor-help" title="初参加のため初期仮値です">
                                       仮
                                     </span>
                                   )}
-                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
+                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                                     {ktmTier.name.split(' ')[0]}
                                   </span>
                                 </div>
-                                {hasDiff && !isProvisional && (
-                                  <span className="text-[10px] text-muted-strong font-mono" title={`最高レーンMMR: ${highestLaneMmr}`}>
+                                {hasDiff && !isProvisional ? (
+                                  <span className="text-[10px] text-muted-strong font-mono leading-tight whitespace-nowrap" title={`最高レーンMMR: ${highestLaneMmr}`}>
                                     (最高 {highestLaneMmr})
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-transparent select-none leading-tight font-mono whitespace-nowrap" aria-hidden="true">
+                                    -
                                   </span>
                                 )}
                               </div>
                             );
                           })()}
                         </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1.5 py-0.5 w-24 mx-auto">
-                            <RoleIcon role={prefs.primary || 'ALL'} className="w-3 h-3 flex-shrink-0" />
-                            <select value={prefs.primary || 'ALL'} onChange={e => handleInputChange(p.id,'primary_role',e.target.value)} className="bg-transparent text-foreground outline-none cursor-pointer w-full text-[11px] font-bold">
-                              {['ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-foreground-soft">{r}</option>)}
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          <div className="flex items-center gap-1.5 bg-surface-subtle border border-border rounded px-2 py-1 w-24 mx-auto">
+                            <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                              {prefs.primary && prefs.primary !== 'ALL' ? (
+                                <RoleIcon role={prefs.primary} className="w-3.5 h-3.5" />
+                              ) : (
+                                <span className="text-[10px] text-muted-strong font-black">🔀</span>
+                              )}
+                            </div>
+                            <select
+                              value={prefs.primary || 'ALL'}
+                              onChange={e => handleInputChange(p.id,'primary_role',e.target.value)}
+                              className="bg-transparent text-foreground outline-none cursor-pointer w-full text-[11px] font-bold"
+                            >
+                              {['ALL','TOP','JG','MID','ADC','SUP'].map(r => (
+                                <option key={r} value={r} className="bg-surface-subtle text-foreground-soft">{r}</option>
+                              ))}
                             </select>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* 設定済みの小型インジケーター */}
-                            <div className="flex items-center gap-1 flex-wrap justify-center">
-                              {prefs.secondary && prefs.secondary !== '-' && prefs.secondary !== 'ALL' && (
-                                <span className="px-1.5 py-0.5 rounded bg-surface-subtle border border-border text-foreground-soft font-mono text-[9px] font-bold" title={`第2希望: ${prefs.secondary}`}>
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          <div className="flex items-center justify-between gap-1.5 w-full max-w-[170px] mx-auto">
+                            {/* 設定済みの小型インジケーター（2段で整然と配置） */}
+                            <div className="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
+                              {prefs.secondary && prefs.secondary !== '-' && prefs.secondary !== 'ALL' ? (
+                                <span className="px-1.5 py-0.2 rounded bg-surface-subtle border border-border text-foreground-soft font-mono text-[9px] font-bold whitespace-nowrap truncate max-w-full" title={`第2希望: ${prefs.secondary}`}>
                                   第2:{prefs.secondary}
                                 </span>
-                              )}
-                              {(p.ng_lane_1 || p.ng_lane_2) && (
-                                <span className="px-1.5 py-0.5 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[9px]" title={`絶対に入りたくない回避レーン: ${[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join(', ')}`}>
-                                  回避:{[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join('/')}
-                                </span>
-                              )}
-                              {p.allow_higher && (
-                                <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-surface-subtle border border-border" title="同じ試合での格上対面もOK">⚔️対面OK</span>
-                              )}
+                              ) : null}
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {(p.ng_lane_1 || p.ng_lane_2) && (
+                                  <span className="px-1 py-0.2 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[9px] whitespace-nowrap" title={`回避レーン: ${[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join('/')}`}>
+                                    回避:{[p.ng_lane_1, p.ng_lane_2].filter(Boolean).join('/')}
+                                  </span>
+                                )}
+                                {p.allow_higher && (
+                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-surface-subtle border border-border whitespace-nowrap" title="同じ試合での格上対面もOK">
+                                    ⚔️対面OK
+                                  </span>
+                                )}
+                              </div>
                             </div>
+
+                            {/* 設定ボタン（絶対に縦崩れしない横向き固定） */}
                             <button
                               type="button"
                               onClick={() => toggleRowExpand(p.id)}
-                              className={`px-1.5 py-0.5 rounded-md border text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer ${
+                              className={`px-2 py-1 rounded-md border text-[11px] font-bold transition inline-flex items-center gap-0.5 cursor-pointer shrink-0 whitespace-nowrap ${
                                 isExpanded
                                   ? 'bg-primary-100 border-primary-edge text-primary-800'
                                   : 'bg-surface-subtle hover:bg-surface-hover border-border text-muted-strong hover:text-foreground'
