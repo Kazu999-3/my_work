@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Users, TrendingUp, AlertCircle, ChevronDown, MessageCircle, BarChart2, CheckCircle2 } from "lucide-react";
 
 // 管理画面「運営」タブ（2026-10-20）。Bot の定期実行の記録・週ごとの数字・最高ランクとメインレーンの分布。
 // 中身は /api/admin/ops-summary。スマホで見る前提で、表は列を絞り、分布は横棒で出す。
@@ -74,6 +74,7 @@ export default function OpsSummaryPanel() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<'active' | 'all'>('active');
+  const [showDetailSection, setShowDetailSection] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -93,205 +94,255 @@ export default function OpsSummaryPanel() {
   useEffect(() => { load(); }, []);
 
   const dist = data?.distribution[scope];
+  const latestWeek = data?.weeks?.[data.weeks.length - 1];
+  const latestMonthly = data?.monthly?.[data.monthly.length - 1];
+  const retentionPct = latestMonthly && latestMonthly.firstTime
+    ? Math.round((latestMonthly.cameBack / latestMonthly.firstTime) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-black text-foreground">運営の状況</h2>
-        <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-black/5 hover:bg-black/10 text-xs font-bold disabled:opacity-50">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black text-foreground flex items-center gap-2">
+            <span>📊</span> 運営の状況（健康診断ダッシュボード）
+          </h2>
+          <p className="text-xs text-muted-strong mt-0.5">
+            今週のコミュニティ活気、新人の定着率、フォローが必要な常連メンバーの状況を確認できます。
+          </p>
+        </div>
+        <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-black/5 hover:bg-black/10 text-xs font-bold disabled:opacity-50 transition cursor-pointer">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> 更新
         </button>
       </div>
 
-      {error && <div className="p-3 rounded-lg border bg-danger-100 text-danger-700 border-danger-edge-soft text-sm">{error}</div>}
-      {loading && !data && <div className="text-sm text-muted-strong">読み込み中…</div>}
+      {error && <div className="p-3 rounded-xl border bg-danger-100 text-danger-700 border-danger-edge-soft text-sm">{error}</div>}
+      {loading && !data && <div className="text-sm text-muted-strong p-6 text-center">データを集計中…</div>}
 
       {data && (
         <>
-          {/* 📊 直近（今週）の運営KPIハイライト */}
-          {(() => {
-            const latest = data.weeks[data.weeks.length - 1];
-            if (!latest) return null;
-            return (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
-                  <div className="text-xs text-muted-strong font-bold">今週の試合数</div>
-                  <div className="text-2xl font-black text-primary-600 mt-1">{latest.matches} <span className="text-xs font-normal text-muted-strong">試合</span></div>
-                  <div className="text-[10px] text-faint mt-0.5">{latest.label}〜</div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
-                  <div className="text-xs text-muted-strong font-bold">今週のアクティブ</div>
-                  <div className="text-2xl font-black text-foreground mt-1">{latest.people} <span className="text-xs font-normal text-muted-strong">名参加</span></div>
-                  <div className="text-[10px] text-faint mt-0.5">1試合以上出場</div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
-                  <div className="text-xs text-muted-strong font-bold">新規・初参加</div>
-                  <div className="text-2xl font-black text-emerald-600 mt-1">{latest.firstTime} <span className="text-xs font-normal text-muted-strong">名</span></div>
-                  <div className="text-[10px] text-faint mt-0.5">2回目来訪: {latest.secondTime}名</div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
-                  <div className="text-xs text-muted-strong font-bold">新規名簿登録</div>
-                  <div className="text-2xl font-black text-secondary-600 mt-1">{latest.joined} <span className="text-xs font-normal text-muted-strong">名</span></div>
-                  <div className="text-[10px] text-faint mt-0.5">サーバー加入者</div>
-                </div>
+          {/* ① 【健康状態サマリー（今週の勢い）】 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* カード1: 今週の活気 */}
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-strong font-bold">
+                <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-primary-600" /> 今週のアクティブ</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-500/10 text-primary-700 font-bold">最新週</span>
               </div>
-            );
-          })()}
+              <div className="text-3xl font-black text-foreground pt-1">
+                {latestWeek?.people ?? 0} <span className="text-sm font-normal text-muted-strong">名参加</span>
+              </div>
+              <div className="text-xs text-muted-strong flex items-center gap-2 pt-1 border-t border-border/40">
+                <span>試合数: <b className="text-foreground">{latestWeek?.matches ?? 0}</b> 試合</span>
+                <span className="text-faint">|</span>
+                <span>直近60日計: <b className="text-foreground">{data.distribution.active.total}</b> 名</span>
+              </div>
+            </div>
 
-          {/* 週ごとの数字 */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-3">
-            <h3 className="text-sm font-black text-foreground">週ごとの数字（月曜はじまり）</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="text-muted-strong bg-black/5 rounded">
-                  <tr className="border-b border-border">
-                    <th className="p-2 text-left font-bold">週</th>
-                    <th className="p-2 text-right font-bold">試合</th>
-                    <th className="p-2 text-right font-bold">参加</th>
-                    <th className="p-2 text-right font-bold">初参加</th>
-                    <th className="p-2 text-right font-bold">2回目</th>
-                    <th className="p-2 text-right font-bold">名簿入り</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {[...data.weeks].reverse().map((w, idx) => (
-                    <tr key={w.label} className={`hover:bg-black/5 transition ${idx === 0 ? 'bg-primary-500/5 font-bold' : idx % 2 === 1 ? 'bg-black/2' : ''}`}>
-                      <td className="p-2 font-mono whitespace-nowrap">
-                        {w.label}〜
-                        {idx === 0 && <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-primary-600 text-white font-bold">最新</span>}
-                      </td>
-                      <td className="p-2 text-right font-mono text-primary-700">{w.matches}</td>
-                      <td className="p-2 text-right font-mono">{w.people}</td>
-                      <td className="p-2 text-right font-mono text-emerald-600">{w.firstTime}</td>
-                      <td className="p-2 text-right font-mono text-primary-600">{w.secondTime}</td>
-                      <td className="p-2 text-right font-mono">{w.joined}</td>
-                    </tr>
+            {/* カード2: 新規リピート定着率 */}
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-strong font-bold">
+                <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-emerald-600" /> 新規定着率（2回目参加）</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${retentionPct >= 50 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-primary-500/10 text-primary-700'}`}>
+                  {latestMonthly?.month ? `${latestMonthly.month.replace('-', '/')}月期` : '直近'}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between pt-1">
+                <span className="text-3xl font-black text-emerald-600">{retentionPct}%</span>
+                <span className="text-xs text-muted-strong font-mono">
+                  初参加 {latestMonthly?.firstTime ?? 0}名 ➔ 2回目 {latestMonthly?.cameBack ?? 0}名
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-black/8 overflow-hidden mt-1.5">
+                <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.min(retentionPct, 100)}%` }} />
+              </div>
+            </div>
+
+            {/* カード3: 声かけ対象（来なくなった常連） */}
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-strong font-bold">
+                <span className="flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-amber-600" /> 要フォロー常連</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 font-bold">30日以上未参加</span>
+              </div>
+              <div className="text-3xl font-black text-amber-600 pt-1">
+                {data.lapsed.length} <span className="text-sm font-normal text-muted-strong">名</span>
+              </div>
+              <p className="text-[11px] text-muted-strong pt-1 border-t border-border/40 truncate">
+                {data.lapsed.length > 0 ? '個別案内で「ひさしぶりにどう？」を送信可能' : '全員定期的に参加しています'}
+              </p>
+            </div>
+          </div>
+
+          {/* ② 【声かけ ＆ 参加者の動き（アクション）】 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 来なくなった常連さんリスト */}
+            <section className="bg-surface border border-border rounded-2xl p-4 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-foreground flex items-center gap-1.5">
+                  <span className="text-amber-500">⏳</span>
+                  <span>最近顔を出していない常連さん（{data.lapsed.length}名）</span>
+                </h3>
+              </div>
+              <p className="text-xs text-muted-strong">
+                以前よく出ていたが30日以上空いているメンバーです。「個別案内」タブで定型文「ひさしぶりにどう？」を送って気軽に誘えます。
+              </p>
+              {data.lapsed.length === 0 ? (
+                <div className="text-xs text-muted-strong p-4 text-center border border-dashed border-border rounded-xl">
+                  現在、30日以上参加が途絶えている常連はいません。
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                  {data.lapsed.map((p) => (
+                    <span key={p.name} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border border-border bg-black/3 shadow-2xs">
+                      <span className="font-bold text-foreground">{p.name}</span>
+                      <span className="text-[10px] text-amber-700 bg-amber-500/10 px-1.5 py-0.2 rounded font-bold">{p.days}日ぶり</span>
+                    </span>
                   ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-[11px] text-muted-strong">参加は、その週に1試合以上出た人数。2回目は、2日目の出場がその週だった人数。</p>
-          </section>
+                </div>
+              )}
+            </section>
 
-          {/* 初参加した人がまた来たか（定着率プログレスバー付き） */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-foreground">初参加した人が2回目に来たか（リピート定着率）</h3>
-              <span className="text-[11px] text-muted-strong">初参加の月ごと</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {data.monthly.map((m) => {
-                const pct = m.firstTime ? Math.round((m.cameBack / m.firstTime) * 100) : 0;
-                return (
-                  <div key={m.month} className="p-2.5 rounded-xl border border-border/80 bg-black/2 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono font-bold text-foreground">{m.month.replace('-', '/')}</span>
-                      <span className="text-muted-strong">
-                        初参加 <b className="font-mono text-foreground">{m.firstTime}</b>名 ➔ 2回目 <b className="font-mono text-primary-600">{m.cameBack}</b>名
-                      </span>
-                      <span className={`font-mono font-black text-xs ${pct >= 50 ? 'text-emerald-600' : 'text-primary-600'}`}>{pct}%</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-black/8 overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${pct >= 50 ? 'bg-emerald-500' : 'bg-primary-500'}`} 
-                        style={{ width: `${Math.min(pct, 100)}%` }} 
-                      />
+            {/* カスタム募集の直近の動き */}
+            <section className="bg-surface border border-border rounded-2xl p-4 space-y-3 shadow-xs">
+              <h3 className="text-sm font-black text-foreground flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>カスタム参加・辞退の動き（最新10件）</span>
+              </h3>
+              {data.recruitLogs.length === 0 ? (
+                <div className="text-xs text-muted-strong p-4 text-center border border-dashed border-border rounded-xl">
+                  記録がありません。
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {data.recruitLogs.slice(0, 10).map((l) => {
+                    const a = ACTION_LABELS[l.action] || { text: l.action, cls: 'bg-black/5 text-muted-strong border-border' };
+                    return (
+                      <div key={l.id} className="flex items-center justify-between text-xs p-1.5 rounded-lg border border-border/60 bg-black/2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-foreground truncate">{l.user_name || '名前なし'}</span>
+                          {l.style && <span className="text-[10px] text-faint">({l.style})</span>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${a.cls}`}>{a.text}</span>
+                          <span className="font-mono text-[10px] text-muted-strong">{fmtTime(l.created_at).slice(5)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* ③ 【詳細データ・分析（アコーディオン折りたたみ）】 */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowDetailSection(!showDetailSection)}
+              className={`w-full p-3 rounded-2xl border text-xs font-bold transition flex items-center justify-between cursor-pointer shadow-2xs ${
+                showDetailSection
+                  ? 'bg-primary-500/10 border-primary-500 text-primary-800'
+                  : 'bg-surface border-border hover:bg-black/5 text-muted-strong hover:text-foreground'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-primary-600" />
+                <span>過去の週次推移・ランク分布・Bot実行ログを詳細表示</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transform transition-transform duration-300 ${showDetailSection ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDetailSection && (
+              <div className="space-y-6 pt-4 animate-fade-in">
+                {/* 最高ランクとメインレーンの分布 */}
+                <section className="bg-surface border border-border rounded-2xl p-4 space-y-4 shadow-xs">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <h3 className="text-sm font-black text-foreground">最高ランクとメインレーンの分布</h3>
+                    <div className="flex gap-1 text-xs">
+                      <button onClick={() => setScope('active')} className={`px-2.5 py-1 rounded-full border cursor-pointer ${scope === 'active' ? 'bg-primary-500 text-white border-primary-edge-strong font-bold' : 'border-border hover:bg-black/5'}`}>
+                        直近60日に出た人（{data.distribution.active.total}名）
+                      </button>
+                      <button onClick={() => setScope('all')} className={`px-2.5 py-1 rounded-full border cursor-pointer ${scope === 'all' ? 'bg-primary-500 text-white border-primary-edge-strong font-bold' : 'border-border hover:bg-black/5'}`}>
+                        名簿全員（{data.distribution.all.total}名）
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            <p className="text-[11px] text-muted-strong">直近の月は、まだ2回目の機会が少ないので低めに出ます。</p>
-          </section>
+                  {dist && (
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-muted-strong">最高ランク</div>
+                        <Bars items={dist.rank} labelOf={(k) => RANK_LABELS[k] || k} />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-muted-strong">メインレーン（第1希望）</div>
+                        <Bars items={dist.lane} labelOf={(k) => (k === 'ALL' ? 'どこでも' : k)} />
+                      </div>
+                    </div>
+                  )}
+                </section>
 
-          {/* 分布 */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-4">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-sm font-black text-foreground">最高ランクとメインレーンの分布</h3>
-              <div className="flex gap-1 text-xs">
-                <button onClick={() => setScope('active')} className={`px-2.5 py-1 rounded-full border ${scope === 'active' ? 'bg-primary-500 text-white border-primary-edge-strong font-bold' : 'border-border'}`}>
-                  直近60日に出た人（{data.distribution.active.total}）
-                </button>
-                <button onClick={() => setScope('all')} className={`px-2.5 py-1 rounded-full border ${scope === 'all' ? 'bg-primary-500 text-white border-primary-edge-strong font-bold' : 'border-border'}`}>
-                  名簿全員（{data.distribution.all.total}）
-                </button>
-              </div>
-            </div>
-            {dist && (
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-muted-strong">最高ランク</div>
-                  <Bars items={dist.rank} labelOf={(k) => RANK_LABELS[k] || k} />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-muted-strong">メインレーン（第1希望）</div>
-                  <Bars items={dist.lane} labelOf={(k) => (k === 'ALL' ? 'どこでも' : k)} />
-                </div>
+                {/* 週ごとの全履歴テーブル */}
+                <section className="bg-surface border border-border rounded-2xl p-4 space-y-3 shadow-xs">
+                  <h3 className="text-sm font-black text-foreground">週ごとの詳細数字（月曜はじまり・全期間）</h3>
+                  <div className="overflow-x-auto max-h-72">
+                    <table className="w-full text-xs">
+                      <thead className="text-muted-strong bg-black/5 rounded sticky top-0">
+                        <tr className="border-b border-border">
+                          <th className="p-2 text-left font-bold">週</th>
+                          <th className="p-2 text-right font-bold">試合</th>
+                          <th className="p-2 text-right font-bold">参加</th>
+                          <th className="p-2 text-right font-bold">初参加</th>
+                          <th className="p-2 text-right font-bold">2回目</th>
+                          <th className="p-2 text-right font-bold">名簿入り</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {[...data.weeks].reverse().map((w, idx) => (
+                          <tr key={w.label} className={`hover:bg-black/5 transition ${idx === 0 ? 'bg-primary-500/5 font-bold' : idx % 2 === 1 ? 'bg-black/2' : ''}`}>
+                            <td className="p-2 font-mono whitespace-nowrap">
+                              {w.label}〜
+                              {idx === 0 && <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-primary-600 text-white font-bold">最新</span>}
+                            </td>
+                            <td className="p-2 text-right font-mono text-primary-700">{w.matches}</td>
+                            <td className="p-2 text-right font-mono">{w.people}</td>
+                            <td className="p-2 text-right font-mono text-emerald-600">{w.firstTime}</td>
+                            <td className="p-2 text-right font-mono text-primary-600">{w.secondTime}</td>
+                            <td className="p-2 text-right font-mono">{w.joined}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* Bot の定期実行ログ */}
+                <section className="bg-surface border border-border rounded-2xl p-4 space-y-2 shadow-xs">
+                  <h3 className="text-sm font-black text-foreground">Bot の定期実行（新しい順）</h3>
+                  {data.botRunsError && <div className="text-xs text-danger-700">記録の読み込みに失敗: {data.botRunsError}</div>}
+                  {data.botRuns.length === 0 && !data.botRunsError && <div className="text-xs text-muted-strong">まだ記録がありません。</div>}
+                  <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                    {data.botRuns.map((r) => {
+                      const b = statusBadge(r);
+                      return (
+                        <div key={r.id} className="flex items-start gap-2 text-xs border-b border-border/60 pb-1.5">
+                          <span className="font-mono text-muted-strong whitespace-nowrap w-24 shrink-0">{fmtTime(r.started_at)}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-foreground">
+                              {JOB_LABELS[r.job] || r.job}
+                              <span className="ml-1.5 text-[10px] text-faint font-normal">{SOURCE_LABELS[r.source] || r.source}</span>
+                            </div>
+                            {(r.detail?.reason || r.detail?.message) && <div className="text-muted-strong break-words text-[11px]">{r.detail.reason || r.detail.message}</div>}
+                          </div>
+                          <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border ${b.cls}`}>{b.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
               </div>
             )}
-          </section>
-
-          {/* 来なくなった常連 */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-2">
-            <h3 className="text-sm font-black text-foreground">来なくなった常連（3日以上出場・30日以上出ていない）: {data.lapsed.length}人</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {data.lapsed.map((p) => (
-                <span key={p.name} className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-black/5">
-                  {p.name} <span className="text-faint">{p.lastDay.slice(5).replace('-', '/')}・{p.days}日</span>
-                </span>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-strong">声をかける時は「個別案内」タブの「来なくなった常連」で絞り込み、定型文「ひさしぶりにどう？」が使えます。</p>
-          </section>
-
-          {/* カスタム募集の参加・辞退 */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-2">
-            <h3 className="text-sm font-black text-foreground">カスタム募集の参加・辞退（新しい順・40件）</h3>
-            {data.recruitLogs.length === 0 && <div className="text-xs text-muted-strong">記録がありません。</div>}
-            <div className="space-y-1.5">
-              {data.recruitLogs.map((l) => {
-                const a = ACTION_LABELS[l.action] || { text: l.action, cls: 'bg-black/5 text-muted-strong border-border' };
-                return (
-                  <div key={l.id} className="flex items-center gap-2 text-xs border-b border-border/60 pb-1.5">
-                    <span className="font-mono text-muted-strong whitespace-nowrap w-28 shrink-0">{fmtTime(l.created_at)}</span>
-                    <span className="flex-1 min-w-0 font-bold text-foreground break-words">
-                      {l.user_name || '（名前なし）'}
-                      {l.style && <span className="ml-1.5 text-[10px] text-faint font-normal">{l.style}</span>}
-                    </span>
-                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border ${a.cls}`}>{a.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Bot の定期実行 */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-2">
-            <h3 className="text-sm font-black text-foreground">Bot の定期実行（新しい順）</h3>
-            {data.botRunsError && <div className="text-xs text-danger-700">記録の読み込みに失敗: {data.botRunsError}</div>}
-            {data.botRuns.length === 0 && !data.botRunsError && <div className="text-xs text-muted-strong">まだ記録がありません（10/20 から記録開始）。</div>}
-            <div className="space-y-1.5">
-              {data.botRuns.map((r) => {
-                const b = statusBadge(r);
-                return (
-                  <div key={r.id} className="flex items-start gap-2 text-xs border-b border-border/60 pb-1.5">
-                    <span className="font-mono text-muted-strong whitespace-nowrap w-28 shrink-0">{fmtTime(r.started_at)}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-foreground">
-                        {JOB_LABELS[r.job] || r.job}
-                        <span className="ml-1.5 text-[10px] text-faint font-normal">{SOURCE_LABELS[r.source] || r.source}</span>
-                      </div>
-                      {(r.detail?.reason || r.detail?.message) && <div className="text-muted-strong break-words">{r.detail.reason || r.detail.message}</div>}
-                    </div>
-                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border ${b.cls}`}>{b.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          </div>
         </>
       )}
     </div>
