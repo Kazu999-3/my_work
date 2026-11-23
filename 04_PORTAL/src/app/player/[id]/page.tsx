@@ -6,7 +6,6 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import PlayerSettingsPanel from "../PlayerSettingsPanel";
-import ScoutingReport from "../../../components/ScoutingReport";
 import MentorshipProgressCard from "../MentorshipProgressCard";
 import confetti from "canvas-confetti";
 import { 
@@ -16,7 +15,6 @@ import {
   Star, 
   Zap, 
   Crosshair, 
-  Target,
   RefreshCw, 
   CheckCircle2, 
   TrendingUp, 
@@ -163,6 +161,8 @@ export default function PlayerMyPage() {
   const [chartPeriod, setChartPeriod] = useState<10 | 30 | 0>(0);
   // 勝率トレンドをMMRグラフに重ねるか（成長の可視化）
   const [showWinRate, setShowWinRate] = useState(false);
+  // Hextech 5軸能力と勝ちパターン分析の連動開閉ステート（初期状態は閉じ）
+  const [analysisOpen, setAnalysisOpen] = useState(false);
 
   // MMR推移グラフ用のデータを計算（useMemoで最適化）。移動平均(5戦)も付与する。
   const mmrChartData = useMemo(() => {
@@ -1599,17 +1599,14 @@ export default function PlayerMyPage() {
                         </div>
                       )}
                       {synergyPair && (
-                        <details className="group bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                          <summary className="flex items-center justify-between cursor-pointer list-none [&::-webkit-details-marker]:hidden border-b border-black/10 pb-3">
+                        <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                          <div className="flex items-center justify-between border-b border-black/10 pb-3">
                             <span className="flex items-center gap-2">
                               <Users className="w-5 h-5 text-primary-700" />
                               <span className="text-base font-black">チーム相性 ＆ シナジー分析</span>
                             </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] text-muted-strong font-medium">(味方同チーム・2戦以上)</span>
-                              <span className="text-xs text-muted-strong font-bold group-open:rotate-180 transition-transform">▼ 開く</span>
-                            </div>
-                          </summary>
+                            <span className="text-[9px] text-muted-strong font-medium">(味方同チーム・2戦以上)</span>
+                          </div>
                           <div className="grid grid-cols-2 gap-4 text-center pt-4">
                             <div className="bg-success-50 border border-success-edge-soft rounded-2xl p-4">
                               <p className="text-[10px] text-success-700 font-black mb-1">🏆 最強のシナジー (高勝率)</p>
@@ -1634,14 +1631,21 @@ export default function PlayerMyPage() {
                               )}
                             </div>
                           </div>
-                        </details>
+                        </div>
                       )}
                     </div>
                   )}
 
                   {/* 🎮 Hextech 5軸能力パラメーター (レーダーチャート) */}
                   {hextechRadarData && (
-                    <details className="group bg-gradient-to-br from-surface/90 via-surface/70 to-surface/80 backdrop-blur-2xl border border-primary-edge-strong/30 rounded-3xl p-6 shadow-xl lg:col-span-1 relative overflow-hidden">
+                    <details
+                      open={analysisOpen}
+                      onToggle={(e) => {
+                        const nextOpen = (e.currentTarget as HTMLDetailsElement).open;
+                        if (nextOpen !== analysisOpen) setAnalysisOpen(nextOpen);
+                      }}
+                      className="group bg-gradient-to-br from-surface/90 via-surface/70 to-surface/80 backdrop-blur-2xl border border-primary-edge-strong/30 rounded-3xl p-6 shadow-xl lg:col-span-1 relative overflow-hidden"
+                    >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10"></div>
                       <summary className="flex items-center justify-between cursor-pointer list-none [&::-webkit-details-marker]:hidden border-b border-black/10 dark:border-white/10 pb-3">
                         <span className="flex items-center gap-2">
@@ -1682,7 +1686,14 @@ export default function PlayerMyPage() {
 
                   {/* 📊 勝ちパターン分析 (Victory Blueprint) */}
                   {victoryBlueprint && (
-                    <details className="group bg-gradient-to-br from-surface/90 via-surface/80 to-surface/70 backdrop-blur-2xl border border-primary-edge-strong/30 rounded-3xl p-6 shadow-xl lg:col-span-2 relative overflow-hidden">
+                    <details
+                      open={analysisOpen}
+                      onToggle={(e) => {
+                        const nextOpen = (e.currentTarget as HTMLDetailsElement).open;
+                        if (nextOpen !== analysisOpen) setAnalysisOpen(nextOpen);
+                      }}
+                      className="group bg-gradient-to-br from-surface/90 via-surface/80 to-surface/70 backdrop-blur-2xl border border-primary-edge-strong/30 rounded-3xl p-6 shadow-xl lg:col-span-2 relative overflow-hidden"
+                    >
                       <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary-500/15 rounded-full blur-3xl pointer-events-none"></div>
                       <summary className="flex items-center justify-between cursor-pointer list-none [&::-webkit-details-marker]:hidden border-b border-black/10 dark:border-white/10 pb-3">
                         <span className="flex items-center gap-2">
@@ -1719,28 +1730,6 @@ export default function PlayerMyPage() {
                       </div>
                     </details>
                   )}
-
-                  {/* 📋 スカウティングレポート（ソロキュー戦績タブへの一本化・誘導リンク） */}
-                  <div className="bg-gradient-to-r from-primary-950/10 via-surface/60 to-surface/80 border border-primary-edge-soft/60 rounded-3xl p-5 shadow-sm lg:col-span-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-primary-100 dark:bg-primary-950/60 flex items-center justify-center text-primary-700 dark:text-primary-300 text-xl shrink-0">
-                        <Sparkles className="w-5 h-5 text-primary-600 animate-pulse" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-black text-foreground">週刊スタッツ・スカウティングレポート</h4>
-                        <p className="text-xs text-muted-strong mt-0.5">
-                          直近の傾向・得意スタイル・改善アドバイスの全文は「🎮 ソロキュー戦績」タブで確認できます。
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('soloq')}
-                      className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-black transition cursor-pointer shrink-0 shadow-sm"
-                    >
-                      スカウティング全文を見る →
-                    </button>
-                  </div>
 
                   {/* MMRグラフ */}
                   <details className="group bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-3 space-y-4">
@@ -2159,62 +2148,45 @@ export default function PlayerMyPage() {
                     </div>
                   </div>
 
-                  {/* 魂のチャンピオン (Riot公式マスタリー) ＆ スカウティングサマリー */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* 魂のチャンピオン (マスタリー一覧) */}
-                    <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                      <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-3">
-                        <h3 className="text-lg font-black flex items-center gap-2">
-                          <Star className="w-5 h-5 text-primary-600" />
-                          <span>魂のチャンピオン (Riot公式マスタリー)</span>
-                        </h3>
-                        <span className="text-xs text-muted-strong font-bold">上位ピック</span>
-                      </div>
-                      <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-                        {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/20 transition-colors">
-                            <div className="flex items-center gap-3.5">
-                              <Image
-                                src={m.iconUrl}
-                                alt={m.name}
-                                width={44}
-                                height={44}
-                                className="w-11 h-11 rounded-full border border-black/10 shadow-sm shrink-0"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                              />
-                              <div className="space-y-0.5">
-                                <div className="font-black text-sm text-foreground">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
-                                <div className="text-[10px] text-muted-strong font-bold">
-                                  マスタリーLv {m.championLevel}
-                                </div>
+                  {/* 魂のチャンピオン (Riot公式マスタリー) */}
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                    <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-3">
+                      <h3 className="text-lg font-black flex items-center gap-2">
+                        <Star className="w-5 h-5 text-primary-600" />
+                        <span>魂のチャンピオン (Riot公式マスタリー)</span>
+                      </h3>
+                      <span className="text-xs text-muted-strong font-bold">上位ピック</span>
+                    </div>
+                    <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                      {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/20 transition-colors">
+                          <div className="flex items-center gap-3.5">
+                            <Image
+                              src={m.iconUrl}
+                              alt={m.name}
+                              width={44}
+                              height={44}
+                              className="w-11 h-11 rounded-full border border-black/10 shadow-sm shrink-0"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                            <div className="space-y-0.5">
+                              <div className="font-black text-sm text-foreground">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
+                              <div className="text-[10px] text-muted-strong font-bold">
+                                マスタリーLv {m.championLevel}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <span className="text-xs font-mono font-black text-primary-800 bg-primary-50 border border-primary-edge-soft px-2 py-0.5 rounded-lg">
-                                {m.championPoints?.toLocaleString()} pt
-                              </span>
-                            </div>
                           </div>
-                        )) : (
-                          <div className="text-muted-strong text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
-                            マスタリーデータがまだ登録されていません。右上の「最新戦績を同期」をお試しください。
+                          <div className="text-right">
+                            <span className="text-xs font-mono font-black text-primary-800 bg-primary-50 border border-primary-edge-soft px-2 py-0.5 rounded-lg">
+                              {m.championPoints?.toLocaleString()} pt
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* スカウティングレポート (ScoutingReport) */}
-                    <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-                      <div className="border-b border-black/10 pb-3 mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-black flex items-center gap-2">
-                          <Target className="w-5 h-5 text-secondary-600" />
-                          <span>スカウティング ＆ 傾向レポート</span>
-                        </h3>
-                        <span className="text-xs text-muted-strong font-bold">プレイスタイル</span>
-                      </div>
-                      <div className="flex-1">
-                        <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
-                      </div>
+                        </div>
+                      )) : (
+                        <div className="text-muted-strong text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
+                          マスタリーデータがまだ登録されていません。右上の「最新戦績を同期」をお試しください。
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

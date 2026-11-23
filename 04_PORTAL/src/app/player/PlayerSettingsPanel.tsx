@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
   Save, CheckCircle2, AlertTriangle, RefreshCw, Moon,
@@ -91,9 +91,58 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   const [notInServer, setNotInServer] = useState(false);
   const [togglingPlaystyle, setTogglingPlaystyle] = useState<string | null>(null);
 
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // 自動保存ステータス: 'idle' | 'saving' | 'saved' | 'error'
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const ignDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // 自動保存関数
+  const executeSave = useCallback(async (override?: {
+    primary?: string;
+    secondary?: string;
+    ng_roles?: string[];
+    ign?: string;
+    weight?: number;
+    allow_higher?: boolean;
+    tier_promotion_pref?: TierPromotionPref;
+  }) => {
+    try {
+      setSaveStatus('saving');
+      setErrorMessage(null);
+
+      const payload = {
+        primary: override?.primary !== undefined ? override.primary : primaryRole,
+        secondary: override?.secondary !== undefined ? override.secondary : secondaryRole,
+        ng_roles: override?.ng_roles !== undefined ? override.ng_roles : ngRoles,
+        ign: override?.ign !== undefined ? override.ign : ign,
+        weight: override?.weight !== undefined ? override.weight : weight,
+        allow_higher: override?.allow_higher !== undefined ? override.allow_higher : allowHigher,
+        tier_promotion_pref: override?.tier_promotion_pref !== undefined ? override.tier_promotion_pref : tierPromotionPref,
+      };
+
+      const res = await fetch("/api/player/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSaveStatus('saved');
+        if (onSaved) onSaved(data.player);
+        setTimeout(() => {
+          setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev));
+        }, 3000);
+      } else {
+        setSaveStatus('error');
+        setErrorMessage(data.error || "設定の保存に失敗しました。");
+      }
+    } catch (err: any) {
+      setSaveStatus('error');
+      setErrorMessage("通信エラーが発生しました。");
+    }
+  }, [primaryRole, secondaryRole, ngRoles, ign, weight, allowHigher, tierPromotionPref, onSaved]);
 
   // 初参加（通算0戦）判定 & ウェルカムバナー表示状態
   const isNewPlayer = (player?.total_games ?? 0) === 0 && (player?.stats?.total?.g ?? 0) === 0;
@@ -210,31 +259,37 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   };
 
   const setLaneChoice = (roleId: string, choice: LaneChoice) => {
+    let nextPrimary = primaryRole;
+    let nextSecondary = secondaryRole;
+    let nextNg = [...ngRoles];
+
     if (choice === "PRIMARY") {
-      setPrimaryRole(roleId);
-      if (secondaryRole === roleId) setSecondaryRole("ALL");
-      if (ngRoles.includes(roleId)) setNgRoles(ngRoles.filter((r) => r !== roleId));
-      return;
-    }
-    if (choice === "SECONDARY") {
-      setSecondaryRole(roleId);
-      if (primaryRole === roleId) setPrimaryRole("ALL");
-      if (ngRoles.includes(roleId)) setNgRoles(ngRoles.filter((r) => r !== roleId));
-      return;
-    }
-    if (choice === "NG") {
+      nextPrimary = roleId;
+      if (nextSecondary === roleId) nextSecondary = "ALL";
+      if (nextNg.includes(roleId)) nextNg = nextNg.filter((r) => r !== roleId);
+    } else if (choice === "SECONDARY") {
+      nextSecondary = roleId;
+      if (nextPrimary === roleId) nextPrimary = "ALL";
+      if (nextNg.includes(roleId)) nextNg = nextNg.filter((r) => r !== roleId);
+    } else if (choice === "NG") {
       if (roleId === "ALL") return;
-      if (primaryRole === roleId) setPrimaryRole("ALL");
-      if (secondaryRole === roleId) setSecondaryRole("ALL");
-      if (!ngRoles.includes(roleId)) {
-        toggleNgRole(roleId);
+      if (nextPrimary === roleId) nextPrimary = "ALL";
+      if (nextSecondary === roleId) nextSecondary = "ALL";
+      if (!nextNg.includes(roleId)) {
+        if (nextNg.length >= 2) nextNg = [...nextNg.slice(1), roleId];
+        else nextNg = [...nextNg, roleId];
       }
-      return;
+    } else {
+      // ANY
+      if (nextPrimary === roleId) nextPrimary = "ALL";
+      if (nextSecondary === roleId) nextSecondary = "ALL";
+      if (nextNg.includes(roleId)) nextNg = nextNg.filter((r) => r !== roleId);
     }
-    // ANY（どちらでも）
-    if (primaryRole === roleId) setPrimaryRole("ALL");
-    if (secondaryRole === roleId) setSecondaryRole("ALL");
-    if (ngRoles.includes(roleId)) setNgRoles(ngRoles.filter((r) => r !== roleId));
+
+    setPrimaryRole(nextPrimary);
+    setSecondaryRole(nextSecondary);
+    setNgRoles(nextNg);
+    executeSave({ primary: nextPrimary, secondary: nextSecondary, ng_roles: nextNg });
   };
 
   const roleLabel = (id: string) => ROLES.find((r) => r.id === id)?.name || id;
@@ -253,49 +308,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
     ngRoles.length === 0 &&
     primaryRole === "ALL" &&
     secondaryRole === "ALL";
-  const hasUnsavedChanges =
-    primaryRole !== toAll(prefs.primary) ||
-    secondaryRole !== toAll(prefs.secondary) ||
-    JSON.stringify(ngRoles) !== JSON.stringify(prefs.ng_roles || [player?.ng_lane_1, player?.ng_lane_2].filter(Boolean)) ||
-    ign !== (player?.ign || "") ||
-    weight !== ([1, 2, 3].includes(Number(player?.weight)) ? Number(player?.weight) : 2) ||
-    allowHigher !== !!player?.allow_higher ||
-    tierPromotionPref !== normalizeTierPromotionPref(player?.tier_promotion_pref);
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      setSaveSuccess(false);
-      setError(null);
-
-      const res = await fetch("/api/player/preferences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          primary: primaryRole,
-          secondary: secondaryRole,
-          ng_roles: ngRoles,
-          ign: ign,
-          weight,
-          allow_higher: allowHigher,
-          tier_promotion_pref: tierPromotionPref,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setSaveSuccess(true);
-        if (onSaved) onSaved(data.player);
-        setTimeout(() => setSaveSuccess(false), 4000);
-      } else {
-        setError(data.error || "設定の保存に失敗しました。");
-      }
-    } catch (err: any) {
-      setError("通信エラーが発生しました。");
-    } finally {
-      setSaving(false);
-    }
+  // 手動保存用のフォールバックハンドラ（再試行時など）
+  const handleSave = () => {
+    executeSave();
   };
 
   // 読み込み中（スケルトン）状態
@@ -404,13 +420,20 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
               📋 今のあなたの設定
             </span>
             <span
-              className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                hasUnsavedChanges
-                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40"
-                  : "bg-success-500/15 text-success-700 dark:text-success-300 border-success-500/30"
+              className={`text-[10px] font-black px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${
+                saveStatus === "saving"
+                  ? "bg-primary-500/15 text-primary-800 dark:text-primary-300 border-primary-500/40 animate-pulse"
+                  : saveStatus === "saved"
+                  ? "bg-success-500/15 text-success-700 dark:text-success-300 border-success-500/30"
+                  : saveStatus === "error"
+                  ? "bg-danger-500/15 text-danger-700 dark:text-danger-400 border-danger-500/30"
+                  : "bg-surface border-border text-muted-strong"
               }`}
             >
-              {hasUnsavedChanges ? "未保存の変更あり（最下部の保存ボタンで反映）" : "保存済み"}
+              {saveStatus === "saving" && <><RefreshCw className="w-3 h-3 animate-spin shrink-0" /><span>自動保存中...</span></>}
+              {saveStatus === "saved" && <><CheckCircle2 className="w-3 h-3 shrink-0" /><span>保存しました</span></>}
+              {saveStatus === "error" && <><AlertTriangle className="w-3 h-3 shrink-0" /><span>保存失敗</span></>}
+              {saveStatus === "idle" && <span>☁️ 変更時に自動保存</span>}
             </span>
           </div>
           <p className="text-xs sm:text-sm font-black text-foreground leading-relaxed">
@@ -599,7 +622,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 <button
                   key={`w-${o.v}`}
                   type="button"
-                  onClick={() => setWeight(o.v)}
+                  onClick={() => {
+                    setWeight(o.v);
+                    executeSave({ weight: o.v });
+                  }}
                   aria-pressed={isSelected}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     isSelected
@@ -669,7 +695,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 <button
                   key={`q1-${String(opt.allow)}`}
                   type="button"
-                  onClick={() => setAllowHigher(opt.allow)}
+                  onClick={() => {
+                    setAllowHigher(opt.allow);
+                    executeSave({ allow_higher: opt.allow });
+                  }}
                   aria-pressed={isSelected}
                   className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
                     isSelected
@@ -741,7 +770,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                   type="button"
                   disabled={isUpperTier}
                   onClick={() => {
-                    if (!isUpperTier) setTierPromotionPref(opt.v);
+                    if (!isUpperTier) {
+                      setTierPromotionPref(opt.v);
+                      executeSave({ tier_promotion_pref: opt.v });
+                    }
                   }}
                   aria-pressed={isSelected}
                   className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between gap-1.5 ${
@@ -797,12 +829,23 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           <input
             type="text"
             value={ign}
-            onChange={(e) => setIgn(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setIgn(val);
+              if (ignDebounceTimer.current) clearTimeout(ignDebounceTimer.current);
+              ignDebounceTimer.current = setTimeout(() => {
+                executeSave({ ign: val });
+              }, 800);
+            }}
+            onBlur={() => {
+              if (ignDebounceTimer.current) clearTimeout(ignDebounceTimer.current);
+              executeSave({ ign });
+            }}
             placeholder="例: Hide on bush#KR1"
             className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-xs"
           />
           <p className="text-[11px] text-faint font-medium">
-            ※ Riot ID とタグライン（#JP1など）を入力すると戦績連携が有効になります（変更後は最下部の「設定を保存する」で保存）。
+            ※ Riot ID とタグライン（#JP1など）を入力すると戦績連携が有効になります（入力時に自動保存されます）。
             {player?.discord_id && (
               <span className="block mt-0.5 text-muted-strong">
                 連携中 Discord ID: <code className="font-mono">{player.discord_id}</code>
@@ -879,49 +922,40 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
         </div>
       </section>
 
-      {/* 保存ボタン & 通知（エラー時は選択を保持して再試行可能） */}
+      {/* 自動保存ステータスバー & エラー通知 */}
       <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border">
-        <div className="w-full sm:w-auto">
-          {saveSuccess && (
-            <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black transition-opacity">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>設定を保存しました！次回のカスタム編成から反映されます。</span>
+        <div className="w-full">
+          {saveStatus === 'saving' && (
+            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 text-xs font-black animate-pulse">
+              <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+              <span>変更を自動保存中...</span>
             </div>
           )}
-          {error && (
+          {saveStatus === 'saved' && (
+            <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black transition-opacity">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>設定を自動保存しました！次回のカスタム編成から自動反映されます。</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
             <div className="flex flex-wrap items-center gap-2 text-danger-700 dark:text-danger-400 text-xs font-black">
               <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{error}（入力中の選択はそのまま残っています）</span>
+              <span>{errorMessage || "設定の保存に失敗しました。"}</span>
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={saving}
                 className="px-2.5 py-1 rounded-lg bg-danger-600 hover:bg-danger-700 text-white text-[11px] font-black cursor-pointer"
               >
                 再試行する
               </button>
             </div>
           )}
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-stone-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20 disabled:opacity-50 transition-all cursor-pointer"
-        >
-          {saving ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>保存中...</span>
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              <span>設定を保存する</span>
-            </>
+          {saveStatus === 'idle' && (
+            <div className="flex items-center gap-2 text-muted-strong text-xs font-medium">
+              <span>☁️ 各項目を変更すると自動的に保存されます（保存ボタンの押下は不要です）</span>
+            </div>
           )}
-        </button>
+        </div>
       </div>
     </div>
   );
