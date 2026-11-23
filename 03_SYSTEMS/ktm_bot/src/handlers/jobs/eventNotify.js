@@ -44,12 +44,12 @@ export async function sendEventUsersNotification(env, options = {}) {
       return { action: 'skipped', reason: '募集カードが見つからない' };
     }
 
-    const allReady = summaries.every((s) => s.status.isReady);
+    const allReady = summaries.every((s) => s.status.high?.isReady && s.status.low?.isReady);
     if (allReady) {
-      console.log('[EventNotify] 対象日（' + summaries.map((s) => s.target.label).join(', ') + '）はすべて定員到達（開催確定）しているためリマインド送信をスキップします');
+      console.log('[EventNotify] 対象日（' + summaries.map((s) => s.target.label).join(', ') + '）は全ロビーが定員到達（開催確定）しているためリマインド送信をスキップします');
       // 満員になった場合も、以前の「残り枠リマインド」が残っていれば掃除する
       await cleanupOldReminderMessages(env, channelId);
-      return { action: 'skipped', reason: 'すべて定員到達' };
+      return { action: 'skipped', reason: '全ロビー定員到達' };
     }
 
     const guildId = await resolveGuildId(env, channelId);
@@ -73,27 +73,23 @@ export async function sendEventUsersNotification(env, options = {}) {
 
     const dayLines = summaries.map((s) => {
       const def = getDayDef(s.target.dayKey);
-      let state;
-      if (s.status.breakdown?.hasBreakdown) {
-        const b = s.status.breakdown;
-        const m1 = b.isMatch1Ready ? '第1戦: 確定' : `第1戦: あと${b.match1Remaining}名`;
-        const m2 = b.isMatch2Ready ? '第2戦: 確定' : `第2戦: あと${b.match2Remaining}名`;
-        state = `**${m1} / ${m2}**`;
-      } else {
-        state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名で開催確定**`;
-      }
+      const high = s.status.high || { joined: 0, isReady: false, remaining: 10 };
+      const low = s.status.low || { joined: 0, isReady: false, remaining: 10 };
+      const highState = high.isReady ? '**✅ 開催確定！**' : `あと${high.remaining}名`;
+      const lowState = low.isReady ? '**✅ 開催確定！**' : `あと${low.remaining}名`;
 
       const link = guildId
         ? ` → [カードへジャンプ](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
         : '';
 
       const lines = [
-        `${def.emoji} **${def.name}**　${s.target.label} 21:00〜`,
-        `　エントリー: **${s.status.joined}/10名** → ${state}${link}`
+        `${def.emoji} **${def.name}**　${s.target.label} 21:00〜${link}`,
+        `　👑 **上位帯ロビー**: **${high.joined}/10名** → ${highState}`,
+        `　🌱 **中初級帯ロビー**: **${low.joined}/10名** → ${lowState}`
       ];
 
       if (s.target.dayKey === 'sat') {
-        lines.push('　🛡️ **実力均等**: チーム戦力を五分五分に自動調整！初心者・低ランクでも安心して参加できます');
+        lines.push('　🛡️ **実力均等**: チーム戦力を推定MMRランクで五分五分に自動調整！初心者・中初級帯でも安心して参加できます');
       } else if (s.target.dayKey === 'sun') {
         lines.push(`　🎪 **今週のお題**: **「${sundayThemeText}」**（ランク不問・お祭り枠✨）`);
       }
@@ -110,7 +106,7 @@ export async function sendEventUsersNotification(env, options = {}) {
         dayLines.join('\n\n'),
         '',
         '---',
-        '🔰 **「低ランクだけど迷惑かけない…？」** ➔ **まったく気にせず押してください！**',
+        '🔰 **「中初級帯だけど迷惑かけない…？」** ➔ **まったく気にせず押してください！**',
         '💡 「21:00〜の1戦のみ参加」や「ご飯終わりの途中合流」も大歓迎です！',
       ].join('\n'),
       color: embedColor,
@@ -313,172 +309,175 @@ export async function checkCustomStatusAt2000(env) {
     // チャンネルの自浄: 過去のリマインド・催促を削除して最新の判定メッセージ1通に保つ
     await cleanupOldReminderMessages(env, summary.channelId || channelId);
 
-    // A. 開催確定（募集カードへの返信として投稿）
-    if (firstMatchCount >= DAY_CAPACITY) {
-      const confirmChannelId = summary.channelId || channelId;
-      // ⚠️ 2026-09-29追加: 以前は開催確定時に**参加者へのメンションが無かった**。
-      // 中止のときだけメンションしており、「開催される側」は返信に気づかないと集合できない
-      // 非対称な状態だった（開催確定こそ集合の合図が要る）。中止側と同じ方式で当事者だけに鳴らす。
-      // なお `sendRecruitmentReminders`（開始15分前リマインド）は呼び出し元ゼロの死んだ関数で、
-      // punctualなcron枠が無く実装できないため削除した。その役割はここが担う。
-      const attendeeIds = [...new Set(
-        summary.lines.flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]))
-      )].slice(0, 100);
-      const attendeeMentions = attendeeIds.length > 0
-        ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
-        : '';
-      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${confirmChannelId}/messages`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は第1戦メンバーが${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
-          allowed_mentions: { users: attendeeIds },
-          ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
-        })
-      });
-      console.log(`[Check2000] 開催確定通知を募集カードへの返信として投稿しました（通知対象 ${attendeeIds.length}名）`);
-      return postOutcome(postRes, '開催確定');
-    }
-
     const idsIn = (lines) => [...new Set((lines || []).flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1])))].slice(0, 100);
-    const replyTo = summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {};
-    const postChannelId = summary.channelId || channelId;
 
-    // A-2. 第1戦は足りないが第2戦は10名そろう → 第2戦から開催で確定（2026-10-17、ユーザー判断）
-    if (breakdown?.isMatch2Ready) {
-      // 第2戦に出る人 = 第1戦欄のうち「1戦のみ」以外 ＋ 2戦目から合流
-      const match2Ids = idsIn([...(breakdown.match1Lines || []).filter((l) => !/1戦のみ/.test(l)), ...(breakdown.match2LateLines || [])]);
-      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: `🎉 **【本日20:00 判定: 第2戦から開催確定！】**\n${def.emoji} **${def.name}** は第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 のため、**第2戦から**開催します（第2戦は ${breakdown.match2Count}名）。開始時刻は主催者からの案内をお待ちください。` +
+    // 指示文32: 20:00 開催判定をロビー（上位帯／中初級帯）ごとに独立して判定・実行
+    function evaluateLobbyDecision({ lobbyKey, lobbyName, lobbyStatus, spectatorLines, def }) {
+      const firstMatchCount = lobbyStatus.match1Count;
+      const lateCount = lobbyStatus.match2LateLines?.length ?? 0;
+      const shortfall = Math.max(0, DAY_CAPACITY - firstMatchCount);
+      const spectatorLinesForMatch1 = (spectatorLines || []).filter((l) => !/2戦目/.test(l));
+
+      // A. 開催確定
+      if (lobbyStatus.isMatch1Ready) {
+        const attendeeIds = idsIn(lobbyStatus.match1Lines);
+        const attendeeMentions = attendeeIds.length > 0
+          ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
+          : '';
+        return {
+          type: 'CONFIRMED',
+          action: `${lobbyName} 開催確定`,
+          isReady: true,
+          content: `🎉 **【本日20:00 判定: ${lobbyName} 開催確定！】**\n${def.emoji} **${def.name}（${lobbyName}）** は第1戦メンバーが ${firstMatchCount}名 集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
+          allowed_mentions: { users: attendeeIds },
+        };
+      }
+
+      // A-2. 第2戦から開催確定
+      if (lobbyStatus.isMatch2Ready) {
+        const match2Ids = idsIn([...(lobbyStatus.match1Lines || []).filter((l) => !/1戦のみ/.test(l)), ...(lobbyStatus.match2LateLines || [])]);
+        return {
+          type: 'MATCH2_CONFIRMED',
+          action: `${lobbyName} 第2戦から開催確定`,
+          isReady: true,
+          content: `🎉 **【本日20:00 判定: ${lobbyName} 第2戦から開催確定！】**\n${def.emoji} **${def.name}（${lobbyName}）** は第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 のため、**第2戦から**開催します（第2戦は ${lobbyStatus.match2Count}名）。開始時刻は主催者からの案内をお待ちください。` +
             (match2Ids.length ? `\n\n集合をお願いします 🎮 ${match2Ids.map((id) => `<@${id}>`).join(' ')}` : ''),
           allowed_mentions: { users: match2Ids },
-          ...replyTo,
-        })
-      });
-      console.log(`[Check2000] 第2戦から開催確定を投稿しました（${breakdown.match2Count}名）`);
-      return postOutcome(postRes, '第2戦から開催確定');
+        };
+      }
+
+      // A-3. 観戦枠への参加依頼
+      if (firstMatchCount + spectatorLinesForMatch1.length >= DAY_CAPACITY) {
+        const spectatorIds = idsIn(spectatorLinesForMatch1);
+        return {
+          type: 'SPECTATOR_REQUEST',
+          action: `${lobbyName} 観戦枠への参加依頼`,
+          isReady: false,
+          content: `🙋 **【参加のお願い】${def.name}（${lobbyName}）**\n` +
+            `第1戦の出場対象は ${firstMatchCount}/${DAY_CAPACITY}名 で、あと **${shortfall}名** 足りません。\n` +
+            `観戦希望の方が入ってくれれば開催できます。出られそうな方は、下のボタンを押して第1戦へエントリーをお願いします🙏\n` +
+            (spectatorIds.length ? `\n\n${spectatorIds.map((id) => `<@${id}>`).join(' ')}` : ''),
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 2,
+                  label: `🙋 ${lobbyName}の第1戦に参加する！ (あと${shortfall}名)`,
+                  style: 3,
+                  custom_id: `spectator_accept:${def.key}:${lobbyKey}`
+                }
+              ]
+            }
+          ],
+          allowed_mentions: { users: spectatorIds },
+        };
+      }
+
+      // B. 助っ人募集
+      if (firstMatchCount >= 8 && lateCount >= 1) {
+        return {
+          type: 'HELP_RECRUIT',
+          action: `${lobbyName} 助っ人募集`,
+          isReady: false,
+          content: `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 ${lobbyName}の助っ人をピンポイント募集中！】**\n\n` +
+            `・**${def.shortName}（${lobbyName}）**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n` +
+            `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
+            `下のボタンから1戦だけ助っ人エントリーをお願いします！`,
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 2,
+                  label: `⏱️ 【助っ人急募】1戦だけ参加する！ (あと${shortfall}名)`,
+                  style: 1,
+                  custom_id: `${def.joinPrefix}:single`
+                }
+              ]
+            }
+          ],
+          allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] },
+        };
+      }
+
+      // C. 中止
+      const entryIds = idsIn(lobbyStatus.eligibleLines);
+      const cancelMentions = entryIds.length > 0
+        ? `\n\n通知: ${entryIds.map((id) => `<@${id}>`).join(' ')}`
+        : '';
+
+      return {
+        type: 'CANCEL',
+        action: `${lobbyName} 中止`,
+        isReady: false,
+        content: `🛑 **【本日の${def.name}（${lobbyName}）は中止です】**\n\n` +
+          `20:00時点で${lobbyName}の第1試合の参加者が ${firstMatchCount}/${DAY_CAPACITY}名 と集まらなかったため、本日の${lobbyName}は中止とします。\n` +
+          `エントリーしてくださった皆さん、ありがとうございました。\n` +
+          `（※開催確定したロビーは予定通り進行します）\n\n` +
+          `💡 集まれる人で遊びたい場合は、下のボタンから通常募集を立てられます。` +
+          cancelMentions,
+        components: [
+          {
+            type: 1,
+            components: [
+              { type: 2, label: "⚔️ 通常募集を立てる", style: 1, custom_id: "portal_recruit" }
+            ]
+          }
+        ],
+        allowed_mentions: { users: entryIds },
+      };
     }
 
-    // A-3. 観戦希望の人まで含めれば第1戦が10名になる → 観戦の人へ参加のお願い（中止にしない。2026-10-17）
-    const spectatorLinesForMatch1 = (breakdown?.spectatorLines || []).filter((l) => !/2戦目/.test(l));
-    if (breakdown && firstMatchCount + spectatorLinesForMatch1.length >= DAY_CAPACITY) {
-      const spectatorIds = idsIn(spectatorLinesForMatch1);
+    const highDecision = evaluateLobbyDecision({
+      lobbyKey: 'high',
+      lobbyName: '上位帯ロビー',
+      lobbyStatus: summary.status.high,
+      spectatorLines: summary.status.spectator?.lines,
+      def,
+    });
+    const lowDecision = evaluateLobbyDecision({
+      lobbyKey: 'low',
+      lobbyName: '中初級帯ロビー',
+      lobbyStatus: summary.status.low,
+      spectatorLines: summary.status.spectator?.lines,
+      def,
+    });
+
+    const decisions = [highDecision, lowDecision];
+    const postChannelId = summary.channelId || channelId;
+    const replyTo = summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {};
+    const todayJst = nowJst.toISOString().slice(0, 10);
+    const skipCancel = NO_CANCEL_NOTICE_DATES.includes(todayJst);
+
+    const outcomes = [];
+    for (const d of decisions) {
+      if (d.type === 'CANCEL' && skipCancel) {
+        console.log(`[Check2000] ${todayJst} は中止告知を出さない日のため${d.action}をスキップ`);
+        continue;
+      }
       const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: `🙋 **【参加のお願い】${def.name}**\n` +
-            `第1戦の出場対象は ${firstMatchCount}/${DAY_CAPACITY}名 で、あと **${shortfall}名** 足りません。\n` +
-            `観戦希望の方が入ってくれれば開催できます。出られそうな方は、このメッセージに ✅ で返事をお願いします🙏\n` +
-            `（集まり次第、主催者が開催を判断します）` +
-            (spectatorIds.length ? `\n\n${spectatorIds.map((id) => `<@${id}>`).join(' ')}` : ''),
-          allowed_mentions: { users: spectatorIds },
+          content: d.content,
+          components: d.components || [],
+          allowed_mentions: d.allowed_mentions || {},
           ...replyTo,
         })
       });
-      console.log(`[Check2000] 観戦枠への参加依頼を投稿しました（第1戦 ${firstMatchCount}名 + 観戦枠 ${spectatorLinesForMatch1.length}名）`);
-      return postOutcome(postRes, '観戦枠への参加依頼');
+      outcomes.push(postOutcome(postRes, d.action));
+      console.log(`[Check2000] ${d.action} を投稿しました: ${def.name}`);
     }
 
-    // B. あと1〜2名 かつ 途中参加者がいる場合は、1戦だけの助っ人をピンポイント募集（募集カードへの返信）
-    if (firstMatchCount >= 8 && lateCount >= 1) {
-      const helpComponents = [
-        {
-          type: 1,
-          components: [
-            {
-              type: 2,
-              label: `⏱️ 【助っ人急募】1戦だけ参加する！ (あと${shortfall}名)`,
-              style: 1,
-              custom_id: `${def.joinPrefix}:single`
-            }
-          ]
-        }
-      ];
-
-      const rankHint = '';
-
-      const content = `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 助っ人をピンポイント募集中！】**\n\n` +
-        `・**${def.shortName}**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n` +
-        rankHint + '\n' +
-        `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
-        `下のボタンから1戦だけ助っ人エントリーをお願いします！`;
-
-      const helpChannelId = summary.channelId || channelId;
-      const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${helpChannelId}/messages`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content,
-          components: helpComponents,
-          allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] },
-          ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
-        })
-      });
-      console.log('[Check2000] ピンポイント助っ人募集メッセージを募集カードへの返信として投稿しました');
-      return postOutcome(postRes, '助っ人募集');
-    }
-
-    // C. 中止
-    // 主催者の判断で中止の告知を出さない日（JSTの日付）。カードも締め切らない。
-    const todayJst = nowJst.toISOString().slice(0, 10);
-    if (NO_CANCEL_NOTICE_DATES.includes(todayJst)) {
-      console.log(`[Check2000] ${todayJst} は中止告知を出さない日のためスキップ（第1戦 ${firstMatchCount}名）`);
-      return { action: 'skipped', reason: '中止告知を出さない日' };
-    }
-
-    // 2026-10-03: 以前は「21:00まで参加枠を開放しています／別モードで遊ぶことも可能です」という
-    // 状況案内とノーマル・ARAMのクイック募集ボタンだったが、開催するのかしないのかが曖昧だった。
-    // ユーザー指示により「中止」と明言し、遊びたい人向けに通常募集を立てるボタンだけを付ける。
-    const substituteComponents = [
-      {
-        type: 1,
-        components: [
-          // portal_recruit は募集作成モーダル（モード・時刻・人数・メモ）を開く。どのメッセージからでも動作する
-          { type: 2, label: "⚔️ 通常募集を立てる", style: 1, custom_id: "portal_recruit" }
-        ]
-      }
-    ];
-
-    const cancelContent = `🛑 **【本日の${def.name}は中止です】**\n\n` +
-      `20:00時点で第1試合の参加者が ${firstMatchCount}/${DAY_CAPACITY}名 と集まらなかったため、本日の定期カスタムは中止とします。\n` +
-      `エントリーしてくださった皆さん、ありがとうございました。\n` +
-      `\n💡 集まれる人で遊びたい場合は、下のボタンから通常募集を立てられます。`;
-
-    // 中止はエントリー済みの当事者に最も届くべき通知なので、募集カードへの返信としてぶら下げ、
-    // メンションはその人たちだけに限定する(@募集通知ロール全体には鳴らさない)。
-    // 以前は独立メッセージかつメンション無しで、エントリー済みの人が中止に気づけなかった。
-    const entryIds = [...new Set(
-      summary.lines.flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]))
-    )].slice(0, 100);
-    const cancelMentions = entryIds.length > 0
-      ? `\n\n通知: ${entryIds.map((id) => `<@${id}>`).join(' ')}`
-      : '';
-
-    // 返信は同一チャンネル内でしか成立しないため、投稿先は募集カードのチャンネルに合わせる
-    const cancelChannelId = summary.channelId || channelId;
-    const postRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${cancelChannelId}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: cancelContent + cancelMentions,
-        components: substituteComponents,
-        allowed_mentions: { users: entryIds },
-        ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
-      })
-    });
-    console.log(`[Check2000] 中止告知と通常募集ボタンを投稿しました: ${def.name}（通知対象 ${entryIds.length}名）`);
-
-    // 中止したのにカードが開いたままだと、20時以降のエントリーで開催するのか分からなくなるため締め切る。
-    // 方式は月曜朝の定期カスタム締め切りと同じ（タイトルに受付終了を付け、ボタンを無効化、DBもclosed）。
-    if (summary.messageId) {
-      await closePeriodicCard(env, cancelChannelId, summary.messageId)
+    // 中止告知の後のカード締め切り:
+    // 両方のロビーが中止になった場合のみカード全体を締め切る（片方でも開催確定ならカードはそのまま進行）
+    if (!highDecision.isReady && !lowDecision.isReady && !skipCancel && summary.messageId) {
+      await closePeriodicCard(env, postChannelId, summary.messageId)
         .catch((e) => console.warn('[Check2000] 中止したカードの締め切りに失敗:', e));
     }
-    return postOutcome(postRes, '中止告知');
+
+    return outcomes[0] || { action: 'posted', reason: '判定完了' };
 
   } catch (err) {
     console.error('[Check2000] error:', err);

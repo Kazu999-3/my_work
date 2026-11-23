@@ -64,19 +64,6 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     });
   }
 
-  if (customId.startsWith('proxy_add_init')) {
-    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ代理追加可能です。", flags: 64 } });
-    return Response.json({
-      type: 9, data: {
-        title: "➕ メンバーの代理追加", custom_id: `proxy_add_modal:${metadata.owner}`,
-        components: [
-          { type: 1, components: [{ type: 4, custom_id: "player_name", label: "プレイヤー名（または Discord 表示名）", style: 1, placeholder: "例: 助っ人A / たろう", required: true }] },
-          { type: 1, components: [{ type: 4, custom_id: "role", label: "参加ロール（任意: TOP/JG/MID/ADC/SUP）", style: 1, placeholder: "空欄なら「指定なし」", required: false }] }
-        ]
-      }
-    });
-  }
-
   // join_any/join_role は同時押しされやすく、interaction.message は「押した瞬間」の
   // スナップショットで古くなりがちなので、直前にメッセージを取り直して競合の窓を狭める
   // （完全な排他制御ではないが、join_periodicと同じ緩和策）。

@@ -20,6 +20,17 @@ export const RECRUITMENT_COLORS = {
 };
 
 export const DAY_CAPACITY = 10;
+export const BAND_BOUNDARY_MMR = 1450;
+export const LOBBY_CAPACITY = 10;
+
+/** 行またはプレイヤーが上位帯（1450+）か中初級帯（<1450）かを判定 */
+export function getLineBand(line) {
+  if (!line) return 'low';
+  if (/上位帯/.test(line)) return 'high';
+  if (/中初級帯/.test(line)) return 'low';
+  const norm = getNormalizedTier(line);
+  return norm === 'プラチナ' ? 'high' : 'low';
+}
 
 // 土曜=実力均等カスタム / 日曜=お祭りカスタム の呼称・絵文字・ルール文言をここへ集約する。
 export const DAY_DEFS = {
@@ -297,7 +308,10 @@ const styleFromMatches = (ms) => (ms.length === 2 ? 'full' : ms[0] === 1 ? 'sing
  * 出場対象枠の中だけで各試合の実働人数を集計する。
  * （2026-10-17以降、全員出場を基本とし、観戦希望者のみを観戦枠へ分離）
  */
-export function parseEntryBreakdown(lines) {
+/**
+ * 1つのロビー（10名定員）の参加者行から第1戦・第2戦の内訳を集計する純粋関数
+ */
+export function parseLobbyBreakdown(lines, capacity = LOBBY_CAPACITY) {
   const entries = (lines || []).filter((l) => l && l.startsWith('- '));
   const eligible = [];
   const spectator = [];
@@ -310,7 +324,6 @@ export function parseEntryBreakdown(lines) {
     }
   }
 
-  // カウントは出場対象枠（eligible）で集計
   const eff = (e) => e.effStyle || styleOf(e.raw);
   const eligibleFull = eligible.filter((e) => eff(e) === 'full');
   const eligibleSingle = eligible.filter((e) => eff(e) === 'single');
@@ -319,17 +332,16 @@ export function parseEntryBreakdown(lines) {
   const match1Count = eligibleFull.length + eligibleSingle.length;
   const match2Count = eligibleFull.length + eligibleLate.length;
 
-  // 試合別の行一覧（第1戦出場メンバーと2戦目合流メンバー）をレーン順にソート
   const match1Lines = sortEntryLinesByLane(
-    eligible
-      .filter((e) => eff(e) !== 'late')
-      .map((e) => e.line)
+    eligible.filter((e) => eff(e) !== 'late').map((e) => e.line)
   );
   const match2LateLines = sortEntryLinesByLane(
-    eligible
-      .filter((e) => eff(e) === 'late')
-      .map((e) => e.line)
+    eligible.filter((e) => eff(e) === 'late').map((e) => e.line)
   );
+
+  const isMatch1Ready = match1Count >= capacity;
+  const isMatch2Ready = match2Count >= capacity;
+  const isReady = isMatch1Ready || (match1Count === 0 && isMatch2Ready);
 
   return {
     total: entries.length,
@@ -339,110 +351,183 @@ export function parseEntryBreakdown(lines) {
     spectatorLines: sortEntryLinesByLane(spectator.map((e) => e.line)),
     match1Lines,
     match2LateLines,
-    dominantTierKey: null,
-    promotedPairsCount: 0,
     hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
     hasSpectator: spectator.length > 0,
     match1Count,
     match2Count,
-    match1Remaining: Math.max(0, DAY_CAPACITY - match1Count),
-    match2Remaining: Math.max(0, DAY_CAPACITY - match2Count),
-    isMatch1Ready: match1Count >= DAY_CAPACITY,
-    isMatch2Ready: match2Count >= DAY_CAPACITY,
+    match1Remaining: Math.max(0, capacity - match1Count),
+    match2Remaining: Math.max(0, capacity - match2Count),
+    isMatch1Ready,
+    isMatch2Ready,
+    isReady,
+    remaining: Math.max(0, capacity - eligible.length),
+    joined: eligible.length,
+    capacity,
+  };
+}
+
+/**
+ * 募集カード全体の参加者行から、上位帯ロビー・中初級帯ロビー・観戦枠を分離して集計する。
+ */
+export function parseEntryBreakdown(countOrLines, capacity = LOBBY_CAPACITY) {
+  let highLines = [];
+  let lowLines = [];
+  let spectatorLines = [];
+
+  if (countOrLines && typeof countOrLines === 'object' && !Array.isArray(countOrLines)) {
+    highLines = countOrLines.high || [];
+    lowLines = countOrLines.low || [];
+    spectatorLines = countOrLines.spectator || [];
+  } else if (Array.isArray(countOrLines)) {
+    for (const raw of countOrLines) {
+      if (isSpectatorMatch(raw)) {
+        spectatorLines.push(raw);
+      } else if (getLineBand(raw) === 'high') {
+        highLines.push(raw);
+      } else {
+        lowLines.push(raw);
+      }
+    }
+  }
+
+  const high = parseLobbyBreakdown(highLines, capacity);
+  const low = parseLobbyBreakdown(lowLines, capacity);
+  const spectator = {
+    total: spectatorLines.length,
+    lines: sortEntryLinesByLane(spectatorLines.map(cleanEntryLine)),
+  };
+
+  const total = high.total + low.total + spectator.total;
+  const eligibleTotal = high.eligibleTotal + low.eligibleTotal;
+  const match1Count = high.match1Count + low.match1Count;
+  const match2Count = high.match2Count + low.match2Count;
+  const isMatch1Ready = high.isMatch1Ready || low.isMatch1Ready;
+  const isMatch2Ready = high.isMatch2Ready || low.isMatch2Ready;
+  const isReady = high.isReady || low.isReady;
+  const isBothReady = high.isReady && low.isReady;
+
+  return {
+    high,
+    low,
+    spectator,
+    total,
+    eligibleTotal,
+    spectatorTotal: spectator.total,
+    match1Count,
+    match2Count,
+    match1Remaining: high.match1Remaining + low.match1Remaining,
+    match2Remaining: high.match2Remaining + low.match2Remaining,
+    isMatch1Ready,
+    isMatch2Ready,
+    isReady,
+    isBothReady,
+    hasBreakdown: high.hasBreakdown || low.hasBreakdown || spectator.total > 0,
+    hasSpectator: spectator.total > 0,
+    eligibleLines: [...high.eligibleLines, ...low.eligibleLines],
+    spectatorLines: spectator.lines,
+    match1Lines: [...high.match1Lines, ...low.match1Lines],
+    match2LateLines: [...high.match2LateLines, ...low.match2LateLines],
   };
 }
 
 /**
  * 1日分（カード1枚分）の募集状態を計算する。
- * 配列が渡された場合は参加形態（1戦のみ・途中参加）およびランク制限を加味して計算する。
+ * 配列またはロビー別オブジェクトが渡された場合はロビー単位（上位帯/中初級帯）で計算する。
  */
 export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey = 'sat') {
-  if (Array.isArray(countOrLines)) {
-    // 2026-10-17: ランク（最多の帯）で出場対象を絞るのをやめ、土曜も全員出場を基本にした（ユーザー判断）。
-    // 実際の参加は毎回10〜15人で、帯で絞ると「人はいるのに第1戦が足りず中止」になっていたため。
-    // 格差への配慮はポータルのバランサー（格上との対面の保護・こだわり度・出る人の選び方）で行う。
-    // 観戦・2部屋目待ちは自分で観戦を選んだ人だけ。帯で分ける処理（parseEntryBreakdown の第2引数）は使わない。
-    const dominantTierInfo = { key: '', text: '', rangeText: '' };
+  const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
 
-    const breakdown = parseEntryBreakdown(countOrLines, null);
-    // ★ カウント・プログレスバーは出場対象枠（eligibleTotal）を基準にする
-    const joined = breakdown.eligibleTotal;
-    const remaining = Math.max(0, capacity - joined);
-    const isReady = breakdown.isMatch1Ready || (breakdown.match1Count === 0 && breakdown.isMatch2Ready);
-    const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
+  if (Array.isArray(countOrLines) || (countOrLines && typeof countOrLines === 'object')) {
+    const dominantTierInfo = { key: '', text: '', rangeText: '' };
+    const breakdown = parseEntryBreakdown(countOrLines, capacity);
+    const high = breakdown.high;
+    const low = breakdown.low;
+    const joined = high.joined + low.joined;
+    const remaining = high.remaining + low.remaining;
+    const isReady = high.isReady || low.isReady;
 
     return {
       total: breakdown.total,
       joined,
       capacity,
+      lobbyCapacity: capacity,
       remaining,
       isReady,
-      color: (breakdown.isMatch1Ready || breakdown.isMatch2Ready) ? RECRUITMENT_COLORS.confirmed : recruitingColor,
+      isBothReady: breakdown.isBothReady,
+      color: isReady ? RECRUITMENT_COLORS.confirmed : recruitingColor,
       breakdown,
+      high,
+      low,
+      spectator: breakdown.spectator,
       dominantTierInfo,
     };
   }
 
-  const joined = Math.max(0, Number(countOrLines) || 0);
-  const remaining = Math.max(0, capacity - joined);
-  const isReady = joined >= capacity;
-  const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
+  // 数値が渡された場合のフォールバック（旧ドライランケース等）
+  const num = Math.max(0, Number(countOrLines) || 0);
+  const isReady = num >= capacity;
+
+  // 上位帯優先で割り当て
+  const highJoined = Math.min(num, capacity);
+  const lowJoined = Math.max(0, num - capacity);
+  const highStatus = parseLobbyBreakdown(Array.from({ length: highJoined }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`), capacity);
+  const lowStatus = parseLobbyBreakdown(Array.from({ length: lowJoined }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`), capacity);
 
   return {
-    total: joined,
-    joined,
+    total: num,
+    joined: num,
     capacity,
-    remaining,
+    lobbyCapacity: capacity,
+    remaining: Math.max(0, capacity - num),
     isReady,
+    isBothReady: num >= capacity * 2,
     color: isReady ? RECRUITMENT_COLORS.confirmed : recruitingColor,
     breakdown: null,
+    high: highStatus,
+    low: lowStatus,
     dominantTierInfo: { key: '', text: '', rangeText: '' },
   };
 }
 
 /**
  * カードの description 先頭に置くステータスバナー。
+ * ロビー単位（上位帯/中初級帯）の集計状況を併記する。
  */
 export function buildDayBanner(dayKey, status, dominantTierText = '') {
   const def = getDayDef(dayKey);
-  const b = status.breakdown;
-  const dominantName = status.dominantTierInfo?.key || dominantTierText.replace(/帯.*$/, '');
-  const tierLabel = dominantName ? `（${dominantName}基準）` : '';
+  const high = status.high;
+  const low = status.low;
 
-  if (b && (b.hasBreakdown || b.hasSpectator || dayKey === 'sat')) {
-    let header;
-    if (b.isMatch1Ready && b.isMatch2Ready) {
-      header = `✅ **全戦 開催確定！**${tierLabel}`;
-    } else if (b.isMatch1Ready) {
-      header = `✅ **第1戦 開催確定！**${tierLabel}`;
-    } else if (b.isMatch2Ready) {
-      header = `✅ **第2戦 開催確定！**${tierLabel}`;
-    } else {
-      header = `🔥 **募集中${tierLabel}**`;
-    }
-
-    // 2026-10-17: 1行に「バー・第1戦・第2戦」を詰め、さらに観戦人数の行もあって読みにくかったため、
-    // 試合ごとに1行へ分けた。観戦・2部屋目待ちの人数は参加者一覧の見出しに出るので、ここでは繰り返さない。
-    const matchLine = (label, count, ready, remaining) =>
-      `${label} \`${renderMiniBar(count, status.capacity)}\` ${count}/${status.capacity}名 → ${ready ? '**開催確定！**' : `あと${remaining}名`}`;
-
-    return [
-      header,
-      matchLine('第1戦', b.match1Count, b.isMatch1Ready, b.match1Remaining),
-      matchLine('第2戦', b.match2Count, b.isMatch2Ready, b.match2Remaining),
-    ].join('\n');
+  let header;
+  if (high?.isReady && low?.isReady) {
+    header = '✅ **両ロビー 開催確定！**';
+  } else if (high?.isReady) {
+    header = '✅ **上位帯 開催確定！**（中初級帯 募集中）';
+  } else if (low?.isReady) {
+    header = '✅ **中初級帯 開催確定！**（上位帯 募集中）';
+  } else {
+    header = '🔥 **募集中**';
   }
 
-  // 全員フルの場合（シンプル表示）
-  const header = status.isReady
-    ? `✅ **開催確定！**${tierLabel}`
-    : `🔥 **募集中${tierLabel}**`;
-  const bar = renderProgressBar(status.joined, status.capacity);
-  const state = status.isReady
-    ? `21:00よりスタート！`
-    : `あと${status.remaining}名で開催確定`;
+  if (!high || !low) {
+    const bar = renderProgressBar(status.joined, status.capacity);
+    const state = status.isReady ? '21:00よりスタート！' : `あと${status.remaining}名で開催確定`;
+    return `${header}\n\`${bar}\` ${state}`;
+  }
 
-  return `${header}\n\`${bar}\` ${state}`;
+  const lobbyLine = (icon, name, s) => {
+    const ready = s.isMatch1Ready || s.isReady;
+    const remaining = s.match1Remaining ?? s.remaining;
+    const count = s.match1Count ?? s.joined;
+    const state = ready ? '**開催確定！**' : `あと${remaining}名`;
+    return `${icon} **${name}**: \`${renderMiniBar(count, DAY_CAPACITY)}\` ${count}/${DAY_CAPACITY}名 → ${state}`;
+  };
+
+  return [
+    header,
+    lobbyLine('👑', '上位帯ロビー', high),
+    lobbyLine('🌱', '中初級帯ロビー', low),
+  ].join('\n');
 }
 
 export function replaceBanner(description, banner) {
@@ -555,7 +640,7 @@ KTMバランサーがチーム戦力を【五分五分】に自動調整する�
 
 🕒 **開催時間**: 21:00〜3戦ほど（24時頃目安）
 💡 **気軽な参加大歓迎**: 「1戦だけ」「ご飯終わりの2戦目から」の途中参加・抜けも自由です！
-🛡️ **対面安心**: 格上とレーンで当たりたくない方は保護されます。`.trim();
+🛡️ **対面安心**: 格上との対面や、上の帯の試合への参加の希望は、Portalのマイページ（希望設定）でいつでも変更・設定できます。`.trim();
   }
 
   // 日曜は通知二重鳴り防止のためメンションを省く

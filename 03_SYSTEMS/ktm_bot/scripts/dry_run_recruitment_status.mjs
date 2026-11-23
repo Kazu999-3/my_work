@@ -49,6 +49,50 @@ const cases = [
       '- <@9> 🟢フル 👑常連 【プラチナ】',
     ]
   },
+  {
+    label: 'ロビー別: 片方だけ満員 (上位10名・中初級3名)',
+    input: [
+      ...Array.from({ length: 10 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 3 }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`),
+    ],
+    expectedHighReady: true,
+    expectedLowReady: false,
+    expectedBothReady: false,
+    expectedHeaderSnippet: '上位帯 開催確定！',
+  },
+  {
+    label: 'ロビー別: 片方だけ満員 (中初級10名・上位2名)',
+    input: [
+      ...Array.from({ length: 2 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 10 }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`),
+    ],
+    expectedHighReady: false,
+    expectedLowReady: true,
+    expectedBothReady: false,
+    expectedHeaderSnippet: '中初級帯 開催確定！',
+  },
+  {
+    label: 'ロビー別: 両方満員 (上位10名・中初級10名)',
+    input: [
+      ...Array.from({ length: 10 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 10 }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`),
+    ],
+    expectedHighReady: true,
+    expectedLowReady: true,
+    expectedBothReady: true,
+    expectedHeaderSnippet: '両ロビー 開催確定！',
+  },
+  {
+    label: 'ロビー別: 両方未達 (上位3名・中初級4名)',
+    input: [
+      ...Array.from({ length: 3 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 4 }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`),
+    ],
+    expectedHighReady: false,
+    expectedLowReady: false,
+    expectedBothReady: false,
+    expectedHeaderSnippet: '募集中',
+  },
 ];
 
 console.log('day | 人数 | color      | isReady | remaining | バナー見出し');
@@ -63,13 +107,13 @@ for (const dayKey of ['sat', 'sun']) {
     if (status.remaining < 0) fail(`[${dayKey}/${c.label}] remainingが負になっています`);
     if (status.joined < 0) fail(`[${dayKey}/${c.label}] joinedが負になっています`);
     
-    // 混在ケースの場合は第1戦または第2戦の成立で判定
-    const expectedReady = status.breakdown?.hasBreakdown
-      ? (status.breakdown.isMatch1Ready || status.breakdown.isMatch2Ready)
+    // 混在ケース・ロビー別ケースの場合はブレークダウンの判定を採用
+    const expectedReady = status.breakdown
+      ? (status.high?.isReady || status.low?.isReady)
       : (status.joined >= DAY_CAPACITY);
 
     if (status.isReady !== expectedReady) {
-      fail(`[${dayKey}/${c.label}] isReadyが人数と一致しません`);
+      fail(`[${dayKey}/${c.label}] isReadyが人数と一致しません (実際: ${status.isReady}, 期待: ${expectedReady})`);
     }
     const expectedColor = status.isReady
       ? RECRUITMENT_COLORS.confirmed
@@ -82,6 +126,20 @@ for (const dayKey of ['sat', 'sun']) {
     }
     if (!status.isReady && !header.includes('募集中')) {
       fail(`[${dayKey}/${c.label}] 募集中なのに見出しに「募集中」がありません: ${header}`);
+    }
+
+    // ロビー別固有のアサーション
+    if (c.expectedHighReady !== undefined && status.high.isReady !== c.expectedHighReady) {
+      fail(`[${dayKey}/${c.label}] high.isReadyが期待と一致しません (実際: ${status.high.isReady}, 期待: ${c.expectedHighReady})`);
+    }
+    if (c.expectedLowReady !== undefined && status.low.isReady !== c.expectedLowReady) {
+      fail(`[${dayKey}/${c.label}] low.isReadyが期待と一致しません (実際: ${status.low.isReady}, 期待: ${c.expectedLowReady})`);
+    }
+    if (c.expectedBothReady !== undefined && status.isBothReady !== c.expectedBothReady) {
+      fail(`[${dayKey}/${c.label}] isBothReadyが期待と一致しません (実際: ${status.isBothReady}, 期待: ${c.expectedBothReady})`);
+    }
+    if (c.expectedHeaderSnippet && !header.includes(c.expectedHeaderSnippet)) {
+      fail(`[${dayKey}/${c.label}] 見出しに期待スニペット「${c.expectedHeaderSnippet}」がありません: ${header}`);
     }
 
     console.log(

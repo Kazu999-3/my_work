@@ -1,5 +1,43 @@
 ## 📅 2026-11-23（月）
 
+### ⚡ 【Bot 指示文30・31・32：参加フロー案A一本化・使い勝手改善・帯別ロビー集計＆20:00独立判定の実装】
+
+**概要**:
+`03_SYSTEMS/ktm_bot/docs/specs/30-recruit-flow-unify-plan-a-instruction.md`、`31-usability-improvements-instruction.md`、`32-band-aware-recruitment-instruction.md` に基づき、募集参加フローのPortal一本化（案A）、使い勝手向上、4大ボタン調査報告書作成、およびMMR 1450境界による「上位帯ロビー」「中初級帯ロビー」の2部屋集計・独立判定システムを実装完了。
+
+1. **指示文30（案A：Portalプロフィール設定への一本化）**:
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/periodicRecruit.js`: 参加時の `higher_risk:` 3択分岐ポップアップ（レーン変更/他者募集/対面了承）および管理者通知を完全撤廃。
+   - `03_SYSTEMS/ktm_bot/src/utils/recruitmentStatus.js`: カード説明文を更新し、格上対面や帯参加の希望はPortalマイページ側でいつでも変更できる旨の案内に統一。
+
+2. **指示文31（使い勝手改善 ＆ 4大ボタン調査）**:
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/recruitCard.js`: 旧来の不要な代理追加モーダル定義（`proxy_add_init`）を削除。
+   - `03_SYSTEMS/ktm_bot/src/handlers/jobs/eventNotify.js`: 「低ランク」表記を「中初級帯」に置換し、「推定MMRランク」表記に完全統一。
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/periodicRecruit.js`:
+     - 20:00以降の観戦者打診に対する「出場する」承諾ボタン（`spectator_accept`）のハンドラを実装。21:00前にロビー定員（10名）到達時は自動で開催確定アナウンスを発信。
+     - 希望レーン（`role_preferences`）または格上対面希望（`allow_higher`）が未設定の初参加者に対し、初回JOIN時にマイページ設定URLをエフェメラルで案内。
+   - `03_SYSTEMS/ktm_bot/wrangler.toml`: 月曜の定例集計cronが停止している旨のコメント注記を更新。
+   - **調査報告書提出**: `03_SYSTEMS/ktm_bot/docs/reports/31-unknown-buttons-investigation.md` を作成し、4つのボタン群（`bet_team:`, `opgg_scout`, `approve_knowledge:`, `quick_substitute_*`）の存在理由・現状・推奨対応を詳細に報告。
+
+3. **指示文32（帯ロビー単位の集計・独立判定）**:
+   - **2ロビー制の導入**: 募集カードは土・日それぞれ1枚のまま、内部に「👑 上位帯ロビー（推定MMR 1450以上）」と「🌱 中初級帯ロビー（推定MMR 1450未満 / 未設定者）」の2部屋（各定員10名）を保持。
+   - **集計・表示**: 参加者一人ひとりの行表示形式は既存を完全維持。Bot側は本人の帯のみで集計し、繰り上げ・サポート意向はPortalバランサー側へ委ねる（Bot側では自動繰り上げを行わない）。
+   - **通知の帯名指し**: リマインド通知および「あと1名」緊急通知において、対象となるロビー名（「上位帯ロビー」「中初級帯ロビー」）を明記。
+   - **20:00 独立開催判定**: 上位帯・中初級帯のそれぞれで成立判定を独立評価。片方のみ成立した場合はそのロビーのみ開催確定アナウンスを送信し、未達ロビーのみヘルプ募集または中止扱いとする。
+
+4. **機械的実値検証（Verifier原則）**:
+   - `03_SYSTEMS/ktm_bot/scripts/dry_run_recruitment_status.mjs` にロビー別ケース（片方のみ満員、両方満員、両方未達等）を追加。
+   - `npm run dryrun:recruitment` を実行し、全ケース（土・日各11パターン、計22パターン＋日付解決＋文字数上限検証）がエラーゼロで正常通過（Exit code 0）。
+
+- 再利用可能な3行ナレッジ:
+  - 複数ロビー制（2部屋同時開催）の募集では、Discordカードを分割せず単一カード内に帯別フィールドを並べることで、チャンネルの可読性を保ちつつ2部屋の集まり具合を一元可視化できる。
+  - 参加時のリスク確認分岐をBot側で都度ポップアップさせるより、WebプロフィールのSSoT（事前設定）に委ねることで、参加離脱を減らしながらバランサー精度を高められる。
+  - 20:00の開催判定をロビー単位で独立化することで、一方の帯が人数不足でも他方の帯の開催を確定させ、参加者の予定確定とマッチング率を最大化できる。
+- [要検証]: 実機Discord上での観戦者打診承諾ボタン（`spectator_accept`）の動作と自動開催確定通知の挙動
+- [継続ウォッチ]: 4大不明ボタンのうち未接続スタブ（`opgg_scout`, `approve_knowledge:`, `quick_substitute_*`）の今後の整理方針
+- [発信候補]: 特になし
+
+## 📅 2026-11-23（月）
+
 ### ⚡ 【Portal 指示文29 & Bot 指示文29：空ブロック残件修正 ＆ 調査報告書2件のファイル提出】
 
 **概要**:

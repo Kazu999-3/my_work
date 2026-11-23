@@ -365,44 +365,31 @@ function formatLinesSafe(lines) {
   return out.join('\n');
 }
 
-function renderEntryList(lines, status) {
-  if (!lines || lines.length === 0) return '▫ まだ誰もいません。最初の1人になりませんか？';
+function renderLobbyList(lobbyStatus) {
+  if (!lobbyStatus || lobbyStatus.eligibleTotal === 0) {
+    return '▫ まだエントリーはありません';
+  }
 
-  const b = status?.breakdown;
-  if (b && (b.hasBreakdown || b.hasSpectator)) {
+  const b = lobbyStatus;
+  if (b.hasBreakdown) {
     const sections = [];
-
-    // 2026-10-17: 見出しで区分が分かるので、行頭の「🌙【2戦目〜】」「👀【観戦】」は消す（同じ情報が2回出て読みにくかった）。
-    // 観戦枠のうち自分で観戦を選んだ人だけは、ランクで回された人と区別できるよう行末に（観戦希望）を残す。
-    // 観戦枠・🤝対面枠の行は、見出しと参加形態が一致しないので、参加形態を行末に短く出す（2026-10-17）。
-    // 例: 「- 🌙【2戦目〜】<@x> …」→「- <@x> …（2戦目〜）」。読み戻しは extractEntryLines が行頭タグへ戻す。
     const isPairLine = (l) => /（🤝[^）]*）/.test(l);
     const toSuffix = (l) => {
       const m = l.match(/^- (👀【観戦】|⏱️【1戦のみ】|🌙【2戦目〜】)/);
       if (!m) return l;
       const short = { '👀【観戦】': '（観戦希望）', '⏱️【1戦のみ】': '（1戦のみ）', '🌙【2戦目〜】': '（2戦目〜）' }[m[1]];
       const body = l.replace(m[0], '- ');
-      // 対面枠の印は行末に残す
       return isPairLine(body) ? body.replace(/(（🤝[^）]*）)$/, `${short}$1`) : `${body}${short}`;
     };
     const stripLate = (l) => (isPairLine(l) ? toSuffix(l) : l.replace(/^- 🌙【2戦目〜】/, '- '));
     const pairSuffix = (l) => (isPairLine(l) ? toSuffix(l) : l);
 
-    // 1. 第1戦から（フル参加者 ＋ 1戦のみ参加者）
     if (b.match1Lines && b.match1Lines.length > 0) {
-      sections.push(`**⚔️ 第1戦から（${b.match1Count}/${status.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
+      sections.push(`**⚔️ 第1戦から（${b.match1Count}/${lobbyStatus.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
     }
-
-    // 2. 2戦目から合流（途中参加者）
     if (b.match2LateLines && b.match2LateLines.length > 0) {
       sections.push(`**🌙 2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
     }
-
-    // 3. 観戦希望（自分で観戦を選んだ人。2026-10-17 から帯で回される人はいない）
-    if (b.spectatorLines && b.spectatorLines.length > 0) {
-      sections.push(`**👀 観戦希望（${b.spectatorTotal}名）**\n${b.spectatorLines.map(toSuffix).join('\n')}`);
-    }
-
     if (sections.length > 0) {
       const groupedText = sections.join('\n\n');
       if (groupedText.length <= FIELD_VALUE_LIMIT) {
@@ -411,9 +398,16 @@ function renderEntryList(lines, status) {
     }
   }
 
-  // 変則参加も観戦枠もいない場合はシンプルに全行（フル参加表記除去・アイコン化済み）をレーン順にソートして表示
-  const cleaned = sortEntryLinesByLane((b?.eligibleLines || lines).map(cleanEntryLine));
+  const cleaned = sortEntryLinesByLane((lobbyStatus.eligibleLines || []).map(cleanEntryLine));
   return formatLinesSafe(cleaned);
+}
+
+function renderSpectatorList(spectatorStatus) {
+  if (!spectatorStatus || spectatorStatus.total === 0) return '';
+  const lines = (spectatorStatus.lines || []).map((l) => {
+    return l.replace(/^- (?:👀【観戦】)?/, '- ').replace(/(?:（観戦希望）)?$/, '') + '（観戦希望）';
+  });
+  return formatLinesSafe(lines);
 }
 
 /**
@@ -422,41 +416,48 @@ function renderEntryList(lines, status) {
  *
  * @param {object} embed 対象のEmbed（破壊的に更新する）
  * @param {string} dayKey 'sat' | 'sun'
- * @param {string[]} entryLines 参加者行（'- <@id> 🟢フル ...' 形式）
+ * @param {string[]|object} entryLines 参加者行配列またはロビー別オブジェクト
  */
 export function applyDayCardState(embed, dayKey, entryLines) {
   const def = getDayDef(dayKey);
   const lines = entryLines || [];
   const status = computeDayStatus(lines, undefined, dayKey);
-  // 最多ランク帯は土曜（チーム分け基準あり）でのみ意味を持つ。
-  // 2026-10-17: 帯で出場対象を絞らなくなったので「〇〇基準」は出さない（computeDayStatus 参照）
-  const dominantTierText = '';
-  const banner = buildDayBanner(def.key, status, dominantTierText);
+  const banner = buildDayBanner(def.key, status);
 
-  // description は純粋にバナー（状況表示）のみとし、ルール等の解説は埋め込み外（メッセージ本文）に任せる
   embed.description = banner;
   embed.color = status.color;
 
-  let fieldTitle;
-  if (status.breakdown?.hasSpectator) {
-    // 内訳は各見出しに人数が出ているので、ここは合計だけ（2026-10-17）
-    fieldTitle = `👥 参加者（計${status.total}名）`;
-  } else {
-    fieldTitle = `👥 参加者 (${status.joined}/${status.capacity}名)`;
-  }
+  const high = status.high;
+  const low = status.low;
+  const spec = status.spectator;
 
-  // ルール・凡例などの固定情報は埋め込み外（メッセージ本文）に出したため、
-  // 埋め込みカードは純粋に可変な「参加者名簿・状況」のみを表示する。
+  const highState = high.isReady ? '開催確定！' : `あと${high.remaining}名`;
+  const lowState = low.isReady ? '開催確定！' : `あと${low.remaining}名`;
+
   embed.fields = [
     {
-      name: fieldTitle,
-      value: renderEntryList(lines, status),
+      name: `👑 上位帯ロビー (${high.joined}/10名 → ${highState})`,
+      value: renderLobbyList(high),
+      inline: false,
+    },
+    {
+      name: `🌱 中初級帯ロビー (${low.joined}/10名 → ${lowState})`,
+      value: renderLobbyList(low),
       inline: false,
     },
   ];
+
+  if (spec && spec.total > 0) {
+    embed.fields.push({
+      name: `👀 観戦希望 (${spec.total}名)`,
+      value: renderSpectatorList(spec),
+      inline: false,
+    });
+  }
+
   embed.footer = { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ大歓迎' };
 
-  return { embed, status, dominantTierText };
+  return { embed, status, dominantTierText: '' };
 }
 
 /**

@@ -1,4 +1,4 @@
-import { CONFIG } from '../../config.js';
+import { CONFIG, getPortalUrl } from '../../config.js';
 import { sendDiscordMessage, sendInteractionFollowup } from '../../utils/api.js';
 import { fetchSupabase } from '../../utils/supabase.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, applyDayCardState } from '../../ui/embeds.js';
@@ -23,9 +23,17 @@ function isLegacyPeriodicCard(message) {
   return fields.filter((f) => detectDayKey(f.name) !== null).length >= 2;
 }
 
-/** 新形式カードから参加者行を取り出す */
+/** 新形式カードから参加者行を取り出す（ロビー別フィールド・観戦フィールドから全件抽出） */
 function readDayEntryLines(embed) {
-  return extractEntryLines(embed?.fields?.[0]?.value);
+  const fields = embed?.fields || [];
+  return fields.flatMap((f) => {
+    const isSpectator = f.name?.includes('観戦');
+    const lines = extractEntryLines(f.value);
+    if (isSpectator) {
+      return lines.map((l) => (l.includes('観戦') ? l : l.replace(/^- /, '- 👀【観戦】')));
+    }
+    return lines;
+  });
 }
 
 const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher';
@@ -107,96 +115,92 @@ async function refreshEntryLines(env, lines, def) {
 
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
 export async function handlePeriodicRecruitButtons(interaction, env, ctx, { customId, userId, appId, token, botToken }) {
-  // ── 【格上対面リスク：3つのアクションボタン処理】 ──────────────────
-  if (customId.startsWith('higher_risk:')) {
-    // customId: higher_risk:targetUserId:dayKey:action
+  // ── 【指示文31-3 & 指示文32: 20:00観戦者への参加お願い ➔ 参加切り替え＆自動開催確定】 ──
+  if (customId.startsWith('spectator_accept:')) {
     const parts = customId.split(':');
-    const targetUserId = parts[1];
-    const dayKey = parts[2] || 'sat';
-    const action = parts[3];
+    const dayKey = parts[1] || 'sat';
+    const lobbyKey = parts[2] || 'high';
+    const def = getDayDef(dayKey);
+    const lobbyName = lobbyKey === 'high' ? '上位帯ロビー' : '中初級帯ロビー';
 
-    if (userId !== targetUserId) {
+    const nowJst = new Date(Date.now() + 9 * 3600 * 1000);
+    if (nowJst.getUTCHours() >= 21) {
       return Response.json({
         type: 4,
-        data: {
-          content: "⚠️ この操作はエントリーしたご本人のみ実行できます。",
+        data: { content: "⚠️ 21:00を過ぎたため、主催者の案内をお待ちください。", flags: 64 }
+      });
+    }
+
+    ctx.waitUntil((async () => {
+      try {
+        const msgId = interaction.message.id;
+        const channelId = interaction.channel_id;
+
+        const [msgRes, playerRow] = await Promise.all([
+          fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
+            headers: { "Authorization": `Bot ${botToken}` }
+          }),
+          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=${PLAYER_SELECT}`)
+            .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
+            .catch(() => null),
+        ]);
+
+        if (!msgRes.ok) return;
+        const msg = await msgRes.json();
+        const targetEmbed = { ...msg.embeds[0] };
+        const currentLines = readDayEntryLines(targetEmbed);
+        const userMention = `<@${userId}>`;
+        const userLine = currentLines.find((l) => l.includes(userMention));
+
+        if (!userLine || !/観戦/.test(userLine)) {
+          await sendInteractionFollowup(appId, token, {
+            content: "⚠️ 観戦希望でエントリーされている方のみが対象の操作です。",
+            flags: 64
+          });
+          return;
+        }
+
+        const { expBadgeStr, rankStr, lanePrefStr } = buildEntrySuffix(playerRow, def);
+        const entryLine = `- ${userMention} 🟢フル${expBadgeStr}${rankStr}${lanePrefStr}`;
+        const nextLines = currentLines.filter((l) => !l.includes(userMention));
+        nextLines.push(entryLine);
+
+        const healedLines = await refreshEntryLines(env, nextLines, def);
+        const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, healedLines);
+
+        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+          embeds: [targetEmbed],
+          components: interaction.message.components,
+          allowed_mentions: { roles: [] }
+        });
+
+        const targetLobby = lobbyKey === 'high' ? nextStatus.high : nextStatus.low;
+        if (targetLobby && targetLobby.match1Count >= DAY_CAPACITY) {
+          const recent = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
+            headers: { "Authorization": `Bot ${botToken}` }
+          }).then(r => r.json()).catch(() => []);
+          const alreadyAnnounced = (recent || []).some(m => m.content?.includes(`${lobbyName} 開催確定！`));
+          if (!alreadyAnnounced) {
+            const attendeeIds = (targetLobby.match1Lines || []).map(l => l.match(/<@(\d+)>/)?.[1]).filter(Boolean);
+            const attendeeMentions = attendeeIds.length ? `\n\n参加メンバー: ${attendeeIds.map(id => `<@${id}>`).join(' ')}` : '';
+            await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+              content: `🎉 **【本日20:00 判定: ${lobbyName} 開催確定！】**\n${def.emoji} **${def.name}（${lobbyName}）** は観戦希望者の参加合流により第1戦メンバーが10名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
+              allowed_mentions: { users: attendeeIds },
+              message_reference: { message_id: msgId, fail_if_not_exists: false }
+            });
+          }
+        }
+
+        await sendInteractionFollowup(appId, token, {
+          content: `✅ **${lobbyName}の第1戦への参加に切り替えました！**\nご協力ありがとうございます✨ チーム分けをお待ちください！`,
           flags: 64
-        }
-      });
-    }
+        });
+      } catch (err) {
+        console.error('spectator_accept error:', err);
+      }
+    })());
 
-    const { fetchPortalAPI } = await import('../../utils/api.js');
-
-    if (action === 'change_lane') {
-      ctx.waitUntil((async () => {
-        try {
-          const rows = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=name,role_preferences`).catch(() => []);
-          const p = rows && rows[0];
-          const name = p?.name || interaction.member?.nick || interaction.user?.username || 'メンバー';
-          let laneStr = 'ALL';
-          try {
-            const pref = typeof p?.role_preferences === 'string' ? JSON.parse(p.role_preferences) : p?.role_preferences;
-            if (pref?.primary) laneStr = pref.primary + (pref.secondary && pref.secondary !== '-' ? ` / ${pref.secondary}` : '');
-          } catch {}
-
-          const dayLabel = dayKey === 'sun' ? '日曜お祭りカスタム' : '土曜実力均等カスタム';
-
-          // かずき（CONFIG.ADMIN_ID）へのメンション付きで個別案内チャットへ送信
-          await fetchPortalAPI(env, '/api/bot/member-channel-message', {
-            discordId: userId,
-            content: `<@${CONFIG.ADMIN_ID}> 📢 **【土曜カスタム参加サポート：格上のレーン変更依頼】**\n<@${userId}> （${name}）さんが土曜カスタムへの参加にあたり、**「🛡️ 格上の方に別レーンをお願いしたい」** を希望されています。\n（※本人が希望レーンで安心して対戦できるよう、格上メンバーに別レーンやオフロールへ回ってもらう調整です）\n本人の希望レーン: **【${laneStr}】**\n運営（<@${CONFIG.ADMIN_ID}>）側で格上メンバーへのお声がけやレーン調整を行います！`
-          });
-        } catch (err) {
-          console.warn('higher_risk change_lane error:', err);
-        }
-      })());
-
-      return Response.json({
-        type: 7, // メッセージ更新
-        data: {
-          content: `✅ **【受付完了】個別案内チャットへ送信しました！**\n個別案内チャット（\`🔒・案内\`）にて管理者（かずき）へメンション付きでお知らせしました。\nあなたが希望レーンで安心してプレイできるよう、格上の方への別レーン変更・調整を運営側で進めます！`,
-          components: []
-        }
-      });
-    }
-
-    if (action === 'recruit_others') {
-      ctx.waitUntil((async () => {
-        try {
-          const rows = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=name,mmr,highest_rank`).catch(() => []);
-          const p = rows && rows[0];
-          const name = p?.name || interaction.member?.nick || interaction.user?.username || 'メンバー';
-          const rank = p?.highest_rank || 'UNRANKED';
-          const dayLabel = dayKey === 'sun' ? '日曜お祭りカスタム' : '土曜実力均等カスタム';
-
-          // かずき（CONFIG.ADMIN_ID）へのメンション付きで個別案内チャットへ送信
-          await fetchPortalAPI(env, '/api/bot/member-channel-message', {
-            discordId: userId,
-            content: `<@${CONFIG.ADMIN_ID}> 📢 **【カスタム参加サポート：同格メンバー招集希望】**\n<@${userId}> （${name} / ${rank}）さんが ${dayLabel} への参加にあたり、**「📢 近いレート帯のメンバー招集」** を希望されています。\n（※安心して参加できるよう、近い実力の仲間を求めています）\n運営（<@${CONFIG.ADMIN_ID}>）側で同レート帯メンバーへのお声がけや募集調整を行います！`
-          });
-        } catch (err) {
-          console.warn('higher_risk recruit_others error:', err);
-        }
-      })());
-
-      return Response.json({
-        type: 7, // メッセージ更新
-        data: {
-          content: `✅ **【受付完了】個別案内チャットへ送信しました！**\n個別案内チャット（\`🔒・案内\`）にて管理者（かずき）へメンション付きでお知らせしました。\n同レート帯メンバーへのお声がけや募集調整を進めますので、そのままご参加ください！`,
-          components: []
-        }
-      });
-    }
-
-    if (action === 'accept_challenge') {
-      return Response.json({
-        type: 7, // メッセージ更新
-        data: {
-          content: `🔥 **【ナイスファイト！】**\n今回は格上との対戦も考慮してチーム分けを調整します。思い切って挑んでみてください！応援しています！\n*(※常に格上対面をOKにしたい場合は、ポータルのマイページから「⚔️ 格上対面もOK」に変更も可能です)*`,
-          components: []
-        }
-      });
-    }
+    return Response.json({ type: 6 });
   }
 
   if (customId.startsWith('join_periodic')) {
@@ -353,87 +357,47 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             }
           }).catch((e) => console.warn('Activity log error:', e));
 
-          // ⚠️ 格上対面リスクの事前警告（土曜・実力均等カスタムのみ、本人限定エフェメラル通知 ＆ 3つのアクション提案）
-          if (dayKey === 'sat' && activityAction === 'JOIN' && playerRow && playerRow.allow_higher === false) {
+          // 指示文31 項目4: プロフィール未設定者（希望レーンまたは格上対面設定）へのみ案内（辞退・変更時は出さない）
+          if (activityAction === 'JOIN') {
+            let hasLanePref = false;
             try {
-              const myMmr = getHighestLaneMmr(playerRow) || playerRow.mmr || 1200;
-              // 現在のエントリー者（自分以外）の Discord ID を抽出
-              const otherUserIds = nextLines
-                .map(line => {
-                  const m = line.match(/<@(\d+)>/);
-                  return m ? m[1] : null;
-                })
-                .filter(id => id && id !== userId);
+              let pref = playerRow?.role_preferences;
+              if (typeof pref === 'string') { try { pref = JSON.parse(pref); } catch {} }
+              if (pref && (pref.primary || pref.secondary)) hasLanePref = true;
+            } catch {}
+            const hasHigherPref = playerRow?.allow_higher !== null && playerRow?.allow_higher !== undefined;
 
-              if (otherUserIds.length > 0) {
-                const otherRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${otherUserIds.join(',')})&select=name,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup`)
-                  .catch(() => []);
-                const higherOpponents = (otherRows || []).filter(opp => {
-                  const oppMmr = getHighestLaneMmr(opp) || opp.mmr || 1200;
-                  return oppMmr - myMmr >= 200;
-                });
-
-                if (higherOpponents.length >= 1) {
-                  const oppSample = higherOpponents.slice(0, 3).map(o => o.name).join('さん、') + 'さん';
-                  await sendInteractionFollowup(appId, token, {
-                    content: `🛡️ **【格上との対面に関する確認】**\n現在エントリーしているメンバーの中に、あなたより推定MMRランクが大きく上の方（${oppSample} 等）がいます。\nあなたの設定は **「🛡️ 格上対面を避ける」** になっています。\n\nより安心してカスタムを楽しめるよう、以下の対応が可能です。ご希望の対応を選んでください：`,
-                    flags: 64,
-                    components: [
-                      {
-                        type: 1, // ACTION_ROW
-                        components: [
-                          {
-                            type: 2, // BUTTON
-                            style: 1, // PRIMARY
-                            custom_id: `higher_risk:${userId}:${dayKey}:change_lane`,
-                            label: '🛡️ 格上の方に別レーンをお願いしたい'
-                          },
-                          {
-                            type: 2, // BUTTON
-                            style: 2, // SECONDARY
-                            custom_id: `higher_risk:${userId}:${dayKey}:recruit_others`,
-                            label: '📢 他のメンバーを招集してほしい'
-                          },
-                          {
-                            type: 2, // BUTTON
-                            style: 3, // SUCCESS
-                            custom_id: `higher_risk:${userId}:${dayKey}:accept_challenge`,
-                            label: '⚔️ 挑戦してみたい'
-                          }
-                        ]
-                      }
-                    ]
-                  }).catch(e => console.warn('Followup warn error:', e));
-                }
-              }
-            } catch (warnErr) {
-              console.warn('Higher MMR warning check failed:', warnErr);
+            if (!playerRow || !hasLanePref || !hasHigherPref) {
+              const portalUrl = getPortalUrl(env);
+              sendInteractionFollowup(appId, token, {
+                content: `💡 **【プロフィール設定のお願い】**\nまだ希望レーンや格上対面の設定が完了していません。\nチーム分けで希望を最大限反映できるよう、事前にポータルのマイページから設定をお願いします✨\n🔗 [マイページで設定する](${portalUrl}/mypage)`,
+                flags: 64,
+              }).catch((e) => console.warn('Profile unset notice error:', e));
             }
           }
         }
 
-        // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿
-        // ⚠️ この行は2026-09-26〜09-29の間、未定義の識別子3つ(computeDayStatus /
-        // DAY_CAPACITY のimport漏れ ＋ 存在しない targetDayKey)で ReferenceError を投げており、
-        // 下の catch が握りつぶしていたため「あと1名」促進が一度も投稿されていなかった。
-        // 参加者一覧のPATCH(上)は例外より前なので成功しており、外から見ると正常に見えていた。
+        // ★ 指示文32: あと1名になった瞬間にロビー（帯）を名指しして促進の返信を自動投稿
         const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, dayKey);
         let promptContent = null;
-        const rankNote = (def.key === 'sat' && nextStatus.dominantTierInfo?.rangeText)
-          ? `（${nextStatus.dominantTierInfo.rangeText}対象）`
-          : '';
 
-        if (nextStatus.breakdown?.hasBreakdown) {
-          const m1JustOne = nextStatus.breakdown.match1Remaining === 1 && (!existingLine || prevStatus.breakdown?.match1Remaining !== 1);
-          const m2JustOne = nextStatus.breakdown.match2Remaining === 1 && (!existingLine || prevStatus.breakdown?.match2Remaining !== 1);
+        const highM1JustOne = nextStatus.high?.match1Remaining === 1 && (!existingLine || prevStatus.high?.match1Remaining !== 1);
+        const lowM1JustOne = nextStatus.low?.match1Remaining === 1 && (!existingLine || prevStatus.low?.match1Remaining !== 1);
 
-          if (m1JustOne) {
-            promptContent = `🔥 **【${def.shortName}: 第1試合があと1名で開催確定！${rankNote}】** 21:00からの開幕戦にエントリーしませんか？✨`;
-          } else if (m2JustOne && nextStatus.breakdown.isMatch1Ready) {
-            promptContent = `🔥 **【${def.shortName}: 第2試合があと1名で10名到達！${rankNote}】** 2戦目からの途中合流で参加しませんか？✨`;
-          }
-        } else if (nextStatus.remaining === 1 && (!existingLine || prevStatus.remaining !== 1)) {
-          promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！${rankNote}】** どなたか最後の1枠で参加しませんか？✨`;
+        if (highM1JustOne && lowM1JustOne) {
+          promptContent = `🔥 **【${def.shortName}: 上位帯・中初級帯ともにあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+        } else if (highM1JustOne) {
+          promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+        } else if (lowM1JustOne) {
+          promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+        } else if (nextStatus.high?.match2Remaining === 1 && nextStatus.high?.isMatch1Ready && prevStatus.high?.match2Remaining !== 1) {
+          promptContent = `🔥 **【${def.shortName}: 上位帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+        } else if (nextStatus.low?.match2Remaining === 1 && nextStatus.low?.isMatch1Ready && prevStatus.low?.match2Remaining !== 1) {
+          promptContent = `🔥 **【${def.shortName}: 中初級帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+        } else if (nextStatus.high?.remaining === 1 && (!existingLine || prevStatus.high?.remaining !== 1)) {
+          promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+        } else if (nextStatus.low?.remaining === 1 && (!existingLine || prevStatus.low?.remaining !== 1)) {
+          promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
         }
 
         if (promptContent) {
