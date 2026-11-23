@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Info, ChevronDown, Settings, RefreshCw } from "lucide-react";
 import { HIGHEST_RANK_OPTIONS, getColorFromRankName } from "../../../lib/mmr";
+import { getPlayerTierBand } from "../../../lib/balancer/tierBand";
 import { RoleIcon, MmrBadgeInput, getColorFromRole, getPlayerExperienceBadge, getRankFromMMR } from "./adminUtils";
 
 // 名簿（デスクトップ用の表: 並び替え・出欠・最高Rank・希望/NGレーン・レーン別MMRの展開編集・Discord ID・Riot ID・備考）
@@ -61,10 +62,8 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                       <SortableHeader label="最高Rank" sortKey="highest_rank" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="第1希望" sortKey="primary_role" sortConfig={sortConfig} requestSort={requestSort} />
                       <th className="px-3 py-2 text-xs text-faint font-semibold text-center whitespace-nowrap">サブ ＆ 回避設定</th>
+                      <SortableHeader label="初中級サポ" sortKey="allow_lower_support" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="平均MMR" sortKey="mmr" sortConfig={sortConfig} requestSort={requestSort} />
-                      <SortableHeader label="Discord ID" sortKey="discord_id" sortConfig={sortConfig} requestSort={requestSort} />
-                      <SortableHeader label="Riot IGN" sortKey="ign" sortConfig={sortConfig} requestSort={requestSort} />
-                      <SortableHeader label="備考" sortKey="notes" sortConfig={sortConfig} requestSort={requestSort} />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border text-sm">
@@ -182,6 +181,24 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                             </button>
                           </div>
                         </td>
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          {getPlayerTierBand(p.mmr) === 'UPPER' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleInputSave(uid, "allow_lower_support", !p.allow_lower_support)}
+                              className={`px-2 py-1 rounded text-xs font-bold border transition cursor-pointer ${
+                                p.allow_lower_support
+                                  ? 'bg-secondary-600 text-white border-secondary-edge shadow-xs'
+                                  : 'bg-black/5 hover:bg-black/10 text-muted-strong border-border'
+                              }`}
+                              title={p.allow_lower_support ? '初中級帯サポート参加: 許可中（クリックで不可に切替）' : '初中級帯サポート参加: 不可（クリックで許可に切替）'}
+                            >
+                              {p.allow_lower_support ? '🔽 許可中' : '不可'}
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-faint" title="中初級帯プレイヤー">-</span>
+                          )}
+                        </td>
                         <td className="px-2 py-1.5 text-center text-xs font-bold align-middle">
                           <div className="flex items-center justify-center gap-1.5">
                             <span>{p.mmr || 1200}</span>
@@ -195,54 +212,10 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                             })()}
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
-                          <input
-                            type="text"
-                            value={p.discord_id}
-                            onChange={(e) => handleInputChange(uid, "discord_id", e.target.value)}
-                            onBlur={handleBlurSave}
-                            className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-24 text-[10px]"
-                            title={p.discord_id}
-                          />
-                        </td>
-                        <td className="px-2 py-1.5 opacity-70 hover:opacity-100 transition">
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={p.ign || ""}
-                              onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
-                              onBlur={handleBlurSave}
-                              placeholder="Name#TAG"
-                              className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-primary-700"
-                              title={p.ign || "未登録"}
-                            />
-                            {onSyncSinglePlayer && p.ign && p.ign.includes('#') && (
-                              <button
-                                type="button"
-                                onClick={() => onSyncSinglePlayer(p.id, p.name)}
-                                disabled={reSyncingPlayerId === p.id}
-                                className="p-1 text-muted-strong hover:text-primary-600 hover:bg-black/10 rounded transition cursor-pointer disabled:opacity-50"
-                                title="このプレイヤーのRiot情報・SoloQランクを即座に再同期"
-                              >
-                                <RefreshCw className={`w-3 h-3 ${reSyncingPlayerId === p.id ? 'animate-spin text-primary-600' : ''}`} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <input
-                            type="text"
-                            value={p.metadata?.notes || ""}
-                            onChange={(e) => handleInputChange(uid, "notes", e.target.value)}
-                            onBlur={handleBlurSave}
-                            placeholder="備考を入力"
-                            className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-32 text-xs text-foreground-soft"
-                          />
-                        </td>
                       </tr>
                       {expandedPlayerIds.includes(uid) && (
                         <tr key={`${uid}-mmr-details`} className="bg-black/3 border-b border-border">
-                          <td colSpan={10} className="p-3">
+                          <td colSpan={8} className="p-3">
                             <div className="space-y-2.5 pl-12">
                               {/* 第2希望・回避レーン設定 */}
                               <div className="flex flex-wrap items-center gap-3 text-xs bg-surface/60 p-2 rounded-lg border border-border/80">
@@ -298,16 +271,6 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                                     ))}
                                   </select>
                                 </div>
-
-                                <label className="flex items-center gap-1.5 bg-surface px-2.5 py-1 rounded border border-secondary-edge-soft cursor-pointer hover:bg-black/5 transition ml-auto" title="上位帯の人数超過・中初級帯不足時にサポート枠として参加を許可">
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(p.allow_lower_support)}
-                                    onChange={(e) => handleInputSave(uid, "allow_lower_support", e.target.checked)}
-                                    className="w-3.5 h-3.5 rounded border-border text-secondary-600 focus:ring-secondary-500 cursor-pointer"
-                                  />
-                                  <span className="font-bold text-foreground-subtle text-xs">🔽 中初級サポ許可</span>
-                                </label>
                               </div>
 
                               {/* レーン別 MMR 設定 */}
@@ -339,6 +302,62 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                                   />
                                 </div>
                               </div>
+
+                              {/* アカウント情報 ＆ 備考 */}
+                              <div className="flex flex-wrap items-center gap-4 text-xs bg-surface/60 p-2 rounded-lg border border-border/80">
+                                <div className="text-xs font-bold text-faint flex items-center gap-1.5 border-r border-border pr-3">
+                                  <Info className="w-3.5 h-3.5 text-primary-500" />
+                                  アカウント ＆ 備考:
+                                </div>
+
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1">
+                                  <span className="text-[11px] text-muted-strong font-bold">Riot IGN:</span>
+                                  <input
+                                    type="text"
+                                    value={p.ign || ""}
+                                    onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
+                                    onBlur={handleBlurSave}
+                                    placeholder="Name#TAG"
+                                    className="bg-transparent outline-none w-28 text-xs font-medium text-primary-700"
+                                    title={p.ign || "未登録"}
+                                  />
+                                  {onSyncSinglePlayer && p.ign && p.ign.includes('#') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onSyncSinglePlayer(p.id, p.name)}
+                                      disabled={reSyncingPlayerId === p.id}
+                                      className="p-1 text-muted-strong hover:text-primary-600 hover:bg-black/10 rounded transition cursor-pointer disabled:opacity-50"
+                                      title="このプレイヤーのRiot情報・SoloQランクを即座に再同期"
+                                    >
+                                      <RefreshCw className={`w-3 h-3 ${reSyncingPlayerId === p.id ? 'animate-spin text-primary-600' : ''}`} />
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1">
+                                  <span className="text-[11px] text-muted-strong font-bold">Discord ID:</span>
+                                  <input
+                                    type="text"
+                                    value={p.discord_id}
+                                    onChange={(e) => handleInputChange(uid, "discord_id", e.target.value)}
+                                    onBlur={handleBlurSave}
+                                    className="bg-transparent outline-none w-36 text-xs font-mono text-muted-strong"
+                                    title={p.discord_id}
+                                  />
+                                </div>
+
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 flex-1 min-w-[200px]">
+                                  <span className="text-[11px] text-muted-strong font-bold shrink-0">備考:</span>
+                                  <input
+                                    type="text"
+                                    value={p.metadata?.notes || ""}
+                                    onChange={(e) => handleInputChange(uid, "notes", e.target.value)}
+                                    onBlur={handleBlurSave}
+                                    placeholder="備考メモを入力"
+                                    className="bg-transparent outline-none w-full text-xs text-foreground-soft"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -349,7 +368,7 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                     
                     {playerCount === 0 && !loading && (
                       <tr>
-                        <td colSpan={10} className="px-6 py-12 text-center text-muted-strong">
+                        <td colSpan={8} className="px-6 py-12 text-center text-muted-strong">
                           プレイヤーが登録されていません。Discord & Riot同期を実行して登録してください。
                         </td>
                       </tr>

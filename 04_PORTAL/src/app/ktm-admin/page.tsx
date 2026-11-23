@@ -150,6 +150,10 @@ export default function KtmAdminPage() {
         aVal = a.role_preferences?.primary || "ALL";
         bVal = b.role_preferences?.primary || "ALL";
       }
+      if (sortConfig.key === "allow_lower_support") {
+        aVal = a.allow_lower_support ? 1 : 0;
+        bVal = b.allow_lower_support ? 1 : 0;
+      }
       if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "no") {
         aVal = parseInt(aVal) || 0;
         bVal = parseInt(bVal) || 0;
