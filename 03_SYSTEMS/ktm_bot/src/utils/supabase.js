@@ -2,13 +2,14 @@
  * Supabase への軽量なRESTアクセスユーティリティ (Cloudflare Workers用)
  */
 
-export async function fetchSupabase(env, table, query = "", method = "GET", body = null) {
+export async function fetchSupabase(env, table, query = "", method = "GET", body = null, customHeaders = {}) {
   const url = `${env.SUPABASE_URL}/rest/v1/${table}${query ? '?' + query : ''}`;
   const headers = {
     "apikey": env.SUPABASE_KEY,
     "Authorization": `Bearer ${env.SUPABASE_KEY}`,
     "Content-Type": "application/json",
-    "Prefer": "return=representation"
+    "Prefer": "return=representation",
+    ...customHeaders
   };
 
   const options = { method, headers };

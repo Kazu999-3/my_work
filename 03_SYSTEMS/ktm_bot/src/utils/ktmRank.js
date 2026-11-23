@@ -1,4 +1,4 @@
-import rawKtmTiers from '../../../../04_PORTAL/src/shared/ktm_tiers.json';
+import rawKtmTiers from '../../../../04_PORTAL/src/shared/ktm_tiers.json' with { type: 'json' };
 
 // shared/ktm_tiers.json から大分類 (CHALLENGER 〜 UNRANKED) を自動構築
 const tierMap = new Map();

@@ -6,6 +6,7 @@ import { createRecruitment, markRecruitmentStatus } from '../../utils/recruitPer
 import { notifyAdminError } from '../../utils/alert.js';
 import { computeDayStatus, getDayDef, detectDayKey, extractEntryLines, DAY_CAPACITY, DAY_DEFS, resolveWeekendTargets, buildRecruitmentContent } from '../../utils/recruitmentStatus.js';
 import { cleanupStaleAdhocRecruitments } from './maintenance.js';
+import { getRecruitmentByMessageId, fetchActiveParticipants, buildDisplayLinesFromDb, fetchPlayerRowsMap } from '../../utils/recruitmentLedger.js';
 
 // 週末の定期募集カード（投稿・受付終了・旧形式からの移行・リセット・集計）と古いリマインドの掃除
 // 2026-10-07: handlers/scheduled.js（1,441行）から分割。処理は分割前と同じ。
@@ -490,64 +491,94 @@ export async function resetPeriodicCards(env) {
  */
 export async function loadDayRecruitmentSummary(env, target, messages) {
   const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+  const def = getDayDef(target.dayKey);
 
-  // 1. Discordのチャンネルから直接探す（こちらが正）
+  // 1. Discordのチャンネルから直接探す
+  let card = null;
+  let recruitId = null;
   try {
     const recent = messages || await fetchRecentBotMessages(env, channelId);
-    const card = findDayCard(recent, target);
-    if (card) {
-      const lines = extractEntryLines(card.embeds?.[0]?.fields?.[0]?.value);
-      return {
-        target,
-        messageId: card.id,
-        channelId: card.channel_id || channelId,
-        message: card,
-        lines,
-        status: computeDayStatus(lines),
-      };
-    }
+    card = findDayCard(recent, target);
   } catch (e) {
     console.warn(`[Recruit] ${target.label}のチャンネル走査に失敗:`, e);
   }
 
   // 2. 走査で見つからない場合のみDBを当たる（カードが100件より前へ流れた場合の保険）
-  try {
-    const rows = await fetchSupabase(
-      env, 'recruitments',
-      `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(target.startAtIso)}` +
-      `&select=id,discord_message_id,discord_channel_id,status&order=created_at.desc&limit=1`
-    );
-    if (!rows || rows.length === 0) {
-      console.log(`[Recruit] ${target.label}の募集カードが見つかりません（チャンネル・DBとも）`);
-      return null;
+  if (!card) {
+    try {
+      const rows = await fetchSupabase(
+        env, 'recruitments',
+        `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(target.startAtIso)}` +
+        `&select=id,discord_message_id,discord_channel_id,status&order=created_at.desc&limit=1`
+      );
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        recruitId = row.id;
+        const msgRes = await fetchWithRetry(
+          `https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`,
+          { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+        );
+        if (msgRes.ok) {
+          card = await msgRes.json();
+        }
+      }
+    } catch (e) {
+      console.warn(`[Recruit] ${target.label}の募集カードDB取得に失敗:`, e);
     }
+  }
 
-    const row = rows[0];
-    const msgRes = await fetchWithRetry(
-      `https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`,
-      { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
-    );
-    if (!msgRes.ok) {
-      console.warn(`[Recruit] ${target.label}の募集カード(${row.discord_message_id})を取得できませんでした: ${msgRes.status}`);
-      return null;
-    }
-
-    const message = await msgRes.json();
-    const lines = extractEntryLines(message.embeds?.[0]?.fields?.[0]?.value);
-
-    return {
-      target,
-      recruitId: row.id,
-      messageId: row.discord_message_id,
-      channelId: row.discord_channel_id,
-      message,
-      lines,
-      status: computeDayStatus(lines, DAY_CAPACITY, target.dayKey),
-    };
-  } catch (e) {
-    console.warn(`[Recruit] ${target.label}の募集カード取得に失敗:`, e);
+  if (!card) {
+    console.log(`[Recruit] ${target.label}の募集カードが見つかりません（チャンネル・DBとも）`);
     return null;
   }
+
+  const messageId = card.id;
+  const targetChannelId = card.channel_id || channelId;
+
+  // DB直読み集計 (recruitment_participants)
+  // 指示文35: recruitments レコードが存在する場合は recruitment_participants から直接集計する
+  try {
+    let recruitmentRow = null;
+    if (recruitId) {
+      const rRows = await fetchSupabase(env, 'recruitments', `id=eq.${recruitId}&select=*`);
+      recruitmentRow = rRows?.[0] || null;
+    } else {
+      recruitmentRow = await getRecruitmentByMessageId(env, messageId);
+    }
+
+    if (recruitmentRow) {
+      const activeParticipants = await fetchActiveParticipants(env, recruitmentRow.id);
+      const playerMap = await fetchPlayerRowsMap(env, activeParticipants.map((p) => p.discord_id));
+      const dbLines = buildDisplayLinesFromDb(activeParticipants, playerMap, def);
+
+      return {
+        target,
+        recruitId: recruitmentRow.id,
+        messageId,
+        channelId: targetChannelId,
+        message: card,
+        lines: dbLines,
+        status: computeDayStatus(dbLines, DAY_CAPACITY, target.dayKey),
+        participants: activeParticipants,
+        source: 'db',
+      };
+    }
+  } catch (dbErr) {
+    console.warn(`[Recruit] ${target.label}のDB直読み集計に失敗、カード本文パースにフォールバック:`, dbErr);
+  }
+
+  // フォールバック: カード本文パース（DB未移行の古いカードなど）
+  const lines = extractEntryLines(card.embeds?.[0]?.fields?.[0]?.value);
+  return {
+    target,
+    recruitId,
+    messageId,
+    channelId: targetChannelId,
+    message: card,
+    lines,
+    status: computeDayStatus(lines, DAY_CAPACITY, target.dayKey),
+    source: 'embed',
+  };
 }
 
 /** チャンネルIDから Guild ID を解決する（メッセージリンクの組み立て用） */

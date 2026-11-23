@@ -17,6 +17,12 @@ import {
   RECRUITMENT_COLORS, DAY_CAPACITY, resolveWeekendTargets, buildRecruitmentContent,
 } from '../src/utils/recruitmentStatus.js';
 import { buildDayRecruitEmbed, buildDayRecruitComponents } from '../src/ui/embeds.js';
+import {
+  BAND_BOUNDARY_MMR,
+  determineParticipantAttributes,
+  formatParticipantDisplayLine,
+  buildDisplayLinesFromDb,
+} from '../src/utils/recruitmentLedger.js';
 
 const COLOR_NAMES = Object.fromEntries(
   Object.entries(RECRUITMENT_COLORS).map(([name, hex]) => [hex, name])
@@ -268,6 +274,174 @@ for (const [dayKey, label, lines] of [['sat', '9/26(土)', sampleLines], ['sun',
     if (f.value.length > 1024) fail(`[${dayKey}] フィールド「${f.name}」のvalueが1024文字を超えています`);
   }
 }
+
+// ---------------------------------------------------------------------------
+// 5. DB駆動（recruitmentLedger）の検証
+// ---------------------------------------------------------------------------
+console.log('5. DB駆動 (recruitmentLedger) 検証:');
+
+// (A) determineParticipantAttributes
+const attrCases = [
+  {
+    name: '土曜・上位帯 (MMR 1500 / PLATINUM)',
+    player: { mmr: 1500, mmr_mid: 1500, role_preferences: { primary: 'MID', secondary: 'TOP' } },
+    style: 'full',
+    dayKey: 'sat',
+    expectedLobby: 'high',
+    expectedStyle: 'full',
+    expectedPrimary: 'MID',
+    expectedSecondary: 'TOP',
+  },
+  {
+    name: '土曜・中初級帯 (MMR 1400 / SILVER)',
+    player: { mmr: 1400, mmr_top: 1400, role_preferences: { primary: 'TOP', secondary: null } },
+    style: 'single',
+    dayKey: 'sat',
+    expectedLobby: 'low',
+    expectedStyle: 'single',
+    expectedPrimary: 'TOP',
+    expectedSecondary: null,
+  },
+  {
+    name: '土曜・未設定/初心者 (MMR なし)',
+    player: null,
+    style: 'late',
+    dayKey: 'sat',
+    expectedLobby: 'low',
+    expectedStyle: 'late',
+    expectedPrimary: null,
+    expectedSecondary: null,
+  },
+  {
+    name: '日曜・上位MMRでも帯分けなし (MMR 1600)',
+    player: { mmr: 1600, mmr_adc: 1600, role_preferences: { primary: 'ADC', secondary: 'FILL' } },
+    style: 'spectator',
+    dayKey: 'sun',
+    expectedLobby: 'low',
+    expectedStyle: 'spectator',
+    expectedPrimary: 'ADC',
+    expectedSecondary: 'ALL',
+  },
+];
+
+for (const ac of attrCases) {
+  const attrs = determineParticipantAttributes(ac.player, ac.style, ac.dayKey);
+  if (attrs.lobby !== ac.expectedLobby) {
+    fail(`[DBAttr: ${ac.name}] lobby 不一致: 期待=${ac.expectedLobby}, 実際=${attrs.lobby}`);
+  }
+  if (attrs.style !== ac.expectedStyle) {
+    fail(`[DBAttr: ${ac.name}] style 不一致: 期待=${ac.expectedStyle}, 実際=${attrs.style}`);
+  }
+  if (attrs.primaryLane !== ac.expectedPrimary) {
+    fail(`[DBAttr: ${ac.name}] primaryLane 不一致: 期待=${ac.expectedPrimary}, 実際=${attrs.primaryLane}`);
+  }
+  if (attrs.secondaryLane !== ac.expectedSecondary) {
+    fail(`[DBAttr: ${ac.name}] secondaryLane 不一致: 期待=${ac.expectedSecondary}, 実際=${attrs.secondaryLane}`);
+  }
+  console.log(`  ✓ ${ac.name.padEnd(38)} → lobby:${attrs.lobby} style:${attrs.style}`);
+}
+
+// (B) buildDisplayLinesFromDb & computeDayStatus の連携テスト
+const satDef = getDayDef('sat');
+const sunDef = getDayDef('sun');
+
+// 模擬DB参加者データ: 上位10名(フル) + 中初級4名(フル2, 1戦1, 途中1)
+const mockParticipants = [
+  ...Array.from({ length: 10 }, (_, i) => ({
+    recruitment_id: 'rec_sat_1',
+    discord_id: `high_user_${i}`,
+    style: 'full',
+    lobby: 'high',
+    rank_tier: 'PLATINUM',
+    primary_lane: 'MID',
+    secondary_lane: 'TOP',
+  })),
+  {
+    recruitment_id: 'rec_sat_1',
+    discord_id: 'low_user_0',
+    style: 'full',
+    lobby: 'low',
+    rank_tier: 'SILVER',
+    primary_lane: 'BOT',
+    secondary_lane: null,
+  },
+  {
+    recruitment_id: 'rec_sat_1',
+    discord_id: 'low_user_1',
+    style: 'single',
+    lobby: 'low',
+    rank_tier: 'BRONZE',
+    primary_lane: null,
+    secondary_lane: null,
+  },
+  {
+    recruitment_id: 'rec_sat_1',
+    discord_id: 'low_user_2',
+    style: 'late',
+    lobby: 'low',
+    rank_tier: 'SILVER',
+    primary_lane: 'SUP',
+    secondary_lane: null,
+  },
+  {
+    recruitment_id: 'rec_sat_1',
+    discord_id: 'low_user_unregistered',
+    style: 'full',
+    lobby: 'low',
+    rank_tier: null,
+    primary_lane: null,
+    secondary_lane: null,
+  },
+];
+
+const mockPlayersMap = new Map([
+  ...Array.from({ length: 10 }, (_, i) => [
+    `high_user_${i}`,
+    { discord_id: `high_user_${i}`, games_mid: 20, mmr_mid: 1550, name: `上位${i}` },
+  ]),
+  ['low_user_0', { discord_id: 'low_user_0', games_adc: 30, mmr_adc: 1350, name: '初級0' }],
+  ['low_user_1', { discord_id: 'low_user_1', games_top: 5, mmr_top: 1200, name: '初級1' }],
+  ['low_user_2', { discord_id: 'low_user_2', games_sup: 15, mmr_sup: 1300, name: '初級2' }],
+  // low_user_unregistered は未登録（Mapに存在しない）
+]);
+
+const satLines = buildDisplayLinesFromDb(mockParticipants, mockPlayersMap, satDef);
+if (satLines.length !== 14) {
+  fail(`[DBLines] 生成行数不一致: 期待=14, 実際=${satLines.length}`);
+}
+
+// 未登録ユーザーの行に 🔰 が含まれているか
+const unregLine = satLines.find((l) => l.includes('low_user_unregistered'));
+if (!unregLine || !unregLine.includes('🔰')) {
+  fail(`[DBLines] 未登録ユーザー行に🔰がありません: ${unregLine}`);
+}
+
+// 上位帯ユーザーの行にランクとレーンが含まれているか
+const highLine0 = satLines.find((l) => l.includes('high_user_0'));
+if (!highLine0 || !highLine0.includes('【プラ】') || !highLine0.includes('【MID/TOP】')) {
+  fail(`[DBLines] 上位帯ユーザー行の表記が不正です: ${highLine0}`);
+}
+
+// 土曜ステータス判定: 上位帯は10名で確定、中初級帯は4名で未達
+const satStatusFromDb = computeDayStatus(satLines, DAY_CAPACITY, 'sat');
+if (!satStatusFromDb.high?.isReady) {
+  fail(`[DBStatus: sat] 上位帯が開催確定になっていません`);
+}
+if (satStatusFromDb.low?.isReady) {
+  fail(`[DBStatus: sat] 中初級帯が未達なのに開催確定になっています`);
+}
+if (satStatusFromDb.isBothReady) {
+  fail(`[DBStatus: sat] 両方確定ではないのに isBothReady が true です`);
+}
+console.log(`  ✓ DB行からの土曜ステータス判定: 上位確定=${satStatusFromDb.high.isReady}, 中初級確定=${satStatusFromDb.low.isReady}`);
+
+// 日曜ステータス判定（同じ14名）: 帯を分けず全体14名で定員(10名)到達、確定
+const sunLines = buildDisplayLinesFromDb(mockParticipants, mockPlayersMap, sunDef);
+const sunStatusFromDb = computeDayStatus(sunLines, DAY_CAPACITY, 'sun');
+if (!sunStatusFromDb.isReady) {
+  fail(`[DBStatus: sun] 日曜全体14名なのに開催確定になっていません`);
+}
+console.log(`  ✓ DB行からの日曜ステータス判定: 全体確定=${sunStatusFromDb.isReady} (参加人数=${sunStatusFromDb.joined})`);
 
 console.log(`${'='.repeat(70)}\n`);
 

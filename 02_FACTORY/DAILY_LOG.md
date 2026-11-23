@@ -1,5 +1,55 @@
 ## 📅 2026-11-23（月）
 
+### ⚡ 【Bot 指示文35：募集台帳のDB化実装（recruitment_participants 新設・DB駆動化）】
+
+**概要**:
+`03_SYSTEMS/ktm_bot/docs/specs/35-recruitment-ledger-db-implementation.md` に基づき、募集台帳のDB化（SSoT: Single Source of Truth）を実装完了。未決事項4点はユーザー承認済み（過去openレコードの掃除、水曜12:00投稿に合わせた切り替え・既存カード引き継ぎなし、辞退は論理削除、対象は週末定期カスタムのみ）に沿って推進。
+
+1. **マイグレーション配備 ＆ 過去レコードクリーンアップ**:
+   - `04_PORTAL/supabase/migrations/142_recruitment_participants.sql` を新設。
+   - `recruitment_participants` テーブルを作成（`recruitment_id`, `discord_id`, `user_name`, `style`, `lobby`, `primary_lane`, `secondary_lane`, `rank_tier`, `estimated_mmr`, `is_cancelled`, `created_at`, `updated_at`）。
+   - `UNIQUE(recruitment_id, discord_id)` 制約により行単位の重複を排除し、アトミックな UPSERT を実現。
+   - RLS を有効化（anon/authenticated は SELECT のみ許可、更新系は service_role のみ）。
+   - クリーンアップSQLを実行対象とし、7日以上経過した過去の `open` レコード 3件（10/10, 10/24, 11/8 作成分）を `closed` へ更新するマイグレーションを配備。
+
+2. **Worker 側 DB 操作ユーティリティの新設**:
+   - `03_SYSTEMS/ktm_bot/src/utils/recruitmentLedger.js` を作成。
+   - `BAND_BOUNDARY_MMR = 1450` を定義し、プレイヤー情報と参加形態から DB 属性を純粋関数で決定する `determineParticipantAttributes` を配備。
+   - `recordParticipant`: PostgREST の `on_conflict=recruitment_id,discord_id` と `Prefer: resolution=merge-duplicates` を用いたアトミックな UPSERT を実装。
+   - `cancelParticipant`: `is_cancelled = true` による論理削除。
+   - `fetchActiveParticipants`: `is_cancelled = false` のアクティブ参加者を取得。
+   - `buildDisplayLinesFromDb` / `formatParticipantDisplayLine`: DB の参加者レコードと名簿からカード表示用の行配列を再生成。
+   - `fetchPlayerRowsMap`: 参加者の `ktm_players` レコードを一括取得。
+   - `03_SYSTEMS/ktm_bot/src/utils/supabase.js`: `customHeaders` オプションを追加し PostgREST の UPSERT ヘッダーに対応。
+
+3. **`periodicRecruit.js` の DB 駆動化**:
+   - `handlePeriodicRecruitButtons` 内の `join_periodic` および `spectator_accept` を DB 駆動化。
+   - メッセージIDから `recruitments` を検索し、レコードが存在する場合は `recruitment_participants` へ書き込み（または論理削除）。
+   - DB書き込み失敗時は握りつぶさず `notifyAdminError` で管理者へアラート通知。
+   - 書き込み成功後、DB から最新アクティブ参加者を取得してカード Embed を再生成し、Discord メッセージを PATCH。
+   - `recruitments` が存在しない場合は、DB 未移行の古いカードに対するフォールバック（既存の本文パース）を維持。
+
+4. **`eventNotify.js` 等の集計を DB 直読み化**:
+   - `03_SYSTEMS/ktm_bot/src/handlers/jobs/periodicCards.js` の `loadDayRecruitmentSummary` を改修。
+   - `recruitments` レコードが存在する場合は `recruitment_participants` から直接参加者を取得し、DB から `lines` と `status` を組み立てて返却。
+   - これにより、20:00 開催判定（`checkCustomStatusAt2000`）やリマインド（`sendEventUsersNotification`）が自動的に DB 直読み化。
+   - DB に行が存在しない・取得失敗時は従来のカード本文パースへフォールバック。
+
+5. **検証とテスト**:
+   - `03_SYSTEMS/ktm_bot/scripts/dry_run_recruitment_status.mjs` に DB 駆動ケース（属性決定、DB 行生成、ロビー別開催判定、日曜全体集計）を追加。
+   - `npm run dryrun:recruitment` を実行し、全ケース PASS（Exit code 0）を確認。
+   - `04_PORTAL` の `npm run build` も実行し、Exit code 0 でビルド成功を確認。
+
+- 再利用可能な3行ナレッジ:
+  - PostgREST による UPSERT（`Prefer: resolution=merge-duplicates` ＋ `on_conflict` クエリパラメータ）を活用することで、外部トランザクションなしに Cloudflare Workers 環境から完全な同時押し耐性を実現できる。
+  - チャット UI の更新において「DB へのアトミック書き込み ➔ DB から最新名簿取得 ➔ UI 再描画」の単方向データフローを確立することで、表示の不整合や競合による巻き戻り事故を根絶できる。
+  - 未移行の旧データに対しては段階的フォールバック（DB レコードの有無で自動分岐）を設けることで、既存カードを壊さずに安全な無停止ロールアウトが可能になる。
+- [要検証]: 2026-11-25（水）12:00 JST の定期募集カード自動投稿後のボタン押下ログおよび DB レコード作成状況
+- [継続ウォッチ]: DB 駆動カードでの参加・変更・辞退の同期速度および同時押し時の整合性
+- [発信候補]: 特になし
+
+## 📅 2026-11-23（月）
+
 ### ⚡ 【Bot 指示文34：募集台帳のDB化に向けた現状分析・不整合原因特定と正規アーキテクチャ設計報告書の提出】
 
 **概要**:
