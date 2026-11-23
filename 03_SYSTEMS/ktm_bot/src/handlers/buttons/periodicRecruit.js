@@ -377,27 +377,41 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           }
         }
 
-        // ★ 指示文32: あと1名になった瞬間にロビー（帯）を名指しして促進の返信を自動投稿
+        // ★ あと1名になった瞬間に促進の返信を自動投稿
+        // 土曜はロビー（帯）を名指しし、日曜は従来どおり全体の表記
         const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, dayKey);
         let promptContent = null;
 
-        const highM1JustOne = nextStatus.high?.match1Remaining === 1 && (!existingLine || prevStatus.high?.match1Remaining !== 1);
-        const lowM1JustOne = nextStatus.low?.match1Remaining === 1 && (!existingLine || prevStatus.low?.match1Remaining !== 1);
+        if (dayKey === 'sun') {
+          const prevM1JustOne = prevStatus.breakdown?.match1Remaining === 1;
+          const nextM1JustOne = nextStatus.breakdown?.match1Remaining === 1;
+          if (nextM1JustOne && (!existingLine || !prevM1JustOne)) {
+            promptContent = `🔥 **【${def.shortName}: 第1試合があと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+          } else if (nextStatus.breakdown?.match2Remaining === 1 && nextStatus.breakdown?.isMatch1Ready && prevStatus.breakdown?.match2Remaining !== 1) {
+            promptContent = `🔥 **【${def.shortName}: 第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+          } else if (nextStatus.remaining === 1 && (!existingLine || prevStatus.remaining !== 1)) {
+            promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          }
+        } else {
+          // 土曜（2ロビー制）
+          const highM1JustOne = nextStatus.high?.match1Remaining === 1 && (!existingLine || prevStatus.high?.match1Remaining !== 1);
+          const lowM1JustOne = nextStatus.low?.match1Remaining === 1 && (!existingLine || prevStatus.low?.match1Remaining !== 1);
 
-        if (highM1JustOne && lowM1JustOne) {
-          promptContent = `🔥 **【${def.shortName}: 上位帯・中初級帯ともにあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
-        } else if (highM1JustOne) {
-          promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
-        } else if (lowM1JustOne) {
-          promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
-        } else if (nextStatus.high?.match2Remaining === 1 && nextStatus.high?.isMatch1Ready && prevStatus.high?.match2Remaining !== 1) {
-          promptContent = `🔥 **【${def.shortName}: 上位帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
-        } else if (nextStatus.low?.match2Remaining === 1 && nextStatus.low?.isMatch1Ready && prevStatus.low?.match2Remaining !== 1) {
-          promptContent = `🔥 **【${def.shortName}: 中初級帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
-        } else if (nextStatus.high?.remaining === 1 && (!existingLine || prevStatus.high?.remaining !== 1)) {
-          promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
-        } else if (nextStatus.low?.remaining === 1 && (!existingLine || prevStatus.low?.remaining !== 1)) {
-          promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          if (highM1JustOne && lowM1JustOne) {
+            promptContent = `🔥 **【${def.shortName}: 上位帯・中初級帯ともにあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+          } else if (highM1JustOne) {
+            promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+          } else if (lowM1JustOne) {
+            promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+          } else if (nextStatus.high?.match2Remaining === 1 && nextStatus.high?.isMatch1Ready && prevStatus.high?.match2Remaining !== 1) {
+            promptContent = `🔥 **【${def.shortName}: 上位帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+          } else if (nextStatus.low?.match2Remaining === 1 && nextStatus.low?.isMatch1Ready && prevStatus.low?.match2Remaining !== 1) {
+            promptContent = `🔥 **【${def.shortName}: 中初級帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+          } else if (nextStatus.high?.remaining === 1 && (!existingLine || prevStatus.high?.remaining !== 1)) {
+            promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          } else if (nextStatus.low?.remaining === 1 && (!existingLine || prevStatus.low?.remaining !== 1)) {
+            promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          }
         }
 
         if (promptContent) {

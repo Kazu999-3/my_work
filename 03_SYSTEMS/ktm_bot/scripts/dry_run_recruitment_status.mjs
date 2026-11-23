@@ -93,6 +93,20 @@ const cases = [
     expectedBothReady: false,
     expectedHeaderSnippet: '募集中',
   },
+  {
+    label: '土日差異検証: 帯混在計10名 (上位5名・中初級5名)',
+    input: [
+      ...Array.from({ length: 5 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 5 }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`),
+    ],
+    // 土曜は各ロビー5名で両方未達 (isReady: false)
+    expectedHighReady: false,
+    expectedLowReady: false,
+    expectedBothReady: false,
+    expectedHeaderSnippet: '募集中',
+    // 日曜は帯を分けず全体10名で定員到達 (isReady: true)
+    expectedSunReady: true,
+  },
 ];
 
 console.log('day | 人数 | color      | isReady | remaining | バナー見出し');
@@ -107,10 +121,45 @@ for (const dayKey of ['sat', 'sun']) {
     if (status.remaining < 0) fail(`[${dayKey}/${c.label}] remainingが負になっています`);
     if (status.joined < 0) fail(`[${dayKey}/${c.label}] joinedが負になっています`);
     
-    // 混在ケース・ロビー別ケースの場合はブレークダウンの判定を採用
-    const expectedReady = status.breakdown
-      ? (status.high?.isReady || status.low?.isReady)
-      : (status.joined >= DAY_CAPACITY);
+    // 土曜と日曜の判定ロジック分岐
+    let expectedReady;
+    if (dayKey === 'sat') {
+      if (!status.high || !status.low) {
+        fail(`[${dayKey}/${c.label}] 土曜なのにhigh/lowロビーが設定されていません`);
+      }
+      expectedReady = status.breakdown
+        ? (status.high.isReady || status.low.isReady)
+        : (status.joined >= DAY_CAPACITY);
+
+      // 土曜ロビー別固有のアサーション
+      if (c.expectedHighReady !== undefined && status.high.isReady !== c.expectedHighReady) {
+        fail(`[${dayKey}/${c.label}] high.isReadyが期待と一致しません (実際: ${status.high.isReady}, 期待: ${c.expectedHighReady})`);
+      }
+      if (c.expectedLowReady !== undefined && status.low.isReady !== c.expectedLowReady) {
+        fail(`[${dayKey}/${c.label}] low.isReadyが期待と一致しません (実際: ${status.low.isReady}, 期待: ${c.expectedLowReady})`);
+      }
+      if (c.expectedBothReady !== undefined && status.isBothReady !== c.expectedBothReady) {
+        fail(`[${dayKey}/${c.label}] isBothReadyが期待と一致しません (実際: ${status.isBothReady}, 期待: ${c.expectedBothReady})`);
+      }
+      if (c.expectedHeaderSnippet && !header.includes(c.expectedHeaderSnippet)) {
+        fail(`[${dayKey}/${c.label}] 見出しに期待スニペット「${c.expectedHeaderSnippet}」がありません: ${header}`);
+      }
+    } else {
+      // 日曜（お祭り）: 帯分けなし（単一集計）
+      if (status.high !== null || status.low !== null) {
+        fail(`[${dayKey}/${c.label}] 日曜なのにhigh/lowロビーが残っています`);
+      }
+      expectedReady = status.breakdown
+        ? status.breakdown.isReady
+        : (status.joined >= DAY_CAPACITY);
+
+      if (header.includes('上位帯') || header.includes('中初級帯')) {
+        fail(`[${dayKey}/${c.label}] 日曜見出しにロビー名が含まれています: ${header}`);
+      }
+      if (c.expectedSunReady !== undefined && status.isReady !== c.expectedSunReady) {
+        fail(`[${dayKey}/${c.label}] 日曜のisReadyが期待と一致しません (実際: ${status.isReady}, 期待: ${c.expectedSunReady})`);
+      }
+    }
 
     if (status.isReady !== expectedReady) {
       fail(`[${dayKey}/${c.label}] isReadyが人数と一致しません (実際: ${status.isReady}, 期待: ${expectedReady})`);
@@ -126,20 +175,6 @@ for (const dayKey of ['sat', 'sun']) {
     }
     if (!status.isReady && !header.includes('募集中')) {
       fail(`[${dayKey}/${c.label}] 募集中なのに見出しに「募集中」がありません: ${header}`);
-    }
-
-    // ロビー別固有のアサーション
-    if (c.expectedHighReady !== undefined && status.high.isReady !== c.expectedHighReady) {
-      fail(`[${dayKey}/${c.label}] high.isReadyが期待と一致しません (実際: ${status.high.isReady}, 期待: ${c.expectedHighReady})`);
-    }
-    if (c.expectedLowReady !== undefined && status.low.isReady !== c.expectedLowReady) {
-      fail(`[${dayKey}/${c.label}] low.isReadyが期待と一致しません (実際: ${status.low.isReady}, 期待: ${c.expectedLowReady})`);
-    }
-    if (c.expectedBothReady !== undefined && status.isBothReady !== c.expectedBothReady) {
-      fail(`[${dayKey}/${c.label}] isBothReadyが期待と一致しません (実際: ${status.isBothReady}, 期待: ${c.expectedBothReady})`);
-    }
-    if (c.expectedHeaderSnippet && !header.includes(c.expectedHeaderSnippet)) {
-      fail(`[${dayKey}/${c.label}] 見出しに期待スニペット「${c.expectedHeaderSnippet}」がありません: ${header}`);
     }
 
     console.log(

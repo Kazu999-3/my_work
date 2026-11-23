@@ -4,9 +4,8 @@ import { patchInteractionResponse } from '../../utils/api.js';
 import { fetchSupabase } from '../../utils/supabase.js';
 import { handleStatsCommand } from '../commands.js';
 import { getPlaystyleEmbed, getPlaystyleComponents } from '../../ui/embeds.js';
-import { getAdminDiscordIds } from '../../utils/recruitPermission.js';
 
-// サモナー名登録・レーン・戦績、ナレッジ承認、募集/ハブ/プレイスタイル（ロール選択）
+// サモナー名登録・レーン・戦績、募集/ハブ/プレイスタイル（ロール選択）
 // 2026-10-07: handlers/components.js（1,486行）のボタン処理から分割。処理は分割前と同じ（元の判定順のまま）。
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
 export async function handlePortalBasicsButtons(interaction, env, ctx, { customId, userId, appId, token, botToken }) {
@@ -60,59 +59,6 @@ export async function handlePortalBasicsButtons(interaction, env, ctx, { customI
   // ⚠️ 2026-09-29: portal_roulette ボタンのハンドラを削除した（/roulette 機能ごと削除・ユーザー判断）。
   // handlers/roulette.js も削除済み。このcustom_idを持つ古いメッセージが残っていた場合は
   // 下のフォールスルーで「不明な操作です」が返る（無言で落ちない）。
-
-  // 📚 YouTube解析ナレッジのワンクリック承認
-  if (customId.startsWith('approve_knowledge:')) {
-    const adminIds = getAdminDiscordIds(env);
-    if (!adminIds.includes(userId)) {
-      return Response.json({
-        type: 4,
-        data: { content: '❌ ナレッジの承認権限がありません（管理者のみ操作可能）。', flags: 64 }
-      });
-    }
-
-    const articleId = customId.split(':')[1];
-    try {
-      await fetchSupabase(env, 'personal_knowledge', `id=eq.${articleId}`, 'PATCH', {
-        review_status: 'verified'
-      });
-
-      const memberName = interaction.member?.nick || interaction.user?.global_name || interaction.user?.username || '管理者';
-      const updatedComponents = [
-        {
-          type: 1,
-          components: [
-            {
-              type: 2,
-              label: `✅ 承認済み (by ${memberName})`,
-              style: 3,
-              disabled: true,
-              custom_id: `approved_noop:${articleId}`
-            },
-            {
-              type: 2,
-              label: '🌐 記事承認画面で確認',
-              style: 5,
-              url: `${CONFIG.PILOT_URL || 'https://ktm-pilot.vercel.app'}/admin/review`
-            }
-          ]
-        }
-      ];
-
-      return Response.json({
-        type: 7, // UPDATE_MESSAGE
-        data: {
-          components: updatedComponents
-        }
-      });
-    } catch (e) {
-      console.error('[approve_knowledge] 承認処理エラー:', e);
-      return Response.json({
-        type: 4,
-        data: { content: `❌ 承認処理に失敗しました: ${e?.message || e}`, flags: 64 }
-      });
-    }
-  }
 
   if (customId === 'portal_recruit') {
     return Response.json({

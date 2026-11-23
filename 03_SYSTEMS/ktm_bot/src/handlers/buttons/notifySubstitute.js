@@ -1,8 +1,8 @@
 import { addMemberRole, removeMemberRole } from '../../utils/discordRoles.js';
 import { CONFIG } from '../../config.js';
-import { patchInteractionResponse, sendDiscordMessage } from '../../utils/api.js';
+import { patchInteractionResponse } from '../../utils/api.js';
 
-// 募集通知のON/OFF、代打募集（ノーマル/ARAM）
+// 募集通知のON/OFF
 // 2026-10-07: handlers/components.js（1,486行）のボタン処理から分割。処理は分割前と同じ（元の判定順のまま）。
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
 export async function handleNotifySubstituteButtons(interaction, env, ctx, { customId, userId, appId, token, botToken }) {
@@ -45,62 +45,6 @@ export async function handleNotifySubstituteButtons(interaction, env, ctx, { cus
 
     return Response.json({ type: 5, data: { flags: 64 } });
   }
-
-  // 代替クイック募集ボタン（ノーマル / ARAM・メイヘム）
-  if (customId === 'quick_substitute_normal' || customId === 'quick_substitute_aram') {
-    const isNormal = customId === 'quick_substitute_normal';
-    const modeLabel = isNormal ? '🎮 代替ノーマル' : '🔥 代替ARAM/メイヘム';
-    const userMention = `<@${userId}>`;
-
-    ctx.waitUntil((async () => {
-      try {
-        const msgId = interaction.message.id;
-        const channelId = interaction.channel_id;
-
-        const msgRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
-          headers: { "Authorization": `Bot ${botToken}` }
-        });
-        if (!msgRes.ok) return;
-        const msg = await msgRes.json();
-        let content = msg.content || '';
-
-        let targetLines = content.split('\n');
-        const userLineIdx = targetLines.findIndex(l => l.includes(userMention));
-
-        if (userLineIdx >= 0) {
-          // 既にエントリーしている場合は解除
-          targetLines = targetLines.filter(l => !l.includes(userMention));
-        } else {
-          // エントリー追加
-          targetLines.push(`- ${userMention} (${modeLabel})`);
-        }
-
-        const count = targetLines.filter(l => l.startsWith('- <@')).length;
-        const updatedContent = targetLines.join('\n');
-
-        // ボタンのラベルを更新（現在の参加人数）
-        const components = msg.components?.map(row => ({
-          ...row,
-          components: row.components.map(btn => {
-            if (btn.custom_id === customId) {
-              return { ...btn, label: isNormal ? `🎮 ノーマル行く人！ (${count}/5)` : `🔥 ARAM / メイヘムやる人！ (${count}/5)` };
-            }
-            return btn;
-          })
-        })) || msg.components;
-
-        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
-          content: updatedContent,
-          components
-        });
-      } catch (e) {
-        console.error('quick_substitute error:', e);
-      }
-    })());
-
-    return Response.json({ type: 5, data: { flags: 64 } });
-  }
-
 
   return undefined;
 }

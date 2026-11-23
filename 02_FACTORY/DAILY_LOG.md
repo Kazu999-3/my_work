@@ -1,5 +1,45 @@
 ## 📅 2026-11-23（月）
 
+### ⚡ 【Bot 指示文33：日曜お祭りカードの単一集計・表示復帰 ＆ 未接続死骸ボタンハンドラ3系統の完全撤去】
+
+**概要**:
+`03_SYSTEMS/ktm_bot/docs/specs/33-sunday-single-lobby-and-dead-buttons-instruction.md` に基づき、指示文32のレビュー結果を受けた日曜カードの単一集計復帰と、指示文31調査で特定された生成側のない死骸ボタンハンドラ3系統の完全撤去を実施完了。
+
+1. **日曜お祭りカードの単一集計・表示復帰**:
+   - `03_SYSTEMS/ktm_bot/src/utils/recruitmentStatus.js`:
+     - `computeDayStatus`: 日曜（`dayKey === 'sun'`）は帯分けを行わず、全体（単一ロビー）として集計。`high`/`low` は null とし、`breakdown` に全体内訳を保持。
+     - `buildDayBanner`: 日曜は従来の全体進捗バナー（全員フルなら `[■■■□□□] あとX名で開催確定`、変則参加なら第1戦/第2戦の状況併記）へ復帰。土曜の2ロビー制バナーはそのまま維持。
+   - `03_SYSTEMS/ktm_bot/src/ui/embeds.js`:
+     - `applyDayCardState`: 日曜は単一フィールド `👥 参加者 (${status.joined}/${status.capacity}名)`（観戦含む場合は `計${status.total}名`）に `renderEntryList` で描画。土曜の2ロビーフィールド（上位帯/中初級帯/観戦）はそのまま維持。
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/periodicRecruit.js`:
+     - 「あと1名」通知: 日曜は帯名指しではなく従来の全体表記（`第1試合があと1名で開催確定！` 等）へ復帰。土曜はロビー名指しを維持。
+   - `03_SYSTEMS/ktm_bot/src/handlers/jobs/eventNotify.js`:
+     - リマインド通知: 日曜は `👥 エントリー状況: X/10名` の全体表記へ復帰。スキップ条件も日曜は `isReady`（10名到達）で判定。
+     - 20:00開催判定: 日曜はロビー分けせず全体判定（第1戦成立/第2戦成立/観戦打診/助っ人/中止）を単一決定として実行。
+
+2. **死骸ボタンハンドラ3系統の完全撤去**:
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/adminQuickActions.js`: 未配線のスタブ `opgg_scout` ハンドラおよび不要となった `extractPlayersFromEmbed` の import を削除。
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/portalBasics.js`: 通知生成側の存在しない `approve_knowledge:` ハンドラおよび不要となった `getAdminDiscordIds` の import を削除。
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/notifySubstitute.js`: 2026-10-03に生成元が廃止されていた `quick_substitute_normal` / `quick_substitute_aram` ハンドラおよび不要となった `sendDiscordMessage` の import を削除。
+   - ※ 現役稼働中の勝敗予想機能 `bet_team:` は一切触れず現状維持。
+
+3. **機械的実値検証（Verifier原則）**:
+   - `03_SYSTEMS/ktm_bot/scripts/dry_run_recruitment_status.mjs` に「土日差異検証: 帯混在計10名（上位5名・中初級5名）」のケースを追加。
+     - 土曜: 各ロビー5名で定員未達（`isReady: false`）を検証。
+     - 日曜: 帯分けなしで全体10名となり定員到達・開催確定（`isReady: true`）を検証。
+     - 日曜のバナー見出しに「上位帯」「中初級帯」が含まれず、`high`/`low` が null であることを機械的に検証。
+   - `npm run dryrun:recruitment` を実行し、全ケース（計24ケース＋日付解決＋文字数上限検証）がエラーゼロで正常通過（Exit code 0）。
+
+- 再利用可能な3行ナレッジ:
+  - 曜日やイベントの性格（実力均等vsお祭り枠）に応じて集計モデルを切り替える際は、カード共通の関数内で `dayKey` を分岐させ、出力される構造体プロパティの有無（`high`/`low` が存在するか null か）でUIや通知をシンプルに疎結合化できる。
+  - 死骸コード・孤立ハンドラは放置すると保守コストと認知的負荷を増やし続けるため、生成側の調査・確認が取れた段階で速やかに撤去することが健全なWorker運用の鉄則。
+  - 差分テストにおいて「同じ入力データ（上位5名・中初級5名）を与えて土曜は未開催、日曜は開催確定になる」という決定的なケースを1つ入れるだけで、仕様の意図と退行防止を極めて強固に担保できる。
+- [要検証]: 実機Discord上での日曜カードのエントリー表示と単一通知の動作確認
+- [継続ウォッチ]: 特になし（死骸ボタンの整理完了）
+- [発信候補]: 特になし
+
+## 📅 2026-11-23（月）
+
 ### ⚡ 【Bot 指示文30・31・32：参加フロー案A一本化・使い勝手改善・帯別ロビー集計＆20:00独立判定の実装】
 
 **概要**:

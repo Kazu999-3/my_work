@@ -44,12 +44,16 @@ export async function sendEventUsersNotification(env, options = {}) {
       return { action: 'skipped', reason: '募集カードが見つからない' };
     }
 
-    const allReady = summaries.every((s) => s.status.high?.isReady && s.status.low?.isReady);
+    const allReady = summaries.every((s) =>
+      s.target.dayKey === 'sat'
+        ? (s.status.high?.isReady && s.status.low?.isReady)
+        : s.status.isReady
+    );
     if (allReady) {
-      console.log('[EventNotify] 対象日（' + summaries.map((s) => s.target.label).join(', ') + '）は全ロビーが定員到達（開催確定）しているためリマインド送信をスキップします');
+      console.log('[EventNotify] 対象日（' + summaries.map((s) => s.target.label).join(', ') + '）は全枠が定員到達（開催確定）しているためリマインド送信をスキップします');
       // 満員になった場合も、以前の「残り枠リマインド」が残っていれば掃除する
       await cleanupOldReminderMessages(env, channelId);
-      return { action: 'skipped', reason: '全ロビー定員到達' };
+      return { action: 'skipped', reason: '全枠定員到達' };
     }
 
     const guildId = await resolveGuildId(env, channelId);
@@ -73,25 +77,28 @@ export async function sendEventUsersNotification(env, options = {}) {
 
     const dayLines = summaries.map((s) => {
       const def = getDayDef(s.target.dayKey);
-      const high = s.status.high || { joined: 0, isReady: false, remaining: 10 };
-      const low = s.status.low || { joined: 0, isReady: false, remaining: 10 };
-      const highState = high.isReady ? '**✅ 開催確定！**' : `あと${high.remaining}名`;
-      const lowState = low.isReady ? '**✅ 開催確定！**' : `あと${low.remaining}名`;
-
       const link = guildId
         ? ` → [カードへジャンプ](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
         : '';
 
-      const lines = [
-        `${def.emoji} **${def.name}**　${s.target.label} 21:00〜${link}`,
-        `　👑 **上位帯ロビー**: **${high.joined}/10名** → ${highState}`,
-        `　🌱 **中初級帯ロビー**: **${low.joined}/10名** → ${lowState}`
-      ];
+      const lines = [`${def.emoji} **${def.name}**　${s.target.label} 21:00〜${link}`];
 
       if (s.target.dayKey === 'sat') {
-        lines.push('　🛡️ **実力均等**: チーム戦力を推定MMRランクで五分五分に自動調整！初心者・中初級帯でも安心して参加できます');
-      } else if (s.target.dayKey === 'sun') {
-        lines.push(`　🎪 **今週のお題**: **「${sundayThemeText}」**（ランク不問・お祭り枠✨）`);
+        const high = s.status.high || { joined: 0, isReady: false, remaining: 10 };
+        const low = s.status.low || { joined: 0, isReady: false, remaining: 10 };
+        const highState = high.isReady ? '**✅ 開催確定！**' : `あと${high.remaining}名`;
+        const lowState = low.isReady ? '**✅ 開催確定！**' : `あと${low.remaining}名`;
+        lines.push(
+          `　👑 **上位帯ロビー**: **${high.joined}/10名** → ${highState}`,
+          `　🌱 **中初級帯ロビー**: **${low.joined}/10名** → ${lowState}`,
+          '　🛡️ **実力均等**: チーム戦力を推定MMRランクで五分五分に自動調整！初心者・中初級帯でも安心して参加できます'
+        );
+      } else {
+        const stateText = s.status.isReady ? '**✅ 開催確定！**' : `あと${s.status.remaining}名`;
+        lines.push(
+          `　👥 **エントリー状況**: **${s.status.joined}/${s.status.capacity}名** → ${stateText}`,
+          `　🎪 **今週のお題**: **「${sundayThemeText}」**（ランク不問・お祭り枠✨）`
+        );
       }
 
       return lines.join('\n');
@@ -311,12 +318,16 @@ export async function checkCustomStatusAt2000(env) {
 
     const idsIn = (lines) => [...new Set((lines || []).flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1])))].slice(0, 100);
 
-    // 指示文32: 20:00 開催判定をロビー（上位帯／中初級帯）ごとに独立して判定・実行
+    // 土曜はロビー（上位帯／中初級帯）ごとに独立判定し、日曜は全体判定
     function evaluateLobbyDecision({ lobbyKey, lobbyName, lobbyStatus, spectatorLines, def }) {
       const firstMatchCount = lobbyStatus.match1Count;
       const lateCount = lobbyStatus.match2LateLines?.length ?? 0;
       const shortfall = Math.max(0, DAY_CAPACITY - firstMatchCount);
       const spectatorLinesForMatch1 = (spectatorLines || []).filter((l) => !/2戦目/.test(l));
+
+      const namePrefix = lobbyName ? ` ${lobbyName}` : '';
+      const nameBracket = lobbyName ? `（${lobbyName}）` : '';
+      const actionLabel = lobbyName || def.name;
 
       // A. 開催確定
       if (lobbyStatus.isMatch1Ready) {
@@ -326,9 +337,9 @@ export async function checkCustomStatusAt2000(env) {
           : '';
         return {
           type: 'CONFIRMED',
-          action: `${lobbyName} 開催確定`,
+          action: `${actionLabel} 開催確定`,
           isReady: true,
-          content: `🎉 **【本日20:00 判定: ${lobbyName} 開催確定！】**\n${def.emoji} **${def.name}（${lobbyName}）** は第1戦メンバーが ${firstMatchCount}名 集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
+          content: `🎉 **【本日20:00 判定:${namePrefix} 開催確定！】**\n${def.emoji} **${def.name}${nameBracket}** は第1戦メンバーが ${firstMatchCount}名 集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
           allowed_mentions: { users: attendeeIds },
         };
       }
@@ -338,9 +349,9 @@ export async function checkCustomStatusAt2000(env) {
         const match2Ids = idsIn([...(lobbyStatus.match1Lines || []).filter((l) => !/1戦のみ/.test(l)), ...(lobbyStatus.match2LateLines || [])]);
         return {
           type: 'MATCH2_CONFIRMED',
-          action: `${lobbyName} 第2戦から開催確定`,
+          action: `${actionLabel} 第2戦から開催確定`,
           isReady: true,
-          content: `🎉 **【本日20:00 判定: ${lobbyName} 第2戦から開催確定！】**\n${def.emoji} **${def.name}（${lobbyName}）** は第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 のため、**第2戦から**開催します（第2戦は ${lobbyStatus.match2Count}名）。開始時刻は主催者からの案内をお待ちください。` +
+          content: `🎉 **【本日20:00 判定:${namePrefix} 第2戦から開催確定！】**\n${def.emoji} **${def.name}${nameBracket}** は第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 のため、**第2戦から**開催します（第2戦は ${lobbyStatus.match2Count}名）。開始時刻は主催者からの案内をお待ちください。` +
             (match2Ids.length ? `\n\n集合をお願いします 🎮 ${match2Ids.map((id) => `<@${id}>`).join(' ')}` : ''),
           allowed_mentions: { users: match2Ids },
         };
@@ -351,9 +362,9 @@ export async function checkCustomStatusAt2000(env) {
         const spectatorIds = idsIn(spectatorLinesForMatch1);
         return {
           type: 'SPECTATOR_REQUEST',
-          action: `${lobbyName} 観戦枠への参加依頼`,
+          action: `${actionLabel} 観戦枠への参加依頼`,
           isReady: false,
-          content: `🙋 **【参加のお願い】${def.name}（${lobbyName}）**\n` +
+          content: `🙋 **【参加のお願い】${def.name}${nameBracket}**\n` +
             `第1戦の出場対象は ${firstMatchCount}/${DAY_CAPACITY}名 で、あと **${shortfall}名** 足りません。\n` +
             `観戦希望の方が入ってくれれば開催できます。出られそうな方は、下のボタンを押して第1戦へエントリーをお願いします🙏\n` +
             (spectatorIds.length ? `\n\n${spectatorIds.map((id) => `<@${id}>`).join(' ')}` : ''),
@@ -363,7 +374,7 @@ export async function checkCustomStatusAt2000(env) {
               components: [
                 {
                   type: 2,
-                  label: `🙋 ${lobbyName}の第1戦に参加する！ (あと${shortfall}名)`,
+                  label: `🙋${namePrefix}の第1戦に参加する！ (あと${shortfall}名)`,
                   style: 3,
                   custom_id: `spectator_accept:${def.key}:${lobbyKey}`
                 }
@@ -378,10 +389,10 @@ export async function checkCustomStatusAt2000(env) {
       if (firstMatchCount >= 8 && lateCount >= 1) {
         return {
           type: 'HELP_RECRUIT',
-          action: `${lobbyName} 助っ人募集`,
+          action: `${actionLabel} 助っ人募集`,
           isReady: false,
-          content: `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 ${lobbyName}の助っ人をピンポイント募集中！】**\n\n` +
-            `・**${def.shortName}（${lobbyName}）**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n` +
+          content: `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合${namePrefix}の助っ人をピンポイント募集中！】**\n\n` +
+            `・**${def.shortName}${nameBracket}**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n` +
             `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
             `下のボタンから1戦だけ助っ人エントリーをお願いします！`,
           components: [
@@ -407,14 +418,16 @@ export async function checkCustomStatusAt2000(env) {
         ? `\n\n通知: ${entryIds.map((id) => `<@${id}>`).join(' ')}`
         : '';
 
+      const cancelLobbyNote = lobbyName ? `（※開催確定したロビーは予定通り進行します）\n\n` : `\n\n`;
+
       return {
         type: 'CANCEL',
-        action: `${lobbyName} 中止`,
+        action: `${actionLabel} 中止`,
         isReady: false,
-        content: `🛑 **【本日の${def.name}（${lobbyName}）は中止です】**\n\n` +
-          `20:00時点で${lobbyName}の第1試合の参加者が ${firstMatchCount}/${DAY_CAPACITY}名 と集まらなかったため、本日の${lobbyName}は中止とします。\n` +
+        content: `🛑 **【本日の${def.name}${nameBracket}は中止です】**\n\n` +
+          `20:00時点で${lobbyName ? `${lobbyName}の` : ''}第1試合の参加者が ${firstMatchCount}/${DAY_CAPACITY}名 と集まらなかったため、本日の${lobbyName || def.name}は中止とします。\n` +
           `エントリーしてくださった皆さん、ありがとうございました。\n` +
-          `（※開催確定したロビーは予定通り進行します）\n\n` +
+          cancelLobbyNote +
           `💡 集まれる人で遊びたい場合は、下のボタンから通常募集を立てられます。` +
           cancelMentions,
         components: [
@@ -429,22 +442,42 @@ export async function checkCustomStatusAt2000(env) {
       };
     }
 
-    const highDecision = evaluateLobbyDecision({
-      lobbyKey: 'high',
-      lobbyName: '上位帯ロビー',
-      lobbyStatus: summary.status.high,
-      spectatorLines: summary.status.spectator?.lines,
-      def,
-    });
-    const lowDecision = evaluateLobbyDecision({
-      lobbyKey: 'low',
-      lobbyName: '中初級帯ロビー',
-      lobbyStatus: summary.status.low,
-      spectatorLines: summary.status.spectator?.lines,
-      def,
-    });
+    let decisions = [];
+    if (dayKey === 'sat') {
+      const highDecision = evaluateLobbyDecision({
+        lobbyKey: 'high',
+        lobbyName: '上位帯ロビー',
+        lobbyStatus: summary.status.high,
+        spectatorLines: summary.status.spectator?.lines,
+        def,
+      });
+      const lowDecision = evaluateLobbyDecision({
+        lobbyKey: 'low',
+        lobbyName: '中初級帯ロビー',
+        lobbyStatus: summary.status.low,
+        spectatorLines: summary.status.spectator?.lines,
+        def,
+      });
+      decisions = [highDecision, lowDecision];
+    } else {
+      // 日曜（お祭り枠・単一集計）
+      const sunDecision = evaluateLobbyDecision({
+        lobbyKey: 'all',
+        lobbyName: '',
+        lobbyStatus: summary.status.breakdown || {
+          match1Count: summary.status.joined,
+          match2LateLines: [],
+          match1Lines: summary.lines,
+          eligibleLines: summary.lines,
+          isMatch1Ready: summary.status.isReady,
+          isMatch2Ready: false,
+        },
+        spectatorLines: summary.status.spectator?.lines,
+        def,
+      });
+      decisions = [sunDecision];
+    }
 
-    const decisions = [highDecision, lowDecision];
     const postChannelId = summary.channelId || channelId;
     const replyTo = summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {};
     const todayJst = nowJst.toISOString().slice(0, 10);
@@ -471,8 +504,9 @@ export async function checkCustomStatusAt2000(env) {
     }
 
     // 中止告知の後のカード締め切り:
-    // 両方のロビーが中止になった場合のみカード全体を締め切る（片方でも開催確定ならカードはそのまま進行）
-    if (!highDecision.isReady && !lowDecision.isReady && !skipCancel && summary.messageId) {
+    // 全ての決定が中止になった場合のみカード全体を締め切る
+    const isAllCancelled = decisions.every((d) => !d.isReady);
+    if (isAllCancelled && !skipCancel && summary.messageId) {
       await closePeriodicCard(env, postChannelId, summary.messageId)
         .catch((e) => console.warn('[Check2000] 中止したカードの締め切りに失敗:', e));
     }

@@ -1,10 +1,10 @@
 import { CONFIG } from '../../config.js';
 import { patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../../utils/api.js';
 import { handleLaneCommand, handleStatsCommand } from '../commands.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed } from '../../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../../ui/embeds.js';
 import { notifyAdminError } from '../../utils/alert.js';
 
-// 管理メニュー・クイック募集・MMR初期化・勝敗ボタン・OP.GG偵察
+// 管理メニュー・クイック募集・MMR初期化・勝敗ボタン
 // 2026-10-07: handlers/components.js（1,486行）のボタン処理から分割。処理は分割前と同じ（元の判定順のまま）。
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
 export async function handleAdminQuickButtons(interaction, env, ctx, { customId, userId, appId, token, botToken }) {
@@ -140,52 +140,6 @@ export async function handleAdminQuickButtons(interaction, env, ctx, { customId,
       }
     })());
     return Response.json({ type: 7, data: { content: "⌛ 処理を開始しました。少々お待ちください...", components: [] } });
-  }
-
-  if (customId === 'opgg_scout') {
-    const players = extractPlayersFromEmbed(interaction.message.embeds[0]);
-    if (players.length === 0) return Response.json({ type: 4, data: { content: "⚠️ プレイヤー情報が見つかりません。", flags: 64 } });
-    
-    const teamA = players.filter(p => p.team === 'BLUE').map(p => p.name);
-    const teamB = players.filter(p => p.team === 'RED').map(p => p.name);
-    
-    ctx.waitUntil((async () => {
-      try {
-        const { getPlayersByNames } = await import('../../utils/supabase.js');
-        const allNames = [...teamA, ...teamB];
-        const playersData = await getPlayersByNames(env, allNames);
-        
-        const getIgn = (name) => {
-          const p = playersData.find(pd => pd.name === name);
-          return p && p.ign && p.ign.includes('#') ? encodeURIComponent(p.ign) : null;
-        };
-
-        const blueIgns = teamA.map(getIgn).filter(ign => ign !== null);
-        const redIgns = teamB.map(getIgn).filter(ign => ign !== null);
-
-        let content = "🕵️ **OP.GG スカウティングレポート**\n以下のリンクから両チームの詳細な戦績を確認できます。\n\n";
-        
-        if (blueIgns.length > 0) {
-          content += `🟦 **TEAM BLUE**\nhttps://www.op.gg/multisearch/jp?summoners=${blueIgns.join(encodeURIComponent(','))}\n\n`;
-        } else {
-          content += `🟦 **TEAM BLUE**: 登録されているIGNがありません\n\n`;
-        }
-        
-        if (redIgns.length > 0) {
-          content += `🟥 **TEAM RED**\nhttps://www.op.gg/multisearch/jp?summoners=${redIgns.join(encodeURIComponent(','))}`;
-        } else {
-          content += `🟥 **TEAM RED**: 登録されているIGNがありません`;
-        }
-        
-        await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
-        await sendInteractionFollowup(appId, token, { content: content, flags: 64 });
-      } catch (err) {
-        await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
-        await sendInteractionFollowup(appId, token, { content: `❌ **エラー**: ${err.message}`, flags: 64 });
-      }
-    })());
-    
-    return Response.json({ type: 5, data: { flags: 64 } });
   }
 
   return undefined;

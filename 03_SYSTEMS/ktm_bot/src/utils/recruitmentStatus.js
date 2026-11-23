@@ -432,11 +432,52 @@ export function parseEntryBreakdown(countOrLines, capacity = LOBBY_CAPACITY) {
 
 /**
  * 1日分（カード1枚分）の募集状態を計算する。
- * 配列またはロビー別オブジェクトが渡された場合はロビー単位（上位帯/中初級帯）で計算する。
+ * 土曜（本戦）はロビー単位（上位帯/中初級帯）で計算し、日曜（お祭り）は帯を分けず全体で計算する。
  */
 export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey = 'sat') {
   const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
 
+  // 日曜（お祭り枠）はランク不問・帯分けなし（単一集計）
+  if (dayKey === 'sun') {
+    if (Array.isArray(countOrLines) || (countOrLines && typeof countOrLines === 'object')) {
+      const allLines = Array.isArray(countOrLines)
+        ? countOrLines
+        : [...(countOrLines.high || []), ...(countOrLines.low || []), ...(countOrLines.spectator || [])];
+      const breakdown = parseLobbyBreakdown(allLines, capacity);
+      return {
+        total: breakdown.total,
+        joined: breakdown.joined,
+        capacity,
+        remaining: breakdown.remaining,
+        isReady: breakdown.isReady,
+        isBothReady: breakdown.isReady,
+        color: breakdown.isReady ? RECRUITMENT_COLORS.confirmed : recruitingColor,
+        breakdown,
+        high: null,
+        low: null,
+        spectator: { total: breakdown.spectatorTotal, lines: breakdown.spectatorLines },
+        dominantTierInfo: { key: '', text: '', rangeText: '' },
+      };
+    }
+
+    const num = Math.max(0, Number(countOrLines) || 0);
+    const isReady = num >= capacity;
+    return {
+      total: num,
+      joined: num,
+      capacity,
+      remaining: Math.max(0, capacity - num),
+      isReady,
+      isBothReady: isReady,
+      color: isReady ? RECRUITMENT_COLORS.confirmed : recruitingColor,
+      breakdown: null,
+      high: null,
+      low: null,
+      dominantTierInfo: { key: '', text: '', rangeText: '' },
+    };
+  }
+
+  // 土曜（実力均等カスタム）: 2ロビー制（上位帯/中初級帯）
   if (Array.isArray(countOrLines) || (countOrLines && typeof countOrLines === 'object')) {
     const dominantTierInfo = { key: '', text: '', rangeText: '' };
     const breakdown = parseEntryBreakdown(countOrLines, capacity);
@@ -491,13 +532,45 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
 
 /**
  * カードの description 先頭に置くステータスバナー。
- * ロビー単位（上位帯/中初級帯）の集計状況を併記する。
+ * 土曜はロビー単位（上位帯/中初級帯）の集計状況を併記し、日曜は全体の集計状況を表示する。
  */
 export function buildDayBanner(dayKey, status, dominantTierText = '') {
   const def = getDayDef(dayKey);
   const high = status.high;
   const low = status.low;
 
+  // 日曜（お祭り）またはロビー情報が無い場合: 従来の全体集計バナー
+  if (!high || !low || dayKey === 'sun') {
+    const b = status.breakdown;
+    if (b && (b.hasBreakdown || b.hasSpectator)) {
+      let header;
+      if (b.isMatch1Ready && b.isMatch2Ready) {
+        header = '✅ **全戦 開催確定！**';
+      } else if (b.isMatch1Ready) {
+        header = '✅ **第1戦 開催確定！**';
+      } else if (b.isMatch2Ready) {
+        header = '✅ **第2戦 開催確定！**';
+      } else {
+        header = '🔥 **募集中**';
+      }
+
+      const matchLine = (label, count, ready, remaining) =>
+        `${label} \`${renderMiniBar(count, status.capacity)}\` ${count}/${status.capacity}名 → ${ready ? '**開催確定！**' : `あと${remaining}名`}`;
+
+      return [
+        header,
+        matchLine('第1戦', b.match1Count, b.isMatch1Ready, b.match1Remaining),
+        matchLine('第2戦', b.match2Count, b.isMatch2Ready, b.match2Remaining),
+      ].join('\n');
+    }
+
+    const header = status.isReady ? '✅ **開催確定！**' : '🔥 **募集中**';
+    const bar = renderProgressBar(status.joined, status.capacity);
+    const state = status.isReady ? '21:00よりスタート！' : `あと${status.remaining}名で開催確定`;
+    return `${header}\n\`${bar}\` ${state}`;
+  }
+
+  // 土曜: 2ロビー併記バナー
   let header;
   if (high?.isReady && low?.isReady) {
     header = '✅ **両ロビー 開催確定！**';
@@ -507,12 +580,6 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
     header = '✅ **中初級帯 開催確定！**（上位帯 募集中）';
   } else {
     header = '🔥 **募集中**';
-  }
-
-  if (!high || !low) {
-    const bar = renderProgressBar(status.joined, status.capacity);
-    const state = status.isReady ? '21:00よりスタート！' : `あと${status.remaining}名で開催確定`;
-    return `${header}\n\`${bar}\` ${state}`;
   }
 
   const lobbyLine = (icon, name, s) => {
