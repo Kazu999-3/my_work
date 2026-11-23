@@ -76,6 +76,7 @@ export const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; cl
     case 'MID': return <Zap className={`${className} text-danger-400`} />;
     case 'ADC': return <Target className={`${className} text-primary-700`} />;
     case 'SUP': return <Heart className={`${className} text-secondary-700`} />;
+    case 'ALL': return <span className="text-xs shrink-0 leading-none">🔀</span>;
     default: return null;
   }
 };

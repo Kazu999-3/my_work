@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Info, ChevronDown, Settings, RefreshCw } from "lucide-react";
 import { HIGHEST_RANK_OPTIONS, getColorFromRankName } from "../../../lib/mmr";
-import { RoleIcon, MmrBadgeInput, getColorFromRole, getPlayerExperienceBadge } from "./adminUtils";
+import { RoleIcon, MmrBadgeInput, getColorFromRole, getPlayerExperienceBadge, getRankFromMMR } from "./adminUtils";
 
 // 名簿（デスクトップ用の表: 並び替え・出欠・最高Rank・希望/NGレーン・レーン別MMRの展開編集・Discord ID・Riot ID・備考）
 // 2026-10-07: app/ktm-admin/page.tsx（1,885行）から分割。表示内容・動作は分割前と同じ。
@@ -59,9 +59,8 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                       <SortableHeader label="Active" sortKey="is_active" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="名前" sortKey="name" sticky={true} sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" sortConfig={sortConfig} requestSort={requestSort} />
-                      <th className="px-2 py-1.5 text-xs text-faint font-semibold text-center">希望レーン</th>
-                      <th className="px-2 py-1.5 text-xs text-faint font-semibold text-center">NG1</th>
-                      <th className="px-2 py-1.5 text-xs text-faint font-semibold text-center">NG2</th>
+                      <SortableHeader label="第1希望" sortKey="primary_role" sortConfig={sortConfig} requestSort={requestSort} />
+                      <th className="px-3 py-2 text-xs text-faint font-semibold text-center whitespace-nowrap">サブ ＆ 回避設定</th>
                       <SortableHeader label="平均MMR" sortKey="mmr" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="Discord ID" sortKey="discord_id" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="Riot IGN" sortKey="ign" sortConfig={sortConfig} requestSort={requestSort} />
@@ -116,94 +115,84 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                             </span>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5">
+                        <td className="px-2 py-1.5 align-middle">
                           <select
                             value={p.highest_rank || "UNRANKED"}
                             onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
-                            className={`bg-black/5 border border-border rounded px-1 py-0.5 outline-none focus:border-primary-edge-strong w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
+                            className={`bg-black/5 border border-border rounded px-1.5 py-1 outline-none focus:border-primary-edge-strong w-24 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}
                           >
                             {HIGHEST_RANK_OPTIONS.map(r => (
                               <option key={r} value={r}>{r}</option>
                             ))}
                           </select>
                         </td>
-                        <td className="px-2 py-1.5 text-center text-xs">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* 第一希望 */}
-                            <div className="flex items-center gap-1 bg-black/5 border border-border rounded px-1.5 py-0.5">
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          <div className="flex items-center gap-1.5 bg-black/5 border border-border rounded px-2 py-1 w-24 mx-auto">
+                            <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
                               <RoleIcon role={p.role_preferences?.primary || "ALL"} />
-                              <select
-                                value={p.role_preferences?.primary || "ALL"}
-                                onChange={(e) => {
-                                  const newVal = e.target.value;
-                                  handleInputSave(uid, "primary_role", newVal);
-                                  if (newVal === "ALL") {
-                                    handleInputSave(uid, "secondary_role", "-");
-                                  }
-                                }}
-                                className={`bg-transparent outline-none cursor-pointer text-xs font-bold ${getColorFromRole(p.role_preferences?.primary)}`}
-                              >
-                                {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                  <option key={role} value={role} className="text-foreground-soft bg-surface">{role}</option>
-                                ))}
-                              </select>
                             </div>
-                            <span className="text-muted-strong">/</span>
-                            {/* 第二希望 */}
-                            <div className="flex items-center gap-1 bg-black/5 border border-border rounded px-1.5 py-0.5">
-                              <RoleIcon role={p.role_preferences?.secondary || "-"} />
-                              <select
-                                value={p.role_preferences?.secondary || "-"}
-                                disabled={p.role_preferences?.primary === "ALL"}
-                                onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
-                                className={`bg-transparent outline-none cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed ${getColorFromRole(p.role_preferences?.secondary)}`}
-                              >
-                                {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                  <option key={role} value={role} className="text-foreground-soft bg-surface">{role}</option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5 text-center text-xs">
-                          <div className="flex items-center justify-center gap-1 bg-black/5 border border-border rounded px-1.5 py-0.5 mx-auto w-max">
-                            <RoleIcon role={p.ng_lane_1 || "-"} />
                             <select
-                              value={p.ng_lane_1 || "-"}
-                              onChange={(e) => handleInputSave(uid, "ng_lane_1", e.target.value)}
-                              className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer text-xs"
+                              value={p.role_preferences?.primary || "ALL"}
+                              onChange={(e) => {
+                                const newVal = e.target.value;
+                                handleInputSave(uid, "primary_role", newVal);
+                                if (newVal === "ALL") {
+                                  handleInputSave(uid, "secondary_role", "-");
+                                }
+                              }}
+                              className={`bg-transparent outline-none cursor-pointer w-full text-xs font-bold ${getColorFromRole(p.role_preferences?.primary)}`}
                             >
-                              {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                <option key={role} value={role} className="text-danger-700 bg-surface">{role}</option>
+                              {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                <option key={role} value={role} className="text-foreground-soft bg-surface">{role}</option>
                               ))}
                             </select>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 text-center text-xs">
-                          <div className="flex items-center justify-center gap-1 bg-black/5 border border-border rounded px-1.5 py-0.5 mx-auto w-max">
-                            <RoleIcon role={p.ng_lane_2 || "-"} />
-                            <select
-                              value={p.ng_lane_2 || "-"}
-                              onChange={(e) => handleInputSave(uid, "ng_lane_2", e.target.value)}
-                              className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer text-xs"
-                            >
-                              {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                <option key={role} value={role} className="text-danger-700 bg-surface">{role}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5 text-center text-xs font-bold">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <span>{p.mmr || 1200}</span>
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          <div className="flex items-center justify-between gap-1.5 w-full max-w-[190px] mx-auto">
+                            <div className="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
+                              {p.role_preferences?.secondary && p.role_preferences?.secondary !== '-' && p.role_preferences?.secondary !== 'ALL' && (
+                                <span className="px-1.5 py-0.2 rounded bg-black/5 border border-border text-foreground-soft font-mono text-[10px] font-bold whitespace-nowrap truncate max-w-full" title={`第2希望: ${p.role_preferences.secondary}`}>
+                                  第2:{p.role_preferences.secondary}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {(p.ng_lane_1 && p.ng_lane_1 !== '-') || (p.ng_lane_2 && p.ng_lane_2 !== '-') ? (
+                                  <span className="px-1.5 py-0.2 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[10px] whitespace-nowrap" title={`回避レーン: ${[p.ng_lane_1, p.ng_lane_2].filter(r => r && r !== '-').join('/')}`}>
+                                    回避:{[p.ng_lane_1, p.ng_lane_2].filter(r => r && r !== '-').join('/')}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-faint">回避: なし</span>
+                                )}
+                              </div>
+                            </div>
+
                             <button
                               type="button"
                               onClick={() => togglePlayerDetails(uid)}
-                              className={`p-0.5 rounded transition ${expandedPlayerIds.includes(uid) ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground hover:bg-black/5'}`}
-                              title="レーン別MMR詳細"
+                              className={`px-2 py-1 rounded-md border text-[11px] font-bold transition inline-flex items-center gap-0.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                                expandedPlayerIds.includes(uid)
+                                  ? 'bg-primary-100 border-primary-edge text-primary-800'
+                                  : 'bg-black/5 hover:bg-black/10 border-border text-muted-strong hover:text-foreground'
+                              }`}
+                              title={expandedPlayerIds.includes(uid) ? '詳細設定を閉じる' : '詳細設定（第2希望・回避レーン・レーン別MMR）を開く'}
                             >
-                              <ChevronDown className={`w-3.5 h-3.5 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
+                              <span>設定</span>
+                              <ChevronDown className={`w-3 h-3 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
                             </button>
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5 text-center text-xs font-bold align-middle">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span>{p.mmr || 1200}</span>
+                            {(() => {
+                              const r = getRankFromMMR(p.mmr || 1200);
+                              return (
+                                <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border border-border shadow-2xs ${r.color}`}>
+                                  {r.tier}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
@@ -254,18 +243,84 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                       {expandedPlayerIds.includes(uid) && (
                         <tr key={`${uid}-mmr-details`} className="bg-black/3 border-b border-border">
                           <td colSpan={10} className="p-3">
-                            <div className="flex flex-wrap items-center gap-6 pl-12">
-                              <div className="text-xs font-bold text-faint flex items-center gap-1.5 border-r border-border pr-4">
-                                <Settings className="w-3.5 h-3.5 text-primary-500 animate-pulse" />
-                                レーン別 MMR 設定:
+                            <div className="space-y-2.5 pl-12">
+                              {/* 第2希望・回避レーン設定 */}
+                              <div className="flex flex-wrap items-center gap-3 text-xs bg-surface/60 p-2 rounded-lg border border-border/80">
+                                <div className="text-xs font-bold text-faint flex items-center gap-1.5 border-r border-border pr-3">
+                                  <Settings className="w-3.5 h-3.5 text-primary-500" />
+                                  希望 ＆ 回避設定:
+                                </div>
+
+                                {/* 第2希望 */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-muted-strong font-bold">第2希望:</span>
+                                  <RoleIcon role={p.role_preferences?.secondary || "-"} />
+                                  <select
+                                    value={p.role_preferences?.secondary || "-"}
+                                    disabled={p.role_preferences?.primary === "ALL"}
+                                    onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
+                                    className={`bg-transparent outline-none cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed ${getColorFromRole(p.role_preferences?.secondary)}`}
+                                  >
+                                    {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                      <option key={role} value={role} className="text-foreground-soft bg-surface">{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* 回避 1 */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-danger-700 font-bold">回避 1:</span>
+                                  <RoleIcon role={p.ng_lane_1 || "-"} />
+                                  <select
+                                    value={p.ng_lane_1 || "-"}
+                                    onChange={(e) => handleInputSave(uid, "ng_lane_1", e.target.value)}
+                                    className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer text-xs"
+                                  >
+                                    <option value="-" className="bg-surface text-faint">なし</option>
+                                    {["TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                      <option key={role} value={role} className="text-danger-700 bg-surface">{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* 回避 2 */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs">
+                                  <span className="text-[11px] text-danger-700 font-bold">回避 2:</span>
+                                  <RoleIcon role={p.ng_lane_2 || "-"} />
+                                  <select
+                                    value={p.ng_lane_2 || "-"}
+                                    onChange={(e) => handleInputSave(uid, "ng_lane_2", e.target.value)}
+                                    className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer text-xs"
+                                  >
+                                    <option value="-" className="bg-surface text-faint">なし</option>
+                                    {["TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                      <option key={role} value={role} className="text-danger-700 bg-surface">{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <label className="flex items-center gap-1.5 bg-surface px-2.5 py-1 rounded border border-secondary-edge-soft cursor-pointer hover:bg-black/5 transition ml-auto" title="上位帯の人数超過・中初級帯不足時にサポート枠として参加を許可">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(p.allow_lower_support)}
+                                    onChange={(e) => handleInputSave(uid, "allow_lower_support", e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded border-border text-secondary-600 focus:ring-secondary-500 cursor-pointer"
+                                  />
+                                  <span className="font-bold text-foreground-subtle text-xs">🔽 中初級サポ許可</span>
+                                </label>
                               </div>
-                              
-                              <div className="flex flex-wrap items-center gap-4 text-xs">
+
+                              {/* レーン別 MMR 設定 */}
+                              <div className="flex flex-wrap items-center gap-4 text-xs bg-surface/60 p-2 rounded-lg border border-border/80">
+                                <div className="text-xs font-bold text-faint flex items-center gap-1.5 border-r border-border pr-3">
+                                  <Settings className="w-3.5 h-3.5 text-primary-500" />
+                                  レーン別 MMR:
+                                </div>
                                 {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
                                   const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof p;
                                   const val = p[mmrKey] as number || 1200;
                                   return (
-                                    <div key={role} className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-border hover:border-border transition">
+                                    <div key={role} className="flex items-center gap-2 bg-surface px-2 py-1 rounded border border-border hover:border-border transition">
                                       <RoleIcon role={role} />
                                       <span className="font-bold text-foreground-subtle w-8">{role}</span>
                                       <MmrBadgeInput
@@ -276,23 +331,13 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                                   );
                                 })}
                                 
-                                <div className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-primary-edge-soft ml-4">
-                                  <span className="font-bold text-primary-700 w-12 text-center">平均MMR</span>
+                                <div className="flex items-center gap-2 bg-surface px-2 py-1 rounded border border-primary-edge-soft ml-auto">
+                                  <span className="font-bold text-primary-700 w-14 text-center">平均MMR</span>
                                   <MmrBadgeInput
                                     value={p.mmr || 1200}
                                     onChange={(v) => handleInputSave(uid, "mmr", v)}
                                   />
                                 </div>
-
-                                <label className="flex items-center gap-1.5 bg-surface px-2.5 py-1.5 rounded border border-secondary-edge-soft cursor-pointer hover:bg-black/5 transition ml-2" title="上位帯の人数超過・中初級帯不足時にサポート枠として参加を許可">
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(p.allow_lower_support)}
-                                    onChange={(e) => handleInputSave(uid, "allow_lower_support", e.target.checked)}
-                                    className="w-3.5 h-3.5 rounded border-border text-secondary-600 focus:ring-secondary-500 cursor-pointer"
-                                  />
-                                  <span className="font-bold text-foreground-subtle text-xs">🔽 中初級サポ許可</span>
-                                </label>
                               </div>
                             </div>
                           </td>
@@ -304,7 +349,7 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                     
                     {playerCount === 0 && !loading && (
                       <tr>
-                        <td colSpan={13} className="px-6 py-12 text-center text-muted-strong">
+                        <td colSpan={10} className="px-6 py-12 text-center text-muted-strong">
                           プレイヤーが登録されていません。Discord & Riot同期を実行して登録してください。
                         </td>
                       </tr>

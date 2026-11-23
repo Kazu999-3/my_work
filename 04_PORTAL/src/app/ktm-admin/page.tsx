@@ -146,6 +146,10 @@ export default function KtmAdminPage() {
     .sort((a, b) => {
       let aVal = sortConfig.key === "notes" ? (a.metadata?.notes || "") : a[sortConfig.key];
       let bVal = sortConfig.key === "notes" ? (b.metadata?.notes || "") : b[sortConfig.key];
+      if (sortConfig.key === "primary_role") {
+        aVal = a.role_preferences?.primary || "ALL";
+        bVal = b.role_preferences?.primary || "ALL";
+      }
       if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "no") {
         aVal = parseInt(aVal) || 0;
         bVal = parseInt(bVal) || 0;
