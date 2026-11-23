@@ -283,6 +283,16 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                                     onChange={(v) => handleInputSave(uid, "mmr", v)}
                                   />
                                 </div>
+
+                                <label className="flex items-center gap-1.5 bg-surface px-2.5 py-1.5 rounded border border-secondary-edge-soft cursor-pointer hover:bg-black/5 transition ml-2" title="上位帯の人数超過・中初級帯不足時にサポート枠として参加を許可">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(p.allow_lower_support)}
+                                    onChange={(e) => handleInputSave(uid, "allow_lower_support", e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded border-border text-secondary-600 focus:ring-secondary-500 cursor-pointer"
+                                  />
+                                  <span className="font-bold text-foreground-subtle text-xs">🔽 中初級サポ許可</span>
+                                </label>
                               </div>
                             </div>
                           </td>

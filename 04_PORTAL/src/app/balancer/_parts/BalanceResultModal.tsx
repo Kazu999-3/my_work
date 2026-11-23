@@ -266,96 +266,67 @@ export default function BalanceResultModal({
             </div>
           )}
 
-          {/* 環境分析 */}
-          {analysis && (
-            <div className={`p-3 rounded-xl border text-sm flex flex-col gap-2 ${
-              analysis.level === 'HIGH_DIFFERENCE'
-                ? 'bg-primary-100 border-primary-edge-soft text-primary-700 dark:bg-primary-950/30 dark:text-primary-300'
-                : analysis.level === 'CLOSE'
-                ? 'bg-success-100 border-success-edge-soft text-success-700 dark:bg-success-950/30 dark:text-success-300'
-                : 'bg-primary-100 border-primary-edge-soft text-primary-700 dark:bg-primary-950/30 dark:text-primary-300'
-            }`}>
-              <div className="flex items-center gap-2 font-bold">
-                {analysis.level === 'HIGH_DIFFERENCE' ? (
-                  <AlertTriangle className="h-4 w-4 text-primary-700 shrink-0" />
-                ) : (
-                  <Globe className="h-4 w-4 text-success-700 shrink-0" />
-                )}
-                <span>本日のカスタム環境:</span>
-                <span className={`px-2 py-0.5 rounded text-xs font-black ${
-                  analysis.level === 'HIGH_DIFFERENCE'
-                    ? 'bg-primary-800 text-primary-100'
-                    : analysis.level === 'CLOSE'
-                    ? 'bg-success-800 text-success-100'
-                    : 'bg-primary-800 text-primary-100'
-                }`}>
-                  {analysis.level === 'HIGH_DIFFERENCE' ? '格差大' : analysis.level === 'CLOSE' ? '実力拮抗' : '標準的'}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed">{String(analysis.message)}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-faint">
-                <span>KTM平均MMR: <strong className="text-foreground font-mono">{String(analysis.averageMMR)}</strong></span>
-                <span>最低: <strong className="text-foreground font-mono">{String(analysis.minMMR)}</strong></span>
-                <span>最高: <strong className="text-foreground font-mono">{String(analysis.maxMMR)}</strong></span>
-                <span>差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-primary-700' : 'text-foreground'}`}>{String(analysis.mmrRange)}</strong></span>
-                <span className="text-[10px] text-muted-strong font-normal">※SoloQではなくKTMカスタム独自のランクMMR基準です</span>
-              </div>
-            </div>
-          )}
-
-          {/* 🔮 Elo勝率予測 ＆ 接戦度カード（リッチなグラデーションメーター） */}
-          <WinRatePredictorCard balanceResult={balanceResult} />
-
-          {/* ⚔️ 因縁マッチアップ ＆ 黄金デュオ速報（Nemesis Clash） */}
-          <NemesisClashCard clashData={clashData} loadingClash={loadingClash} />
-
-          {/* 案タブ */}
+          {/* 案タブ ＆ カスタム環境サマリー */}
           {proposals.length > 1 && (
-            <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
-              {proposals.map((prop: BalanceResult, idx: number): React.ReactElement => {
-                const pBlue = prop.teamBlue || prop.blueTeam || [];
-                const pRed = prop.teamRed || prop.redTeam || [];
-                const diff = Number(prop.mmrDiff ?? Math.abs((prop.teamBlueMMR || 0) - (prop.teamRedMMR || 0)));
-                const allP = [...pBlue, ...pRed];
-                let mainC = 0;
-                let subC = 0;
-                allP.forEach((p: BalanceTeamMember) => {
-                  const r = p.currentRole || p.role;
-                  const m = p.mainLane || (p as { pref1?: string }).pref1;
-                  const s = p.subLane || (p as { pref2?: string }).pref2;
-                  if (p.isFixed || m === 'ALL' || m === r) mainC++;
-                  else if (s === r) subC++;
-                });
-                const satRate = allP.length > 0 ? Math.round(((mainC + subC * 0.5) / allP.length) * 100) : 0;
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+                {proposals.map((prop: BalanceResult, idx: number): React.ReactElement => {
+                  const pBlue = prop.teamBlue || prop.blueTeam || [];
+                  const pRed = prop.teamRed || prop.redTeam || [];
+                  const diff = Number(prop.mmrDiff ?? Math.abs((prop.teamBlueMMR || 0) - (prop.teamRedMMR || 0)));
+                  const allP = [...pBlue, ...pRed];
+                  let mainC = 0;
+                  let subC = 0;
+                  allP.forEach((p: BalanceTeamMember) => {
+                    const r = p.currentRole || p.role;
+                    const m = p.mainLane || (p as { pref1?: string }).pref1;
+                    const s = p.subLane || (p as { pref2?: string }).pref2;
+                    if (p.isFixed || m === 'ALL' || m === r) mainC++;
+                    else if (s === r) subC++;
+                  });
+                  const satRate = allP.length > 0 ? Math.round(((mainC + subC * 0.5) / allP.length) * 100) : 0;
 
-                return (
-                  <button
-                    key={(prop as { id?: string | number }).id || idx}
-                    type="button"
-                    onClick={() => {
-                      setBalanceResult(prop);
-                      setSelectedProposalIdx(idx);
-                    }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
-                      selectedProposalIdx === idx
-                        ? 'bg-primary-600 text-white border-primary-500 shadow-xs'
-                        : 'bg-surface-subtle hover:bg-surface-hover text-foreground-soft border-border'
-                    }`}
-                  >
-                    <span>{String(prop.title || `案${(prop as { id?: string | number }).id || idx + 1}`)}</span>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
-                      selectedProposalIdx === idx ? 'bg-black/20 text-white' : 'bg-surface text-muted'
-                    }`}>
-                      差:{diff}
-                    </span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
-                      selectedProposalIdx === idx ? 'bg-black/20 text-white' : 'bg-surface text-success-600'
-                    }`}>
-                      {satRate}%
-                    </span>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={(prop as { id?: string | number }).id || idx}
+                      type="button"
+                      onClick={() => {
+                        setBalanceResult(prop);
+                        setSelectedProposalIdx(idx);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
+                        selectedProposalIdx === idx
+                          ? 'bg-primary-600 text-white border-primary-500 shadow-xs'
+                          : 'bg-surface-subtle hover:bg-surface-hover text-foreground-soft border-border'
+                      }`}
+                    >
+                      <span>{String(prop.title || `案${(prop as { id?: string | number }).id || idx + 1}`)}</span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
+                        selectedProposalIdx === idx ? 'bg-black/20 text-white' : 'bg-surface text-muted'
+                      }`}>
+                        差:{diff}
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
+                        selectedProposalIdx === idx ? 'bg-black/20 text-white' : 'bg-surface text-success-600'
+                      }`}>
+                        {satRate}%
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {analysis && (
+                <div className="flex items-center gap-2 text-xs font-mono text-muted bg-surface-subtle px-2.5 py-1 rounded-lg border border-border shrink-0 self-start sm:self-auto">
+                  <span className="font-bold text-foreground flex items-center gap-1">
+                    <Globe className="w-3.5 h-3.5 text-primary-600" />
+                    <span>環境: {analysis.level === 'HIGH_DIFFERENCE' ? '格差大' : analysis.level === 'CLOSE' ? '実力拮抗' : '標準的'}</span>
+                  </span>
+                  <span className="text-border">|</span>
+                  <span>平均:<strong>{String(analysis.averageMMR)}</strong></span>
+                  <span>差:<strong>{String(analysis.mmrRange)}</strong></span>
+                </div>
+              )}
             </div>
           )}
 
@@ -423,7 +394,7 @@ export default function BalanceResultModal({
             </div>
           )}
 
-          {/* チーム表示ヘッダー */}
+          {/* チーム表示ヘッダー ＆ 各レーンの対面行 */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center border-b border-border pb-3">
               <div className="md:col-span-5 bg-gradient-to-r from-secondary-100 dark:from-secondary-950/40 to-transparent p-3 rounded-xl border-l-4 border-secondary-edge-strong flex justify-between items-center">
@@ -469,6 +440,40 @@ export default function BalanceResultModal({
                 />
               );
             })}
+          </div>
+
+          {/* 📊 戦況分析 ＆ 因縁ハイライト (チーム対面表の直下に解説として配置) */}
+          <div className="pt-3 border-t border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                <Activity className="h-4 w-4 text-primary-600" />
+                <span>戦況分析 ＆ 因縁ハイライト</span>
+              </span>
+              <span className="text-[10px] text-muted font-bold">勝率予測 ＆ マッチアップ相性</span>
+            </div>
+
+            {/* 🔮 Elo勝率予測 ＆ 接戦度カード */}
+            <WinRatePredictorCard balanceResult={balanceResult} />
+
+            {/* ⚔️ 因縁マッチアップ ＆ 黄金デュオ速報（Nemesis Clash） */}
+            <NemesisClashCard clashData={clashData} loadingClash={loadingClash} />
+
+            {/* 環境分析の詳細解説 */}
+            {analysis && (
+              <div className="p-3 rounded-xl border bg-surface-subtle border-border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-primary-600 shrink-0" />
+                  <span className="font-bold text-foreground">本日のカスタム環境:</span>
+                  <span className="text-foreground-soft leading-relaxed">{String(analysis.message)}</span>
+                </div>
+                <div className="flex items-center gap-3 text-faint font-mono text-[11px] shrink-0">
+                  <span>平均: <strong>{String(analysis.averageMMR)}</strong></span>
+                  <span>最低: {String(analysis.minMMR)}</span>
+                  <span>最高: {String(analysis.maxMMR)}</span>
+                  <span>差: <strong>{String(analysis.mmrRange)}</strong></span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* AIレポート */}

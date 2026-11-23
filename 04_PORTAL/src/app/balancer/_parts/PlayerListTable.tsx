@@ -234,7 +234,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                 const band = getPlayerTierBand(p.mmr);
                                 if (band === 'UPPER') {
                                   const strict = getDownwardOffroleRule(p.mmr) === 'STRICT_OFFROLE';
-                                  return isAdmin && p.is_active ? (
+                                  return (
                                     <div className="inline-flex items-center gap-1 flex-wrap">
                                       <span
                                         className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50 whitespace-nowrap shrink-0"
@@ -242,32 +242,15 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                       >
                                         上位帯
                                       </span>
-                                      <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={Boolean(p.allow_lower_support)}
-                                        onClick={() => handleInputChange(p.id, 'allow_lower_support', !p.allow_lower_support)}
-                                        className={`inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.2 rounded-full border transition cursor-pointer whitespace-nowrap shrink-0 ${
-                                          p.allow_lower_support
-                                            ? 'bg-secondary-600 text-white border-secondary-edge-strong shadow-xs hover:bg-secondary-500'
-                                            : 'bg-surface-subtle text-muted-strong border-border hover:border-secondary-edge hover:text-foreground'
-                                        }`}
-                                        title={
-                                          p.allow_lower_support
-                                            ? `中初級帯サポート許可中 (${strict ? 'メイン・サブ除外/完全オフレーン' : 'メイン除外/オフレーン'})`
-                                            : `クリックで中初級帯(MMR <${TIER_BAND_THRESHOLD})へのサポート参加を許可`
-                                        }
-                                      >
-                                        {p.allow_lower_support ? '中初級帯サポ: 許可中 ✓' : '中初級帯サポ: 不可'}
-                                      </button>
+                                      {p.allow_lower_support && (
+                                        <span
+                                          className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.2 rounded-full border bg-secondary-600 text-white border-secondary-edge-strong shadow-xs whitespace-nowrap shrink-0"
+                                          title={`中初級帯サポート許可中 (${strict ? 'メイン・サブ除外/完全オフレーン' : 'メイン除外/オフレーン'})`}
+                                        >
+                                          🔽 サポ可
+                                        </span>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <span
-                                      className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-500/10 text-primary-700 border border-primary-edge/50 whitespace-nowrap"
-                                      title={`上位帯 (MMR ${TIER_BAND_THRESHOLD}+)`}
-                                    >
-                                      上位帯
-                                    </span>
                                   );
                                 }
                                 const tp = normalizeTierPromotionPref(p.tier_promotion_pref);
@@ -469,6 +452,20 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                                   />
                                   <span className="text-[11px] font-bold text-foreground-soft">⚔️ 格上挑戦</span>
                                 </label>
+
+                                {/* 上位帯プレイヤーのみ: 中初級帯サポート参加許可トグル */}
+                                {getPlayerTierBand(p.mmr) === 'UPPER' && (
+                                  <label className="flex items-center gap-1.5 bg-surface border border-border rounded px-2.5 py-1 cursor-pointer hover:bg-surface-hover transition shadow-2xs" title="上位帯の人数超過・中初級帯不足時にサポート枠として参加を許可">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!p.allow_lower_support}
+                                      disabled={!isAdmin}
+                                      onChange={e => handleInputChange(p.id, 'allow_lower_support', e.target.checked)}
+                                      className="w-3.5 h-3.5 rounded border-border bg-surface text-secondary-600 focus:ring-secondary-500/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                    />
+                                    <span className="text-[11px] font-bold text-foreground-soft">🔽 中初級サポ許可{isAdmin ? '' : '🔒'}</span>
+                                  </label>
+                                )}
                               </div>
 
                               {/* レーン別MMR要約（SPEC 05の主要情報要件） */}
@@ -572,6 +569,9 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         {/* 格上との対面OKの人だけ印を付ける（保護ありが大多数のため。2026-10-17） */}
                         {p.allow_higher && (
                           <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-danger-100 text-danger-700 border-danger-edge-soft" title="格上との対面: ⚔️挑戦したい（保護なし）">⚔️挑戦</span>
+                        )}
+                        {p.allow_lower_support && (
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-secondary-600 text-white border-secondary-edge-strong shadow-xs" title="中初級帯サポート参加許可中">🔽サポ可</span>
                         )}
                         
                         {/* MMR ＆ KTMランクバッジ */}

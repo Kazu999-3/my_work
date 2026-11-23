@@ -103,6 +103,7 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
         mmr_mid: parseInt(p.mmr_mid) || 1200,
         mmr_adc: parseInt(p.mmr_adc) || 1200,
         mmr_sup: parseInt(p.mmr_sup) || 1200,
+        allow_lower_support: Boolean(p.allow_lower_support),
       });
       const updates = targetPlayers.filter(p => p.id).map(p => ({
         id: p.id,
