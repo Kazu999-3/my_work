@@ -6,23 +6,27 @@
  */
 
 import { fetchSupabase } from './supabase.js';
-import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from './ktmRank.js';
+import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from './ktmRank.js';
 import { RANK_SHORT_JP_MAP, RANK_JP_MAP } from './recruitmentStatus.js';
 
 export const BAND_BOUNDARY_MMR = 1450;
-export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher';
+export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,allow_higher';
 
 /**
  * プレイヤー情報と参加形態から、DB（recruitment_participants）に保存する属性を決定する純粋関数
+ * @param {object|null} playerRow - ktm_players レコード
+ * @param {string} participationStyle - 'full' | 'single' | 'late' | 'spectator'
+ * @param {string|null} dayKey - 'sat' | 'sun' | 'all' | null (null/'all' の場合は都度募集扱い)
+ * @param {object} [overrides] - 明示的な上書きプロパティ ({ lobby, primaryLane })
  */
-export function determineParticipantAttributes(playerRow, participationStyle, dayKey = 'sat') {
+export function determineParticipantAttributes(playerRow, participationStyle, dayKey = 'sat', overrides = {}) {
   const style = ['full', 'single', 'late', 'spectator'].includes(participationStyle)
     ? participationStyle
     : 'full';
 
   let estimatedMmr = null;
   let rankTier = null;
-  let primaryLane = null;
+  let primaryLane = overrides.primaryLane || null;
   let secondaryLane = null;
 
   if (playerRow) {
@@ -46,7 +50,7 @@ export function determineParticipantAttributes(playerRow, participationStyle, da
           const u = String(v).toUpperCase();
           return u === 'FILL' || u === 'ANY' ? 'ALL' : u;
         };
-        primaryLane = normalize(pref.primary);
+        if (!primaryLane) primaryLane = normalize(pref.primary);
         secondaryLane = normalize(pref.secondary);
         if (secondaryLane === primaryLane || primaryLane === 'ALL') {
           secondaryLane = null;
@@ -58,8 +62,13 @@ export function determineParticipantAttributes(playerRow, participationStyle, da
   // 帯ロビーの決定:
   // 土曜: 推定MMR 1450以上なら 'high'、1450未満または未設定なら 'low'
   // 日曜: 帯分けなし（'low' に統一）
+  // 都度募集 (dayKey === 'all' または null): 'all'
   let lobby = 'low';
-  if (dayKey === 'sat') {
+  if (overrides.lobby) {
+    lobby = overrides.lobby;
+  } else if (!dayKey || dayKey === 'all') {
+    lobby = 'all';
+  } else if (dayKey === 'sat') {
     if (estimatedMmr !== null && estimatedMmr >= BAND_BOUNDARY_MMR) {
       lobby = 'high';
     } else {
@@ -89,8 +98,10 @@ export async function getRecruitmentByMessageId(env, messageId) {
 /**
  * 参加・参加形態の変更（UPSERT）
  */
-export async function recordParticipant(env, { recruitmentId, discordId, userName, playerRow, style, dayKey }) {
-  const attrs = determineParticipantAttributes(playerRow, style, dayKey);
+export async function recordParticipant(env, {
+  recruitmentId, discordId, userName, playerRow, style, dayKey, lobby, primaryLane
+}) {
+  const attrs = determineParticipantAttributes(playerRow, style, dayKey, { lobby, primaryLane });
   const now = new Date().toISOString();
 
   const payload = {
@@ -224,4 +235,62 @@ export async function fetchPlayerRowsMap(env, discordIds) {
     return new Map();
   }
 }
+
+/**
+ * 都度募集の metadata を DB の activeParticipants から再構築する
+ */
+export function rebuildAdhocMetadataFromDb(metadata, activeParticipants, playerMap = new Map()) {
+  const nextMeta = { ...metadata };
+  const joined = [];
+  const spectating = [];
+  const roles = { ...nextMeta.roles };
+  // 既存の roles を初期化（DBをSSoTにするため）
+  Object.keys(roles).forEach((r) => { roles[r] = null; });
+  const names = { ...nextMeta.names };
+  const badges = { ...nextMeta.badges };
+  const lanes = { ...nextMeta.lanes };
+
+  for (const p of activeParticipants) {
+    const id = p.discord_id;
+    if (p.user_name) names[id] = p.user_name;
+    const playerRow = playerMap instanceof Map ? playerMap.get(id) : playerMap?.[id];
+
+    if (!badges[id] && playerRow) {
+      badges[id] = getPlayerActiveMark(playerRow);
+    }
+    if (!lanes[id]) {
+      lanes[id] = p.primary_lane || 'ALL';
+    }
+
+    if (p.style === 'spectator') {
+      spectating.push(id);
+    } else {
+      joined.push(id);
+      // ロール参加の場合
+      if (p.primary_lane && roles[p.primary_lane] === null) {
+        roles[p.primary_lane] = id;
+      }
+    }
+  }
+
+  nextMeta.joined = joined;
+  nextMeta.spectating = spectating;
+  nextMeta.roles = roles;
+  nextMeta.names = names;
+  nextMeta.badges = badges;
+  nextMeta.lanes = lanes;
+
+  // カスタム募集の場合、希望レーン順にソート
+  if (nextMeta.mode === 'カスタム' && Array.isArray(nextMeta.joined) && nextMeta.joined.length > 1) {
+    const lanePriority = { TOP: 1, JG: 2, MID: 3, ADC: 4, BOT: 4, SUP: 5, ALL: 6 };
+    nextMeta.joined.sort((a, b) => {
+      const lA = lanePriority[nextMeta.lanes?.[a]] || 6;
+      const lB = lanePriority[nextMeta.lanes?.[b]] || 6;
+      return lA - lB;
+    });
+  }
+
+  return nextMeta;
+}
+
 

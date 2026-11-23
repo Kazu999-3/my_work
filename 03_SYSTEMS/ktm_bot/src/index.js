@@ -115,17 +115,17 @@ export default {
       if (interaction.type === 2) {
         const name = interaction.data.name;
         const context = { ...env, DISCORD_TOKEN }; // トークンを注入
-        // ⚠️ 2026-09-29: コマンドを21名称 → 7名称へ整理した（ユーザー判断）。
+        // ⚠️ コマンド構成（9コマンドが現行、エイリアスは廃止済み）：
+        //   現行9件: /ign, /recruit, /stats, /lane, /ranking, /coins, /casino, /tip, /welcome
         //
-        // 【機能ごと削除】/welcome /welcome-panel（/portal と中身が完全に同じだった）、
-        //   /roulette（チャンピオン抽選）、/memo、/patch。実装ファイルも削除済み。
-        // 【エイリアス廃止】1機能に複数名称を登録していたため、Discordの選択欄に21個並び
-        //   初見のメンバーがどれを選ぶべきか判断できなかった。主名称1つに統一:
-        //     /panel /command /ktm_portal → /portal
-        //     /bet        → /coins    （/bet は「賭ける」と誤解されるのに残高表示だった）
-        //     /rich       → /casino
-        //     /send-coins → /tip
-        //     /award      → /ranking
+        // 【過去の整理経緯】
+        //   ・1機能に複数名称を登録していたエイリアス群を廃止し主名称に統一:
+        //       /bet        → /coins    （/bet は「賭ける」と誤解されるのに残高表示だった）
+        //       /rich       → /casino
+        //       /send-coins → /tip
+        //       /award      → /ranking
+        //   ・不要となったコマンド（/roulette, /memo, /patch 等）は削除済み。
+        //   ・/welcome（ウェルカムパネル表示）は現役コマンドとして稼働中。
         //
         // 🚨 コードを消しただけでは Discord 側の登録は消えない（＝押しても無反応の
         //   幽霊コマンドになる）。`03_SYSTEMS/TOOLS/unregister_discord_commands.mjs` で

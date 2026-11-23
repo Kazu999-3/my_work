@@ -22,6 +22,7 @@ import {
   determineParticipantAttributes,
   formatParticipantDisplayLine,
   buildDisplayLinesFromDb,
+  rebuildAdhocMetadataFromDb,
 } from '../src/utils/recruitmentLedger.js';
 
 const COLOR_NAMES = Object.fromEntries(
@@ -442,6 +443,107 @@ if (!sunStatusFromDb.isReady) {
   fail(`[DBStatus: sun] 日曜全体14名なのに開催確定になっていません`);
 }
 console.log(`  ✓ DB行からの日曜ステータス判定: 全体確定=${sunStatusFromDb.isReady} (参加人数=${sunStatusFromDb.joined})`);
+
+// ---------------------------------------------------------------------------
+// 6. 都度募集 DB 駆動（rebuildAdhocMetadataFromDb / lobby='all'）の検証
+// ---------------------------------------------------------------------------
+console.log('\n6. 都度募集 DB 駆動 (rebuildAdhocMetadataFromDb) 検証:');
+
+// (A) determineParticipantAttributes: 都度募集時は lobby='all'
+const adhocAttr1 = determineParticipantAttributes(
+  { mmr: 1600, mmr_top: 1600, role_preferences: { primary: 'TOP' } },
+  'full',
+  null, // dayKey が null
+  { lobby: 'all', primaryLane: 'TOP' }
+);
+if (adhocAttr1.lobby !== 'all') {
+  fail(`[AdhocAttr] lobby が 'all' になっていません (実際: ${adhocAttr1.lobby})`);
+}
+if (adhocAttr1.primaryLane !== 'TOP') {
+  fail(`[AdhocAttr] primaryLane が 'TOP' になっていません (実際: ${adhocAttr1.primaryLane})`);
+}
+console.log(`  ✓ 都度募集ロール参加属性: lobby=${adhocAttr1.lobby}, primaryLane=${adhocAttr1.primaryLane}`);
+
+const adhocAttr2 = determineParticipantAttributes(null, 'spectator', 'all');
+if (adhocAttr2.lobby !== 'all' || adhocAttr2.style !== 'spectator') {
+  fail(`[AdhocAttr] 観戦属性が不正です: lobby=${adhocAttr2.lobby}, style=${adhocAttr2.style}`);
+}
+console.log(`  ✓ 都度募集観戦属性: lobby=${adhocAttr2.lobby}, style=${adhocAttr2.style}`);
+
+// (B) rebuildAdhocMetadataFromDb: DB参加者からメタデータ再構築
+const initialMetadata = {
+  mode: 'カスタム',
+  maxCount: 10,
+  owner: 'owner_1',
+  joined: [],
+  spectating: [],
+  roles: { TOP: null, JG: null, MID: null, ADC: null, SUP: null },
+  names: {},
+  badges: {},
+  lanes: {},
+};
+
+const mockAdhocParticipants = [
+  {
+    recruitment_id: 'rec_adhoc_1',
+    discord_id: 'u_mid',
+    user_name: 'ミッド担当',
+    style: 'full',
+    lobby: 'all',
+    primary_lane: 'MID',
+  },
+  {
+    recruitment_id: 'rec_adhoc_1',
+    discord_id: 'u_top',
+    user_name: 'トップ担当',
+    style: 'full',
+    lobby: 'all',
+    primary_lane: 'TOP',
+  },
+  {
+    recruitment_id: 'rec_adhoc_1',
+    discord_id: 'u_any',
+    user_name: '自由枠',
+    style: 'full',
+    lobby: 'all',
+    primary_lane: null,
+  },
+  {
+    recruitment_id: 'rec_adhoc_1',
+    discord_id: 'u_spec',
+    user_name: '見学者',
+    style: 'spectator',
+    lobby: 'all',
+    primary_lane: null,
+  },
+];
+
+const mockAdhocPlayerMap = new Map([
+  ['u_mid', { discord_id: 'u_mid', games_mid: 20, mmr_mid: 1500, days_since_last_match: 2 }],
+  ['u_top', { discord_id: 'u_top', games_top: 10, mmr_top: 1400, days_since_last_match: 1 }],
+  ['u_any', { discord_id: 'u_any', games_sup: 5, mmr_sup: 1200, days_since_last_match: 5 }],
+  ['u_spec', { discord_id: 'u_spec', total_games: 0 }],
+]);
+
+const rebuiltMeta = rebuildAdhocMetadataFromDb(initialMetadata, mockAdhocParticipants, mockAdhocPlayerMap);
+
+if (rebuiltMeta.joined.length !== 3) {
+  fail(`[RebuildAdhoc] joined 人数不一致: 期待=3, 実際=${rebuiltMeta.joined.length}`);
+}
+if (rebuiltMeta.spectating.length !== 1 || rebuiltMeta.spectating[0] !== 'u_spec') {
+  fail(`[RebuildAdhoc] spectating 不正: ${JSON.stringify(rebuiltMeta.spectating)}`);
+}
+if (rebuiltMeta.roles.TOP !== 'u_top') {
+  fail(`[RebuildAdhoc] roles.TOP 不正: 期待='u_top', 実際=${rebuiltMeta.roles.TOP}`);
+}
+if (rebuiltMeta.roles.MID !== 'u_mid') {
+  fail(`[RebuildAdhoc] roles.MID 不正: 期待='u_mid', 実際=${rebuiltMeta.roles.MID}`);
+}
+// カスタム募集でのレーン優先順ソート検証: TOP (1) ➔ MID (3) ➔ ALL (6)
+if (rebuiltMeta.joined[0] !== 'u_top' || rebuiltMeta.joined[1] !== 'u_mid' || rebuiltMeta.joined[2] !== 'u_any') {
+  fail(`[RebuildAdhoc] joined のレーン順ソート不正: ${JSON.stringify(rebuiltMeta.joined)}`);
+}
+console.log(`  ✓ 都度募集メタデータ再構築: joined=${rebuiltMeta.joined.length}名, spectating=${rebuiltMeta.spectating.length}名, ソート順=${rebuiltMeta.joined.join(' -> ')}`);
 
 console.log(`${'='.repeat(70)}\n`);
 

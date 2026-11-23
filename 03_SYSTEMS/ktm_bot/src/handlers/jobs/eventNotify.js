@@ -233,13 +233,10 @@ const NO_CANCEL_NOTICE_DATES = [];
 
 export async function checkCustomStatusAt2000(env) {
   try {
-    // ★ 2026-09-21修正: ここだけが他の全関数と違い、CONFIGのフォールバックを持たない
-    // env.DISCORD_KTM_CHANNEL_ID を素で参照していた。この変数はconfig.jsにもwrangler.tomlにも
-    // 定義が無く(コードベース全体でこの1箇所しか参照が無い)、未設定なら即returnするため、
-    // cronが正しく発火しても20:00判定が無言で何もしない状態だった(「孤立した自動化」パターン)。
-    const channelId = env.DISCORD_KTM_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+    const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
     if (!channelId) {
       console.error('[Check2000] 判定対象のチャンネルIDが解決できませんでした');
+      await notifyAdminError(env, new Error('判定対象のチャンネルIDが解決できませんでした'), { action: 'checkCustomStatusAt(20:00開催判定)' });
       return { action: 'error', reason: '判定対象のチャンネルが解決できない' };
     }
 

@@ -6,6 +6,7 @@
  * 漏れることがある（2026-10-17 時点で 10/17・10/18 分が無かった）ため、bot と同じくチャンネルを直接見る。
  */
 import { discordFetch } from './discordFetch';
+import { supabaseAdmin } from './supabaseAdmin';
 
 // 定期カスタムの募集チャンネル（bot の CONFIG.PERIODIC_RECRUIT_CHANNEL_ID と同じ）
 const PERIODIC_RECRUIT_CHANNEL_ID = process.env.PERIODIC_RECRUIT_CHANNEL_ID || '1528646515533287497';
@@ -131,6 +132,98 @@ function startFromTitle(title: string, now: Date): Date | null {
 
 /** まだ終わっていない（開始から4時間以内を含む）一番近い定期カスタムのカード */
 export async function loadNextPeriodicCustomEntries(now = new Date()): Promise<PeriodicCustomEntries | null> {
+  // ── 1. DB（recruitments / recruitment_participants）優先読み込み ──
+  if (supabaseAdmin) {
+    try {
+      const fourHoursAgo = new Date(now.getTime() - 4 * 3600e3).toISOString();
+      const { data: recRows, error: recErr } = await supabaseAdmin
+        .from('recruitments')
+        .select('id, discord_message_id, discord_channel_id, start_at, mode, status')
+        .eq('mode', '定期カスタム')
+        .eq('status', 'open')
+        .gte('start_at', fourHoursAgo)
+        .order('start_at', { ascending: true })
+        .limit(1);
+
+      if (!recErr && recRows && recRows.length > 0) {
+        const rec = recRows[0];
+        const { data: partRows, error: partErr } = await supabaseAdmin
+          .from('recruitment_participants')
+          .select('*')
+          .eq('recruitment_id', rec.id)
+          .eq('is_cancelled', false)
+          .order('created_at', { ascending: true });
+
+        if (!partErr && partRows) {
+          const startDate = new Date(rec.start_at);
+          const jstDate = new Date(startDate.getTime() + 9 * 3600e3);
+          const month = jstDate.getUTCMonth() + 1;
+          const day = jstDate.getUTCDate();
+          const dayOfWeek = jstDate.getUTCDay();
+          const dayStr = dayOfWeek === 6 ? '土' : dayOfWeek === 0 ? '日' : '';
+          const prefix = dayOfWeek === 0 ? '🎪 KTM 日曜・お祭りカスタム' : '⚔️ KTM 土曜・実力均等カスタム';
+          const title = `${prefix} ${month}/${day}(${dayStr}) 21:00〜`;
+
+          const channelId = rec.discord_channel_id || PERIODIC_RECRUIT_CHANNEL_ID;
+          const messageUrl = `https://discord.com/channels/1485636149379858567/${channelId}/${rec.discord_message_id}`;
+
+          const spectatorIds: string[] = [];
+          const entryIds: string[] = [];
+          const entries: CustomEntryDetail[] = [];
+          const laneCounts: Record<string, number> = { TOP: 0, JG: 0, MID: 0, BOT: 0, SUP: 0 };
+
+          for (const p of partRows) {
+            const id = p.discord_id;
+            if (!id) continue;
+            if (p.style === 'spectator') {
+              spectatorIds.push(id);
+            } else {
+              entryIds.push(id);
+              const lanes: string[] = [];
+              if (p.primary_lane) lanes.push(normalizeLane(p.primary_lane));
+              if (p.secondary_lane) lanes.push(normalizeLane(p.secondary_lane));
+              const cardRank = p.rank_tier || null;
+              const isLate = p.style === 'late';
+              const isSingle = p.style === 'single';
+
+              entries.push({
+                discordId: id,
+                lanes,
+                rank: cardRank,
+                tier: getRankTier(cardRank),
+                playerName: p.user_name || null,
+                isLate,
+                isSingle,
+              });
+
+              const primary = lanes[0];
+              if (primary && laneCounts[primary] !== undefined) {
+                laneCounts[primary] += 1;
+              }
+            }
+          }
+
+          const standardLanes = ['TOP', 'JG', 'MID', 'BOT', 'SUP'];
+          const neededLanes = standardLanes.filter((lane) => (laneCounts[lane] || 0) < 2);
+
+          return {
+            title,
+            startAt: startDate.toISOString(),
+            messageUrl,
+            entryIds: [...new Set(entryIds)],
+            spectatorIds: [...new Set(spectatorIds)],
+            entries,
+            laneCounts,
+            neededLanes,
+          };
+        }
+      }
+    } catch (dbErr) {
+      console.warn('[periodicCustomCard] DB読み込み失敗、Discord APIへフォールバック:', dbErr);
+    }
+  }
+
+  // ── 2. フォールバック: Discord チャンネルメッセージ走査・本文パース ──
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) throw new Error('DISCORD_BOT_TOKEN is not set.');
   const res = await discordFetch(`https://discord.com/api/v10/channels/${PERIODIC_RECRUIT_CHANNEL_ID}/messages?limit=50`, {

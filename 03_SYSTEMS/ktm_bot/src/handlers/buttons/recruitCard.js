@@ -7,6 +7,15 @@ import { getPlayerActiveMark } from '../../utils/ktmRank.js';
 import { notifyAdminError } from '../../utils/alert.js';
 import { recordRecruitmentActivity } from '../../utils/recruitmentAudit.js';
 import { cleanupOldReminderMessages } from '../scheduled.js';
+import {
+  getRecruitmentByMessageId,
+  recordParticipant,
+  cancelParticipant,
+  fetchActiveParticipants,
+  fetchPlayerRowsMap,
+  rebuildAdhocMetadataFromDb,
+  PLAYER_SELECT,
+} from '../../utils/recruitmentLedger.js';
 
 // 連打・並行アクセスによる二重通知防止用キャッシュ (messageId -> timestamp)
 const lastOneNotifyLock = new Map();
@@ -64,144 +73,261 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     });
   }
 
-  // join_any/join_role は同時押しされやすく、interaction.message は「押した瞬間」の
-  // スナップショットで古くなりがちなので、直前にメッセージを取り直して競合の窓を狭める
-  // （完全な排他制御ではないが、join_periodicと同じ緩和策）。
+  // join_any/join_role/toggle_spectate/leave_recruit の処理
+  // 指示文37: recruitments レコードが存在する場合は recruitment_participants を正とし、DBから再描画する。
   let prevJoinedCount = (metadata.joined || []).length;
-  const refreshJoinMetadata = async () => {
-    try {
-      const freshRes = await fetch(`https://discord.com/api/v10/channels/${interaction.channel_id}/messages/${interaction.message.id}`, {
-        headers: { "Authorization": `Bot ${botToken}` }
-      });
-      if (freshRes.ok) {
-        Object.assign(metadata, parseMessageData(await freshRes.json()));
-      }
-    } catch (e) {
-      console.warn("join: 最新状態の再取得に失敗、インタラクションのスナップショットで続行:", e);
-    }
-    prevJoinedCount = (metadata.joined || []).length;
-  };
-
   let auditAction = null;
   let auditStyle = null;
 
-  if (customId.startsWith('upgrade_to_10')) {
-    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ拡張可能です。", flags: 64 } });
-    metadata.mode = 'カスタム'; metadata.maxCount = 10;
-  } else if (customId.startsWith('join_any')) {
-    await refreshJoinMetadata();
-    if (metadata.joined.includes(userId) && !Object.values(metadata.roles).includes(userId)) {
-      // 二度押しで離脱
-      metadata.joined = metadata.joined.filter(id => id !== userId);
-      auditAction = 'LEAVE';
-    } else if (metadata.joined.length < metadata.maxCount) {
-      if (!metadata.joined.includes(userId)) {
-        metadata.joined.push(userId);
-        // 初参加(レーン未設定)ならセットアップ案内をDM
-        ctx.waitUntil(sendOnboardingIfNeeded(env, userId));
+  const recruitment = await getRecruitmentByMessageId(env, interaction.message.id).catch(() => null);
+
+  if (recruitment) {
+    // ── DB駆動モード (SSoT: recruitment_participants) ──
+    const [activeBefore, playerRow] = await Promise.all([
+      fetchActiveParticipants(env, recruitment.id),
+      fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=${PLAYER_SELECT}`)
+        .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
+        .catch(() => null),
+    ]);
+    prevJoinedCount = activeBefore.filter((p) => p.style !== 'spectator').length;
+    const existingParticipant = activeBefore.find((p) => p.discord_id === userId);
+
+    if (customId.startsWith('upgrade_to_10')) {
+      if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ拡張可能です。", flags: 64 } });
+      metadata.mode = 'カスタム';
+      metadata.maxCount = 10;
+      await fetchSupabase(env, 'recruitments', `id=eq.${recruitment.id}`, 'PATCH', { mode: 'カスタム', max_count: 10 }).catch(() => {});
+    } else if (customId.startsWith('join_any')) {
+      if (existingParticipant && existingParticipant.style !== 'spectator' && !existingParticipant.primary_lane) {
+        // 二度押しで離脱
+        auditAction = 'LEAVE';
+        try {
+          await cancelParticipant(env, { recruitmentId: recruitment.id, discordId: userId });
+        } catch (dbErr) {
+          await notifyAdminError(env, dbErr, { action: 'recruitCard:cancelParticipant(join_any)', customId });
+          throw dbErr;
+        }
+      } else if (prevJoinedCount < metadata.maxCount || existingParticipant?.style === 'spectator') {
         auditAction = 'JOIN';
         auditStyle = 'any';
-      }
-      metadata.names[userId] = userName;
-      metadata.spectating = metadata.spectating.filter(id => id !== userId);
-      Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-    }
-  } else if (customId.startsWith('join_role:')) {
-    const role = customId.split(':')[1];
-    await refreshJoinMetadata();
-    if (metadata.roles[role] === userId) {
-      // 二度押しで離脱
-      metadata.roles[role] = null;
-      metadata.joined = metadata.joined.filter(id => id !== userId);
-      auditAction = 'LEAVE';
-    } else {
-      Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-      if (!metadata.roles[role] && metadata.joined.length < metadata.maxCount) {
-        metadata.roles[role] = userId; metadata.names[userId] = userName;
-        if (!metadata.joined.includes(userId)) metadata.joined.push(userId);
-        metadata.spectating = metadata.spectating.filter(id => id !== userId);
-        auditAction = 'JOIN';
-        auditStyle = role;
-      }
-    }
-  } else if (customId.startsWith('toggle_spectate')) {
-    await refreshJoinMetadata();
-    if (!metadata.spectating) metadata.spectating = [];
-    if (metadata.spectating.includes(userId)) {
-      metadata.spectating = metadata.spectating.filter(id => id !== userId);
-      auditAction = 'LEAVE';
-      auditStyle = 'spectate';
-    } else {
-      metadata.spectating.push(userId);
-      metadata.joined = metadata.joined.filter(id => id !== userId);
-      Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-      metadata.names[userId] = userName;
-      auditAction = 'JOIN';
-      auditStyle = 'spectate';
-    }
-  } else if (customId.startsWith('leave_recruit')) {
-    await refreshJoinMetadata();
-    const wasIn = (metadata.joined || []).includes(userId) || (metadata.spectating || []).includes(userId) || Object.values(metadata.roles || {}).includes(userId);
-    metadata.joined = metadata.joined.filter(id => id !== userId);
-    if (metadata.spectating) {
-      metadata.spectating = metadata.spectating.filter(id => id !== userId);
-    }
-    Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-    if (wasIn) {
-      auditAction = 'LEAVE';
-    }
-  }
-
-  // 監査ログを非同期記録
-  if (auditAction) {
-    ctx.waitUntil(
-      recordRecruitmentActivity(env, {
-        messageId: interaction.message.id,
-        recruitmentType: 'spontaneous',
-        channelId: interaction.channel_id,
-        userId,
-        userName,
-        action: auditAction,
-        style: auditStyle,
-        metadata: { mode: metadata.mode, maxCount: metadata.maxCount }
-      })
-    );
-  }
-
-  // 参加者・見学者のアクティブマーク（👑、🔰、🌱、⏳等）および希望レーンを補完
-  if (!metadata.badges) metadata.badges = {};
-  if (!metadata.lanes) metadata.lanes = {};
-  const allParticipantIds = [...new Set([...(metadata.joined || []), ...(metadata.spectating || [])])];
-  const missingInfoIds = allParticipantIds.filter(id => !metadata.badges[id] || !metadata.lanes[id]);
-  if (missingInfoIds.length > 0) {
-    try {
-      const idsStr = missingInfoIds.map(i => `"${i}"`).join(',');
-      const pRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,role_preferences`);
-      const pMap = new Map((pRows || []).map(p => [String(p.discord_id), p]));
-      for (const id of missingInfoIds) {
-        const p = pMap.get(String(id));
-        if (!metadata.badges[id]) metadata.badges[id] = getPlayerActiveMark(p);
-        if (!metadata.lanes[id]) {
-          let pr = p?.role_preferences?.primary;
-          if (typeof p?.role_preferences === 'string') {
-            try { pr = JSON.parse(p.role_preferences)?.primary; } catch {}
-          }
-          metadata.lanes[id] = (pr && pr !== '指定なし' && pr !== 'なし') ? pr.toUpperCase() : 'ALL';
+        if (!existingParticipant) {
+          ctx.waitUntil(sendOnboardingIfNeeded(env, userId));
+        }
+        try {
+          await recordParticipant(env, {
+            recruitmentId: recruitment.id,
+            discordId: userId,
+            userName,
+            playerRow,
+            style: 'full',
+            dayKey: 'all',
+            lobby: 'all',
+            primaryLane: null,
+          });
+        } catch (dbErr) {
+          await notifyAdminError(env, dbErr, { action: 'recruitCard:recordParticipant(join_any)', customId });
+          throw dbErr;
         }
       }
-    } catch (e) {
-      console.warn('badges/lanes fetch error:', e);
+    } else if (customId.startsWith('join_role:')) {
+      const role = customId.split(':')[1];
+      if (existingParticipant && existingParticipant.primary_lane === role && existingParticipant.style !== 'spectator') {
+        // 二度押しで離脱
+        auditAction = 'LEAVE';
+        try {
+          await cancelParticipant(env, { recruitmentId: recruitment.id, discordId: userId });
+        } catch (dbErr) {
+          await notifyAdminError(env, dbErr, { action: 'recruitCard:cancelParticipant(join_role)', customId });
+          throw dbErr;
+        }
+      } else {
+        const isRoleTaken = activeBefore.some((p) => p.discord_id !== userId && p.primary_lane === role && p.style !== 'spectator');
+        const canJoin = !isRoleTaken && (prevJoinedCount < metadata.maxCount || (existingParticipant && existingParticipant.style !== 'spectator'));
+        if (canJoin) {
+          auditAction = 'JOIN';
+          auditStyle = role;
+          if (!existingParticipant) {
+            ctx.waitUntil(sendOnboardingIfNeeded(env, userId));
+          }
+          try {
+            await recordParticipant(env, {
+              recruitmentId: recruitment.id,
+              discordId: userId,
+              userName,
+              playerRow,
+              style: 'full',
+              dayKey: 'all',
+              lobby: 'all',
+              primaryLane: role,
+            });
+          } catch (dbErr) {
+            await notifyAdminError(env, dbErr, { action: 'recruitCard:recordParticipant(join_role)', customId });
+            throw dbErr;
+          }
+        }
+      }
+    } else if (customId.startsWith('toggle_spectate')) {
+      if (existingParticipant && existingParticipant.style === 'spectator') {
+        auditAction = 'LEAVE';
+        auditStyle = 'spectate';
+        try {
+          await cancelParticipant(env, { recruitmentId: recruitment.id, discordId: userId });
+        } catch (dbErr) {
+          await notifyAdminError(env, dbErr, { action: 'recruitCard:cancelParticipant(toggle_spectate)', customId });
+          throw dbErr;
+        }
+      } else {
+        auditAction = 'JOIN';
+        auditStyle = 'spectate';
+        try {
+          await recordParticipant(env, {
+            recruitmentId: recruitment.id,
+            discordId: userId,
+            userName,
+            playerRow,
+            style: 'spectator',
+            dayKey: 'all',
+            lobby: 'all',
+          });
+        } catch (dbErr) {
+          await notifyAdminError(env, dbErr, { action: 'recruitCard:recordParticipant(toggle_spectate)', customId });
+          throw dbErr;
+        }
+      }
+    } else if (customId.startsWith('leave_recruit')) {
+      if (existingParticipant) {
+        auditAction = 'LEAVE';
+        try {
+          await cancelParticipant(env, { recruitmentId: recruitment.id, discordId: userId });
+        } catch (dbErr) {
+          await notifyAdminError(env, dbErr, { action: 'recruitCard:cancelParticipant(leave_recruit)', customId });
+          throw dbErr;
+        }
+      }
     }
-  }
 
-  // カスタム募集の場合、参加者一覧（metadata.joined）を希望レーン順にソート
-  if (metadata.mode === 'カスタム' && Array.isArray(metadata.joined) && metadata.joined.length > 1) {
-    const lanePriority = { TOP: 1, JG: 2, MID: 3, ADC: 4, BOT: 4, SUP: 5, ALL: 6 };
-    metadata.joined.sort((a, b) => {
-      const lA = lanePriority[metadata.lanes?.[a]] || 6;
-      const lB = lanePriority[metadata.lanes?.[b]] || 6;
-      return lA - lB;
-    });
+    // 最新のアクティブ参加者一覧を取得してカード metadata を再構築
+    const activeAfter = await fetchActiveParticipants(env, recruitment.id);
+    const playerMap = await fetchPlayerRowsMap(env, activeAfter.map((p) => p.discord_id));
+    if (playerRow && !playerMap.has(userId)) {
+      playerMap.set(userId, playerRow);
+    }
+    metadata = rebuildAdhocMetadataFromDb(metadata, activeAfter, playerMap);
+  } else {
+    // ── フォールバック（DB未移行カード等: 従来の本文パース） ──
+    const refreshJoinMetadata = async () => {
+      try {
+        const freshRes = await fetch(`https://discord.com/api/v10/channels/${interaction.channel_id}/messages/${interaction.message.id}`, {
+          headers: { "Authorization": `Bot ${botToken}` }
+        });
+        if (freshRes.ok) {
+          Object.assign(metadata, parseMessageData(await freshRes.json()));
+        }
+      } catch (e) {
+        console.warn("join: 最新状態の再取得に失敗、インタラクションのスナップショットで続行:", e);
+      }
+      prevJoinedCount = (metadata.joined || []).length;
+    };
+
+    if (customId.startsWith('upgrade_to_10')) {
+      if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ拡張可能です。", flags: 64 } });
+      metadata.mode = 'カスタム'; metadata.maxCount = 10;
+    } else if (customId.startsWith('join_any')) {
+      await refreshJoinMetadata();
+      if (metadata.joined.includes(userId) && !Object.values(metadata.roles).includes(userId)) {
+        metadata.joined = metadata.joined.filter(id => id !== userId);
+        auditAction = 'LEAVE';
+      } else if (metadata.joined.length < metadata.maxCount) {
+        if (!metadata.joined.includes(userId)) {
+          metadata.joined.push(userId);
+          ctx.waitUntil(sendOnboardingIfNeeded(env, userId));
+          auditAction = 'JOIN';
+          auditStyle = 'any';
+        }
+        metadata.names[userId] = userName;
+        metadata.spectating = metadata.spectating.filter(id => id !== userId);
+        Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
+      }
+    } else if (customId.startsWith('join_role:')) {
+      const role = customId.split(':')[1];
+      await refreshJoinMetadata();
+      if (metadata.roles[role] === userId) {
+        metadata.roles[role] = null;
+        metadata.joined = metadata.joined.filter(id => id !== userId);
+        auditAction = 'LEAVE';
+      } else {
+        Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
+        if (!metadata.roles[role] && metadata.joined.length < metadata.maxCount) {
+          metadata.roles[role] = userId; metadata.names[userId] = userName;
+          if (!metadata.joined.includes(userId)) metadata.joined.push(userId);
+          metadata.spectating = metadata.spectating.filter(id => id !== userId);
+          auditAction = 'JOIN';
+          auditStyle = role;
+        }
+      }
+    } else if (customId.startsWith('toggle_spectate')) {
+      await refreshJoinMetadata();
+      if (!metadata.spectating) metadata.spectating = [];
+      if (metadata.spectating.includes(userId)) {
+        metadata.spectating = metadata.spectating.filter(id => id !== userId);
+        auditAction = 'LEAVE';
+        auditStyle = 'spectate';
+      } else {
+        metadata.spectating.push(userId);
+        metadata.joined = metadata.joined.filter(id => id !== userId);
+        Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
+        metadata.names[userId] = userName;
+        auditAction = 'JOIN';
+        auditStyle = 'spectate';
+      }
+    } else if (customId.startsWith('leave_recruit')) {
+      await refreshJoinMetadata();
+      const wasIn = (metadata.joined || []).includes(userId) || (metadata.spectating || []).includes(userId) || Object.values(metadata.roles || {}).includes(userId);
+      metadata.joined = metadata.joined.filter(id => id !== userId);
+      if (metadata.spectating) {
+        metadata.spectating = metadata.spectating.filter(id => id !== userId);
+      }
+      Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
+      if (wasIn) {
+        auditAction = 'LEAVE';
+      }
+    }
+
+    // 参加者・見学者のアクティブマークおよび希望レーンを補完
+    if (!metadata.badges) metadata.badges = {};
+    if (!metadata.lanes) metadata.lanes = {};
+    const allParticipantIds = [...new Set([...(metadata.joined || []), ...(metadata.spectating || [])])];
+    const missingInfoIds = allParticipantIds.filter(id => !metadata.badges[id] || !metadata.lanes[id]);
+    if (missingInfoIds.length > 0) {
+      try {
+        const idsStr = missingInfoIds.map(i => `"${i}"`).join(',');
+        const pRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,role_preferences`);
+        const pMap = new Map((pRows || []).map(p => [String(p.discord_id), p]));
+        for (const id of missingInfoIds) {
+          const p = pMap.get(String(id));
+          if (!metadata.badges[id]) metadata.badges[id] = getPlayerActiveMark(p);
+          if (!metadata.lanes[id]) {
+            let pr = p?.role_preferences?.primary;
+            if (typeof p?.role_preferences === 'string') {
+              try { pr = JSON.parse(p.role_preferences)?.primary; } catch {}
+            }
+            metadata.lanes[id] = (pr && pr !== '指定なし' && pr !== 'なし') ? pr.toUpperCase() : 'ALL';
+          }
+        }
+      } catch (e) {
+        console.warn('badges/lanes fetch error:', e);
+      }
+    }
+
+    // カスタム募集の場合、希望レーン順にソート
+    if (metadata.mode === 'カスタム' && Array.isArray(metadata.joined) && metadata.joined.length > 1) {
+      const lanePriority = { TOP: 1, JG: 2, MID: 3, ADC: 4, BOT: 4, SUP: 5, ALL: 6 };
+      metadata.joined.sort((a, b) => {
+        const lA = lanePriority[metadata.lanes?.[a]] || 6;
+        const lB = lanePriority[metadata.lanes?.[b]] || 6;
+        return lA - lB;
+      });
+    }
   }
 
   if (customId.startsWith('close_silent') || customId.startsWith('close')) {

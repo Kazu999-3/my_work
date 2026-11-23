@@ -1,5 +1,51 @@
 ## 📅 2026-11-23（月）
 
+### ⚡ 【Bot 指示文36 & 指示文37：残件整理・マイグレーション142実測検証・台帳DB化フェーズ2（都度募集DB化＆PortalオンボーディングDB直読み化）】
+
+**概要**:
+`03_SYSTEMS/ktm_bot/docs/specs/36-small-cleanups-and-migration-verify-instruction.md` および `37-ledger-phase2-adhoc-and-portal-instruction.md` に基づき、残件整理・マイグレーション実測確認、および台帳DB化フェーズ2（都度募集のDB化・Portal側の参加者取得DBクエリ化）を完了。
+
+1. **指示文36：残件整理 ＆ マイグレーション142の適用実測確認**:
+   - `03_SYSTEMS/ktm_bot/src/index.js`: コマンド整理コメントを実態（現行9コマンド稼働中、/portalは未存在、/welcomeは現役、エイリアス廃止済み）に修正。
+   - `03_SYSTEMS/ktm_bot/src/handlers/jobs/eventNotify.js`: `checkCustomStatusAt2000` 内の未定義環境変数 `env.DISCORD_KTM_CHANNEL_ID` を削除し、CONFIG の定期募集チャンネルを正とする形へ統一。未解決時のエラーログと `notifyAdminError` は維持。
+   - **マイグレーション142の実測検証結果**:
+     - `recruitment_participants` テーブル: 存在確認（HTTP 200 OK）。
+     - RLS ポリシー: Anon による SELECT は 200 OK で許可、Anon による INSERT は `401 / 42501 (権限なし)` で想定通り拒否。
+     - 過去 `open` レコードのクリーンアップ: 7日以上前の open レコードが実測 0件 になり、対象 3件（10/10, 10/24, 11/8）が `status = 'closed'` へ正常更新されたことを確認。
+
+2. **指示文37：都度募集（/recruit・クイック募集）の DB 化**:
+   - `03_SYSTEMS/ktm_bot/src/utils/recruitmentLedger.js`:
+     - `determineParticipantAttributes` / `recordParticipant`: 都度募集（`dayKey = null` / `'all'`）時に `lobby = 'all'` で登録されるよう拡張。ロール指定参加（`primaryLane`）の上書きに対応。
+     - `rebuildAdhocMetadataFromDb`: DB の `recruitment_participants` から都度募集の `metadata`（`joined`, `spectating`, `roles`, `names`, `badges`, `lanes`）を再構築し、カスタム時の希望レーン順ソートを行うヘルパー関数を新設。
+   - `03_SYSTEMS/ktm_bot/src/handlers/buttons/recruitCard.js`:
+     - `upgrade_to_10`, `join_any`, `join_role`, `toggle_spectate`, `leave_recruit` を DB 駆動化。
+     - メッセージIDから `recruitments` を検索し、レコードが存在する場合は `recruitment_participants` へアトミックに UPSERT / 論理削除。
+     - DB書き込み失敗時は握りつぶさず `notifyAdminError` で管理者アラートへ通知。
+     - DB から最新アクティブ参加者を取得して `metadata` を再構築し、カードを再描画。
+     - DB 行が存在しない古い都度募集カードは、従来の本文パースへフォールバックして互換性を維持。
+     - 放置募集の自動クローズ（6時間）、満員時通知、あと1名促進リマインド、個別案内チャンネルへのオンボーディング案内はそのまま維持。
+
+3. **指示文37：Portal 側オンボーディング参加者取得の DB クエリ化**:
+   - `04_PORTAL/src/lib/periodicCustomCard.ts`:
+     - `loadNextPeriodicCustomEntries` を改修。`supabaseAdmin` を使用して直近の `recruitments`（定期カスタム、open、開始4時間前以降）と `recruitment_participants`（`is_cancelled = false`）を直接クエリ。
+     - 取得情報の内容: `entryIds`, `spectatorIds`, `entries`（`discordId`, `lanes`, `rank`, `tier`, `playerName`, `isLate`, `isSingle`）, `laneCounts`, `neededLanes` が DB から直接かつ型安全に構築され、従来の Discord API 本文パースと同等以上の情報（正確な登録名、正規化レーン、MMR 等）が得られることを確認。
+     - DB レコードが存在しない場合やエラー時は、従来の Discord チャンネル走査・本文パースへ安全にフォールバック。
+
+4. **テスト・ビルド検証**:
+   - `03_SYSTEMS/ktm_bot/scripts/dry_run_recruitment_status.mjs`: 都度募集の属性決定（`lobby = 'all'`）、観戦、ロール参加、メタデータ再構築、レーン順ソートの検証ケースを追加。
+   - `npm run dryrun:recruitment` 実行: **全ケース PASS（Exit code 0）**。
+   - `04_PORTAL`: `npm run build` 実行: **Exit code 0** でビルド成功。
+
+- 再利用可能な3行ナレッジ:
+  - 定期募集と都度募集で異なるUI表現（ロビー分割カード vs ロール指定・透明ピクセル）であっても、台帳子テーブル（`recruitment_participants`）のスキーマを `lobby = 'all'` やレーンカラムで統一しておくことで、バックエンドロジックの再利用性と保守性が飛躍的に高まる。
+  - Portal側の画面表示ロジックを Discord API 依存から DB 直読みクエリに切り替えることで、外部APIのレートリミットやトークン失効、本文書式揺れによるパースエラーから脱却できる。
+  - マイグレーション適用後に「テーブル存在・RLS拒否・更新クリーンアップ件数」をテストスクリプトで実測確認する儀式を徹底することで、CI/CD や DB の反映漏れを確実に防げる。
+- [要検証]: 都度募集カードでの新規募集作成からボタン参加・変更・辞退までの実戦ログ
+- [継続ウォッチ]: 水曜12:00定期カード投稿後の Portal オンボーディング管理画面での表示同期
+- [発信候補]: 特になし
+
+## 📅 2026-11-23（月）
+
 ### ⚡ 【Bot 指示文35：募集台帳のDB化実装（recruitment_participants 新設・DB駆動化）】
 
 **概要**:
