@@ -61,9 +61,10 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                       <SortableHeader label="名前" sortKey="name" sticky={true} sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="第1希望" sortKey="primary_role" sortConfig={sortConfig} requestSort={requestSort} />
-                      <th className="px-3 py-2 text-xs text-faint font-semibold text-center whitespace-nowrap">サブ ＆ 回避設定</th>
+                      <th className="px-3 py-2 text-xs text-faint font-semibold text-center whitespace-nowrap">サブ ＆ 回避</th>
                       <SortableHeader label="初中級サポ" sortKey="allow_lower_support" sortConfig={sortConfig} requestSort={requestSort} />
                       <SortableHeader label="平均MMR" sortKey="mmr" sortConfig={sortConfig} requestSort={requestSort} />
+                      <th className="px-3 py-2 text-xs text-faint font-semibold text-center whitespace-nowrap">詳細設定</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border text-sm">
@@ -114,16 +115,13 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                             </span>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 align-middle">
-                          <select
-                            value={p.highest_rank || "UNRANKED"}
-                            onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
-                            className={`bg-black/5 border border-border rounded px-1.5 py-1 outline-none focus:border-primary-edge-strong w-24 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-xs font-bold border border-border/80 shadow-2xs ${getColorFromRankName(p.highest_rank)}`}
+                            title="SoloQ最高ランク（Riot同期で自動更新）"
                           >
-                            {HIGHEST_RANK_OPTIONS.map(r => (
-                              <option key={r} value={r}>{r}</option>
-                            ))}
-                          </select>
+                            {p.highest_rank && p.highest_rank !== 'UNRANKED' ? p.highest_rank.split(' ')[0] : 'UNRANKED'}
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-center align-middle">
                           <div className="flex items-center gap-1.5 bg-black/5 border border-border rounded px-2 py-1 w-24 mx-auto">
@@ -148,37 +146,23 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                           </div>
                         </td>
                         <td className="px-2 py-1.5 text-center align-middle">
-                          <div className="flex items-center justify-between gap-1.5 w-full max-w-[190px] mx-auto">
-                            <div className="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
-                              {p.role_preferences?.secondary && p.role_preferences?.secondary !== '-' && p.role_preferences?.secondary !== 'ALL' && (
-                                <span className="px-1.5 py-0.2 rounded bg-black/5 border border-border text-foreground-soft font-mono text-[10px] font-bold whitespace-nowrap truncate max-w-full" title={`第2希望: ${p.role_preferences.secondary}`}>
-                                  第2:{p.role_preferences.secondary}
+                          <div className="flex flex-col items-center justify-center gap-0.5 mx-auto max-w-[150px]">
+                            {p.role_preferences?.secondary && p.role_preferences?.secondary !== '-' && p.role_preferences?.secondary !== 'ALL' && (
+                              <span className="px-1.5 py-0.2 rounded bg-black/5 border border-border text-foreground-soft font-mono text-[10px] font-bold whitespace-nowrap truncate max-w-full" title={`第2希望: ${p.role_preferences.secondary}`}>
+                                第2:{p.role_preferences.secondary}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1 flex-wrap justify-center">
+                              {(p.ng_lane_1 && p.ng_lane_1 !== '-') || (p.ng_lane_2 && p.ng_lane_2 !== '-') ? (
+                                <span className="px-1.5 py-0.2 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[10px] whitespace-nowrap" title={`回避レーン: ${[p.ng_lane_1, p.ng_lane_2].filter(r => r && r !== '-').join('/')}`}>
+                                  回避:{[p.ng_lane_1, p.ng_lane_2].filter(r => r && r !== '-').join('/')}
                                 </span>
+                              ) : (
+                                !p.role_preferences?.secondary || p.role_preferences?.secondary === '-' || p.role_preferences?.secondary === 'ALL' ? (
+                                  <span className="text-[10px] text-faint">特になし</span>
+                                ) : null
                               )}
-                              <div className="flex items-center gap-1 flex-wrap">
-                                {(p.ng_lane_1 && p.ng_lane_1 !== '-') || (p.ng_lane_2 && p.ng_lane_2 !== '-') ? (
-                                  <span className="px-1.5 py-0.2 rounded bg-danger-100 text-danger-700 border border-danger-edge font-bold text-[10px] whitespace-nowrap" title={`回避レーン: ${[p.ng_lane_1, p.ng_lane_2].filter(r => r && r !== '-').join('/')}`}>
-                                    回避:{[p.ng_lane_1, p.ng_lane_2].filter(r => r && r !== '-').join('/')}
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-faint">回避: なし</span>
-                                )}
-                              </div>
                             </div>
-
-                            <button
-                              type="button"
-                              onClick={() => togglePlayerDetails(uid)}
-                              className={`px-2 py-1 rounded-md border text-[11px] font-bold transition inline-flex items-center gap-0.5 cursor-pointer shrink-0 whitespace-nowrap ${
-                                expandedPlayerIds.includes(uid)
-                                  ? 'bg-primary-100 border-primary-edge text-primary-800'
-                                  : 'bg-black/5 hover:bg-black/10 border-border text-muted-strong hover:text-foreground'
-                              }`}
-                              title={expandedPlayerIds.includes(uid) ? '詳細設定を閉じる' : '詳細設定（第2希望・回避レーン・レーン別MMR）を開く'}
-                            >
-                              <span>設定</span>
-                              <ChevronDown className={`w-3 h-3 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
-                            </button>
                           </div>
                         </td>
                         <td className="px-2 py-1.5 text-center align-middle">
@@ -212,12 +196,28 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                             })()}
                           </div>
                         </td>
+                        <td className="px-2 py-1.5 text-center align-middle">
+                          <button
+                            type="button"
+                            onClick={() => togglePlayerDetails(uid)}
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs ${
+                              expandedPlayerIds.includes(uid)
+                                ? 'bg-primary-600 text-white border-primary-edge shadow-md'
+                                : 'bg-surface hover:bg-black/8 border-border text-foreground-soft hover:text-foreground'
+                            }`}
+                            title={expandedPlayerIds.includes(uid) ? '詳細設定を閉じる' : '詳細設定（第2希望・回避・最高Rank修正・レーン別MMR）を開く'}
+                          >
+                            <Settings className="w-3 h-3" />
+                            <span>設定</span>
+                            <ChevronDown className={`w-3 h-3 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
+                          </button>
+                        </td>
                       </tr>
                       {expandedPlayerIds.includes(uid) && (
                         <tr key={`${uid}-mmr-details`} className="bg-black/3 border-b border-border">
-                          <td colSpan={8} className="p-3">
+                          <td colSpan={9} className="p-3">
                             <div className="space-y-2.5 pl-12">
-                              {/* 第2希望・回避レーン設定 */}
+                              {/* 第2希望・回避レーン・最高Rank設定 */}
                               <div className="flex flex-wrap items-center gap-3 text-xs bg-surface/60 p-2 rounded-lg border border-border/80">
                                 <div className="text-xs font-bold text-faint flex items-center gap-1.5 border-r border-border pr-3">
                                   <Settings className="w-3.5 h-3.5 text-primary-500" />
@@ -268,6 +268,20 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                                     <option value="-" className="bg-surface text-faint">なし</option>
                                     {["TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role} className="text-danger-700 bg-surface">{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* 最高Rank手動修正（万が一の補正用） */}
+                                <div className="flex items-center gap-1.5 bg-surface border border-border rounded px-2 py-1 shadow-2xs ml-auto">
+                                  <span className="text-[11px] text-muted-strong font-bold">最高Rank修正:</span>
+                                  <select
+                                    value={p.highest_rank || "UNRANKED"}
+                                    onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
+                                    className={`bg-transparent outline-none cursor-pointer text-xs font-bold ${getColorFromRankName(p.highest_rank)}`}
+                                  >
+                                    {HIGHEST_RANK_OPTIONS.map(r => (
+                                      <option key={r} value={r} className="text-foreground-soft bg-surface">{r}</option>
                                     ))}
                                   </select>
                                 </div>
@@ -368,7 +382,7 @@ export default function PlayerTableDesktop({ sortedPlayers, playerCount, loading
                     
                     {playerCount === 0 && !loading && (
                       <tr>
-                        <td colSpan={8} className="px-6 py-12 text-center text-muted-strong">
+                        <td colSpan={9} className="px-6 py-12 text-center text-muted-strong">
                           プレイヤーが登録されていません。Discord & Riot同期を実行して登録してください。
                         </td>
                       </tr>

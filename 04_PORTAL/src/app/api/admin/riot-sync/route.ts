@@ -65,6 +65,10 @@ export async function POST(request: Request) {
         if (!puuid) {
           if (!currentIgn || !currentIgn.includes('#')) continue;
           const [gameName, tagLine] = currentIgn.split('#');
+          if (!gameName?.trim() || !tagLine?.trim()) {
+            console.warn(`[Riot Sync] 不正なRiot ID形式（タグなし等）のためスキップ: ${currentIgn}`);
+            continue;
+          }
           puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
         } else if (!rankOnly) {
           // (A-2) すでに puuid がある場合は、Riot ID（改名）の自動同期を試みる（rankOnly時はスキップ）
