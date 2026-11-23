@@ -108,30 +108,66 @@ export default function OpsSummaryPanel() {
 
       {data && (
         <>
+          {/* 📊 直近（今週）の運営KPIハイライト */}
+          {(() => {
+            const latest = data.weeks[data.weeks.length - 1];
+            if (!latest) return null;
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
+                  <div className="text-xs text-muted-strong font-bold">今週の試合数</div>
+                  <div className="text-2xl font-black text-primary-600 mt-1">{latest.matches} <span className="text-xs font-normal text-muted-strong">試合</span></div>
+                  <div className="text-[10px] text-faint mt-0.5">{latest.label}〜</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
+                  <div className="text-xs text-muted-strong font-bold">今週のアクティブ</div>
+                  <div className="text-2xl font-black text-foreground mt-1">{latest.people} <span className="text-xs font-normal text-muted-strong">名参加</span></div>
+                  <div className="text-[10px] text-faint mt-0.5">1試合以上出場</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
+                  <div className="text-xs text-muted-strong font-bold">新規・初参加</div>
+                  <div className="text-2xl font-black text-emerald-600 mt-1">{latest.firstTime} <span className="text-xs font-normal text-muted-strong">名</span></div>
+                  <div className="text-[10px] text-faint mt-0.5">2回目来訪: {latest.secondTime}名</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-surface border border-border shadow-xs">
+                  <div className="text-xs text-muted-strong font-bold">新規名簿登録</div>
+                  <div className="text-2xl font-black text-secondary-600 mt-1">{latest.joined} <span className="text-xs font-normal text-muted-strong">名</span></div>
+                  <div className="text-[10px] text-faint mt-0.5">サーバー加入者</div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* 週ごとの数字 */}
           <section className="bg-surface border border-border rounded-2xl p-4 space-y-3">
             <h3 className="text-sm font-black text-foreground">週ごとの数字（月曜はじまり）</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="text-muted-strong">
+                <thead className="text-muted-strong bg-black/5 rounded">
                   <tr className="border-b border-border">
-                    <th className="p-1.5 text-left">週</th>
-                    <th className="p-1.5 text-right">試合</th>
-                    <th className="p-1.5 text-right">参加</th>
-                    <th className="p-1.5 text-right">初参加</th>
-                    <th className="p-1.5 text-right">2回目</th>
-                    <th className="p-1.5 text-right">名簿入り</th>
+                    <th className="p-2 text-left font-bold">週</th>
+                    <th className="p-2 text-right font-bold">試合</th>
+                    <th className="p-2 text-right font-bold">参加</th>
+                    <th className="p-2 text-right font-bold">初参加</th>
+                    <th className="p-2 text-right font-bold">2回目</th>
+                    <th className="p-2 text-right font-bold">名簿入り</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {[...data.weeks].reverse().map((w) => (
-                    <tr key={w.label} className="border-b border-border/60">
-                      <td className="p-1.5 font-mono whitespace-nowrap">{w.label}〜</td>
-                      <td className="p-1.5 text-right font-mono">{w.matches}</td>
-                      <td className="p-1.5 text-right font-mono">{w.people}</td>
-                      <td className="p-1.5 text-right font-mono">{w.firstTime}</td>
-                      <td className="p-1.5 text-right font-mono">{w.secondTime}</td>
-                      <td className="p-1.5 text-right font-mono">{w.joined}</td>
+                <tbody className="divide-y divide-border/60">
+                  {[...data.weeks].reverse().map((w, idx) => (
+                    <tr key={w.label} className={`hover:bg-black/5 transition ${idx === 0 ? 'bg-primary-500/5 font-bold' : idx % 2 === 1 ? 'bg-black/2' : ''}`}>
+                      <td className="p-2 font-mono whitespace-nowrap">
+                        {w.label}〜
+                        {idx === 0 && <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-primary-600 text-white font-bold">最新</span>}
+                      </td>
+                      <td className="p-2 text-right font-mono text-primary-700">{w.matches}</td>
+                      <td className="p-2 text-right font-mono">{w.people}</td>
+                      <td className="p-2 text-right font-mono text-emerald-600">{w.firstTime}</td>
+                      <td className="p-2 text-right font-mono text-primary-600">{w.secondTime}</td>
+                      <td className="p-2 text-right font-mono">{w.joined}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -140,18 +176,33 @@ export default function OpsSummaryPanel() {
             <p className="text-[11px] text-muted-strong">参加は、その週に1試合以上出た人数。2回目は、2日目の出場がその週だった人数。</p>
           </section>
 
-          {/* 初参加した人がまた来たか */}
-          <section className="bg-surface border border-border rounded-2xl p-4 space-y-2">
-            <h3 className="text-sm font-black text-foreground">初参加した人が2回目に来たか（初参加の月ごと）</h3>
-            <div className="space-y-1">
-              {data.monthly.map((m) => (
-                <div key={m.month} className="flex items-center justify-between text-xs border-b border-border/60 py-1">
-                  <span className="font-mono">{m.month.replace('-', '/')}</span>
-                  <span>初参加 <b className="font-mono">{m.firstTime}</b>人 → 2回目 <b className="font-mono">{m.cameBack}</b>人
-                    <span className="text-faint ml-1">({m.firstTime ? Math.round((m.cameBack / m.firstTime) * 100) : 0}%)</span>
-                  </span>
-                </div>
-              ))}
+          {/* 初参加した人がまた来たか（定着率プログレスバー付き） */}
+          <section className="bg-surface border border-border rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-foreground">初参加した人が2回目に来たか（リピート定着率）</h3>
+              <span className="text-[11px] text-muted-strong">初参加の月ごと</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {data.monthly.map((m) => {
+                const pct = m.firstTime ? Math.round((m.cameBack / m.firstTime) * 100) : 0;
+                return (
+                  <div key={m.month} className="p-2.5 rounded-xl border border-border/80 bg-black/2 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-mono font-bold text-foreground">{m.month.replace('-', '/')}</span>
+                      <span className="text-muted-strong">
+                        初参加 <b className="font-mono text-foreground">{m.firstTime}</b>名 ➔ 2回目 <b className="font-mono text-primary-600">{m.cameBack}</b>名
+                      </span>
+                      <span className={`font-mono font-black text-xs ${pct >= 50 ? 'text-emerald-600' : 'text-primary-600'}`}>{pct}%</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-black/8 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${pct >= 50 ? 'bg-emerald-500' : 'bg-primary-500'}`} 
+                        style={{ width: `${Math.min(pct, 100)}%` }} 
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <p className="text-[11px] text-muted-strong">直近の月は、まだ2回目の機会が少ないので低めに出ます。</p>
           </section>

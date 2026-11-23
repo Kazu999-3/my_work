@@ -7,10 +7,9 @@ import MentorSettingsSection from "./_admin/MentorSettingsSection";
 import MatchmakerSection from "./_admin/MatchmakerSection";
 import OpsSummaryPanel from "./OpsSummaryPanel";
 import ReplayPathsPanel from "./ReplayPathsPanel";
-import PlayerAnalyzerPage from "../analyzer/page";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
-import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Globe, Map as MapIcon, ExternalLink } from "lucide-react";
+import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle, BarChart3, Map as MapIcon, ExternalLink } from "lucide-react";
 import { useAdminRoster, type AdminMessage } from "./_admin/useAdminRoster";
 import { useRosterSync } from "./_admin/useRosterSync";
 import AdminToolbar from "./_admin/AdminToolbar";
@@ -281,16 +280,6 @@ export default function KtmAdminPage() {
             <BarChart3 className="h-4 w-4" /> 運営
           </button>
           <button
-            onClick={() => handleTabChange('analyzer')}
-            className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'analyzer'
-                ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5'
-                : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
-            }`}
-          >
-            <Globe className="h-4 w-4" /> 外部分析
-          </button>
-          <button
             onClick={() => handleTabChange('paths')}
             className={`px-3 sm:px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'paths'
@@ -304,7 +293,6 @@ export default function KtmAdminPage() {
 
         {activeTab === 'history' && <MatchHistoryPanel />}
         {activeTab === 'ops' && <OpsSummaryPanel />}
-        {activeTab === 'analyzer' && <PlayerAnalyzerPage />}
         {activeTab === 'paths' && <ReplayPathsPanel />}
         {activeTab === 'onboarding' && (
           <div className="space-y-6">

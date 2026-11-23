@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Send, ExternalLink, ShieldAlert, Target } from "lucide-react";
+import { RefreshCw, Send, ExternalLink, ShieldAlert, Target, ChevronDown } from "lucide-react";
 import { getRankTier, RANK_TIERS } from "../../lib/periodicCustomCard";
 
 // 管理画面「個別案内」タブ: 各メンバーの個別案内チャンネルの発言状況と、一斉連絡（2026-10-17）。
@@ -194,6 +194,8 @@ export default function OnboardingChannelsPanel() {
   const [excludeRecentCustomNudge, setExcludeRecentCustomNudge] = useState<boolean>(true);
   // 「直近60日」などの判定の基準時刻。描画中に Date.now() を呼ばないよう、読み込んだ時点の時刻を使う
   const [loadedAt, setLoadedAt] = useState<number>(() => Date.now());
+  // 一斉連絡・対面抽出エリアの開閉トグル（デフォルトは閉じ、個別案内の部屋一覧を最優先表示）
+  const [showBroadcast, setShowBroadcast] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -582,8 +584,70 @@ export default function OnboardingChannelsPanel() {
         </div>
       </div>
 
-      {/* 一斉連絡 */}
-      <div className="rounded-xl border border-border bg-black/5 p-4 space-y-3">
+      {/* 📊 クイックサマリーカード（クリックで即座に絞り込み可能） */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div 
+          onClick={() => setFilter('unread')}
+          className={`p-3.5 rounded-2xl border transition cursor-pointer shadow-xs ${filter === 'unread' ? 'bg-danger-500/10 border-danger-500 ring-2 ring-danger-400' : 'bg-surface border-border hover:bg-black/5'}`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-strong font-bold">🔴 未読の個別部屋</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-danger-100 text-danger-700 font-bold">要確認</span>
+          </div>
+          <div className="text-2xl font-black text-danger-600 mt-1">{unreadCount} <span className="text-xs font-normal text-muted-strong">件</span></div>
+        </div>
+
+        <div 
+          onClick={() => setFilter('needsReply')}
+          className={`p-3.5 rounded-2xl border transition cursor-pointer shadow-xs ${filter === 'needsReply' ? 'bg-primary-500/10 border-primary-500 ring-2 ring-primary-400' : 'bg-surface border-border hover:bg-black/5'}`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-strong font-bold">🔵 既読・未返信</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-bold">返信待ち</span>
+          </div>
+          <div className="text-2xl font-black text-primary-600 mt-1">{readNoReplyCount} <span className="text-xs font-normal text-muted-strong">件</span></div>
+        </div>
+
+        <div 
+          onClick={() => setFilter('all')}
+          className={`p-3.5 rounded-2xl border transition cursor-pointer shadow-xs ${filter === 'all' ? 'bg-black/8 border-border-strong' : 'bg-surface border-border hover:bg-black/5'}`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-strong font-bold">📂 全チャンネル</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/5 text-muted-strong">総部屋数</span>
+          </div>
+          <div className="text-2xl font-black text-foreground mt-1">{rows.length} <span className="text-xs font-normal text-muted-strong">件</span></div>
+        </div>
+      </div>
+
+      {/* 📣 一斉連絡・対面抽出トグルバー */}
+      <div className="flex items-center justify-between pt-1">
+        <button
+          type="button"
+          onClick={() => setShowBroadcast(!showBroadcast)}
+          className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-2xs ${
+            showBroadcast || selected.size > 0
+              ? 'bg-primary-100 border-primary-edge text-primary-800'
+              : 'bg-surface border-border hover:bg-black/5 text-muted-strong hover:text-foreground'
+          }`}
+        >
+          <span>📣 一斉連絡・対面抽出ツール</span>
+          {selected.size > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-primary-600 text-white text-[10px] font-bold">
+              {selected.size}件 選択中
+            </span>
+          )}
+          <ChevronDown className={`w-3.5 h-3.5 transform transition-transform duration-300 ${showBroadcast ? 'rotate-180' : ''}`} />
+        </button>
+
+        <span className="text-xs text-muted-strong">
+          {showBroadcast ? 'クリックで折りたたむ' : '必要な時だけ開いて送信・対面抽出できます'}
+        </span>
+      </div>
+
+      {/* 一斉連絡（折りたたみ式） */}
+      {showBroadcast && (
+      <div className="rounded-xl border border-border bg-black/5 p-4 space-y-3 animate-fade-in">
         <div className="text-sm font-bold text-foreground">📣 一斉連絡</div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-strong">送り先: 下の一覧でチェックした人（{selected.size}件）</span>
@@ -803,6 +867,7 @@ export default function OnboardingChannelsPanel() {
           </div>
         )}
       </div>
+      )}
 
       {error && <div className="text-sm rounded-lg border px-3 py-2 bg-danger-100 text-danger-700 border-danger-edge-soft">{error}</div>}
 

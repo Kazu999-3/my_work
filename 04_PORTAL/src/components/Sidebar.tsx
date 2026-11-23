@@ -35,8 +35,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PushOptIn from './PushOptIn';
-import NotificationBell from './NotificationBell';
-import TaskStatusDrawer from './TaskStatusDrawer';
 import ThemeToggle from './ThemeToggle';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
@@ -478,11 +476,7 @@ export default function Sidebar() {
           )}
           <UserAuthWidget collapsed={isCollapsed} />
           {adminChecked && isAdminUser && (
-            <>
-              <TaskStatusDrawer collapsed={isCollapsed} />
-              <NotificationBell collapsed={isCollapsed} />
-              <PushOptIn collapsed={isCollapsed} />
-            </>
+            <PushOptIn collapsed={isCollapsed} />
           )}
         </div>
       </aside>
