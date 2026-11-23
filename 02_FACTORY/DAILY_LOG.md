@@ -1,5 +1,44 @@
 ## 📅 2026-11-23（月）
 
+### ⚡ 【Custom / Bot ✕ Portal：定期カスタム募集文短縮 ＆ 2帯合同1卓（案A・厳格保護②・代表MMR統一）刷新】
+
+**概要**:
+ユーザーからの「全体で10〜19名の場合の合同1卓（初中級サポ枠・格上対面保護）の挙動ブラッシュアップ」「自動投稿メッセージが長すぎるので短縮」の要望および設計合意に基づき、Discord Bot（`03_SYSTEMS/ktm_bot`）と Web ポータル（`04_PORTAL`）を貫くルール統一と機能刷新を実施。あわせて `wrangler deploy --dry-run` で発見した既存の Bot デプロイブロッカー（`recruitCard.js:215`）も解消した。
+
+1. **合意仕様 ＆ 判断の経緯（没理由）**:
+   - **帯の判定基準**: 「最高レーンMMR」ではなくポータルと同じ **代表MMR（`mmr >= 1450`）** にBot・ポータルとも完全統一（不採用案：最高レーンMMR統一 ➔ ポータル名簿・バランサーとズレて二重基準になるため没）。
+   - **10〜19名（1卓合同）のベース帯決定（案A）**: 人数が多い方の帯をベース編成し、同数なら中初級ベースを優先（不採用案：常に中初級優先／常に全員フラット ➔ 上位が多く集まった回や `never` 保護と噛み合わないため没）。
+   - **厳格保護（仕様②）**: マイページ設定 `tier_promotion_pref === 'never'` の中初級メンバーは上位ベース卓に絶対カウント・混入しない（厳格除外で不足時は助っ人募集・中止に回す）。中初級ベース卓へ参加する上位帯は `allow_lower_support === true` 限定で自動オフレーン制限（1450〜1549はメイン除外、1550+はメイン＆サブ除外）を適用。
+   - **募集メッセージ（パターン①）**: 広告調やEmbedとの重複表現を削ぎ落とし、土曜3行・日曜2行＋20:00判定時1通集約（合同成立・中止とも）へ刷新。
+
+2. **修正内容**:
+   - **Bot側 (`03_SYSTEMS/ktm_bot/`)**:
+     - `src/utils/ktmRank.js` / `src/utils/recruitmentLedger.js` / `src/handlers/buttons/periodicRecruit.js`: `getRepresentativeMmr()` 追加と代表MMR統一、`PLAYER_SELECT` へ `tier_promotion_pref,allow_lower_support` 追加、`playerMap` のカード再計算伝播、`combined_*` 観戦合流対応。
+     - `src/utils/recruitmentStatus.js` / `src/ui/embeds.js`: パターン①（土曜3行・日曜2行）へ募集文短縮、`evaluateCombinedStatus()` による案A＋厳格保護②判定実装、合同1卓確定時のバナー（`✅ 合同1卓 開催確定！`＋緑色＋`2部屋目まであと◯名`）と `extractDiscordId` 英数字モックID互換対応。
+     - `src/handlers/jobs/periodicCards.js` / `src/handlers/jobs/eventNotify.js` / `src/handlers/scheduled.js`: フォールバック読み取りの全フィールド化修正、中間リマインドの合同表示＆残り人数修正、土曜20:00判定の合同1卓1通告知・中止1通集約・観戦募集、月曜受付終了の `土曜・実力均等カスタム` 対応と戻り値追加（`None` 解消）。
+     - `src/handlers/buttons/recruitCard.js` L215: 既存コミット `07831504` 由来の `const metadata` 再代入エラー（`wrangler deploy` 失敗原因）を `Object.assign(metadata, ...)` へ修正。
+     - `scripts/dry_run_recruitment_status.mjs`: 案A・厳格保護・代表MMRケースを追加し全検証パス。
+   - **ポータル側 (`04_PORTAL/`)**:
+     - `src/lib/balancer/tierBand.ts` / `src/lib/__tests__/tierBand.test.ts`: 2卓同時開催（3パターン）と1卓独立評価・案A＋厳格保護②による `recommendedMode` / `recommendedBand` / `reasonText` 算出を実装し単体テスト拡充。
+     - `src/app/balancer/page.tsx` / `src/app/balancer/_parts/TableSplitPanel.tsx` / `src/app/api/balancer/route.ts`: 運営ツールを閉じていても常時見える「帯編成ステータスバー（全員フラット切替・帯選び直し）」新設、本戦チーム分け時 `effectiveTable` 自動適用（`SHORTAGE` 時は確認ダイアログ）、`api/balancer` 側での `selectedBand === 'UPPER'` 時 `never` 混入400ブロック実装。
+
+3. **検証結果**:
+   - `npm run dryrun:recruitment --prefix 03_SYSTEMS/ktm_bot`: 全ケース合格（Exit code 0）。
+   - `03_SYSTEMS/ktm_bot/src/**/*.js` 全ファイル `node --check`: エラー0。
+   - `npx wrangler deploy --dry-run`（`03_SYSTEMS/ktm_bot`）: バンドル検証成功（`Total Upload: 334.06 KiB`, Exit code 0）。
+   - `npm test --prefix 04_PORTAL`: 全テスト合格。
+   - `npm run build --prefix 04_PORTAL`: TypeScript 型チェック通過、全64ページ最適化生成完了（Exit code 0）。
+
+- 再利用可能な3行ナレッジ:
+  - 2帯制コミュニティで「人数が中途半端（10〜19名）の1卓開催」と「格差保護（上の帯NG / サポ枠制限）」を両立するには、Botの参加判定・カード表示・ポータルのチーム分けの3層すべてが同一の代表MMR閾値と除外規則を参照するよう単一仕様で貫通させる必要がある。
+  - バランサー画面の運用ルールを折りたたみ（運営ツール）の中に隠したままだと手動押し忘れで保護ルールが効かなくなるため、推奨編成の自動適用＋1行ステータスバーによる常時可視化・オプトアウト切替が最も事故を防ぐ。
+  - Cloudflare Workers は `node --check`（単体構文チェック）では通る型・バンドル制約エラー（`const` 再代入等）を esbuild 段階で弾くため、Bot改修時は必ず `npx wrangler deploy --dry-run` をゲートに含めるべきである。
+- [要検証]: 実際の Discord `#🎮カスタム募集` での土曜募集カード本文短縮表示と、10〜19名ケース（上位4+中初級6、上位6+中初級4）でのバランサー自動適用・20:00判定動作
+- [継続ウォッチ]: GitHub Actions (`KTM Bot Deploy`) での本番 Cloudflare Workers デプロイ成功確認
+- [発信候補]: 「Discord Bot ✕ Web バランサーの10〜19名ハイブリッドマッチングと初心者保護設計」
+
+## 📅 2026-11-23（月）
+
 ### ⚡ 【Balancer：Discord募集メンバーのワンクリック取り込み機能の新設】
 
 **概要**:

@@ -8,12 +8,12 @@ import {
 } from '../../../lib/balancer';
 import { fetchAllRows } from '../../../lib/fetchAll';
 import { reportApiError } from '../../../lib/apiHandler';
-import { getDownwardExcludedRoles } from '../../../lib/balancer/tierBand';
+import { getDownwardExcludedRoles, getPlayerTierBand, normalizeTierPromotionPref } from '../../../lib/balancer/tierBand';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { participants } = body;
+    const { participants, selectedBand } = body;
     
     if (!participants || !Array.isArray(participants) || participants.length < 10) {
       return NextResponse.json({ error: '参加者は最低10人必要です。' }, { status: 400 });
@@ -38,6 +38,27 @@ export async function POST(request: Request) {
 
     if (pError || !playersData) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
+    }
+
+    if (selectedBand === 'UPPER') {
+      const nonSpectatorNames = new Set(
+        participants.filter((p: any) => !p.isSpectatorFixed).map((p: any) => p.name)
+      );
+      const blockedNever = playersData.filter(
+        (p: any) =>
+          nonSpectatorNames.has(p.name) &&
+          getPlayerTierBand(p.mmr) === 'LOWER' &&
+          normalizeTierPromotionPref(p.tier_promotion_pref) === 'never'
+      );
+      if (blockedNever.length > 0) {
+        const blockedNames = blockedNever.map((p: any) => p.name).join(', ');
+        return NextResponse.json(
+          {
+            error: `厳格保護により「上の帯NG」設定の中初級プレイヤー（${blockedNames}）を上位帯のチーム分けに含めることはできません。`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // 各参加者の実際の戦績（試合数・勝率）を Supabase から取得・集計

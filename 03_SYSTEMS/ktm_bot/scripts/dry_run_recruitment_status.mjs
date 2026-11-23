@@ -101,17 +101,76 @@ const cases = [
     expectedHeaderSnippet: '募集中',
   },
   {
-    label: '土日差異検証: 帯混在計10名 (上位5名・中初級5名)',
+    label: '土日差異検証: 厳格保護あり混在計10名 (上位5非サポ・中初級5うちnever2)',
     input: [
-      ...Array.from({ length: 5 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
-      ...Array.from({ length: 5 }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`),
+      ...Array.from({ length: 5 }, (_, i) => `- <@HS${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 5 }, (_, i) => `- <@LS${i}> 🟢フル 【シルバー】`),
     ],
-    // 土曜は各ロビー5名で両方未達 (isReady: false)
+    playerMap: new Map([
+      ...Array.from({ length: 5 }, (_, i) => [`HS${i}`, { mmr: 1550, allow_lower_support: false }]),
+      ...Array.from({ length: 5 }, (_, i) => [`LS${i}`, { mmr: 1300, tier_promotion_pref: i < 2 ? 'never' : 'fill_only' }]),
+    ]),
+    // 土曜は厳格保護により上位ベース8名・中初級ベース5名で両方未達 (isReady: false)
     expectedHighReady: false,
     expectedLowReady: false,
     expectedBothReady: false,
+    expectedCombinedMode: 'RECRUITING',
     expectedHeaderSnippet: '募集中',
     // 日曜は帯を分けず全体10名で定員到達 (isReady: true)
+    expectedSunReady: true,
+  },
+  {
+    label: '案A合同1卓: 上位4(サポ4)＋中初級6 ➔ 中初級ベース開催確定',
+    input: [
+      ...Array.from({ length: 4 }, (_, i) => `- <@CUH${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 6 }, (_, i) => `- <@CUL${i}> 🟢フル 【シルバー】`),
+    ],
+    playerMap: new Map([
+      ...Array.from({ length: 4 }, (_, i) => [`CUH${i}`, { mmr: 1500, allow_lower_support: true }]),
+      ...Array.from({ length: 6 }, (_, i) => [`CUL${i}`, { mmr: 1300, tier_promotion_pref: 'never' }]),
+    ]),
+    expectedHighReady: false,
+    expectedLowReady: false,
+    expectedBothReady: false,
+    expectedCombinedReady: true,
+    expectedCombinedMode: 'COMBINED_LOWER',
+    expectedHeaderSnippet: '合同1卓 開催確定！',
+    expectedSunReady: true,
+  },
+  {
+    label: '案A合同1卓: 上位6(非サポ)＋中初級4(繰上OK) ➔ 上位ベース開催確定',
+    input: [
+      ...Array.from({ length: 6 }, (_, i) => `- <@CH${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 4 }, (_, i) => `- <@CL${i}> 🟢フル 【ゴールド】`),
+    ],
+    playerMap: new Map([
+      ...Array.from({ length: 6 }, (_, i) => [`CH${i}`, { mmr: 1550, allow_lower_support: false }]),
+      ...Array.from({ length: 4 }, (_, i) => [`CL${i}`, { mmr: 1400, tier_promotion_pref: i === 0 ? 'mix_ok' : 'fill_only' }]),
+    ]),
+    expectedHighReady: false,
+    expectedLowReady: false,
+    expectedBothReady: false,
+    expectedCombinedReady: true,
+    expectedCombinedMode: 'COMBINED_UPPER',
+    expectedHeaderSnippet: '合同1卓 開催確定！',
+    expectedSunReady: true,
+  },
+  {
+    label: '厳格保護②: 上位6(サポ2)＋中初級4(never 2) ➔ 不成立(募集中)',
+    input: [
+      ...Array.from({ length: 6 }, (_, i) => `- <@NH${i}> 🟢フル 【プラチナ】`),
+      ...Array.from({ length: 4 }, (_, i) => `- <@NL${i}> 🟢フル 【シルバー】`),
+    ],
+    playerMap: new Map([
+      ...Array.from({ length: 6 }, (_, i) => [`NH${i}`, { mmr: 1550, allow_lower_support: i < 2 }]),
+      ...Array.from({ length: 4 }, (_, i) => [`NL${i}`, { mmr: 1350, tier_promotion_pref: i < 2 ? 'never' : 'fill_only' }]),
+    ]),
+    expectedHighReady: false,
+    expectedLowReady: false,
+    expectedBothReady: false,
+    expectedCombinedReady: false,
+    expectedCombinedMode: 'RECRUITING',
+    expectedHeaderSnippet: '募集中',
     expectedSunReady: true,
   },
 ];
@@ -121,7 +180,7 @@ console.log('----|------|------------|---------|-----------|-------------');
 
 for (const dayKey of ['sat', 'sun']) {
   for (const c of cases) {
-    const status = computeDayStatus(c.input, undefined, dayKey);
+    const status = computeDayStatus(c.input, undefined, dayKey, { playerMap: c.playerMap });
     const header = buildDayBanner(dayKey, status, status.dominantTierInfo?.text).split('\n')[0];
     const colorName = COLOR_NAMES[status.color] || `不明(0x${status.color.toString(16)})`;
 
@@ -135,10 +194,10 @@ for (const dayKey of ['sat', 'sun']) {
         fail(`[${dayKey}/${c.label}] 土曜なのにhigh/lowロビーが設定されていません`);
       }
       expectedReady = status.breakdown
-        ? (status.high.isReady || status.low.isReady)
+        ? (status.high.isReady || status.low.isReady || Boolean(status.combined?.isReady))
         : (status.joined >= DAY_CAPACITY);
 
-      // 土曜ロビー別固有のアサーション
+      // 土曜ロビー別・合同固有のアサーション
       if (c.expectedHighReady !== undefined && status.high.isReady !== c.expectedHighReady) {
         fail(`[${dayKey}/${c.label}] high.isReadyが期待と一致しません (実際: ${status.high.isReady}, 期待: ${c.expectedHighReady})`);
       }
@@ -147,6 +206,12 @@ for (const dayKey of ['sat', 'sun']) {
       }
       if (c.expectedBothReady !== undefined && status.isBothReady !== c.expectedBothReady) {
         fail(`[${dayKey}/${c.label}] isBothReadyが期待と一致しません (実際: ${status.isBothReady}, 期待: ${c.expectedBothReady})`);
+      }
+      if (c.expectedCombinedReady !== undefined && Boolean(status.combined?.isReady) !== c.expectedCombinedReady) {
+        fail(`[${dayKey}/${c.label}] combined.isReadyが期待と一致しません (実際: ${status.combined?.isReady}, 期待: ${c.expectedCombinedReady})`);
+      }
+      if (c.expectedCombinedMode !== undefined && status.combined?.mode !== c.expectedCombinedMode) {
+        fail(`[${dayKey}/${c.label}] combined.modeが期待と一致しません (実際: ${status.combined?.mode}, 期待: ${c.expectedCombinedMode})`);
       }
       if (c.expectedHeaderSnippet && !header.includes(c.expectedHeaderSnippet)) {
         fail(`[${dayKey}/${c.label}] 見出しに期待スニペット「${c.expectedHeaderSnippet}」がありません: ${header}`);
@@ -323,6 +388,16 @@ const attrCases = [
     expectedPrimary: 'ADC',
     expectedSecondary: 'ALL',
   },
+  {
+    name: '土曜・代表MMR統一 (mmr 1400 < 1450 かつ mmr_mid 1550 ➔ low)',
+    player: { mmr: 1400, mmr_mid: 1550, role_preferences: { primary: 'MID' } },
+    style: 'full',
+    dayKey: 'sat',
+    expectedLobby: 'low',
+    expectedStyle: 'full',
+    expectedPrimary: 'MID',
+    expectedSecondary: null,
+  },
 ];
 
 for (const ac of attrCases) {
@@ -398,11 +473,11 @@ const mockParticipants = [
 const mockPlayersMap = new Map([
   ...Array.from({ length: 10 }, (_, i) => [
     `high_user_${i}`,
-    { discord_id: `high_user_${i}`, games_mid: 20, mmr_mid: 1550, name: `上位${i}` },
+    { discord_id: `high_user_${i}`, mmr: 1550, games_mid: 20, mmr_mid: 1550, name: `上位${i}` },
   ]),
-  ['low_user_0', { discord_id: 'low_user_0', games_adc: 30, mmr_adc: 1350, name: '初級0' }],
-  ['low_user_1', { discord_id: 'low_user_1', games_top: 5, mmr_top: 1200, name: '初級1' }],
-  ['low_user_2', { discord_id: 'low_user_2', games_sup: 15, mmr_sup: 1300, name: '初級2' }],
+  ['low_user_0', { discord_id: 'low_user_0', mmr: 1350, games_adc: 30, mmr_adc: 1350, name: '初級0' }],
+  ['low_user_1', { discord_id: 'low_user_1', mmr: 1200, games_top: 5, mmr_top: 1200, name: '初級1' }],
+  ['low_user_2', { discord_id: 'low_user_2', mmr: 1300, games_sup: 15, mmr_sup: 1300, name: '初級2' }],
   // low_user_unregistered は未登録（Mapに存在しない）
 ]);
 

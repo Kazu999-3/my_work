@@ -23,9 +23,31 @@ export const DAY_CAPACITY = 10;
 export const BAND_BOUNDARY_MMR = 1450;
 export const LOBBY_CAPACITY = 10;
 
-/** 行またはプレイヤーが上位帯（1450+）か中初級帯（<1450）かを判定 */
-export function getLineBand(line) {
+export function normalizeTierPromotionPref(value) {
+  if (value === 'mix_ok' || value === 'fill_only' || value === 'never') {
+    return value;
+  }
+  return 'fill_only';
+}
+
+export function extractDiscordId(line) {
+  return (line || '').match(/<@!?([A-Za-z0-9_-]+)>/)?.[1] || null;
+}
+
+function getPlayerFromMap(playerMap, discordId) {
+  if (!playerMap || !discordId) return null;
+  if (typeof playerMap.get === 'function') return playerMap.get(discordId) || null;
+  return playerMap[discordId] || null;
+}
+
+/** 行またはプレイヤーが上位帯（代表MMR 1450+）か中初級帯（<1450）かを判定 */
+export function getLineBand(line, playerMap = null) {
   if (!line) return 'low';
+  const discordId = extractDiscordId(line);
+  const playerRow = getPlayerFromMap(playerMap, discordId);
+  if (playerRow && playerRow.mmr != null && Number.isFinite(Number(playerRow.mmr))) {
+    return Number(playerRow.mmr) >= BAND_BOUNDARY_MMR ? 'high' : 'low';
+  }
   if (/上位帯/.test(line)) return 'high';
   if (/中初級帯/.test(line)) return 'low';
   const norm = getNormalizedTier(line);
@@ -338,6 +360,9 @@ export function parseLobbyBreakdown(lines, capacity = LOBBY_CAPACITY) {
   const match2LateLines = sortEntryLinesByLane(
     eligible.filter((e) => eff(e) === 'late').map((e) => e.line)
   );
+  const match2Lines = sortEntryLinesByLane(
+    eligible.filter((e) => eff(e) !== 'single').map((e) => e.line)
+  );
 
   const isMatch1Ready = match1Count >= capacity;
   const isMatch2Ready = match2Count >= capacity;
@@ -351,6 +376,7 @@ export function parseLobbyBreakdown(lines, capacity = LOBBY_CAPACITY) {
     spectatorLines: sortEntryLinesByLane(spectator.map((e) => e.line)),
     match1Lines,
     match2LateLines,
+    match2Lines,
     hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
     hasSpectator: spectator.length > 0,
     match1Count,
@@ -369,7 +395,8 @@ export function parseLobbyBreakdown(lines, capacity = LOBBY_CAPACITY) {
 /**
  * 募集カード全体の参加者行から、上位帯ロビー・中初級帯ロビー・観戦枠を分離して集計する。
  */
-export function parseEntryBreakdown(countOrLines, capacity = LOBBY_CAPACITY) {
+export function parseEntryBreakdown(countOrLines, capacity = LOBBY_CAPACITY, options = {}) {
+  const playerMap = options?.playerMap || null;
   let highLines = [];
   let lowLines = [];
   let spectatorLines = [];
@@ -382,7 +409,7 @@ export function parseEntryBreakdown(countOrLines, capacity = LOBBY_CAPACITY) {
     for (const raw of countOrLines) {
       if (isSpectatorMatch(raw)) {
         spectatorLines.push(raw);
-      } else if (getLineBand(raw) === 'high') {
+      } else if (getLineBand(raw, playerMap) === 'high') {
         highLines.push(raw);
       } else {
         lowLines.push(raw);
@@ -431,11 +458,175 @@ export function parseEntryBreakdown(countOrLines, capacity = LOBBY_CAPACITY) {
 }
 
 /**
- * 1日分（カード1枚分）の募集状態を計算する。
- * 土曜（本戦）はロビー単位（上位帯/中初級帯）で計算し、日曜（お祭り）は帯を分けず全体で計算する。
+ * 土曜（2帯制）における10〜19名時の合同1卓成立・厳格保護評価（案A ＋ 厳格保護②）
  */
-export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey = 'sat') {
+export function evaluateCombinedStatus(high, low, capacity = LOBBY_CAPACITY, playerMap = null) {
+  const splitForCombined = (highLines, lowLines) => {
+    const promotableLow = [];
+    const neverLow = [];
+    for (const line of lowLines || []) {
+      const p = getPlayerFromMap(playerMap, extractDiscordId(line));
+      const pref = normalizeTierPromotionPref(p?.tier_promotion_pref);
+      if (pref === 'never') {
+        neverLow.push(line);
+      } else {
+        promotableLow.push({
+          line,
+          pref,
+          mmr: p?.mmr != null && Number.isFinite(Number(p.mmr)) ? Number(p.mmr) : 1200,
+        });
+      }
+    }
+    promotableLow.sort((a, b) => {
+      const pa = a.pref === 'mix_ok' ? 0 : 1;
+      const pb = b.pref === 'mix_ok' ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      return b.mmr - a.mmr;
+    });
+
+    const supportHigh = [];
+    const nonSupportHigh = [];
+    for (const line of highLines || []) {
+      const p = getPlayerFromMap(playerMap, extractDiscordId(line));
+      if (p?.allow_lower_support) {
+        supportHigh.push({
+          line,
+          mmr: p?.mmr != null && Number.isFinite(Number(p.mmr)) ? Number(p.mmr) : BAND_BOUNDARY_MMR,
+        });
+      } else {
+        nonSupportHigh.push(line);
+      }
+    }
+    supportHigh.sort((a, b) => a.mmr - b.mmr);
+
+    const highArr = [...(highLines || [])];
+    const lowArr = [...(lowLines || [])];
+    const upperBaseLines = [...highArr, ...promotableLow.map((x) => x.line)];
+    const lowerBaseLines = [...lowArr, ...supportHigh.map((x) => x.line)];
+
+    return {
+      highNativeCount: highArr.length,
+      lowNativeCount: lowArr.length,
+      promotableLowLines: promotableLow.map((x) => x.line),
+      neverLowLines: neverLow,
+      supportHighLines: supportHigh.map((x) => x.line),
+      nonSupportHighLines: nonSupportHigh,
+      upperBaseLines,
+      lowerBaseLines,
+      upperReady: upperBaseLines.length >= capacity,
+      lowerReady: lowerBaseLines.length >= capacity,
+    };
+  };
+
+  const m1 = splitForCombined(high?.match1Lines, low?.match1Lines);
+  const m2 = splitForCombined(high?.match2Lines, low?.match2Lines);
+
+  let mode = 'RECRUITING';
+  let isReady = false;
+  let base = null;
+  let selectedLines = [];
+  let excludedLines = [];
+  let match1ActiveCount = Math.max(m1.upperBaseLines.length, m1.lowerBaseLines.length);
+  let match2ActiveCount = Math.max(m2.upperBaseLines.length, m2.lowerBaseLines.length);
+
+  if (high?.isReady && low?.isReady) {
+    mode = 'BOTH';
+  } else if (high?.isReady) {
+    mode = 'HIGH_ONLY';
+  } else if (low?.isReady) {
+    mode = 'LOW_ONLY';
+  } else if (m1.lowerReady && m1.upperReady) {
+    // 案A: ネイティブ人数が多い方をベース（同数なら中初級ベース優先）
+    if (m1.lowNativeCount >= m1.highNativeCount) {
+      mode = 'COMBINED_LOWER';
+      base = 'lower';
+      selectedLines = m1.lowerBaseLines;
+      excludedLines = m1.nonSupportHighLines;
+      match1ActiveCount = m1.lowerBaseLines.length;
+    } else {
+      mode = 'COMBINED_UPPER';
+      base = 'upper';
+      selectedLines = m1.upperBaseLines;
+      excludedLines = m1.neverLowLines;
+      match1ActiveCount = m1.upperBaseLines.length;
+    }
+    isReady = true;
+  } else if (m1.lowerReady) {
+    mode = 'COMBINED_LOWER';
+    base = 'lower';
+    selectedLines = m1.lowerBaseLines;
+    excludedLines = m1.nonSupportHighLines;
+    match1ActiveCount = m1.lowerBaseLines.length;
+    isReady = true;
+  } else if (m1.upperReady) {
+    mode = 'COMBINED_UPPER';
+    base = 'upper';
+    selectedLines = m1.upperBaseLines;
+    excludedLines = m1.neverLowLines;
+    match1ActiveCount = m1.upperBaseLines.length;
+    isReady = true;
+  } else if (m2.lowerReady || m2.upperReady) {
+    isReady = true;
+    const chooseLower = m2.lowerReady && (!m2.upperReady || m2.lowNativeCount >= m2.highNativeCount);
+    if (chooseLower) {
+      mode = 'COMBINED_MATCH2_LOWER';
+      base = 'lower';
+      selectedLines = m2.lowerBaseLines;
+      excludedLines = m2.nonSupportHighLines;
+      match2ActiveCount = m2.lowerBaseLines.length;
+    } else {
+      mode = 'COMBINED_MATCH2_UPPER';
+      base = 'upper';
+      selectedLines = m2.upperBaseLines;
+      excludedLines = m2.neverLowLines;
+      match2ActiveCount = m2.upperBaseLines.length;
+    }
+  }
+
+  const upperShortfall = Math.max(0, capacity - m1.upperBaseLines.length);
+  const lowerShortfall = Math.max(0, capacity - m1.lowerBaseLines.length);
+  const bestShortfall = Math.min(upperShortfall, lowerShortfall);
+  let bestBase = 'lower';
+  if (upperShortfall < lowerShortfall) {
+    bestBase = 'upper';
+  } else if (upperShortfall === lowerShortfall && m1.highNativeCount > m1.lowNativeCount) {
+    bestBase = 'upper';
+  }
+  const bestCount = bestBase === 'lower' ? m1.lowerBaseLines.length : m1.upperBaseLines.length;
+
+  return {
+    mode,
+    isReady,
+    base,
+    selectedLines,
+    excludedLines,
+    match1ActiveCount,
+    match2ActiveCount,
+    highNativeM1Count: m1.highNativeCount,
+    lowNativeM1Count: m1.lowNativeCount,
+    promotableLowCount: m1.promotableLowLines.length,
+    neverLowCount: m1.neverLowLines.length,
+    supportHighCount: m1.supportHighLines.length,
+    nonSupportHighCount: m1.nonSupportHighLines.length,
+    upperBaseM1Count: m1.upperBaseLines.length,
+    lowerBaseM1Count: m1.lowerBaseLines.length,
+    upperShortfall,
+    lowerShortfall,
+    bestShortfall,
+    bestBase,
+    bestCount,
+    m1,
+    m2,
+  };
+}
+
+/**
+ * 1日分（カード1枚分）の募集状態を計算する。
+ * 土曜（本戦）はロビー単位（上位帯/中初級帯）+ 案A合同1卓で計算し、日曜（お祭り）は帯を分けず全体で計算する。
+ */
+export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey = 'sat', options = {}) {
   const recruitingColor = dayKey === 'sun' ? RECRUITMENT_COLORS.recruitingSun : RECRUITMENT_COLORS.recruitingSat;
+  const playerMap = options?.playerMap || null;
 
   // 日曜（お祭り枠）はランク不問・帯分けなし（単一集計）
   if (dayKey === 'sun') {
@@ -455,6 +646,7 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
         breakdown,
         high: null,
         low: null,
+        combined: null,
         spectator: { total: breakdown.spectatorTotal, lines: breakdown.spectatorLines },
         dominantTierInfo: { key: '', text: '', rangeText: '' },
       };
@@ -473,19 +665,21 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
       breakdown: null,
       high: null,
       low: null,
+      combined: null,
       dominantTierInfo: { key: '', text: '', rangeText: '' },
     };
   }
 
-  // 土曜（実力均等カスタム）: 2ロビー制（上位帯/中初級帯）
+  // 土曜（実力均等カスタム）: 2ロビー制（上位帯/中初級帯）＋ 案A厳格合同1卓
   if (Array.isArray(countOrLines) || (countOrLines && typeof countOrLines === 'object')) {
     const dominantTierInfo = { key: '', text: '', rangeText: '' };
-    const breakdown = parseEntryBreakdown(countOrLines, capacity);
+    const breakdown = parseEntryBreakdown(countOrLines, capacity, { playerMap });
     const high = breakdown.high;
     const low = breakdown.low;
+    const combined = evaluateCombinedStatus(high, low, capacity, playerMap);
     const joined = high.joined + low.joined;
-    const remaining = high.remaining + low.remaining;
-    const isReady = high.isReady || low.isReady;
+    const isReady = high.isReady || low.isReady || combined.isReady;
+    const remaining = isReady ? 0 : combined.bestShortfall;
 
     return {
       total: breakdown.total,
@@ -499,6 +693,7 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
       breakdown,
       high,
       low,
+      combined,
       spectator: breakdown.spectator,
       dominantTierInfo,
     };
@@ -513,6 +708,18 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
   const lowJoined = Math.max(0, num - capacity);
   const highStatus = parseLobbyBreakdown(Array.from({ length: highJoined }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`), capacity);
   const lowStatus = parseLobbyBreakdown(Array.from({ length: lowJoined }, (_, i) => `- <@L${i}> 🟢フル 【シルバー】`), capacity);
+  const fallbackCombined = {
+    mode: num >= capacity * 2 ? 'BOTH' : num >= capacity ? 'HIGH_ONLY' : 'RECRUITING',
+    isReady: false,
+    base: null,
+    selectedLines: [],
+    excludedLines: [],
+    match1ActiveCount: num,
+    match2ActiveCount: num,
+    bestShortfall: Math.max(0, capacity - num),
+    bestBase: 'lower',
+    bestCount: num,
+  };
 
   return {
     total: num,
@@ -526,13 +733,14 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
     breakdown: null,
     high: highStatus,
     low: lowStatus,
+    combined: fallbackCombined,
     dominantTierInfo: { key: '', text: '', rangeText: '' },
   };
 }
 
 /**
  * カードの description 先頭に置くステータスバナー。
- * 土曜はロビー単位（上位帯/中初級帯）の集計状況を併記し、日曜は全体の集計状況を表示する。
+ * 土曜はロビー単位（上位帯/中初級帯）と合同1卓確定状況を併記し、日曜は全体の集計状況を表示する。
  */
 export function buildDayBanner(dayKey, status, dominantTierText = '') {
   const def = getDayDef(dayKey);
@@ -570,7 +778,8 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
     return `${header}\n\`${bar}\` ${state}`;
   }
 
-  // 土曜: 2ロビー併記バナー
+  // 土曜: 2ロビー ＋ 合同1卓（案A）併記バナー
+  const combined = status.combined;
   let header;
   if (high?.isReady && low?.isReady) {
     header = '✅ **両ロビー 開催確定！**';
@@ -578,15 +787,30 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
     header = '✅ **上位帯 開催確定！**（中初級帯 募集中）';
   } else if (low?.isReady) {
     header = '✅ **中初級帯 開催確定！**（上位帯 募集中）';
+  } else if (combined?.mode === 'COMBINED_LOWER') {
+    header = `✅ **合同1卓 開催確定！**（計${combined.match1ActiveCount}名・中初級ベース ／ 各帯10名で2部屋開催）`;
+  } else if (combined?.mode === 'COMBINED_UPPER') {
+    header = `✅ **合同1卓 開催確定！**（計${combined.match1ActiveCount}名・上位ベース ／ 各帯10名で2部屋開催）`;
+  } else if (combined?.mode === 'COMBINED_MATCH2_LOWER') {
+    header = `✅ **合同1卓 第2戦から開催確定！**（計${combined.match2ActiveCount}名・中初級ベース）`;
+  } else if (combined?.mode === 'COMBINED_MATCH2_UPPER') {
+    header = `✅ **合同1卓 第2戦から開催確定！**（計${combined.match2ActiveCount}名・上位ベース）`;
+  } else if (combined && typeof combined.bestShortfall === 'number' && status.joined > 0) {
+    header = `🔥 **募集中**（合同1卓まであと${combined.bestShortfall}名）`;
   } else {
     header = '🔥 **募集中**';
   }
 
+  const isAnyReady = Boolean(status.isReady);
   const lobbyLine = (icon, name, s) => {
     const ready = s.isMatch1Ready || s.isReady;
     const remaining = s.match1Remaining ?? s.remaining;
     const count = s.match1Count ?? s.joined;
-    const state = ready ? '**開催確定！**' : `あと${remaining}名`;
+    const state = ready
+      ? '**開催確定！**'
+      : isAnyReady
+        ? `2部屋目まであと${remaining}名`
+        : `あと${remaining}名`;
     return `${icon} **${name}**: \`${renderMiniBar(count, DAY_CAPACITY)}\` ${count}/${DAY_CAPACITY}名 → ${state}`;
   };
 
@@ -694,28 +918,15 @@ function buildWeekendTarget(dayKey, jstNow, diffDays) {
  * @param {string|number} [notificationRoleId] メンション対象のロールID
  */
 export function buildRecruitmentContent(target, notificationRoleId) {
-  const { def, label } = target;
-  const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
+  const mentionPrefix = notificationRoleId ? `<@&${notificationRoleId}> ` : '';
 
   if (target.dayKey === 'sat') {
-    return `📢 **【${def.shortName}】${label} 21:00〜** ${mention}
-
-🔰 **「中初級帯だけど迷惑かけない…？」**
-➔ **まったく気にせず押してください！**
-KTMバランサーがチーム戦力を【五分五分】に自動調整するため、誰が入ってもフェアで楽しい試合になります！
-（20人集まれば「初中級部屋」「上級部屋」の2部屋同時開催！）
-
-🕒 **開催時間**: 21:00〜3戦ほど（24時頃目安）
-💡 **気軽な参加大歓迎**: 「1戦だけ」「ご飯終わりの2戦目から」の途中参加・抜けも自由です！
-🛡️ **対面安心**: 格上との対面や、上の帯の試合への参加の希望は、Portalのマイページ（希望設定）でいつでも変更・設定できます。`.trim();
+    return `${mentionPrefix}今週の土曜カスタムです⚔️
+🔰「まだ不慣れだけど入っていい？」→ ぜんぜんOKです！実力は五分五分に組むので気軽に押してください。
+21:00〜 3戦ほど（24時頃めやす）／1戦だけ・途中合流も自由です！`;
   }
 
   // 日曜は通知二重鳴り防止のためメンションを省く
-  return `📢 **【${def.shortName}】${label} 21:00〜**
-
-🎪 **勝敗気にせずワイワイ遊ぶお祭り枠！** レート変動なし・ランク不問✨
-不慣れなチャンプやレーンの練習、特殊ルール・ARAMなどなんでも大歓迎です！
-
-🔰 **「カスタム初めてで不安…」という方のデビューにも最適！**
-「まずは1戦だけ覗いてみる」も大歓迎ですので、ぜひ気軽にボタンを押してみてください！`.trim();
+  return `今週の日曜はお祭りカスタムです🎪（ランク不問・レート変動なし）
+🔰 カスタム初参加や、普段やらないチャンプの練習にもぴったり。1戦だけでも気軽にどうぞ！`;
 }

@@ -20,13 +20,18 @@ export default function TableSplitPanel({
   return (
     <div className="bg-surface border border-primary-edge-soft rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-black text-primary-700">
-            🏟️ 帯分けロビー編成（参加 {tableSplit.total}人 / 基準 MMR {TIER_BAND_THRESHOLD}）
-          </span>
-          <span className="text-[10px] text-muted-strong">
-            上位帯不足時は格上許可ONからMMR近い順に自動繰り上げ ／ 格下サポートはオフレーン制限
-          </span>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-black text-primary-700">
+              🏟️ 帯分けロビー編成（参加 {tableSplit.total}人 / 代表MMR {TIER_BAND_THRESHOLD}基準）
+            </span>
+            <span className="text-[10px] text-muted-strong">
+              上位帯不足時は上の帯OK優先で繰り上げ ／ 中初級サポ許可はオフレーン制限
+            </span>
+          </div>
+          <div className="text-[11px] font-bold text-foreground-soft">
+            {tableSplit.reasonText}
+          </div>
         </div>
         {selectedTable && (
           <button
@@ -42,12 +47,17 @@ export default function TableSplitPanel({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {[tableSplit.upper, tableSplit.lower].map((t) => {
           const isSelected = selectedTable?.label === t.label;
+          const isRecommended = tableSplit.recommendedBand === t.band;
           const canSelect = t.members.length >= 10;
           return (
             <div
               key={t.label}
               className={`rounded-xl border p-3 transition ${
-                isSelected ? "border-primary-edge-strong bg-primary-100/60" : "border-border bg-black/[0.03]"
+                isSelected
+                  ? "border-primary-edge-strong bg-primary-100/60"
+                  : isRecommended
+                    ? "border-success-edge bg-success-500/5"
+                    : "border-border bg-black/[0.03]"
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-2">
@@ -55,6 +65,19 @@ export default function TableSplitPanel({
                   <span className="text-xs font-black text-foreground">
                     {t.label}（{t.members.length}名）
                   </span>
+                  {isRecommended && (
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-success-600 text-white">
+                      ⭐ おすすめ
+                    </span>
+                  )}
+                  {t.band === 'UPPER' && t.excludedNeverCount > 0 && (
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning-500/15 text-warning-700 border border-warning-edge-soft"
+                      title="マイページで「上の帯NG」設定の中初級メンバーは厳格保護により除外されています"
+                    >
+                      🛡️ 上の帯NG除外 {t.excludedNeverCount}名
+                    </span>
+                  )}
                   {t.promotedIds.length > 0 && (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success-500/15 text-success-700 border border-success-edge-soft">
                       ⬆️ 繰り上げ +{t.promotedIds.length}

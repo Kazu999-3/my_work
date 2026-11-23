@@ -212,7 +212,7 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     if (playerRow && !playerMap.has(userId)) {
       playerMap.set(userId, playerRow);
     }
-    metadata = rebuildAdhocMetadataFromDb(metadata, activeAfter, playerMap);
+    Object.assign(metadata, rebuildAdhocMetadataFromDb(metadata, activeAfter, playerMap));
   } else {
     // ── フォールバック（DB未移行カード等: 従来の本文パース） ──
     const refreshJoinMetadata = async () => {

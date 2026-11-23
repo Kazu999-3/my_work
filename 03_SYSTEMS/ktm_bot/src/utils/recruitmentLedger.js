@@ -6,11 +6,11 @@
  */
 
 import { fetchSupabase } from './supabase.js';
-import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from './ktmRank.js';
+import { getKtmRank, getRepresentativeMmr, getPlayerExperienceBadge, getPlayerActiveMark } from './ktmRank.js';
 import { RANK_SHORT_JP_MAP, RANK_JP_MAP } from './recruitmentStatus.js';
 
 export const BAND_BOUNDARY_MMR = 1450;
-export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,allow_higher';
+export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,allow_higher,tier_promotion_pref,allow_lower_support';
 
 /**
  * プレイヤー情報と参加形態から、DB（recruitment_participants）に保存する属性を決定する純粋関数
@@ -30,7 +30,7 @@ export function determineParticipantAttributes(playerRow, participationStyle, da
   let secondaryLane = null;
 
   if (playerRow) {
-    const mmr = getHighestLaneMmr(playerRow);
+    const mmr = getRepresentativeMmr(playerRow);
     if (typeof mmr === 'number' && !Number.isNaN(mmr)) {
       estimatedMmr = mmr;
       const tier = getKtmRank(mmr);
@@ -182,7 +182,7 @@ export function formatParticipantDisplayLine(participant, playerRow, def) {
       const shortName = RANK_SHORT_JP_MAP[tierName] || RANK_JP_MAP[tierName] || tierName;
       rankStr = ` 【${shortName}】`;
     } else if (playerRow) {
-      const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);
+      const tier = getKtmRank(getRepresentativeMmr(playerRow) ?? 1200);
       if (tier?.name) {
         const shortName = RANK_SHORT_JP_MAP[tier.name] || RANK_JP_MAP[tier.name] || tier.name;
         rankStr = ` 【${shortName}】`;

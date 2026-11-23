@@ -3,7 +3,7 @@ import { sendDiscordMessage, sendInteractionFollowup } from '../../utils/api.js'
 import { fetchSupabase } from '../../utils/supabase.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, applyDayCardState } from '../../ui/embeds.js';
 import { parseMessageData } from '../../utils/helpers.js';
-import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../../utils/ktmRank.js';
+import { getKtmRank, getRepresentativeMmr, getPlayerExperienceBadge } from '../../utils/ktmRank.js';
 import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP, RANK_JP_MAP } from '../../utils/recruitmentStatus.js';
 import { cleanupOldReminderMessages } from '../scheduled.js';
 import { notifyAdminError } from '../../utils/alert.js';
@@ -44,17 +44,17 @@ function readDayEntryLines(embed) {
   });
 }
 
-const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher';
+const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher,tier_promotion_pref,allow_lower_support';
 
 /** 名簿行の「経験バッジ・ランク（土曜のみ）・希望レーン」部分。playerRow が無い（未登録）時は 🔰 だけ */
 function buildEntrySuffix(playerRow, def) {
   const expBadgeStr = ` ${getPlayerExperienceBadge(playerRow).short}`;
 
-  // ランク表記は土曜（最多ランク帯を基準にチーム分けする）でのみ意味を持つ。
+  // ランク表記は土曜（代表MMRで帯分け・チーム分けする）でのみ意味を持つ。
   // 日曜はランク不問のお祭り枠なので出さない。
   let rankStr = "";
   if (def.showRank && playerRow) {
-    const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);
+    const tier = getKtmRank(getRepresentativeMmr(playerRow) ?? 1200);
     if (tier && tier.name) {
       const shortName = RANK_SHORT_JP_MAP[tier.name] || RANK_JP_MAP[tier.name] || tier.name;
       rankStr = ` 【${shortName}】`;
@@ -106,11 +106,11 @@ function buildEntrySuffix(playerRow, def) {
 async function refreshEntryLines(env, lines, def) {
   const tailRe = /<@(\d+)>(.*)$/;
   const ids = [...new Set(lines.map((l) => l.match(tailRe)?.[1]).filter(Boolean))];
-  if (ids.length === 0) return lines;
+  if (ids.length === 0) return { lines, playerMap: new Map() };
   const rows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${ids.join(',')})&select=${PLAYER_SELECT}`).catch(() => null);
-  if (!rows || rows.length === 0) return lines; // 読めなければ今の表記のまま
+  if (!rows || rows.length === 0) return { lines, playerMap: new Map() }; // 読めなければ今の表記のまま
   const byId = new Map(rows.map((r) => [r.discord_id, r]));
-  return lines.map((l) => {
+  const updatedLines = lines.map((l) => {
     const m = l.match(tailRe);
     if (!m) return l;
     if (/フル|1戦のみ|途中参加|観戦/.test(m[2])) return l;
@@ -119,6 +119,7 @@ async function refreshEntryLines(env, lines, def) {
     const { expBadgeStr, rankStr, lanePrefStr } = buildEntrySuffix(row, def);
     return l.replace(tailRe, `<@${m[1]}>${expBadgeStr}${rankStr}${lanePrefStr}`);
   });
+  return { lines: updatedLines, playerMap: byId };
 }
 
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
@@ -129,7 +130,15 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
     const dayKey = parts[1] || 'sat';
     const lobbyKey = parts[2] || 'high';
     const def = getDayDef(dayKey);
-    const lobbyName = lobbyKey === 'high' ? '上位帯ロビー' : '中初級帯ロビー';
+    const lobbyName = lobbyKey === 'combined_upper'
+      ? '合同1卓（上位ベース）'
+      : lobbyKey === 'combined_lower'
+        ? '合同1卓（中初級ベース）'
+        : lobbyKey === 'all'
+          ? def.shortName
+          : lobbyKey === 'high'
+            ? '上位帯ロビー'
+            : '中初級帯ロビー';
 
     const nowJst = new Date(Date.now() + 9 * 3600 * 1000);
     if (nowJst.getUTCHours() >= 21) {
@@ -180,7 +189,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             playerMap.set(userId, playerRow);
           }
           const nextLines = buildDisplayLinesFromDb(activeParticipants, playerMap, def);
-          const stateRes = applyDayCardState(targetEmbed, dayKey, nextLines);
+          const stateRes = applyDayCardState(targetEmbed, dayKey, nextLines, { playerMap });
           nextStatus = stateRes.status;
         } else {
           // フォールバック（DB未移行カード）
@@ -201,8 +210,11 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           const nextLines = currentLines.filter((l) => !l.includes(userMention));
           nextLines.push(entryLine);
 
-          const healedLines = await refreshEntryLines(env, nextLines, def);
-          const stateRes = applyDayCardState(targetEmbed, dayKey, healedLines);
+          const { lines: healedLines, playerMap } = await refreshEntryLines(env, nextLines, def);
+          if (playerRow && !playerMap.has(userId)) {
+            playerMap.set(userId, playerRow);
+          }
+          const stateRes = applyDayCardState(targetEmbed, dayKey, healedLines, { playerMap });
           nextStatus = stateRes.status;
         }
 
@@ -212,14 +224,27 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           allowed_mentions: { roles: [] }
         });
 
+        const isCombinedLobby = lobbyKey === 'combined_upper' || lobbyKey === 'combined_lower';
+        const isAllLobby = lobbyKey === 'all' || dayKey === 'sun';
         const targetLobby = lobbyKey === 'high' ? nextStatus.high : nextStatus.low;
-        if (targetLobby && targetLobby.match1Count >= DAY_CAPACITY) {
+        const lobbyReady = isCombinedLobby
+          ? Boolean(nextStatus.combined?.isReady)
+          : isAllLobby
+            ? Boolean(nextStatus.isReady)
+            : Boolean(targetLobby && targetLobby.match1Count >= DAY_CAPACITY);
+        const matchLinesForAnnounce = isCombinedLobby
+          ? (nextStatus.combined?.selectedLines || [])
+          : isAllLobby
+            ? (nextStatus.breakdown?.match1Lines || [])
+            : (targetLobby?.match1Lines || []);
+
+        if (lobbyReady) {
           const recent = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }).then(r => r.json()).catch(() => []);
-          const alreadyAnnounced = (recent || []).some(m => m.content?.includes(`${lobbyName} 開催確定！`));
+          const alreadyAnnounced = (recent || []).some(m => m.content?.includes(`${lobbyName} 開催確定！`) || m.content?.includes('合同1卓 開催確定！'));
           if (!alreadyAnnounced) {
-            const attendeeIds = (targetLobby.match1Lines || []).map(l => l.match(/<@(\d+)>/)?.[1]).filter(Boolean);
+            const attendeeIds = matchLinesForAnnounce.map(l => l.match(/<@(\d+)>/)?.[1]).filter(Boolean);
             const attendeeMentions = attendeeIds.length ? `\n\n参加メンバー: ${attendeeIds.map(id => `<@${id}>`).join(' ')}` : '';
             await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
               content: `🎉 **【本日20:00 判定: ${lobbyName} 開催確定！】**\n${def.emoji} **${def.name}（${lobbyName}）** は観戦希望者の参加合流により第1戦メンバーが10名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
@@ -295,7 +320,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
         const msg = await msgRes.json();
         if (!msg.embeds || msg.embeds.length === 0) throw new Error("Embedが見つかりません");
 
-        let currentLines, activityAction = null, rankStr = '', lanePrefStr = '', nextLines, nextStatus, existingLine;
+        let currentLines, activityAction = null, rankStr = '', lanePrefStr = '', nextLines, nextStatus, existingLine, prevPlayerMap = new Map();
 
         if (recruitment) {
           // ── DB駆動モード (SSoT: recruitment_participants) ──
@@ -303,6 +328,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           const activeBefore = await fetchActiveParticipants(env, recruitment.id);
           const playerMapBefore = await fetchPlayerRowsMap(env, activeBefore.map((p) => p.discord_id));
           if (playerRow && !playerMapBefore.has(userId)) playerMapBefore.set(userId, playerRow);
+          prevPlayerMap = playerMapBefore;
           currentLines = buildDisplayLinesFromDb(activeBefore, playerMapBefore, def);
           existingLine = currentLines.find((l) => l.includes(userMention));
           const existingParticipant = activeBefore.find((p) => p.discord_id === userId);
@@ -345,7 +371,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           nextLines = buildDisplayLinesFromDb(activeAfter, playerMapAfter, def);
 
           const targetEmbed = { ...msg.embeds[0] };
-          const stateRes = applyDayCardState(targetEmbed, dayKey, nextLines);
+          const stateRes = applyDayCardState(targetEmbed, dayKey, nextLines, { playerMap: playerMapAfter });
           nextStatus = stateRes.status;
 
           const [satTarget, sunTarget] = resolveWeekendTargets();
@@ -396,8 +422,11 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
               }
             }
 
-            const healedLines = await refreshEntryLines(env, nLines, def);
-            const { status: nStatus } = applyDayCardState(targetEmbed, dayKey, healedLines);
+            const { lines: healedLines, playerMap } = await refreshEntryLines(env, nLines, def);
+            if (playerRow && !playerMap.has(userId)) {
+              playerMap.set(userId, playerRow);
+            }
+            const { status: nStatus } = applyDayCardState(targetEmbed, dayKey, healedLines, { playerMap });
 
             const [satTarget, sunTarget] = resolveWeekendTargets();
             const currentTarget = dayKey === 'sun' ? sunTarget : satTarget;
@@ -409,7 +438,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
               components: interaction.message.components,
               allowed_mentions: { roles: [] }
             });
-            return { currentLines: curLines, activityAction: actAction, rankStr: rStr, lanePrefStr: lStr, nextLines: nLines, nextStatus: nStatus, existingLine: exLine };
+            return { currentLines: curLines, activityAction: actAction, rankStr: rStr, lanePrefStr: lStr, nextLines: nLines, nextStatus: nStatus, existingLine: exLine, playerMap };
           };
 
           const fetchCard = async () => {
@@ -431,6 +460,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           nextLines = res.nextLines;
           nextStatus = res.nextStatus;
           existingLine = res.existingLine;
+          prevPlayerMap = res.playerMap || new Map();
 
           for (let attempt = 0; attempt < 2; attempt++) {
             await new Promise((r) => setTimeout(r, 400 + Math.floor(Math.random() * 600)));
@@ -446,12 +476,13 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             nextLines = retryRes.nextLines;
             nextStatus = retryRes.nextStatus;
             existingLine = retryRes.existingLine;
+            prevPlayerMap = retryRes.playerMap || new Map();
           }
         }
 
         // ⑭ 開催確定後の辞退は Pity（希望レーン優先権）をリセットする（2026-10-16 配線。
         // TODO では「完了」扱いだったが未実装だった）。「確定」は辞退前のカードが開催確定(isReady)だったか。
-        if (activityAction === 'LEAVE' && playerRow && computeDayStatus(currentLines, DAY_CAPACITY, dayKey).isReady) {
+        if (activityAction === 'LEAVE' && playerRow && computeDayStatus(currentLines, DAY_CAPACITY, dayKey, { playerMap: prevPlayerMap }).isReady) {
           try {
             await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`, 'PATCH', { pity: 0 });
             await sendInteractionFollowup(appId, token, {
@@ -501,8 +532,8 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
         }
 
         // ★ あと1名になった瞬間に促進の返信を自動投稿
-        // 土曜はロビー（帯）を名指しし、日曜は従来どおり全体の表記
-        const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, dayKey);
+        // 土曜はロビー（帯）と合同1卓を名指しし、日曜は従来どおり全体の表記
+        const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, dayKey, { playerMap: prevPlayerMap });
         let promptContent = null;
 
         if (dayKey === 'sun') {
@@ -516,9 +547,10 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
           }
         } else {
-          // 土曜（2ロビー制）
+          // 土曜（2ロビー制 + 案A合同1卓）
           const highM1JustOne = nextStatus.high?.match1Remaining === 1 && (!existingLine || prevStatus.high?.match1Remaining !== 1);
           const lowM1JustOne = nextStatus.low?.match1Remaining === 1 && (!existingLine || prevStatus.low?.match1Remaining !== 1);
+          const combinedJustOne = !nextStatus.isReady && nextStatus.combined?.bestShortfall === 1 && (!existingLine || prevStatus.combined?.bestShortfall !== 1);
 
           if (highM1JustOne && lowM1JustOne) {
             promptContent = `🔥 **【${def.shortName}: 上位帯・中初級帯ともにあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
@@ -526,6 +558,9 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
             promptContent = `🔥 **【${def.shortName}: 上位帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
           } else if (lowM1JustOne) {
             promptContent = `🔥 **【${def.shortName}: 中初級帯ロビーがあと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+          } else if (combinedJustOne) {
+            const baseLabel = nextStatus.combined?.bestBase === 'lower' ? '中初級ベース' : '上位ベース';
+            promptContent = `🔥 **【${def.shortName}: あと1名で合同1卓（${baseLabel}）開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
           } else if (nextStatus.high?.match2Remaining === 1 && nextStatus.high?.isMatch1Ready && prevStatus.high?.match2Remaining !== 1) {
             promptContent = `🔥 **【${def.shortName}: 上位帯の第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
           } else if (nextStatus.low?.match2Remaining === 1 && nextStatus.low?.isMatch1Ready && prevStatus.low?.match2Remaining !== 1) {

@@ -76,6 +76,13 @@ export function getTierEmoji(mmr) {
   return TIER_EMOJI[tier.name] || '⬜';
 }
 
+/** プレイヤーレコードから代表MMR（ポータルの総合MMR）を取得する（未設定なら null） */
+export function getRepresentativeMmr(player) {
+  if (!player || player.mmr == null) return null;
+  const m = Number(player.mmr);
+  return Number.isFinite(m) ? m : null;
+}
+
 /** プレイヤーレコードから一番高いレーンのMMR（最高レーンMMR）を取得する */
 export function getHighestLaneMmr(player) {
   if (!player) return 0;

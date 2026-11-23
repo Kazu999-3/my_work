@@ -2,7 +2,7 @@ import { CONFIG } from '../../config.js';
 import { fetchWithRetry } from '../../utils/api.js';
 import { notifyAdminError } from '../../utils/alert.js';
 import { fetchSupabase } from '../../utils/supabase.js';
-import { getDayDef, DAY_CAPACITY, RECRUITMENT_COLORS, resolveWeekendTargets } from '../../utils/recruitmentStatus.js';
+import { getDayDef, DAY_CAPACITY, RECRUITMENT_COLORS, resolveWeekendTargets, extractDiscordId, normalizeTierPromotionPref, BAND_BOUNDARY_MMR } from '../../utils/recruitmentStatus.js';
 import { fetchRecentBotMessages, closePeriodicCard, loadDayRecruitmentSummary, resolveGuildId, cleanupOldReminderMessages } from './periodicCards.js';
 
 // 開催前の中間アナウンス・リマインドと、土日20:00の開催判定
@@ -86,12 +86,18 @@ export async function sendEventUsersNotification(env, options = {}) {
       if (s.target.dayKey === 'sat') {
         const high = s.status.high || { joined: 0, isReady: false, remaining: 10 };
         const low = s.status.low || { joined: 0, isReady: false, remaining: 10 };
-        const highState = high.isReady ? '**✅ 開催確定！**' : `あと${high.remaining}名`;
-        const lowState = low.isReady ? '**✅ 開催確定！**' : `あと${low.remaining}名`;
+        const combined = s.status.combined;
+        const isAnyReady = Boolean(s.status.isReady);
+        const highState = high.isReady ? '**✅ 開催確定！**' : isAnyReady ? `2部屋目まであと${high.remaining}名` : `あと${high.remaining}名`;
+        const lowState = low.isReady ? '**✅ 開催確定！**' : isAnyReady ? `2部屋目まであと${low.remaining}名` : `あと${low.remaining}名`;
+        if (combined?.isReady) {
+          const baseLabel = combined.base === 'lower' ? '中初級ベース' : '上位ベース';
+          lines.push(`　✅ **合同1卓 開催確定済み！**（${baseLabel}・各帯10名で2部屋開催）`);
+        }
         lines.push(
           `　👑 **上位帯ロビー**: **${high.joined}/10名** → ${highState}`,
           `　🌱 **中初級帯ロビー**: **${low.joined}/10名** → ${lowState}`,
-          '　🛡️ **実力均等**: チーム戦力を推定MMRランクで五分五分に自動調整！初心者・中初級帯でも安心して参加できます'
+          '　🛡️ 実力五分五分に自動調整（初心者・中初級帯も安心！）'
         );
       } else {
         const stateText = s.status.isReady ? '**✅ 開催確定！**' : `あと${s.status.remaining}名`;
@@ -113,8 +119,7 @@ export async function sendEventUsersNotification(env, options = {}) {
         dayLines.join('\n\n'),
         '',
         '---',
-        '🔰 **「中初級帯だけど迷惑かけない…？」** ➔ **まったく気にせず押してください！**',
-        '💡 「21:00〜の1戦のみ参加」や「ご飯終わりの途中合流」も大歓迎です！',
+        '🔰 初めてや低ランクの方も遠慮なくどうぞ！1戦のみ・途中参加も自由です。',
       ].join('\n'),
       color: embedColor,
       footer: { text: 'KTM Bot | 週末カスタム リマインド ｜ 各募集カードからエントリーできます' },
@@ -144,15 +149,18 @@ export async function sendEventUsersNotification(env, options = {}) {
       .filter((s) => !s.status.isReady)
       .map((s) => {
         const def = getDayDef(s.target.dayKey);
-        const targetNote = '';
+        if (s.target.dayKey === 'sat') {
+          const shortfall = s.status.combined?.bestShortfall ?? s.status.remaining;
+          return `${def.label} 1卓成立まであと${shortfall}名`;
+        }
         if (s.status.breakdown?.hasBreakdown) {
           const b = s.status.breakdown;
           const parts = [];
           if (!b.isMatch1Ready) parts.push(`第1戦あと${b.match1Remaining}名`);
           if (!b.isMatch2Ready) parts.push(`第2戦あと${b.match2Remaining}名`);
-          return `${def.label}${targetNote} ${parts.join('・')}`;
+          return `${def.label} ${parts.join('・')}`;
         }
-        return `${def.label}${targetNote} あと${s.status.remaining}名`;
+        return `${def.label} あと${s.status.remaining}名`;
       })
       .join(' / ');
 
@@ -441,21 +449,181 @@ export async function checkCustomStatusAt2000(env) {
 
     let decisions = [];
     if (dayKey === 'sat') {
-      const highDecision = evaluateLobbyDecision({
-        lobbyKey: 'high',
-        lobbyName: '上位帯ロビー',
-        lobbyStatus: summary.status.high,
-        spectatorLines: summary.status.spectator?.lines,
-        def,
-      });
-      const lowDecision = evaluateLobbyDecision({
-        lobbyKey: 'low',
-        lobbyName: '中初級帯ロビー',
-        lobbyStatus: summary.status.low,
-        spectatorLines: summary.status.spectator?.lines,
-        def,
-      });
-      decisions = [highDecision, lowDecision];
+      const combined = summary.status.combined;
+      if (combined?.mode === 'BOTH') {
+        decisions = [
+          evaluateLobbyDecision({
+            lobbyKey: 'high',
+            lobbyName: '上位帯ロビー',
+            lobbyStatus: summary.status.high,
+            spectatorLines: summary.status.spectator?.lines,
+            def,
+          }),
+          evaluateLobbyDecision({
+            lobbyKey: 'low',
+            lobbyName: '中初級帯ロビー',
+            lobbyStatus: summary.status.low,
+            spectatorLines: summary.status.spectator?.lines,
+            def,
+          }),
+        ];
+      } else if (combined?.mode === 'HIGH_ONLY' || combined?.mode === 'LOW_ONLY') {
+        decisions = [
+          evaluateLobbyDecision({
+            lobbyKey: 'high',
+            lobbyName: '上位帯ロビー',
+            lobbyStatus: summary.status.high,
+            spectatorLines: summary.status.spectator?.lines,
+            def,
+          }),
+          evaluateLobbyDecision({
+            lobbyKey: 'low',
+            lobbyName: '中初級帯ロビー',
+            lobbyStatus: summary.status.low,
+            spectatorLines: summary.status.spectator?.lines,
+            def,
+          }),
+        ];
+      } else if (combined?.mode === 'COMBINED_LOWER' || combined?.mode === 'COMBINED_UPPER') {
+        const isLower = combined.mode === 'COMBINED_LOWER';
+        const baseTitle = isLower ? '中初級ベース（上位はオフレーン調整）' : '上位ベース（中初級から繰り上げ）';
+        const breakdownText = isLower
+          ? `中初級 ${combined.lowNativeM1Count}名＋上位サポ ${combined.supportHighCount}名`
+          : `上位 ${combined.highNativeM1Count}名＋中初級繰上 ${combined.promotableLowCount}名`;
+        const attendeeIds = idsIn(combined.selectedLines);
+        const excludedIds = idsIn(combined.excludedLines);
+        const excludeNote = excludedIds.length > 0
+          ? `\nℹ️ 条件外（${isLower ? '通常上位' : '上の帯NG'}）の方 ${excludedIds.length}名 は今回は見学・次回優先枠となります。`
+          : '';
+        const attendeeMentions = attendeeIds.length > 0
+          ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
+          : '';
+        decisions = [{
+          type: 'CONFIRMED',
+          action: `合同1卓 開催確定（${isLower ? '中初級ベース' : '上位ベース'}）`,
+          isReady: true,
+          content: `🎉 **【本日20:00 判定: 合同1卓 開催確定！】**\n${def.emoji} **${def.name}** は合計 **${combined.match1ActiveCount}名**（${breakdownText}）集まったため、**${baseTitle}** で1卓開催します！21:00より開始します。ポータルのバランサーでチーム分けを行います。${excludeNote}${attendeeMentions}`,
+          allowed_mentions: { users: attendeeIds },
+        }];
+      } else if (combined?.mode === 'COMBINED_MATCH2_LOWER' || combined?.mode === 'COMBINED_MATCH2_UPPER') {
+        const isLower = combined.mode === 'COMBINED_MATCH2_LOWER';
+        const baseTitle = isLower ? '中初級ベース（上位はオフレーン調整）' : '上位ベース（中初級から繰り上げ）';
+        const attendeeIds = idsIn(combined.selectedLines);
+        const attendeeMentions = attendeeIds.length > 0
+          ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
+          : '';
+        decisions = [{
+          type: 'MATCH2_CONFIRMED',
+          action: `合同1卓 第2戦から開催確定（${isLower ? '中初級ベース' : '上位ベース'}）`,
+          isReady: true,
+          content: `🎉 **【本日20:00 判定: 合同1卓 第2戦から開催確定！】**\n${def.emoji} **${def.name}** は第2戦から **${combined.match2ActiveCount}名** 揃うため、**${baseTitle}** で第2戦から開催します！開始時刻は主催者からの案内をお待ちください。${attendeeMentions}`,
+          allowed_mentions: { users: attendeeIds },
+        }];
+      } else {
+        // RECRUITING（合同1卓でも厳格保護により10名未満）
+        const playerMap = summary.playerMap;
+        const specM1Lines = (summary.status.spectator?.lines || []).filter((l) => !/2戦目/.test(l));
+        const getSpecPlayer = (l) => {
+          const id = extractDiscordId(l);
+          return id && playerMap ? (typeof playerMap.get === 'function' ? playerMap.get(id) : playerMap[id]) : null;
+        };
+        const specForUpper = specM1Lines.filter((l) => {
+          const p = getSpecPlayer(l);
+          const isUpper = p && p.mmr != null ? Number(p.mmr) >= BAND_BOUNDARY_MMR : /【プラ|【エメ|【ダイヤ|【マス|【グラマス|【チャレ/.test(l);
+          if (isUpper) return true;
+          return normalizeTierPromotionPref(p?.tier_promotion_pref) !== 'never';
+        });
+        const specForLower = specM1Lines.filter((l) => {
+          const p = getSpecPlayer(l);
+          const isUpper = p && p.mmr != null ? Number(p.mmr) >= BAND_BOUNDARY_MMR : /【プラ|【エメ|【ダイヤ|【マス|【グラマス|【チャレ/.test(l);
+          if (!isUpper) return true;
+          return Boolean(p?.allow_lower_support);
+        });
+
+        const lowerReach = (combined?.lowerBaseM1Count ?? 0) + specForLower.length >= DAY_CAPACITY;
+        const upperReach = (combined?.upperBaseM1Count ?? 0) + specForUpper.length >= DAY_CAPACITY;
+
+        if (lowerReach || upperReach) {
+          const useLower = lowerReach && (!upperReach || (combined.lowNativeM1Count >= combined.highNativeM1Count));
+          const targetSpecs = useLower ? specForLower : specForUpper;
+          const baseCount = useLower ? combined.lowerBaseM1Count : combined.upperBaseM1Count;
+          const sf = Math.max(1, DAY_CAPACITY - baseCount);
+          const specIds = idsIn(targetSpecs);
+          const baseLabel = useLower ? '中初級ベース' : '上位ベース';
+          const acceptKey = useLower ? 'combined_lower' : 'combined_upper';
+          decisions = [{
+            type: 'SPECTATOR_REQUEST',
+            action: `合同1卓（${baseLabel}）観戦枠への参加依頼`,
+            isReady: false,
+            content: `🙋 **【参加のお願い】${def.name}（${baseLabel}）**\n` +
+              `現在、第1戦の出場対象は ${baseCount}/${DAY_CAPACITY}名 で、あと **${sf}名** 足りません。\n` +
+              `観戦希望の方が入ってくれれば開催できます。出られそうな方は、下のボタンを押して第1戦へエントリーをお願いします🙏\n` +
+              (specIds.length ? `\n\n${specIds.map((id) => `<@${id}>`).join(' ')}` : ''),
+            components: [{
+              type: 1,
+              components: [{
+                type: 2,
+                label: `🙋 ${baseLabel}の第1戦に参加する！ (あと${sf}名)`,
+                style: 3,
+                custom_id: `spectator_accept:${def.key}:${acceptKey}`,
+              }]
+            }],
+            allowed_mentions: { users: specIds },
+          }];
+        } else {
+          const bestCount = combined?.bestCount ?? 0;
+          const bestSf = combined?.bestShortfall ?? DAY_CAPACITY;
+          const totalLateCount = (summary.status.high?.match2LateLines?.length ?? 0) + (summary.status.low?.match2LateLines?.length ?? 0);
+          if (bestCount >= 8 && totalLateCount >= 1) {
+            const baseLabel = combined?.bestBase === 'lower' ? '中初級ベース' : '上位ベース';
+            decisions = [{
+              type: 'HELP_RECRUIT',
+              action: `合同1卓（${baseLabel}）助っ人募集`,
+              isReady: false,
+              content: `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合（${baseLabel}）の助っ人をピンポイント募集中！】**\n\n` +
+                `・**${def.shortName}**: 第1試合（21:00〜）があと **${bestSf}名** 不足！（2戦目からは途中参加の方が ${totalLateCount}名 合流予定✨）\n` +
+                `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
+                `下のボタンから1戦だけ助っ人エントリーをお願いします！`,
+              components: [{
+                type: 1,
+                components: [{
+                  type: 2,
+                  label: `⏱️ 【助っ人急募】1戦だけ参加する！ (あと${bestSf}名)`,
+                  style: 1,
+                  custom_id: `${def.joinPrefix}:single`,
+                }]
+              }],
+              allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] },
+            }];
+          } else {
+            const allEntryIds = idsIn([
+              ...(summary.status.high?.eligibleLines || []),
+              ...(summary.status.low?.eligibleLines || []),
+            ]);
+            const cancelMentions = allEntryIds.length > 0
+              ? `\n\n通知: ${allEntryIds.map((id) => `<@${id}>`).join(' ')}`
+              : '';
+            decisions = [{
+              type: 'CANCEL',
+              action: '合同1卓 中止（厳格保護・人数未達）',
+              isReady: false,
+              content: `🛑 **【本日の${def.name}は中止です】**\n\n` +
+                `20:00時点で合同1卓の成立条件（10名・厳格保護適用）を満たさなかったため、本日の定期カスタムは中止とします。\n` +
+                `（現在：上位帯 ${combined?.highNativeM1Count ?? 0}名 ／ 中初級帯 ${combined?.lowNativeM1Count ?? 0}名）\n` +
+                `エントリーしてくださった皆さん、ありがとうございました。\n\n` +
+                `💡 集まれる人で遊びたい場合は、下のボタンから通常募集を立てられます。` +
+                cancelMentions,
+              components: [{
+                type: 1,
+                components: [
+                  { type: 2, label: "⚔️ 通常募集を立てる", style: 1, custom_id: "portal_recruit" }
+                ]
+              }],
+              allowed_mentions: { users: allEntryIds },
+            }];
+          }
+        }
+      }
     } else {
       // 日曜（お祭り枠・単一集計）
       const sunDecision = evaluateLobbyDecision({
@@ -508,7 +676,9 @@ export async function checkCustomStatusAt2000(env) {
         .catch((e) => console.warn('[Check2000] 中止したカードの締め切りに失敗:', e));
     }
 
-    return outcomes[0] || { action: 'posted', reason: '判定完了' };
+    const hasError = outcomes.some((o) => o.action === 'error');
+    const summaryReason = outcomes.map((o) => o.reason).filter(Boolean).join(' / ') || '判定完了';
+    return { action: hasError ? 'error' : 'posted', reason: summaryReason };
 
   } catch (err) {
     console.error('[Check2000] error:', err);

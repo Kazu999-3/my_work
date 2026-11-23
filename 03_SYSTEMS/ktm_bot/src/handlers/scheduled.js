@@ -98,7 +98,7 @@ async function runScheduledJob(event, env, ctx) {
       const recent = await fetchRecentBotMessages(env, channelId);
       for (const m of recent.slice(0, MAX_CARDS_PER_RUN)) {
         const title = m.embeds?.[0]?.title || '';
-        if ((title.includes('土曜・本戦カスタム') || title.includes('日曜・お祭りカスタム')) && !isClosedCard(m)) {
+        if ((title.includes('土曜・実力均等カスタム') || title.includes('土曜・本戦カスタム') || title.includes('日曜・お祭りカスタム')) && !isClosedCard(m)) {
           const closedEmbed = { ...m.embeds[0], title: markTitleClosed(title), color: 0x7f8c8d };
           const disabledComponents = (m.components || []).map((row) => ({
             ...row,
@@ -116,6 +116,7 @@ async function runScheduledJob(event, env, ctx) {
     }
     // 放置された古いアドホック募集（6時間以上経過）も静かに受付終了にする
     await cleanupStaleAdhocRecruitments(env);
+    return { action: 'closed', reason: '前週末カード受付終了' };
   } else if (
     cronExpression.includes("0 11 * * 7,1") || cronExpression.includes("0 11 * * 7") ||
     cronExpression.includes("0 11 * * 1") ||

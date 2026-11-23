@@ -4,7 +4,7 @@ import { fetchWithRetry, fetchPortalAPI } from '../../utils/api.js';
 import { buildDayRecruitEmbed, buildDayRecruitComponents, applyDayCardState } from '../../ui/embeds.js';
 import { createRecruitment, markRecruitmentStatus } from '../../utils/recruitPermission.js';
 import { notifyAdminError } from '../../utils/alert.js';
-import { computeDayStatus, getDayDef, detectDayKey, extractEntryLines, DAY_CAPACITY, DAY_DEFS, resolveWeekendTargets, buildRecruitmentContent } from '../../utils/recruitmentStatus.js';
+import { computeDayStatus, getDayDef, detectDayKey, extractEntryLines, extractDiscordId, DAY_CAPACITY, DAY_DEFS, resolveWeekendTargets, buildRecruitmentContent } from '../../utils/recruitmentStatus.js';
 import { cleanupStaleAdhocRecruitments } from './maintenance.js';
 import { getRecruitmentByMessageId, fetchActiveParticipants, buildDisplayLinesFromDb, fetchPlayerRowsMap } from '../../utils/recruitmentLedger.js';
 
@@ -489,6 +489,18 @@ export async function resetPeriodicCards(env) {
  *   成立していない）、中間アナウンスも20:00開催判定も常に「カードが見つかりません」で
  *   空振りする。DBが直った場合に備えて、走査で見つからなかったときだけDBを試す。
  */
+function readAllCardEntryLines(embed) {
+  const fields = embed?.fields || [];
+  return fields.flatMap((f) => {
+    const isSpectator = f.name?.includes('観戦');
+    const lines = extractEntryLines(f.value);
+    if (isSpectator) {
+      return lines.map((l) => (l.includes('観戦') ? l : l.replace(/^- /, '- 👀【観戦】')));
+    }
+    return lines;
+  });
+}
+
 export async function loadDayRecruitmentSummary(env, target, messages) {
   const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
   const def = getDayDef(target.dayKey);
@@ -558,7 +570,8 @@ export async function loadDayRecruitmentSummary(env, target, messages) {
         channelId: targetChannelId,
         message: card,
         lines: dbLines,
-        status: computeDayStatus(dbLines, DAY_CAPACITY, target.dayKey),
+        playerMap,
+        status: computeDayStatus(dbLines, DAY_CAPACITY, target.dayKey, { playerMap }),
         participants: activeParticipants,
         source: 'db',
       };
@@ -567,8 +580,10 @@ export async function loadDayRecruitmentSummary(env, target, messages) {
     console.warn(`[Recruit] ${target.label}のDB直読み集計に失敗、カード本文パースにフォールバック:`, dbErr);
   }
 
-  // フォールバック: カード本文パース（DB未移行の古いカードなど）
-  const lines = extractEntryLines(card.embeds?.[0]?.fields?.[0]?.value);
+  // フォールバック: カード本文パース（上位帯・中初級帯・観戦の全フィールドを読む）
+  const lines = readAllCardEntryLines(card.embeds?.[0]);
+  const ids = [...new Set(lines.map((l) => extractDiscordId(l)).filter(Boolean))];
+  const playerMap = await fetchPlayerRowsMap(env, ids).catch(() => new Map());
   return {
     target,
     recruitId,
@@ -576,7 +591,8 @@ export async function loadDayRecruitmentSummary(env, target, messages) {
     channelId: targetChannelId,
     message: card,
     lines,
-    status: computeDayStatus(lines, DAY_CAPACITY, target.dayKey),
+    playerMap,
+    status: computeDayStatus(lines, DAY_CAPACITY, target.dayKey, { playerMap }),
     source: 'embed',
   };
 }
@@ -617,8 +633,8 @@ export async function cleanupOldReminderMessages(env, channelId) {
     for (const m of messages) {
       if (!m.author?.bot) continue;
       const embedTitle = m.embeds?.[0]?.title || '';
-      // 募集カード本体（KTM 土曜・本戦カスタム / KTM 日曜・お祭りカスタム）は絶対に削除しない
-      if (embedTitle.includes('KTM 土曜・本戦カスタム') || embedTitle.includes('KTM 日曜・お祭りカスタム')) {
+      // 募集カード本体（KTM 土曜・実力均等カスタム / 旧KTM 土曜・本戦カスタム / KTM 日曜・お祭りカスタム）は絶対に削除しない
+      if (embedTitle.includes('KTM 土曜・実力均等カスタム') || embedTitle.includes('KTM 土曜・本戦カスタム') || embedTitle.includes('KTM 日曜・お祭りカスタム')) {
         continue;
       }
       const embedDesc = m.embeds?.[0]?.description || '';
@@ -670,11 +686,13 @@ export async function syncPeriodicCardContents(env) {
 
     const newContent = buildRecruitmentContent(target, CONFIG.NOTIFICATION_ROLE_ID);
 
-    // Embedカードも最新ロジック（案A: 10名未満は全員エントリー）で再計算！
+    // Embedカードも最新ロジック（案A＋厳格保護②＋代表MMR）で再計算！
     const currentEmbed = card.embeds?.[0] || {};
-    const rawLines = extractEntryLines(currentEmbed.fields?.[0]?.value);
+    const rawLines = readAllCardEntryLines(currentEmbed);
+    const ids = [...new Set(rawLines.map((l) => extractDiscordId(l)).filter(Boolean))];
+    const playerMap = await fetchPlayerRowsMap(env, ids).catch(() => new Map());
     const updatedEmbed = { ...currentEmbed };
-    applyDayCardState(updatedEmbed, target.dayKey, rawLines);
+    applyDayCardState(updatedEmbed, target.dayKey, rawLines, { playerMap });
 
     const patchRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${card.id}`, {
       method: 'PATCH',

@@ -167,9 +167,16 @@ export default function BalancerPage() {
     [players, handicapIds]
   );
 
-  // 帯分けロビー編成: MMR 1450基準の2帯（人数不足時は格上許可ONから自動繰り上げ）
+  // 帯分けロビー編成: 代表MMR 1450基準の2帯（10〜19名時は案A＋厳格保護を自動推奨）
   const [selectedTable, setSelectedTable] = useState<TableSplit | null>(null);
+  const [manualFlatOverride, setManualFlatOverride] = useState(false);
   const tableSplit = useMemo(() => buildTierBandLobbies(players), [players]);
+  const effectiveTable: TableSplit | null = useMemo(() => {
+    if (selectedTable) return selectedTable;
+    if (manualFlatOverride || !tableSplit?.recommendedBand) return null;
+    const target = tableSplit.recommendedBand === 'LOWER' ? tableSplit.lower : tableSplit.upper;
+    return { label: target.label, ids: target.ids, band: target.band };
+  }, [selectedTable, manualFlatOverride, tableSplit]);
   // SPEC 12: 運営ツール（VC操作・帯分け・格差診断）は初期状態・閉
   const [showOpsTools, setShowOpsTools] = useState(false);
 
@@ -227,10 +234,22 @@ export default function BalancerPage() {
   };
 
   const handleBalance = async () => {
-    // 卓分割: 選択中の卓があればそのメンバーのみ、なければ全員
+    // 卓分割: 明示選択または案A自動推奨卓があればそのメンバー（見学固定含む）、なければ全員フラット
     const allActive = (players as BalancerPlayer[]).filter((p) => p.is_active);
-    const activePlayers = selectedTable
-      ? allActive.filter((p) => selectedTable.ids.includes(p.id))
+    if (!selectedTable && !manualFlatOverride && tableSplit?.recommendedMode === 'SHORTAGE') {
+      const proceedFlat = confirm(
+        `厳格保護（上の帯NG / サポ許可限定）により、上位ベース（${tableSplit.upper.members.length}名）・中初級ベース（${tableSplit.lower.members.length}名）とも10名未満です。\n` +
+        `このまま帯分けを無視して全員フラット（${allActive.filter((p) => !p.is_spectator_fixed).length}名）でチーム分けしますか？\n` +
+        `（[キャンセル] を押すと内訳を確認できます）`
+      );
+      if (!proceedFlat) {
+        if (isAdmin) setShowOpsTools(true);
+        return;
+      }
+    }
+
+    const activePlayers = effectiveTable
+      ? allActive.filter((p) => effectiveTable.ids.includes(p.id) || p.is_spectator_fixed)
       : allActive;
 
     // ガード節（06_code_smells_and_dod.md）
@@ -244,7 +263,7 @@ export default function BalancerPage() {
 
     // 構成復元用のローカルキャッシュ保存
     try {
-      localStorage.setItem('balancer_active_ids', JSON.stringify(activePlayers.map((p) => p.id)));
+      localStorage.setItem('balancer_active_ids', JSON.stringify(allActive.map((p) => p.id)));
     } catch {}
 
     // 前回結果が残っている場合の確認
@@ -266,7 +285,7 @@ export default function BalancerPage() {
         activePlayers,
         handicapIds,
         defaultHandicapPenalty: HANDICAP_MMR_PENALTY,
-        selectedBand: selectedTable?.band,
+        selectedBand: effectiveTable?.band,
       });
 
       const res = await fetch('/api/balancer', {
@@ -277,6 +296,7 @@ export default function BalancerPage() {
           searchDepth,
           selectionMode,
           handicapPenalty: HANDICAP_MMR_PENALTY,
+          selectedBand: effectiveTable?.band || null,
         }),
       });
 
@@ -455,6 +475,55 @@ export default function BalancerPage() {
         {/* ⚡ 3秒でわかるチーム分け手順（SPEC 12: 一般向け手順＆帯分け説明） */}
         <UsageGuide />
 
+        {/* 🏟️ 2帯混在時の帯編成ステータスバー（運営ツールを閉じていても常に視認・切替可能） */}
+        {tableSplit && tableSplit.upper.nativeCount > 0 && tableSplit.lower.nativeCount > 0 && (
+          <div className="rounded-xl border border-primary-edge-soft bg-surface/90 px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap text-xs">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <span className="font-black text-foreground">
+                {selectedTable
+                  ? `🎯 選択中の帯: ${selectedTable.label}（${selectedTable.ids.length}名）`
+                  : manualFlatOverride
+                    ? '🔀 手動設定: 全員フラット（帯分け・オフレーン制限なし）'
+                    : tableSplit.recommendedBand === 'LOWER'
+                      ? `🌱 自動適用中: ${tableSplit.reasonText}`
+                      : tableSplit.recommendedBand === 'UPPER'
+                        ? `👑 自動適用中: ${tableSplit.reasonText}`
+                        : tableSplit.recommendedMode === 'TWO_TABLES'
+                          ? `🏟️ ${tableSplit.reasonText}`
+                          : `⚠️ ${tableSplit.reasonText}`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {selectedTable ? (
+                <button
+                  type="button"
+                  onClick={() => { setSelectedTable(null); setManualFlatOverride(false); }}
+                  className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover border border-border text-[11px] font-bold cursor-pointer transition"
+                >
+                  自動帯判定に戻す
+                </button>
+              ) : (effectiveTable || manualFlatOverride) && (
+                <button
+                  type="button"
+                  onClick={() => setManualFlatOverride((v) => !v)}
+                  className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface-hover border border-border text-[11px] font-bold cursor-pointer transition"
+                >
+                  {manualFlatOverride ? '🤖 自動帯判定に戻す' : '🔀 全員フラットで組む'}
+                </button>
+              )}
+              {isAdmin && !showOpsTools && (
+                <button
+                  type="button"
+                  onClick={() => setShowOpsTools(true)}
+                  className="px-2.5 py-1 rounded-lg bg-primary-100 hover:bg-primary-200 text-primary-800 border border-primary-edge-soft text-[11px] font-black cursor-pointer transition"
+                >
+                  ⚙️ 帯を選び直す
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ⚠️ MMR整合性ズレ警告バナー（ズレ検知時のみ自動出現） */}
         {integrityData?.hasDiscrepancy && (
           <div className="p-3 bg-danger-100 border border-danger-edge-strong rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-danger-900 font-bold shadow-sm">
@@ -527,7 +596,10 @@ export default function BalancerPage() {
                 {tableSplit && (
                   <TableSplitPanel
                     selectedTable={selectedTable}
-                    setSelectedTable={setSelectedTable}
+                    setSelectedTable={(val) => {
+                      setSelectedTable(val);
+                      setManualFlatOverride(false);
+                    }}
                     tableSplit={tableSplit}
                   />
                 )}

@@ -463,10 +463,10 @@ function renderSpectatorList(spectatorStatus) {
  * @param {string} dayKey 'sat' | 'sun'
  * @param {string[]|object} entryLines 参加者行配列またはロビー別オブジェクト
  */
-export function applyDayCardState(embed, dayKey, entryLines) {
+export function applyDayCardState(embed, dayKey, entryLines, options = {}) {
   const def = getDayDef(dayKey);
   const lines = entryLines || [];
-  const status = computeDayStatus(lines, undefined, dayKey);
+  const status = computeDayStatus(lines, undefined, dayKey, options);
   const banner = buildDayBanner(def.key, status);
 
   embed.description = banner;
@@ -493,9 +493,10 @@ export function applyDayCardState(embed, dayKey, entryLines) {
     const high = status.high;
     const low = status.low;
     const spec = status.spectator;
+    const isAnyReady = Boolean(status.isReady);
 
-    const highState = high.isReady ? '開催確定！' : `あと${high.remaining}名`;
-    const lowState = low.isReady ? '開催確定！' : `あと${low.remaining}名`;
+    const highState = high.isReady ? '開催確定！' : isAnyReady ? `2部屋目まであと${high.remaining}名` : `あと${high.remaining}名`;
+    const lowState = low.isReady ? '開催確定！' : isAnyReady ? `2部屋目まであと${low.remaining}名` : `あと${low.remaining}名`;
 
     embed.fields = [
       {
@@ -519,7 +520,7 @@ export function applyDayCardState(embed, dayKey, entryLines) {
     }
   }
 
-  embed.footer = { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ大歓迎' };
+  embed.footer = { text: '土曜・日曜は別々エントリー ｜ 20:00に開催判定' };
 
   return { embed, status, dominantTierText: '' };
 }
@@ -529,14 +530,14 @@ export function applyDayCardState(embed, dayKey, entryLines) {
  * @param {{dayKey: string, label: string}} target 対象日（label例: '9/26(土)'）
  * @param {string[]} [entryLines] 参加者行
  */
-export function buildDayRecruitEmbed(target, entryLines = []) {
+export function buildDayRecruitEmbed(target, entryLines = [], options = {}) {
   const def = getDayDef(target.dayKey);
   const embed = {
     title: `${def.emoji} KTM ${def.name}　${target.label} 21:00〜`,
-    footer: { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ歓迎' },
+    footer: { text: '土曜・日曜は別々エントリー ｜ 20:00に開催判定' },
     timestamp: new Date().toISOString(),
   };
-  applyDayCardState(embed, target.dayKey, entryLines);
+  applyDayCardState(embed, target.dayKey, entryLines, options);
   return embed;
 }
 
