@@ -294,8 +294,6 @@ export default function CasinoPage() {
         if (res.ok && data.success) {
           setScratchData(data);
           setIsScratchOpen(true);
-          fetchBetData();
-          refreshUser();
         } else {
           toast.error(data.error || 'スクラッチくじの購入に失敗しました。');
         }
@@ -484,7 +482,11 @@ export default function CasinoPage() {
       {/* 🥠 スクラッチくじ削り演出モーダル */}
       <ScratchModal
         isOpen={isScratchOpen}
-        onClose={() => setIsScratchOpen(false)}
+        onClose={() => {
+          setIsScratchOpen(false);
+          fetchBetData();
+          refreshUser();
+        }}
         resultData={scratchData}
         onFinished={() => {
           fetchBetData();

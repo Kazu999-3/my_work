@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, Coins, X } from 'lucide-react';
+import { Sparkles, Coins, X, FastForward } from 'lucide-react';
 
 export interface ScratchResultData {
   price: number;
@@ -24,45 +24,80 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
   const [isScratching, setIsScratching] = useState(true);
   const [scratchedCount, setScratchedCount] = useState(0);
 
+  // onFinished を ref で保持し、親の再レンダリングによる useEffect ループ／タイマー中断を防止
+  const onFinishedRef = useRef(onFinished);
+  useEffect(() => {
+    onFinishedRef.current = onFinished;
+  }, [onFinished]);
+
+  const hasRevealedRef = useRef(false);
+
+  const reveal = useCallback(() => {
+    if (hasRevealedRef.current) return;
+    hasRevealedRef.current = true;
+    setScratchedCount(3);
+    setIsScratching(false);
+
+    if (resultData && resultData.prize >= 250) {
+      try {
+        confetti({
+          particleCount: resultData.prize >= 800 ? 120 : 60,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981'],
+        });
+      } catch {}
+    }
+    onFinishedRef.current?.();
+  }, [resultData]);
+
   useEffect(() => {
     if (!isOpen || !resultData) return;
 
+    hasRevealedRef.current = false;
     setIsScratching(true);
     setScratchedCount(0);
 
     const timer1 = setTimeout(() => setScratchedCount(1), 300);
     const timer2 = setTimeout(() => setScratchedCount(2), 650);
     const timer3 = setTimeout(() => {
-      setScratchedCount(3);
-      setIsScratching(false);
+      reveal();
+    }, 1000);
 
-      if (resultData.prize >= 250) {
-        try {
-          confetti({
-            particleCount: resultData.prize >= 800 ? 120 : 60,
-            spread: 80,
-            origin: { y: 0.6 },
-            colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981'],
-          });
-        } catch {}
-      }
-      onFinished?.();
-    }, 1100);
+    // 安全策: 万一ブラウザ遅延やバックグラウンド移行時でも最大1.5秒で確実に結果確定
+    const safetyTimer = setTimeout(() => {
+      reveal();
+    }, 1500);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
+      clearTimeout(safetyTimer);
     };
-  }, [isOpen, resultData, onFinished]);
+  }, [isOpen, resultData, reveal]);
 
   if (!isOpen || !resultData) return null;
 
   const isWin = resultData.prize >= 250; // 2等以上（2026-10-17 当選額変更に合わせた）
   const isJackpot = resultData.prize >= 800; // 1等以上
 
+  const handleClose = () => {
+    if (isScratching) {
+      reveal();
+    }
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }}
+    >
       <div className="relative w-full max-w-sm rounded-3xl bg-surface border-2 border-primary-edge shadow-2xl p-6 text-center space-y-6 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         {/* 背景の装飾グロー */}
         <div
@@ -71,10 +106,12 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
           }`}
         />
 
+        {/* 閉じるボタン（削り中でも安全に押下可能） */}
         <button
-          onClick={onClose}
-          disabled={isScratching}
-          className="absolute top-4 right-4 p-2 rounded-full text-muted hover:text-foreground hover:bg-black/10 transition-colors disabled:opacity-30"
+          type="button"
+          onClick={handleClose}
+          className="absolute top-4 right-4 p-2 rounded-full text-muted hover:text-foreground hover:bg-black/10 transition-colors cursor-pointer z-10"
+          title="閉じる"
         >
           <X size={18} />
         </button>
@@ -89,8 +126,14 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
           </h3>
         </div>
 
-        {/* スクラッチ削り窓（3マス） */}
-        <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-black/10 border border-black/10">
+        {/* スクラッチ削り窓（3マス - タップで即時開封可能） */}
+        <div
+          onClick={isScratching ? reveal : undefined}
+          className={`grid grid-cols-3 gap-2 p-3 rounded-2xl bg-black/10 border border-black/10 transition-colors ${
+            isScratching ? 'cursor-pointer hover:bg-black/15' : ''
+          }`}
+          title={isScratching ? 'クリックで即時開封！' : undefined}
+        >
           {[0, 1, 2].map((idx) => {
             const isRevealed = scratchedCount > idx;
             return (
@@ -122,7 +165,7 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
         <div className="space-y-2 min-h-[60px] flex flex-col items-center justify-center">
           {isScratching ? (
             <p className="text-xs text-muted font-bold animate-pulse">
-              銀の膜を削っています... 結果まで少々お待ちください！
+              銀の膜を削っています...（タップで即スキップ可）
             </p>
           ) : (
             <div className="animate-in fade-in zoom-in duration-300 space-y-1">
@@ -141,16 +184,24 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
           )}
         </div>
 
+        {/* アクションボタン: 削り中はスキップ、完了後は閉じる */}
         <button
-          onClick={onClose}
-          disabled={isScratching}
-          className={`w-full py-3 rounded-2xl font-black text-sm transition-all shadow-md ${
+          type="button"
+          onClick={isScratching ? reveal : handleClose}
+          className={`w-full py-3 rounded-2xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
             isScratching
-              ? 'bg-black/10 text-faint cursor-not-allowed'
-              : 'bg-stone-900 hover:bg-primary-600 text-white cursor-pointer'
+              ? 'bg-primary-500/15 hover:bg-primary-500/25 text-primary-900 dark:text-primary-200 border border-primary-edge-soft'
+              : 'bg-stone-900 hover:bg-primary-600 text-white'
           }`}
         >
-          {isScratching ? '削り中...' : '閉じる'}
+          {isScratching ? (
+            <>
+              <FastForward size={16} />
+              <span>タップして結果を見る</span>
+            </>
+          ) : (
+            <span>コインを受け取って閉じる ✨</span>
+          )}
         </button>
       </div>
     </div>
