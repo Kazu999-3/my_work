@@ -1069,6 +1069,17 @@ export default function PlayerMyPage() {
                   </span>
                 </div>
               </div>
+              {typeof (typeof player.coins === 'number' ? player.coins : player.role_preferences?.coins) === 'number' && (
+                <>
+                  <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">所持コイン</span>
+                    <span className="text-amber-800 dark:text-amber-300 font-black font-mono text-sm bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-center">
+                      🪙 {(typeof player.coins === 'number' ? player.coins : player.role_preferences?.coins).toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="text-[10px] text-muted-strong pt-1 md:pt-0">
                 <Link href="/guide#portal-mmr" className="text-primary-700 hover:underline font-bold">
                   📖 MMR・KDA(3.0以上で好成績)・勝率の見方ガイド
@@ -1089,103 +1100,45 @@ export default function PlayerMyPage() {
           </div>
         )}
 
-        {/* 👑 サマリーカード6枚（総合カルテ以外のタブで要約として常駐表示、総合カルテでは下部詳細との重複を防ぐため非表示） */}
-        {activeTab !== 'summary' && (
-          <div className="space-y-3.5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {/* 1. KTMレート ＆ 実力Tier */}
-          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 border border-primary-edge flex items-center justify-center text-xl shrink-0">
-                🏆
-              </div>
-              <div>
-                <div className="text-[10px] font-black text-faint uppercase tracking-wider">推定MMRランク ＆ Tier</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xl font-black font-mono text-foreground">{player.mmr || 1200}</span>
-                  <span className="text-xs font-black text-primary-800 bg-primary-100 px-2 py-0.5 rounded border border-primary-edge-soft">
-                    {getKtmRank(player.mmr || 1200).name}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {typeof (typeof player.coins === 'number' ? player.coins : player.role_preferences?.coins) === 'number' && (
-              <div className="text-right">
-                <div className="text-[10px] font-bold text-faint">所持コイン</div>
-                <div className="text-xs font-black font-mono text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-edge-soft mt-0.5">
-                  🪙 {(typeof player.coins === 'number' ? player.coins : player.role_preferences?.coins)}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 2. 得意チャンピオン TOP3 */}
-          {champPool.filter((c: any) => c.name && c.name !== 'Unknown').length > 0 && (
-            <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-faint uppercase tracking-wider flex items-center gap-1">
-                  <span>⚔️ 得意チャンピオン TOP3</span>
-                </span>
-                <span className="text-[10px] font-bold text-faint font-mono">勝率 (試合数)</span>
-              </div>
-              <div className="flex items-center gap-2 pt-0.5">
-                {champPool.filter((c: any) => c.name && c.name !== 'Unknown').slice(0, 3).map((c: any, idx: number) => (
-                  <div key={idx} className="flex-1 flex items-center gap-1.5 bg-background border border-border/80 p-1.5 rounded-xl">
-                    <Image
-                      src={getChampIcon(c.name)}
-                      alt={c.name}
-                      width={22}
-                      height={22}
-                      className="w-5.5 h-5.5 rounded-full border border-border shrink-0"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-black text-foreground truncate">{c.name}</div>
-                      <div className="text-[9px] font-mono font-bold text-success-700">{c.winRate}% ({c.games}戦)</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 3. 主力レーン適正 ＆ 通算勝率 */}
-          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 border border-primary-edge flex items-center justify-center text-xl shrink-0">
-                🎯
-              </div>
-              <div>
-                <div className="text-[10px] font-black text-faint uppercase tracking-wider">主力希望レーン ＆ 勝率</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-sm font-black text-foreground bg-surface-subtle px-2 py-0.5 rounded border border-border">
-                    {player.role_preferences?.primary || 'ALL'}
-                  </span>
-                  <span className="text-xs font-bold text-faint">/</span>
-                  <span className="text-xs font-bold text-muted">
-                    {player.role_preferences?.secondary || 'ALL'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] font-bold text-faint">通算戦績</div>
-              <div className="text-xs font-black font-mono text-foreground mt-0.5">
-                <span className="text-success-700 font-extrabold">{overallStats.winRate}%</span>
-                <span className="text-[10px] text-muted-strong ml-1">({overallStats.wins}勝{overallStats.losses}敗)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 🔥 直近の調子・連勝バッジ ＆ 🏆相棒・⚔️天敵ハイライト（中身があるカードのみ表示） */}
-        {Boolean(
+        {/* 👑 サマリーカード（総合カルテ以外のタブで要約として常駐表示、総合カルテでは下部詳細との重複を防ぐため非表示） */}
+        {activeTab !== 'summary' && Boolean(
+          (champPool.filter((c: any) => c.name && c.name !== 'Unknown').length > 0) ||
           (recentForm && recentForm.seq && recentForm.seq.length > 0) ||
           (topPartners && topPartners.length > 0) ||
           (matchupExtremes?.worst && matchupExtremes.worst.length > 0)
         ) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-            {/* 直近の調子・勝敗ストリーク */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {/* 1. 得意チャンピオン TOP3 */}
+            {champPool.filter((c: any) => c.name && c.name !== 'Unknown').length > 0 && (
+              <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-faint uppercase tracking-wider flex items-center gap-1">
+                    <span>⚔️ 得意チャンピオン TOP3</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-faint font-mono">勝率 (試合数)</span>
+                </div>
+                <div className="flex items-center gap-2 pt-0.5">
+                  {champPool.filter((c: any) => c.name && c.name !== 'Unknown').slice(0, 3).map((c: any, idx: number) => (
+                    <div key={idx} className="flex-1 flex items-center gap-1.5 bg-background border border-border/80 p-1.5 rounded-xl">
+                      <Image
+                        src={getChampIcon(c.name)}
+                        alt={c.name}
+                        width={22}
+                        height={22}
+                        className="w-5.5 h-5.5 rounded-full border border-border shrink-0"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-black text-foreground truncate">{c.name}</div>
+                        <div className="text-[9px] font-mono font-bold text-success-700">{c.winRate}% ({c.games}戦)</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2. 直近の調子 ＆ モメンタム */}
             {recentForm && recentForm.seq && recentForm.seq.length > 0 && (
               <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
                 <div className="flex items-center justify-between">
@@ -1218,15 +1171,15 @@ export default function PlayerMyPage() {
                         {isWin ? 'W' : 'L'}
                       </span>
                     ))}
-                    <span className="text-[11px] font-bold text-muted-strong ml-1">
-                      (直近10戦 {recentForm.last10Wins}勝{recentForm.last10Games - recentForm.last10Wins}敗)
-                    </span>
                   </div>
+                  <span className="text-[10px] font-mono font-bold text-faint">
+                    直近5戦
+                  </span>
                 </div>
               </div>
             )}
 
-            {/* 🏆 名コンビ（最高勝率の相棒） */}
+            {/* 3. 🏆 名コンビ（最高勝率の相棒） */}
             {topPartners && topPartners.length > 0 && (
               <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
                 <div className="flex items-center justify-between">
@@ -1269,7 +1222,7 @@ export default function PlayerMyPage() {
               </div>
             )}
 
-            {/* ⚔️ 最大の天敵（苦戦中のライバル） */}
+            {/* 4. ⚔️ 最大の天敵（対戦ライバル） */}
             {matchupExtremes?.worst && matchupExtremes.worst.length > 0 && (
               <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
                 <div className="flex items-center justify-between">
@@ -1308,8 +1261,6 @@ export default function PlayerMyPage() {
             )}
           </div>
         )}
-      </div>
-    )}
 
         {/* Tab Controls (横スライド対応、洗練されたグラスデザイン) */}
         <div className="flex gap-1 bg-surface/60 backdrop-blur-md p-1.5 rounded-2xl border border-black/10 overflow-x-auto scrollbar-none shadow-lg">
