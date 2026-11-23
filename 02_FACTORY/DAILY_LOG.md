@@ -1,5 +1,41 @@
 ## 📅 2026-11-23（月）
 
+### ⚡ 【Onboarding：自己紹介15分おき省エネ自動検知 ＆ 管理画面「自己紹介を取り込む」ボタン追加】
+
+**概要**:
+ユーザーからの「自己紹介から自動検知する処理って今1時間に1回とかだと思うけど改善できない？」「案2（空振りVercel CPU 0秒）と管理ページから機能呼び出しボタンの追加したい」という要望に基づき、15分おきの超軽量省エネ監視ワークフローを新設し、`/ktm-admin` の両タブへ即時取り込みボタンを配備した。
+
+1. **背景と課題・採用方針（没理由）**:
+   - 従来は `scripts/edge_cloud_worker.py` が1時間おきに無条件で Vercel `/api/onboarding/process-intro` を叩いており、最長1時間超の待ち時間と月約720回の空振り起動が発生していた（2026-11-15の `pg_cron` 停止と同じ Vercel Fluid Active CPU 防衛課題）。
+   - 常駐 WebSocket Bot は別サーバー運用コストがかかるため不採用とし、既存の Cloudflare Workers 無料枠の Discord API 参照だけを使って「新着あり／なし」を先に判定し、`pendingCount > 0` の時だけ Vercel を起こす設計を採用した。
+
+2. **修正内容**:
+   - **Cloudflare Workers 側 (`03_SYSTEMS/ktm_bot/`)**:
+     - `src/config.js`: `INTRO_CHANNEL_ID: "1485646578621616209"` を追加。
+     - `src/index.js`: `GET /check-intro-pending` を追加（`key` 認証、Supabase 接続なしで `#📝自己紹介` 直近15件から未✅・`#` 含む投稿のみカウントして `{ ok, pendingCount, checked, pendingAuthors }` を返却）。
+   - **GitHub Actions ＆ Python ワーカー**:
+     - `.github/workflows/onboarding-intro-watcher.yml`（新規作成）: 15分おき（`*/15 * * * *`）に `curl` + `jq` だけで `/check-intro-pending` を確認し、`pendingCount > 0` の時のみ `/api/onboarding/process-intro` を起動（空振り時は Vercel CPU 消費0秒）。
+     - `scripts/edge_cloud_worker.py`: 毎時無条件キックしていた `check_onboarding_intros()` を撤去し、省エネ監視へ一本化。
+   - **管理画面 (`04_PORTAL/src/app/ktm-admin/`)**:
+     - `OnboardingChannelsPanel.tsx`: ヘッダーへ **`📝 自己紹介を取り込む`** ボタンおよび結果通知バナーを追加（成功時は個別案内部屋一覧も自動リロード）。説明文を15分おき自動確認へ更新。
+     - `_admin/AdminToolbar.tsx` / `page.tsx`: 未使用だった `handleProcessIntros` / `processingIntros` をツールバーの **`📝 自己紹介取込`** ボタンと強制解除へ接続し、`info` メッセージバナーの色分けを改善。
+
+3. **検証結果**:
+   - `node --check 03_SYSTEMS/ktm_bot/src/index.js` / `config.js`: エラー 0。
+   - `npx wrangler deploy --dry-run`（`03_SYSTEMS/ktm_bot`）: バンドル検証成功（`Total Upload: 336.64 KiB`, Exit code 0）。
+   - `.venv\Scripts\python.exe -m py_compile scripts/edge_cloud_worker.py`: Exit code 0。
+   - `npm run build --prefix 04_PORTAL`: TypeScript 型チェック通過、全64ページ最適化生成完了（Exit code 0）。
+
+- 再利用可能な3行ナレッジ:
+  - Serverless (Vercel) の無料 CPU 枠を守りつつ監視頻度（1時間 → 15分）を上げるには、ポーリング判定の前段に Cloudflare Workers の超軽量エンドポイントを挟み「変化がある時だけ重処理を起こす」2段構え（Pre-check ゲート）にするのが最も費用対効果が高い。
+  - 既存の `handleProcessIntros` のようにロジックだけ定義されてUI未接続の関数を残さず、操作が発生する現場のタブ（「名簿」「個別案内」両方）へボタンを配置することで運用時の行き来を減らせる。
+  - GitHub Actions で `curl` + `jq` だけで完結する監視は `actions/checkout` や `pip install` さえ不要となり、起動数秒・GitHub Actions 無料枠の消費も最小限に抑えられる。
+- [要検証]: 本番デプロイ後に `.github/workflows/onboarding-intro-watcher.yml` が `KTM_WORKER_URL` / `KTM_TRIGGER_KEY` / `VERCEL_CRON_SECRET` で緑色に完走すること（Actions の `Run workflow` 手動実行で即時確認推奨）、および `/ktm-admin` の両タブのボタン動作
+- [継続ウォッチ]: GitHub Actions 定期実行での `pendingCount: 0` 時 Vercel スキップ挙動
+- [発信候補]: 「Cloudflare Workers ✕ GitHub Actions 15分監視で Vercel Fluid CPU 空振りを0秒にする無料構成」
+
+## 📅 2026-11-23（月）
+
 ### ⚡ 【Custom / Bot ✕ Portal：定期カスタム募集文短縮 ＆ 2帯合同1卓（案A・厳格保護②・代表MMR統一）刷新】
 
 **概要**:

@@ -1,8 +1,8 @@
 "use client";
 
-import { Users, RefreshCw, Filter, X, Zap, PartyPopper } from "lucide-react";
+import { Users, RefreshCw, Filter, X, Zap, PartyPopper, UserPlus } from "lucide-react";
 
-// 名簿タブの見出し・検索・自動保存の状態・操作ボタン（お祭り参加+1 / Discord & Riot同期 / 全員メンテ）
+// 名簿タブの見出し・検索・自動保存の状態・操作ボタン（お祭り参加+1 / 自己紹介取込 / Discord & Riot同期 / 全員メンテ）
 export default function AdminToolbar({
   searchQuery,
   setSearchQuery,
@@ -10,10 +10,12 @@ export default function AdminToolbar({
   loading,
   syncingDiscord,
   syncingMaintenance,
+  processingIntros,
   syncData,
   onForceReset,
   onSyncCheck,
   onSyncAllMaintenance,
+  onProcessIntros,
   onAddFestivalAttendance,
   activeCount = 0,
 }: {
@@ -23,10 +25,12 @@ export default function AdminToolbar({
   loading: boolean;
   syncingDiscord?: boolean;
   syncingMaintenance?: boolean;
+  processingIntros?: boolean;
   syncData?: any;
   onForceReset: () => void;
   onSyncCheck?: () => void;
   onSyncAllMaintenance?: () => void;
+  onProcessIntros?: () => void;
   onAddFestivalAttendance?: () => void;
   activeCount?: number;
 }) {
@@ -89,6 +93,23 @@ export default function AdminToolbar({
           </button>
         )}
 
+        {/* 📝 自己紹介取り込みボタン */}
+        {onProcessIntros && (
+          <button
+            onClick={onProcessIntros}
+            disabled={processingIntros || syncingDiscord || syncingMaintenance || loading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs shadow-sm ${
+              processingIntros
+                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-700 cursor-not-allowed'
+                : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 border-emerald-500/40 hover:border-emerald-500/60 cursor-pointer'
+            }`}
+            title="#📝自己紹介の未処理投稿を今すぐチェックし、名簿登録・ロール付与・個別案内部屋を開通します"
+          >
+            <UserPlus className={`h-4 w-4 ${processingIntros ? 'animate-pulse' : ''}`} />
+            {processingIntros ? "取込中..." : "📝 自己紹介取込"}
+          </button>
+        )}
+
         {/* 👤 Discord & Riot同期ボタン */}
         {onSyncCheck && (
           <button
@@ -124,7 +145,7 @@ export default function AdminToolbar({
         )}
 
         {/* ローディング強制解除ボタン（通信中のみ表示される救済策） */}
-        {(syncingDiscord || syncingMaintenance || saving) && (
+        {(syncingDiscord || syncingMaintenance || processingIntros || saving) && (
           <button
             onClick={onForceReset}
             className="flex items-center gap-1.5 bg-surface hover:bg-black/5 text-primary-500 border border-primary-edge-soft px-3 py-2 rounded-lg font-bold transition text-xs animate-pulse cursor-pointer"

@@ -1,0 +1,74 @@
+name: Onboarding Intro Watcher (15min Zero-Waste)
+
+on:
+  schedule:
+    # 15分おきに Cloudflare Workers で新着有無だけ超軽量チェックし、未処理がある時だけ Vercel を起動
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: onboarding-intro-watcher
+  cancel-in-progress: false
+
+jobs:
+  watch-intro:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check pending intros via Cloudflare Worker and trigger Vercel if needed
+        env:
+          KTM_WORKER_URL: ${{ secrets.KTM_WORKER_URL }}
+          KTM_TRIGGER_KEY: ${{ secrets.KTM_TRIGGER_KEY }}
+          VERCEL_CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET }}
+          PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
+          PORTAL_URL: https://my-work-8jbd.vercel.app
+        run: |
+          if [ -z "$KTM_WORKER_URL" ] || [ -z "$KTM_TRIGGER_KEY" ]; then
+            echo "::warning::KTM_WORKER_URL または KTM_TRIGGER_KEY が未設定のためスキップします"
+            exit 0
+          fi
+
+          BASE_WORKER="${KTM_WORKER_URL%/}"
+          CHECK_RES=$(curl -sS -w "\n%{http_code}" --get "$BASE_WORKER/check-intro-pending" --data-urlencode "key=$KTM_TRIGGER_KEY")
+          CHECK_BODY=$(echo "$CHECK_RES" | head -n -1)
+          CHECK_CODE=$(echo "$CHECK_RES" | tail -n 1)
+
+          echo "Pre-check status: $CHECK_CODE / body: $CHECK_BODY"
+          if [ "$CHECK_CODE" -ne 200 ]; then
+            echo "::error::自己紹介プリチェック失敗 ($CHECK_CODE)"
+            exit 1
+          fi
+
+          IS_OK=$(echo "$CHECK_BODY" | jq -r '.ok // false')
+          if [ "$IS_OK" != "true" ]; then
+            echo "::error::自己紹介プリチェック応答エラー: $CHECK_BODY"
+            exit 1
+          fi
+
+          PENDING_COUNT=$(echo "$CHECK_BODY" | jq -r '.pendingCount // 0')
+          if [ "$PENDING_COUNT" -eq 0 ]; then
+            echo "✅ 未処理の新着自己紹介なし（Vercel 起動スキップ / Fluid CPU 消費 0秒）"
+            exit 0
+          fi
+
+          echo "🚀 未処理の自己紹介を ${PENDING_COUNT} 件検知しました。Vercel オンボーディングを実行します..."
+          if [ -n "$VERCEL_CRON_SECRET" ]; then
+            AUTH_HEADER="Authorization: Bearer $VERCEL_CRON_SECRET"
+          elif [ -n "$PORTAL_BOT_SECRET" ]; then
+            AUTH_HEADER="x-bot-secret: $PORTAL_BOT_SECRET"
+          else
+            echo "::error::VERCEL_CRON_SECRET および PORTAL_BOT_SECRET が未設定です"
+            exit 1
+          fi
+
+          PROC_RES=$(curl -sS -w "\n%{http_code}" -X POST "$PORTAL_URL/api/onboarding/process-intro" \
+            -H "$AUTH_HEADER" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          PROC_BODY=$(echo "$PROC_RES" | head -n -1)
+          PROC_CODE=$(echo "$PROC_RES" | tail -n 1)
+
+          echo "Process-intro status: $PROC_CODE / body: $PROC_BODY"
+          if [ "$PROC_CODE" -ne 200 ]; then
+            echo "::error::オンボーディング実行エラー ($PROC_CODE)"
+            exit 1
+          fi

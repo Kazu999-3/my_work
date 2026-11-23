@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Send, ExternalLink, ShieldAlert, Target, ChevronDown } from "lucide-react";
+import { RefreshCw, Send, ExternalLink, ShieldAlert, Target, ChevronDown, UserPlus, X } from "lucide-react";
 import { getRankTier, RANK_TIERS } from "../../lib/periodicCustomCard";
 
 // 管理画面「個別案内」タブ: 各メンバーの個別案内チャンネルの発言状況と、一斉連絡（2026-10-17）。
@@ -184,6 +184,8 @@ export default function OnboardingChannelsPanel() {
   const [nextCustom, setNextCustom] = useState<NextCustom | null>(null);
   const [broadcastHistory, setBroadcastHistory] = useState<BroadcastHistoryEntry[]>([]);
   const [cleaningDeparted, setCleaningDeparted] = useState(false);
+  const [processingIntros, setProcessingIntros] = useState(false);
+  const [introResult, setIntroResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sortKey, setSortKey] = useState<SortKey>('status');
@@ -514,6 +516,37 @@ export default function OnboardingChannelsPanel() {
     return next;
   });
 
+  const handleProcessIntros = async () => {
+    setProcessingIntros(true);
+    setIntroResult(null);
+    try {
+      const res = await fetch('/api/onboarding/process-intro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok || data.status === 'ERROR') {
+        throw new Error(data.message || data.error || '取り込み処理に失敗しました');
+      }
+      if (data.processed > 0) {
+        setIntroResult({
+          ok: true,
+          text: `🎉 新メンバー ${data.processed} 名の自己紹介を取り込み、名簿登録・ロール付与・個別案内部屋を開通しました！`,
+        });
+        load();
+      } else {
+        setIntroResult({
+          ok: true,
+          text: `ℹ️ 未処理の新着自己紹介はありませんでした（確認済み: ${data.skipped ?? 0}件）。`,
+        });
+      }
+    } catch (e: any) {
+      setIntroResult({ ok: false, text: `❌ 取り込みエラー: ${e.message}` });
+    } finally {
+      setProcessingIntros(false);
+    }
+  };
+
   const handleCleanupDeparted = async () => {
     if (!window.confirm('Discordサーバーを既に退出したメンバーの個別案内チャンネルを検知して削除します。よろしいですか？')) return;
     setCleaningDeparted(true);
@@ -565,24 +598,46 @@ export default function OnboardingChannelsPanel() {
         <div>
           <h2 className="text-lg font-bold text-foreground">🤝 個別案内（{rows.length}件）</h2>
           <p className="text-xs text-muted-strong mt-0.5">
-            未読 <span className="font-bold text-danger-700">{unreadCount}件</span> ／ 既読・未返信 <span className="font-bold text-primary-700">{readNoReplyCount}件</span>。「開く」で既読になります。本人からの新着は1時間おきに確認し、アプリにも通知します（タブを開いた時点でも最新に更新します）
+            未読 <span className="font-bold text-danger-700">{unreadCount}件</span> ／ 既読・未返信 <span className="font-bold text-primary-700">{readNoReplyCount}件</span>。「開く」で既読になります。自己紹介の新着は15分おきに省エネ自動確認しており、「📝 自己紹介を取り込む」で今すぐ即時反映できます
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleProcessIntros}
+            disabled={processingIntros}
+            title="#📝自己紹介の未処理投稿を今すぐチェックし、名簿登録・ロール付与・個別案内チャンネルを作成します"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 disabled:opacity-50 transition cursor-pointer"
+          >
+            <UserPlus className={`h-3.5 w-3.5 ${processingIntros ? 'animate-pulse' : ''}`} />
+            {processingIntros ? '取り込み中...' : '📝 自己紹介を取り込む'}
+          </button>
           <button
             onClick={handleCleanupDeparted}
             disabled={cleaningDeparted}
             title="Discordサーバーから抜けた退会者の個別部屋を検知して安全に削除します"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 transition"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 transition cursor-pointer"
           >
             <ShieldAlert className={`h-3.5 w-3.5 ${cleaningDeparted ? 'animate-spin' : ''}`} />
             {cleaningDeparted ? '退出者確認中...' : '退出者の部屋を整理'}
           </button>
-          <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-border bg-black/5 text-foreground hover:bg-black/10 disabled:opacity-50 transition">
+          <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-border bg-black/5 text-foreground hover:bg-black/10 disabled:opacity-50 transition cursor-pointer">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> 更新
           </button>
         </div>
       </div>
+
+      {introResult && (
+        <div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${
+          introResult.ok
+            ? 'bg-emerald-500/10 text-emerald-800 border-emerald-500/30'
+            : 'bg-danger-100 text-danger-700 border-danger-edge-soft'
+        }`}>
+          <span>{introResult.text}</span>
+          <button type="button" onClick={() => setIntroResult(null)} className="opacity-60 hover:opacity-100 cursor-pointer" aria-label="閉じる">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* 📊 クイックサマリーカード（クリックで即座に絞り込み可能） */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

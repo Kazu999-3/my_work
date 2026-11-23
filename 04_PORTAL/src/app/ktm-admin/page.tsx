@@ -311,15 +311,18 @@ export default function KtmAdminPage() {
               loading={loading}
               syncingDiscord={sync.syncingDiscord}
               syncingMaintenance={sync.syncingMaintenance}
+              processingIntros={processingIntros}
               syncData={sync.syncData}
               onAddFestivalAttendance={roster.handleAddFestivalAttendance}
               activeCount={roster.players.filter((p: any) => p.is_active).length}
               onSyncCheck={sync.handleSyncCheck}
               onSyncAllMaintenance={sync.handleSyncAllMaintenance}
+              onProcessIntros={handleProcessIntros}
               onForceReset={() => {
                 sync.resetSyncFlags();
                 roster.setSaving(false);
                 roster.setLoading(false);
+                setProcessingIntros(false);
                 setMessage({ type: "info", text: "⚠️ 処理のローディング状態を強制解除しました。" });
               }}
             />
@@ -337,7 +340,13 @@ export default function KtmAdminPage() {
 
             {/* Message Banner */}
             {message.text && (
-              <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-danger-100 text-danger-700 border border-danger-edge-soft' : 'bg-success-100 text-success-700 border border-success-edge-soft'}`}>
+              <div className={`p-4 rounded-lg flex items-center gap-3 ${
+                message.type === 'error'
+                  ? 'bg-danger-100 text-danger-700 border border-danger-edge-soft'
+                  : message.type === 'info'
+                    ? 'bg-primary-500/10 text-primary-700 border border-primary-edge-soft'
+                    : 'bg-success-100 text-success-700 border border-success-edge-soft'
+              }`}>
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
               </div>

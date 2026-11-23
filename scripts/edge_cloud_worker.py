@@ -332,37 +332,11 @@ def ensure_local_daemon_healthy():
     )
 
 
-def check_onboarding_intros():
-    """新メンバーの自己紹介チャンネル投稿を検知し、名簿登録・ロール付与・個別部屋開通をキック"""
-    if not PORTAL_URL:
-        return
-    try:
-        url = f"{PORTAL_URL}/api/onboarding/process-intro"
-        headers = {"Content-Type": "application/json"}
-        if PORTAL_BOT_SECRET:
-            headers["x-bot-secret"] = PORTAL_BOT_SECRET
-        req = urllib.request.Request(url, method="POST", headers=headers, data=b"{}")
-        with urllib.request.urlopen(req, timeout=20) as r:
-            res = json.loads(r.read().decode())
-            processed = res.get("processed", 0)
-            skipped = res.get("skipped", 0)
-            errors = res.get("errors", 0)
-            if processed > 0:
-                print(f"🎉 [Onboarding] 新メンバー自己紹介を検知・自動登録完了: {processed}件")
-            elif errors > 0:
-                print(f"⚠️ [Onboarding] 自己紹介処理でエラーが発生しました: errors={errors}, details={res.get('details')}")
-            else:
-                print(f"ℹ️ [Onboarding] 自己紹介チェック完了 (新着未処理なし: skipped={skipped})")
-    except Exception as e:
-        # オンボーディングの通信失敗で他のクラウドワーカー全体を止めない安全設計
-        print(f"⚠️ [Onboarding] 自己紹介チェック失敗 (次回再試行): {e}")
-
-
 def main():
     ensure_channel_monitor_scheduled()
     ensure_bulk_update_resumed()
     ensure_local_daemon_healthy()
-    check_onboarding_intros()
+    # 自己紹介の新着検知は .github/workflows/onboarding-intro-watcher.yml (15分おき省エネ監視) へ一本化
 
     types_str = ",".join(TASK_MAP.keys())
     status, tasks = sb(
