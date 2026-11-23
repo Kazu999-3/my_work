@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -47,6 +47,43 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
   setSelectionMode?: React.Dispatch<React.SetStateAction<'fair' | 'low' | 'high'>>;
   onOpenResultModal?: () => void;
 }) {
+  const [importingDiscord, setImportingDiscord] = useState(false);
+
+  const handleImportDiscordRecruits = async () => {
+    setImportingDiscord(true);
+    try {
+      const res = await fetch('/api/balancer/import-recruits');
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error || 'Discord募集メンバーの取得に失敗しました');
+        return;
+      }
+
+      const activeSet = new Set(data.activePlayerIds || []);
+      const spectatorSet = new Set(data.spectatorPlayerIds || []);
+
+      const updated = players.map(p => ({
+        ...p,
+        is_active: activeSet.has(p.id),
+        is_spectator_fixed: spectatorSet.has(p.id),
+      }));
+
+      setPlayers(updated);
+      try {
+        localStorage.setItem('balancer_active_ids', JSON.stringify(data.activePlayerIds));
+      } catch {}
+
+      toast.success(`📥 ${data.title || '定期カスタム'} から ${data.activeCount} 名を反映しました！`);
+      if (data.unmappedDiscordIds && data.unmappedDiscordIds.length > 0) {
+        toast.info(`⚠️ 名簿未登録のDiscordメンバーが ${data.unmappedDiscordIds.length} 名いました`);
+      }
+    } catch (err: any) {
+      toast.error('通信エラーが発生しました: ' + (err?.message || ''));
+    } finally {
+      setImportingDiscord(false);
+    }
+  };
+
   return (
         <div className="flex flex-col gap-3 border-b border-border pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -161,7 +198,9 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
                   value=""
                   onChange={(e) => {
                     const action = e.target.value;
-                    if (action === 'all_on') {
+                    if (action === 'import_discord') {
+                      handleImportDiscordRecruits();
+                    } else if (action === 'all_on') {
                       const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: true });
                       setPlayers(updated);
                       try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
@@ -185,10 +224,12 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, p
                       }
                     }
                   }}
+                  disabled={importingDiscord}
                   aria-label="一括操作メニュー"
-                  className="bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft text-xs font-bold rounded-xl px-3 py-2 outline-none cursor-pointer transition shadow-2xs"
+                  className="bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft text-xs font-bold rounded-xl px-3 py-2 outline-none cursor-pointer transition shadow-2xs disabled:opacity-50"
                 >
-                  <option value="" disabled>⚙️ メンバー一括操作 ▾</option>
+                  <option value="" disabled>{importingDiscord ? '⏳ 募集読込中...' : '⚙️ メンバー一括操作 ▾'}</option>
+                  <option value="import_discord">📥 Discord募集メンバーを反映</option>
                   <option value="all_on">✅ 全員参加ON</option>
                   <option value="all_off">❌ 全員解除</option>
                   <option value="restore">⏪ 前回構成を復元</option>
