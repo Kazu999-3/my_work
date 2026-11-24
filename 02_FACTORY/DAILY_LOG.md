@@ -1,3 +1,42 @@
+## 📅 2026-11-25（水）
+
+### ⚡ 【Onboarding / Bot：自己紹介ウォッチャーをWorker Cron（5分間隔）へ移行 (Bot指示文38)】
+
+**概要**:
+Bot指示文38（`03_SYSTEMS/ktm_bot/docs/specs/38-intro-watcher-worker-cron.md`）に基づき、自己紹介投稿からオンボーディング処理開始までの待ち時間短縮（現状の数時間〜無期限から最大10分程度へ短縮）のため、監視の実行基盤をGitHub ActionsからCloudflare Workers Cron Triggersへ移行した。
+
+1. **背景と課題・採用方針**:
+   - 2026-11-24夜、自己紹介投稿から4時間経過してもBotが反応しない事象が発生。調査の結果、GitHub Actionsの15分cron（`onboarding-intro-watcher.yml`）がGitHub側のスケジューラ間引きにより1日2回（09:40 JST, 19:27 JST）しか実行されていなかったことが判明。
+   - 処理チェーン自体（Worker `/check-intro-pending` ➔ Portal `/api/onboarding/process-intro`）に不具合はなく、原因はGitHub Actions高頻度cronの実行間引きであったため、定期実行の実績があるCloudflare Workers Cron Triggers（5分間隔）へ監視を移設した。
+
+2. **修正内容**:
+   - **Bot ジョブモジュール新設 (`03_SYSTEMS/ktm_bot/src/handlers/jobs/introWatcher.js`)**:
+     - `checkPendingIntros(env)`: `#📝自己紹介` チャンネルの直近15件を取得し、対象開始日時（2026-10-08T07:00:00Z以降）・非Bot・未✅・Riot ID形式マッチを抽出する共通未処理判定関数を実装（既存基準を完全維持）。
+     - `watchPendingIntros(env)`: 未処理0件時はPortalを呼ばず `action: 'skipped'` で終了（ゼロ・ウェイスト維持）。1件以上検知時のみ `fetchPortalAPI(env, '/api/onboarding/process-intro', {})` を呼び出す。失敗時は `notifyAdminError` へ通知。
+   - **Bot エンドポイントリファクタ (`03_SYSTEMS/ktm_bot/src/index.js`)**:
+     - `GET /check-intro-pending` を上記 `checkPendingIntros` を利用する形へリファクタ（手動確認用・認証や返却形式は完全互換）。
+   - **Bot スケジューラ拡張 (`03_SYSTEMS/ktm_bot/src/handlers/scheduled.js`)**:
+     - `scheduledJobName` に `intro_watch` を追加。
+     - `runScheduledJob` に `cronExpression.includes("*/5 * * * *") || mode === "intro_watch"` 分岐を追加し、`watchPendingIntros` を配線。
+     - 既存の `recordCronRun` 経由で `bot_cron_runs` テーブルにジョブログを自動記録。
+   - **Wrangler 設定更新 (`03_SYSTEMS/ktm_bot/wrangler.toml`)**:
+     - `[triggers] crons` に `"*/5 * * * *"`（5分間隔）を追加。
+   - **GitHub Actions 側スケジュールの解除 (`.github/workflows/onboarding-intro-watcher.yml`)**:
+     - `schedule:` トリガーを削除し、手動実行（`workflow_dispatch:`）のみ残存。
+
+3. **検証結果**:
+   - `node --check`（`03_SYSTEMS/ktm_bot/src` 配下の全JS）: 構文エラー 0。
+   - `npm run dryrun:recruitment --prefix 03_SYSTEMS/ktm_bot`: 全ケース通過（Exit code 0）。
+   - `npm run deploy --prefix 03_SYSTEMS/ktm_bot -- --dry-run`: バンドル生成・サイズ検証成功（`Total Upload: 338.70 KiB`, Exit code 0）。
+
+- 再利用可能な3行ナレッジ:
+  - GitHub Actionsのschedule cronは高頻度（15分等）指定時にキュー混雑で大幅に間引かれる（1日2回しか動かない等）ため、即応性が必要な準リアルタイム監視タスクにはCloudflare Workers Cronなどの専用cron基盤を採用する。
+  - HTTPエンドポイント用とScheduled Cron用で同じ判定ロジックを別々に持たず、ジョブモジュールとして共通化することで判定のズレや仕様変更時の二重修正を防げる。
+  - 外部の重いServerless処理（Vercel）を起こすジョブは、事前にWorkers側で「未処理件数 > 0」を確認してから呼ぶPre-checkゲートを維持することで、5分間隔の常時監視でも不要な起動コストを完全にゼロにできる。
+- [要検証]: 本番デプロイ（KTM Bot Deploy）後、Cloudflare側から5分おきにcronが発火し、`bot_cron_runs` テーブルへ `job: 'intro_watch'` が継続記録されること
+- [継続ウォッチ]: 新着自己紹介投稿時に最大10分以内に自動オンボーディング処理（ロール付与・個別部屋作成等）が完了すること
+- [発信候補]: 「GitHub Actions cron間引き問題とCloudflare Workers Cronへの移設による確実な5分間隔監視の実現」
+
 ## 📅 2026-11-23（月）
 
 ### ⚡ 【Onboarding：自己紹介15分おき省エネ自動検知 ＆ 管理画面「自己紹介を取り込む」ボタン追加】
