@@ -28,7 +28,7 @@ Muse（みゅーさん）と Antigravity（あんちゃん）が、互いの学�
 | ai-smell-removal | 文章からAI臭を除き人間らしく直す。プロジェクト固有ルール（固有禁止語彙・言い切り原則）を含む | Muse（2026-11-24、GitHubのhumanizer系＋日本語実践記事を統合）。同日、ghost-writer と執筆規約 30_content_factory の固有ルールを統合 | `.agent/skills/ai-smell-removal/SKILL.md` | カスタムスキル `ai_smell_removal` | 2026-11-24 |
 | note-monetize-pipeline | note収益化パイプライン（初稿→辛口査定→リライト→X宣伝スレッド）。ツール紹介系記事用 | Supabase `agent_prompts` の monetize 系4プロンプト（02_FACTORY/INFRA/prompts_migration_v6.sql） | `.agent/skills/note-monetize-pipeline/SKILL.md` | カスタムスキル `note_monetize_pipeline` | 2026-11-24 |
 | prompt-techniques-checklist | プロンプト技法「ランクA／ランクS」18技法の場面別チェックリスト（依頼前／回答後／深掘り） | reference_items A1（かねき @kaneki_aiafi） | `.agent/skills/prompt-techniques-checklist/SKILL.md` | カスタムスキル `prompt_techniques_checklist` | 2026-11-24 |
-| note-sales-funnel | note／Brain販売ファネルと投稿の型（X長文＋短尺動画＋保存促進、段階価格、選べる記事構成） | reference_items B12（テンペ）／B8（くろねこ）／B2（とら） | `.agent/skills/note-sales-funnel/SKILL.md` | カスタムスキル `note_sales_funnel` | 2026-11-24 |
+| note-sales-funnel | note／Brain販売ファネルと投稿の型（X長文＋短尺動画＋保存促進、段階価格、選べる記事構成、Xポストの4層構造） | reference_items B12（テンペ）／B8（くろねこ）／B2（とら）＋ `02_FACTORY/PROMO/THREADS/x_viral_lead_framework.md`（2026-11-25 統合） | `.agent/skills/note-sales-funnel/SKILL.md` | カスタムスキル `note_sales_funnel` | 2026-11-25 |
 | automation-design-check | 自動化の設計チェック（4行設計シート、自動化レベル1〜5、止まる5原因、週次点検） | reference_items B3（プルぽち「Muse自動化の教科書2026年11月版」） | `.agent/skills/automation-design-check/SKILL.md` | カスタムスキル `automation_design_check` | 2026-11-24 |
 | bot-copy-generator | Discord告知・募集文のコピー作成（KTMコミュニティ用） | Antigravity | `.agent/skills/bot-copy-generator/SKILL.md` | カスタムスキル `bot_copy_generator`（取り込み済み） | 2026-11-24 |
 | knowledge-drill | 積ん読を定着させる理解度クイズ（AI家庭教師） | Antigravity | `.agent/skills/knowledge-drill/SKILL.md` | カスタムスキル `knowledge_drill`（取り込み済み） | 2026-11-24 |
@@ -49,7 +49,7 @@ Muse（みゅーさん）と Antigravity（あんちゃん）が、互いの学�
 - **reference_items A9（敵JG習慣トラッカー）／C2（スキルCD表示）**：スキルではなく、Tactical Pilot の機能SPEC候補として進める。
 - **reference_items B7（合法なGitHubリポジトリ10選）**：一部実施済み（Whisper、Ollama）。残りは参照のみ。
 - **ルール／ワークフロー類**：`.agent/rules/30_content_factory.md`、`02_FACTORY/03_ASSETS/forge_note_protocol.md`、`.agent/rules/31_deep_research_v3.md`、`.agent/rules/known_pitfalls.md`、`.agent/workflows/`（audit／weekly-review／wrap-up）は、現行の形（常駐ルール・参照データ・Antigravity側ワークフロー）で維持する。30_content_factory の文体原則の一部は ai-smell-removal へ統合済み。
-- **未着**：`02_FACTORY/PROMO/THREADS/x_viral_lead_framework.md`（500円note誘導の4層Xポスト構造）がリポジトリに届いたら、note-sales-funnel へ統合する。
+- **統合済み**：`02_FACTORY/PROMO/THREADS/x_viral_lead_framework.md`（500円note誘導の4層Xポスト構造）は 2026-11-25 に note-sales-funnel へ統合した。
 - **未確認**：本番 Supabase の `reference_items`／`personal_knowledge` に、マイグレーション後に画面等から直接追加されたレコードの有無は、Muse の環境から本番DBへ接続できないため未確認（2026-11-24）。reference_items の投入経路はシードのみの設計。
 
 ## Antigravityへのお願い
