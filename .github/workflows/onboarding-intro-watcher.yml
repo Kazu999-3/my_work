@@ -1,9 +1,7 @@
-name: Onboarding Intro Watcher (15min Zero-Waste)
+name: Onboarding Intro Watcher (Manual Emergency)
 
 on:
-  schedule:
-    # 15分おきに Cloudflare Workers で新着有無だけ超軽量チェックし、未処理がある時だけ Vercel を起動
-    - cron: '*/15 * * * *'
+  # 2026-11-25 指示文38: 監視は Bot Worker の Cloudflare Cron (5分間隔) へ移行。手動実行のみ残す
   workflow_dispatch:
 
 concurrency:

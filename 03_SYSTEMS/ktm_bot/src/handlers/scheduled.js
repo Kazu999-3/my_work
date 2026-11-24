@@ -5,6 +5,7 @@ import { sendEventUsersNotification, checkCustomStatusAt2000 } from './jobs/even
 import { cleanupStaleAdhocRecruitments } from './jobs/maintenance.js';
 import { postWeeklyRecruitment, MAX_CARDS_PER_RUN, fetchRecentBotMessages, isClosedCard, markTitleClosed, migrateLegacyPeriodicCards, resetPeriodicCards } from './jobs/periodicCards.js';
 import { sendWeeklyReports } from './jobs/weeklyReports.js';
+import { watchPendingIntros } from './jobs/introWatcher.js';
 
 // 定期実行（Cloudflare Cron / GitHub Actions のバックアップ）の振り分け。各処理は ./jobs/ にある
 // （2026-10-07 に1,441行から分割。処理は分割前と同じ）。他のファイルからの読み込み口として下の2つを再公開する。
@@ -15,6 +16,7 @@ export { checkCustomStatusAt2000 } from './jobs/eventNotify.js';
  * 定期実行がどの仕事か（記録用）。分岐の条件は下の runScheduledJob と同じ
  */
 function scheduledJobName(cronExpression, mode) {
+  if (cronExpression.includes("*/5 * * * *") || mode === "intro_watch") return "intro_watch";
   if (cronExpression.includes("0 3 * * 4") || mode === "weekly_recruit") return "weekly_recruit";
   if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") return "weekly_report";
   if (cronExpression.startsWith("0 11 ") || mode === "check_2000") return "check_2000";
@@ -125,6 +127,13 @@ async function runScheduledJob(event, env, ctx) {
     // 毎週土日 20:00 JST (UTC 11:00 土日 / CF dow=7,1): 開催可否判定 ＆ 中止時クイック代替募集
     console.log("[Scheduled] Executing 20:00 Custom Check & Substitute Handler...");
     return await checkCustomStatusAt2000(env);
+  } else if (
+    cronExpression.includes("*/5 * * * *") ||
+    mode === "intro_watch"
+  ) {
+    // 5分間隔: 自己紹介ウォッチャー (新着自己紹介の検知とオンボーディング自動処理)
+    console.log("[Scheduled] Executing intro watcher (5min check)...");
+    return await watchPendingIntros(env);
   } else if (
     mode === "event_notify" ||
     cronExpression.includes("0 10 * * 6") || // 金曜 19:00 JST (UTC 10:00 / CF dow=6)

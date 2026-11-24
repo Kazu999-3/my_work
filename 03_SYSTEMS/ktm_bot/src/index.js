@@ -6,6 +6,7 @@ import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
 import { syncPeriodicCardContents } from './handlers/jobs/periodicCards.js';
 import { notifyAdminError } from './utils/alert.js';
+import { checkPendingIntros } from './handlers/jobs/introWatcher.js';
 
 
 export default {
@@ -35,7 +36,7 @@ export default {
 
     // 2026-10-20: GAS（スプレッドシート）用の /announce-match・/post-report を削除（スプレッドシートは使っていない。ユーザー確認）
 
-    // 超軽量自己紹介プリチェック（GitHub Actions 15分監視用: Supabase接続なし・未処理がある時のみVercelを起動）
+    // 超軽量自己紹介プリチェック（手動確認用・未処理がある時のみVercelを起動）
     if (url.pathname === '/check-intro-pending' && request.method === 'GET') {
       const authKey = url.searchParams.get('key');
       const acceptedKeys = [env.INTERNAL_GAS_SECRET, env.BOT_TRIGGER_KEY].filter(Boolean);
@@ -46,51 +47,22 @@ export default {
         });
       }
 
-      if (!DISCORD_TOKEN) {
-        return new Response(JSON.stringify({ ok: false, error: 'DISCORD_TOKEN is not configured' }), {
-          status: 500,
+      const result = await checkPendingIntros({ ...env, DISCORD_TOKEN });
+      if (!result.ok) {
+        return new Response(JSON.stringify({ ok: false, error: result.error }), {
+          status: result.status || 502,
           headers: { 'Content-Type': 'application/json' },
         });
       }
 
-      try {
-        const res = await fetch(`https://discord.com/api/v10/channels/${CONFIG.INTRO_CHANNEL_ID}/messages?limit=15`, {
-          headers: { Authorization: `Bot ${DISCORD_TOKEN}` },
-        });
-        if (!res.ok) {
-          const errBody = (await res.text().catch(() => '')).slice(0, 200);
-          return new Response(JSON.stringify({ ok: false, error: `Discord API ${res.status}: ${errBody}` }), {
-            status: 502,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-
-        const messages = await res.json();
-        const ONBOARDING_START_MS = Date.parse('2026-10-08T07:00:00.000Z');
-        const idShapeRe = /[^\s\n\r#]+\s*#\s*[a-zA-Z0-9ぁ-んァ-ヶー一-龠]+/;
-        const pendingMessages = (Array.isArray(messages) ? messages : []).filter((m) => {
-          if (m.author?.bot) return false;
-          const ts = Date.parse(m.timestamp);
-          if (!Number.isFinite(ts) || ts < ONBOARDING_START_MS) return false;
-          const hasCheck = Array.isArray(m.reactions) && m.reactions.some((r) => r.emoji?.name === '✅');
-          if (hasCheck) return false;
-          return typeof m.content === 'string' && idShapeRe.test(m.content);
-        });
-
-        return new Response(JSON.stringify({
-          ok: true,
-          pendingCount: pendingMessages.length,
-          checked: Array.isArray(messages) ? messages.length : 0,
-          pendingAuthors: pendingMessages.map((m) => m.author?.global_name || m.author?.username || m.author?.id),
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e?.message || 'Unknown error' }), {
-          status: 502,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
+      return new Response(JSON.stringify({
+        ok: true,
+        pendingCount: result.pendingCount,
+        checked: result.checked,
+        pendingAuthors: result.pendingAuthors,
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // 手動で Scheduled Event をキックする管理者用エンドポイント
