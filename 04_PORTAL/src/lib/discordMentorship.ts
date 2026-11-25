@@ -727,3 +727,59 @@ export async function createMentorshipForumThread(
   }
 }
 
+/**
+ * 師弟活動の期間満了・自動解散時に、専用スレッドへ円満修了および再オファー案内通知を投稿する
+ */
+export async function notifyMentorshipThreadDisband(params: {
+  threadId: string;
+  mentorDiscordId?: string;
+  pupilDiscordId?: string;
+}): Promise<boolean> {
+  if (!params.threadId || !DISCORD_BOT_TOKEN) return false;
+
+  const mentions = [
+    params.mentorDiscordId ? `<@${params.mentorDiscordId}>` : '',
+    params.pupilDiscordId ? `<@${params.pupilDiscordId}>` : '',
+  ].filter(Boolean).join(' ');
+
+  const embed = {
+    title: '📢 【運営より】師弟活動の円満修了・自動解散のお知らせ',
+    description: [
+      'お二人の設定活動期間が満了したため、本日をもって相談ペアを自動解散（円満修了）といたしました！活動お疲れ様でした🎉',
+      '',
+      '💡 **今後のご案内**',
+      '・お互いのプロフィールが再公開され、先輩の相談枠も解放されました。',
+      '・**「まだまだこの先輩に教えてもらいたい！」という場合**は、遠慮なくポータルの掲示板から改めて【継続依頼（再オファー）】を送信してください✨',
+      '（一度キリよく区切ることで、お互いの予定や負担を調整しながら安心して継続できます）',
+      '',
+      `👉 [教えて先輩！相談掲示板を開く](${PORTAL_BASE_URL}/mentorship)`,
+    ].join('\n'),
+    color: 0x10b981, // エメラルドグリーン（円満・完了）
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${params.threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: mentions ? `${mentions} 師弟活動の期間満了に伴うご案内です。` : undefined,
+        embeds: [embed],
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn(`[discordMentorship] notifyMentorshipThreadDisband failed (${res.status}):`, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[discordMentorship] Error in notifyMentorshipThreadDisband:', err);
+    return false;
+  }
+}
+
+

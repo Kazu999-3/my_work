@@ -1,5 +1,5 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
-import { syncMentorshipDashboard } from './discordMentorship';
+import { syncMentorshipDashboard, notifyMentorshipThreadDisband } from './discordMentorship';
 
 const GRACE_PERIOD_DAYS = 7;
 let lastCheckTime = 0;
@@ -21,6 +21,17 @@ function parseDurationDays(notes: string | null): number {
     return 30;
   }
   return 30;
+}
+
+function extractThreadId(notes: string | null): string | null {
+  if (!notes) return null;
+  try {
+    if (notes.startsWith('{') && notes.endsWith('}')) {
+      const parsed = JSON.parse(notes);
+      return parsed.threadId || null;
+    }
+  } catch (_) {}
+  return null;
 }
 
 function appendCancelReason(notes: string | null, reason: string): string {
@@ -45,6 +56,7 @@ function appendCancelReason(notes: string | null, reason: string): string {
 /**
  * 期間満了後、7日間の猶予期間を過ぎても延長されなかった師弟ペアを
  * 自動的に円満解散（CANCELLED）とし、相談枠とプロフィールを解放する。
+ * また、専用スレッドがある場合は円満修了および再オファー案内通知を投稿する。
  */
 export async function autoCloseExpiredMentorshipMatches(force = false): Promise<{
   checked: boolean;
@@ -60,7 +72,7 @@ export async function autoCloseExpiredMentorshipMatches(force = false): Promise<
   try {
     const { data: activeMatches, error } = await supabase
       .from('mentorship_matches')
-      .select('id, mentor_profile_id, pupil_profile_id, started_at, notes')
+      .select('id, mentor_profile_id, pupil_profile_id, mentor_discord_id, pupil_discord_id, started_at, notes')
       .eq('status', 'ACTIVE');
 
     if (error || !activeMatches || activeMatches.length === 0) {
@@ -116,6 +128,18 @@ export async function autoCloseExpiredMentorshipMatches(force = false): Promise<
       if (!updateErr) {
         closedIds.push(item.match.id);
         item.profileIds.forEach((id) => allProfileIdsToOpen.add(id));
+
+        // 💬 スレッドへの円満解散・再オファー案内通知
+        const threadId = extractThreadId(item.match.notes);
+        if (threadId) {
+          notifyMentorshipThreadDisband({
+            threadId,
+            mentorDiscordId: item.match.mentor_discord_id,
+            pupilDiscordId: item.match.pupil_discord_id,
+          }).catch((err) => {
+            console.warn('[mentorshipAutoClose] Thread notify warning:', err);
+          });
+        }
       }
     }
 
