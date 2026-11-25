@@ -194,11 +194,11 @@ export function isSpectatorMatch(line) {
 export function cleanEntryLine(line) {
   let s = (line || '').replace(/\s*🟢\s*フル/g, '');
 
-  // 経験度バッジの簡素化（初参加🔰のみ残し、名簿の視認性を邪魔する👑や🌱、⏳等は非表示に）
+  // 経験度バッジの簡素化（配慮が必要な初参加🔰・ライト層🌱を残し、常連👑や⏳、🎖️は非表示に）
   s = s.replace(/👑\s*常連|👑/g, '')
-       .replace(/🌱\s*ライト|🌱/g, '')
        .replace(/⏳\s*復帰勢|⏳/g, '')
        .replace(/🎖️\s*経験者|🎖️/g, '')
+       .replace(/🌱\s*ライト/g, '🌱')
        .replace(/🔰\s*初参加/g, '🔰');
 
   // ランク表記を短縮（案B）

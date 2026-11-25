@@ -49,7 +49,7 @@ const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,rol
 /** 名簿行の「経験バッジ・ランク（土曜のみ）・希望レーン」部分。playerRow が無い（未登録）時は 🔰 だけ */
 function buildEntrySuffix(playerRow, def) {
   const expBadge = getPlayerExperienceBadge(playerRow);
-  const expBadgeStr = expBadge?.tier === 'new' ? ' 🔰' : '';
+  const expBadgeStr = expBadge?.tier === 'new' ? ' 🔰' : expBadge?.tier === 'light' ? ' 🌱' : '';
 
   // ランク表記は土曜（代表MMRで帯分け・チーム分けする）でのみ意味を持つ。
   // 日曜はランク不問のお祭り枠なので出さない。
