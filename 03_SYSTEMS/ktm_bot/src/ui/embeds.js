@@ -385,17 +385,17 @@ function renderEntryList(lines, status) {
 
     // 1. 第1戦から（フル参加者 ＋ 1戦のみ参加者）
     if (b.match1Lines && b.match1Lines.length > 0) {
-      sections.push(`**⚔️ 第1戦から（${b.match1Count}/${status.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
+      sections.push(`**第1戦から（${b.match1Count}/${status.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
     }
 
     // 2. 2戦目から合流（途中参加者）
     if (b.match2LateLines && b.match2LateLines.length > 0) {
-      sections.push(`**🌙 2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
+      sections.push(`**2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
     }
 
     // 3. 観戦希望
     if (b.spectatorLines && b.spectatorLines.length > 0) {
-      sections.push(`**👀 観戦希望（${b.spectatorTotal}名）**\n${b.spectatorLines.map(toSuffix).join('\n')}`);
+      sections.push(`**観戦希望（${b.spectatorTotal}名）**\n${b.spectatorLines.map(toSuffix).join('\n')}`);
     }
 
     if (sections.length > 0) {
@@ -430,10 +430,10 @@ function renderLobbyList(lobbyStatus) {
     const pairSuffix = (l) => (isPairLine(l) ? toSuffix(l) : l);
 
     if (b.match1Lines && b.match1Lines.length > 0) {
-      sections.push(`**⚔️ 第1戦から（${b.match1Count}/${lobbyStatus.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
+      sections.push(`**第1戦から（${b.match1Count}/${lobbyStatus.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
     }
     if (b.match2LateLines && b.match2LateLines.length > 0) {
-      sections.push(`**🌙 2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
+      sections.push(`**2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
     }
     if (sections.length > 0) {
       const groupedText = sections.join('\n\n');

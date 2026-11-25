@@ -171,8 +171,9 @@ export function formatParticipantDisplayLine(participant, playerRow, def) {
   else if (style === 'late') styleBadge = ' 🌙途中参加(2戦目〜)';
   else if (style === 'spectator') styleBadge = ' 👀観戦希望';
 
-  // 経験バッジ
-  const expBadgeStr = ` ${getPlayerExperienceBadge(playerRow).short}`;
+  // 経験バッジ（初参加のみ🔰を表示、常連やライト層は非表示でスッキリ化）
+  const expBadge = getPlayerExperienceBadge(playerRow);
+  const expBadgeStr = expBadge?.tier === 'new' ? ' 🔰' : '';
 
   // ランク表記（土曜のみ）
   let rankStr = '';
