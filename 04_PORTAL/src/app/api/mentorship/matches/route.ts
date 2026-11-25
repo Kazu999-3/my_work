@@ -9,6 +9,7 @@ import { sendErrorNotification } from '../../../../lib/discordNotify';
 // 師弟の通知は DM ではなく本人の個別案内チャンネルへ送る（2026-10-20 ユーザー判断）
 import { sendToMemberChannel } from '../../../../lib/onboardingChannels';
 import { syncMentorshipDashboard, createMentorshipForumThread } from '../../../../lib/discordMentorship';
+import { autoCloseExpiredMentorshipMatches } from '../../../../lib/mentorshipAutoClose';
 
 export const dynamic = 'force-dynamic';
 
@@ -281,6 +282,11 @@ async function sendDiscordOfferNotification(
 export async function GET() {
   let myDiscordId: string | undefined = undefined;
   try {
+    // 猶予期間（満了後7日）を超過したペアを自動解散して枠を解放
+    await autoCloseExpiredMentorshipMatches().catch((err) => {
+      console.warn('[mentorship/matches] autoClose warning:', err);
+    });
+
     const session = await getAuthSession();
     myDiscordId = session?.discordId;
 

@@ -5,6 +5,7 @@ import { verifyBotSecret } from '../../../../lib/botAuth';
 import { findOrCreatePlayer } from '../../../../lib/playerCoins';
 import { sendErrorNotification } from '../../../../lib/discordNotify';
 import { notifyNewMentorshipProfile, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
+import { autoCloseExpiredMentorshipMatches } from '../../../../lib/mentorshipAutoClose';
 
 import { getPlayerTier, ExperienceTier } from '../../../../lib/playerTier';
 import { MENTORSHIP_FIRST_PROFILE_BONUS_COINS } from '../../../../lib/constants/rewards';
@@ -123,6 +124,11 @@ export async function resolvePlayerTier(discordId: string, playerName?: string) 
 export async function GET(request: Request) {
   let myDiscordId: string | undefined = undefined;
   try {
+    // 猶予期間（満了後7日）を超過したペアを自動解散して枠を解放
+    await autoCloseExpiredMentorshipMatches().catch((err) => {
+      console.warn('[mentorship/profiles] autoClose warning:', err);
+    });
+
     const { searchParams } = new URL(request.url);
     const roleType = searchParams.get('roleType'); // 'PUPIL' | 'MENTOR' | null
     const lane = searchParams.get('lane'); // 'TOP' | 'JUNGLE' | 'MID' | 'BOT' | 'SUPPORT' | null
