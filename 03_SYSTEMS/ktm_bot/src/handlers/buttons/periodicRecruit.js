@@ -15,6 +15,8 @@ import {
   fetchActiveParticipants,
   buildDisplayLinesFromDb,
   fetchPlayerRowsMap,
+  fetchPlayerRow,
+  PLAYER_SELECT,
 } from '../../utils/recruitmentLedger.js';
 
 // 定期募集（土日カード）への参加・代理追加
@@ -43,8 +45,6 @@ function readDayEntryLines(embed) {
     return lines;
   });
 }
-
-const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher,tier_promotion_pref,allow_lower_support';
 
 /** 名簿行の「経験バッジ・ランク（土曜のみ）・希望レーン」部分。playerRow が無い（未登録）時は 🔰 だけ */
 function buildEntrySuffix(playerRow, def) {
@@ -108,9 +108,8 @@ async function refreshEntryLines(env, lines, def) {
   const tailRe = /<@(\d+)>(.*)$/;
   const ids = [...new Set(lines.map((l) => l.match(tailRe)?.[1]).filter(Boolean))];
   if (ids.length === 0) return { lines, playerMap: new Map() };
-  const rows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${ids.join(',')})&select=${PLAYER_SELECT}`).catch(() => null);
-  if (!rows || rows.length === 0) return { lines, playerMap: new Map() }; // 読めなければ今の表記のまま
-  const byId = new Map(rows.map((r) => [r.discord_id, r]));
+  const byId = await fetchPlayerRowsMap(env, ids);
+  if (!byId || byId.size === 0) return { lines, playerMap: new Map() }; // 読めなければ今の表記のまま
   const updatedLines = lines.map((l) => {
     const m = l.match(tailRe);
     if (!m) return l;
@@ -158,9 +157,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }),
-          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=${PLAYER_SELECT}`)
-            .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
-            .catch(() => null),
+          fetchPlayerRow(env, userId).catch(() => null),
           getRecruitmentByMessageId(env, msgId).catch(() => null),
         ]);
 
@@ -309,8 +306,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }),
-          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=${PLAYER_SELECT}`)
-            .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
+          fetchPlayerRow(env, userId)
             // 読み込み失敗は undefined（未登録の null と区別し、🔰 を書き込まない）
             .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return undefined; }),
           getRecruitmentByMessageId(env, msgId).catch(() => null),

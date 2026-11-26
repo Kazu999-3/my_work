@@ -13,6 +13,7 @@ import {
   cancelParticipant,
   fetchActiveParticipants,
   fetchPlayerRowsMap,
+  fetchPlayerRow,
   rebuildAdhocMetadataFromDb,
   PLAYER_SELECT,
 } from '../../utils/recruitmentLedger.js';
@@ -85,9 +86,7 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     // ── DB駆動モード (SSoT: recruitment_participants) ──
     const [activeBefore, playerRow] = await Promise.all([
       fetchActiveParticipants(env, recruitment.id),
-      fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=${PLAYER_SELECT}`)
-        .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
-        .catch(() => null),
+      fetchPlayerRow(env, userId).catch(() => null),
     ]);
     prevJoinedCount = activeBefore.filter((p) => p.style !== 'spectator').length;
     const existingParticipant = activeBefore.find((p) => p.discord_id === userId);

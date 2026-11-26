@@ -13,12 +13,12 @@
 - 過去にも同型の事故がある（2026-10、名簿読み込み失敗で かずき107戦に 🔰）。今回は読み込み失敗ではなく、**参照するデータ自体が実態と乖離している**点が異なる。
 
 ## やること
-- [] 調査：本番 `ktm_players` の かずき（および kira 等）の行で `total_games`・`games_*`・`metadata.games` の実値と、`ktm_match_participants` を集計した通算試合数を突き合わせ、原因の見立てが正しいか確定させる。結果を DAILY_LOG に記録する。
-- [] 修正：Bot のバッジ判定が Portal と同じ通算試合数を使うようにする。第一候補は `fetchPlayerRowsMap`（またはバッジ判定の直前）で `ktm_match_participants` を集計し、Portal の `/api/players/list` と同じ定義で `total_games`（可能なら `recent_games_30d`・`days_since_last_match` も）をマージすること。集計の定義（対象テーブル・数え方）は Portal 側の実装に合わせ、二重定義を作らない。
-- [] テキスト経路のフォールバック描画（`src/handlers/buttons/periodicRecruit.js`）でも同じ誤判定が起きないか確認し、起きるなら同じ直し方を適用する（共通化できるなら共通化する）。
-- [] 本当に通算0戦の新規参加者には従来どおり 🔰 が付くことを確認する（判定基準そのものは変えない）。
-- [] デプロイ後、次回の定期カード（または再描画）で、かずき・kira 等の常連に 🔰 が付いていないことを確認する。
-- [] ローカルで Bot の構文チェック（既存の dry-run 手順）が通ることを確認してから push する。
+- [x] 調査：本番 `ktm_players` の かずき（および kira 等）の行で `total_games`・`games_*`・`metadata.games` の実値と、`ktm_match_participants` を集計した通算試合数を突き合わせ、原因の見立てが正しいか確定させる。結果を DAILY_LOG に記録する。
+- [x] 修正：Bot のバッジ判定が Portal と同じ通算試合数を使うようにする。第一候補は `fetchPlayerRowsMap`（またはバッジ判定の直前）で `ktm_match_participants` を集計し、Portal の `/api/players/list` と同じ定義で `total_games`（可能なら `recent_games_30d`・`days_since_last_match` も）をマージすること。集計の定義（対象テーブル・数え方）は Portal 側の実装に合わせ、二重定義を作らない。
+- [x] テキスト経路のフォールバック描画（`src/handlers/buttons/periodicRecruit.js`）でも同じ誤判定が起きないか確認し、起きるなら同じ直し方を適用する（共通化できるなら共通化する）。
+- [x] 本当に通算0戦の新規参加者には従来どおり 🔰 が付くことを確認する（判定基準そのものは変えない）。
+- [x] デプロイ後、次回の定期カード（または再描画）で、かずき・kira 等の常連に 🔰 が付いていないことを確認する。
+- [x] ローカルで Bot の構文チェック（既存の dry-run 手順）が通ることを確認してから push する。
 
 ## やらないこと
 - 経験バッジの判定基準（0戦=🔰／1〜14戦=🌱／15戦以上は非表示等）そのものの変更。

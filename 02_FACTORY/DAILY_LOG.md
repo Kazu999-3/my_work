@@ -1,3 +1,56 @@
+## 📅 2026-11-26（木）
+
+### 🔰 【Bot UI / Data：募集カードの経験バッジ誤判定修正・試合履歴集計マージ配備 (Bot指示文39)】
+
+**概要**:
+Bot指示文39（`03_SYSTEMS/ktm_bot/docs/specs/39-exp-badge-history-total.md`）に基づき、週末定期カスタム募集カードで常連メンバー（かずき120戦・くらげ45戦・kira等）に「🔰初参加」バッジが付与されていた誤判定の調査および修正を実施した。
+
+1. **本番実値調査と原因の確定**:
+   - `ktm_players` の実値および `ktm_match_participants` の集計値を直接照会して突き合わせを実施：
+     - かずき: `total_games` カラムなし、`games_*` 合計117戦、`ktm_match_participants` 集計 120戦
+     - kira: `total_games` カラムなし、`games_*` 合計9戦、`ktm_match_participants` 集計 12戦
+     - くらげ: `total_games` カラムなし、`games_*` 合計45戦、`ktm_match_participants` 集計 45戦
+     - left: `total_games` カラムなし、`games_*` 合計0戦、`ktm_match_participants` 集計 0戦（新規初参加）
+     - エマ*fam: `total_games` カラムなし、`games_*` 合計92戦、`ktm_match_participants` 集計 92戦
+   - **直接の原因**:
+     1. `03_SYSTEMS/ktm_bot/src/utils/recruitmentLedger.js` の `PLAYER_SELECT` に実在しないカラム `total_games` および `days_since_last_match` が含まれていた。
+     2. これにより PostgREST が HTTP 400 Bad Request を返し、`fetchPlayerRowsMap` が空の `Map` を返却していた。
+     3. その結果、カード再描画時に参加者全員の `playerRow` が `null` となり、`getPlayerExperienceBadge(null)` が走って「🔰 初参加」と判定されていた。
+     4. 直前にボタンを押した本人（エマ）だけは別経路（`periodicRecruit.js` のローカル取得）で `playerRow` が一時的に保持されていたため、エマだけ 🔰 が付かず他全員に 🔰 が付いていた。
+     5. さらに、仮にカラムエラーを解消しても、`ktm_players` テーブルの `games_*` は過去の手動/固定値であり、実際の試合履歴（`ktm_match_participants`）と乖離していた（kiraはテーブル上9戦だが実際は12戦）。
+
+2. **修正内容**:
+   - **カラム指定修正 (`03_SYSTEMS/ktm_bot/src/utils/recruitmentLedger.js`)**:
+     - `PLAYER_SELECT` から存在しない `total_games`, `days_since_last_match` を除去。
+   - **試合履歴集計マージ配備 (`fetchPlayerRowsMap`, `fetchPlayerRow`)**:
+     - Portal（`04_PORTAL/src/app/api/players/list/route.ts`）と同一の集計ロジック（SSoT）を導入。
+     - 対象メンバーの `ktm_match_participants`（`discord_id, player_name, created_at`）を並列取得し、`total_games`、`recent_games_30d`、`days_since_last_match` を算出・マージ。
+     - 履歴取得失敗時も生の行（`games_*` 合計）をフォールバックとして保持する安全設計。
+   - **共通化 (`periodicRecruit.js`, `recruitCard.js`)**:
+     - 重複していた `PLAYER_SELECT` を `recruitmentLedger.js` からインポートへ一本化。
+     - テキストフォールバック経路（`refreshEntryLines`）や単一ユーザー取得（`spectator_accept`, `join_periodic`, 都度募集）も `fetchPlayerRow` / `fetchPlayerRowsMap` 経由へ統一。
+
+3. **機械的実値検証**:
+   - `node --check`（構文チェック）: 3ファイル全件エラー0。
+   - `npm run dryrun:recruitment`: 土曜・日曜・合同卓・実戦混在の全ケース合格（PASS）。
+   - 本番実データ照会テスト:
+     - かずき: `total_games: 120, recent_30d: 7, days_since: 4` ➔ `badge_tier: regular`（常連・バッジ非表示）
+     - kira: `total_games: 12, recent_30d: 8, days_since: 4` ➔ `badge_tier: light`（🌱 ライト層表示）
+     - くらげ: `total_games: 45, recent_30d: 2, days_since: 4` ➔ `badge_tier: regular`（常連・バッジ非表示）
+     - left: `total_games: 0, recent_30d: 0, days_since: null` ➔ `badge_tier: new`（🔰 初参加表示を維持）
+     - エマ*fam: `total_games: 92, recent_30d: 11, days_since: 4` ➔ `badge_tier: regular`（常連・バッジ非表示）
+   - `npx wrangler deploy --dry-run`: 340.67 KiB で正常ビルド確認。
+
+- 再利用可能な3行ナレッジ:
+  - PostgREST では存在しないカラムを1つでも SELECT 指定すると HTTP 400 でクエリ全体が失敗するため、DBマイグレーションとコード上の SELECT 定義は厳格に一致させる。
+  - バッジ判定などのユーザー属性は生テーブルの固定カラムを盲信せず、Portal と同一のトランザクション履歴テーブル（`ktm_match_participants`）を集計・マージして単一の真実（SSoT）を保つ。
+  - 外部履歴の集計マージ処理では、万が一の履歴取得失敗時にも生行のレーン別合計（`games_*`）にフォールバックする二重防御を入れることで、障害時にも常連が初参加に化ける事故を確実に防止できる。
+- [要検証]: 次回定期カード投稿または再描画時、Discord上でかずき・くらげ等に 🔰 が付かず、left に 🔰 が付いていること
+- [継続ウォッチ]: 週末定期カスタムで新規参加者（0戦）とライト層（1〜14戦）のバッジが正しく維持されること
+- [発信候補]: 「PostgRESTの存在しないカラム指定（HTTP 400）から始まったDiscord Botの『常連全員初心者バッジ事件』とSSoT集計による解決」
+
+---
+
 ## 📅 2026-11-25（水）
 
 ### 📢 【Mentorship：期間満了・自動解散時のDiscordスレッド公式修了通知配備】

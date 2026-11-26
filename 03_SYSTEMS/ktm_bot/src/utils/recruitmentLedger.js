@@ -10,7 +10,7 @@ import { getKtmRank, getRepresentativeMmr, getPlayerExperienceBadge, getPlayerAc
 import { RANK_SHORT_JP_MAP, RANK_JP_MAP } from './recruitmentStatus.js';
 
 export const BAND_BOUNDARY_MMR = 1450;
-export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,allow_higher,tier_promotion_pref,allow_lower_support';
+export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher,tier_promotion_pref,allow_lower_support';
 
 /**
  * プレイヤー情報と参加形態から、DB（recruitment_participants）に保存する属性を決定する純粋関数
@@ -217,24 +217,108 @@ export function buildDisplayLinesFromDb(participants, playerRowsMap, def) {
 }
 
 /**
- * 複数の Discord ID から ktm_players レコードを一括取得して Map で返す
+ * 複数の Discord ID から ktm_players レコードを一括取得し、
+ * ktm_match_participants の集計値（total_games, recent_games_30d, days_since_last_match）をマージして Map で返す。
+ * 集計定義は Portal (/api/players/list) と完全に同一の SSoT。
  */
 export async function fetchPlayerRowsMap(env, discordIds) {
   if (!discordIds || discordIds.length === 0) return new Map();
   const uniqueIds = [...new Set(discordIds.filter(Boolean))];
   if (uniqueIds.length === 0) return new Map();
   try {
-    const rows = await fetchSupabase(
-      env,
-      'ktm_players',
-      `discord_id=in.(${uniqueIds.join(',')})&select=${PLAYER_SELECT}`
-    );
-    if (!rows || !Array.isArray(rows)) return new Map();
-    return new Map(rows.map((r) => [r.discord_id, r]));
+    const [playerRows, participantRows] = await Promise.all([
+      fetchSupabase(
+        env,
+        'ktm_players',
+        `discord_id=in.(${uniqueIds.join(',')})&select=${PLAYER_SELECT}`
+      ),
+      fetchSupabase(
+        env,
+        'ktm_match_participants',
+        `discord_id=in.(${uniqueIds.join(',')})&select=discord_id,player_name,created_at`
+      ).catch((err) => {
+        console.warn('fetch match_participants error:', err);
+        return null;
+      }),
+    ]);
+
+    if (!playerRows || !Array.isArray(playerRows)) return new Map();
+
+    // 試合履歴取得に失敗した場合は、フォールバックとして生の行を返す（games_* による判定が動く）
+    if (!participantRows) {
+      return new Map(playerRows.map((r) => [r.discord_id, r]));
+    }
+
+    // Portal (/api/players/list) と同一の集計ロジック
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+    const statsByDiscord = new Map();
+    const statsByNameLower = new Map();
+
+    const updateStats = (map, key, time) => {
+      let stat = map.get(key);
+      if (!stat) {
+        stat = { total: 0, recent30d: 0, lastPlayedAt: null };
+        map.set(key, stat);
+      }
+      stat.total += 1;
+      if (time >= thirtyDaysAgo) {
+        stat.recent30d += 1;
+      }
+      if (!stat.lastPlayedAt || time > stat.lastPlayedAt) {
+        stat.lastPlayedAt = time;
+      }
+    };
+
+    (participantRows || []).forEach((row) => {
+      const matchTime = row.created_at ? new Date(row.created_at).getTime() : 0;
+      if (row.discord_id) {
+        updateStats(statsByDiscord, String(row.discord_id).trim(), matchTime);
+      }
+      if (row.player_name) {
+        updateStats(statsByNameLower, String(row.player_name).trim().toLowerCase(), matchTime);
+      }
+    });
+
+    const enrichedRows = playerRows.map((p) => {
+      let historyStat = null;
+      if (p.discord_id && statsByDiscord.has(String(p.discord_id).trim())) {
+        historyStat = statsByDiscord.get(String(p.discord_id).trim());
+      } else if (p.name && statsByNameLower.has(String(p.name).trim().toLowerCase())) {
+        historyStat = statsByNameLower.get(String(p.name).trim().toLowerCase());
+      }
+
+      const totalGames = historyStat ? historyStat.total : 0;
+      const recent30d = historyStat ? historyStat.recent30d : 0;
+      const daysSinceLast = historyStat?.lastPlayedAt
+        ? Math.floor((now - historyStat.lastPlayedAt) / (24 * 60 * 60 * 1000))
+        : null;
+
+      return {
+        ...p,
+        total_games: totalGames,
+        games: totalGames,
+        recent_games_30d: recent30d,
+        last_played_at: historyStat?.lastPlayedAt ? new Date(historyStat.lastPlayedAt).toISOString() : null,
+        days_since_last_match: daysSinceLast,
+      };
+    });
+
+    return new Map(enrichedRows.map((r) => [r.discord_id, r]));
   } catch (err) {
     console.warn('fetchPlayerRowsMap error:', err);
     return new Map();
   }
+}
+
+/**
+ * 単一の Discord ID から ktm_players レコードを取得（集計値マージ済み）
+ */
+export async function fetchPlayerRow(env, discordId) {
+  if (!discordId) return null;
+  const map = await fetchPlayerRowsMap(env, [discordId]);
+  return map.get(discordId) || null;
 }
 
 /**
