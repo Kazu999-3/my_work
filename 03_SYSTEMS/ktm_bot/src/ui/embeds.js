@@ -455,6 +455,24 @@ function renderSpectatorList(spectatorStatus) {
   return formatLinesSafe(lines);
 }
 
+function formatLobbyHeader(icon, name, s, isAnyReady) {
+  const ready = s.isMatch1Ready || s.isReady;
+  const remaining = s.match1Remaining ?? s.remaining;
+  const count = s.match1Count ?? s.joined;
+  const state = ready
+    ? '開催確定！'
+    : isAnyReady
+      ? `2部屋目まであと${remaining}名`
+      : `あと${remaining}名`;
+
+  const lateCount = s.match2LateLines?.length ?? 0;
+
+  if (lateCount > 0) {
+    return `${icon} ${name} (第1戦 ${count}/10名 → ${state}／2戦目から合流 ${lateCount}名)`;
+  }
+  return `${icon} ${name} (${count}/10名 → ${state})`;
+}
+
 /**
  * 募集カードEmbedへ、現在の参加者から導かれる状態（バナー・色・参加者フィールド）を反映する。
  * 新規作成時も更新時もこの関数を通すため、文言の二重管理が発生しない。
@@ -475,7 +493,14 @@ export function applyDayCardState(embed, dayKey, entryLines, options = {}) {
   // 日曜（お祭り枠）: 帯を分けず全体で単一の参加者フィールド
   if (dayKey === 'sun' || !status.high || !status.low) {
     let fieldTitle;
-    if (status.breakdown?.hasSpectator) {
+    const b = status.breakdown;
+    const lateCount = b?.match2LateLines?.length ?? 0;
+    const hasSpectator = Boolean(b?.hasSpectator);
+
+    if (lateCount > 0) {
+      const specText = hasSpectator ? `／観戦 ${b.spectatorTotal}名` : '';
+      fieldTitle = `👥 参加者 (第1戦 ${b.match1Count}/${status.capacity}名／2戦目から合流 ${lateCount}名${specText})`;
+    } else if (hasSpectator) {
       fieldTitle = `👥 参加者（計${status.total}名）`;
     } else {
       fieldTitle = `👥 参加者 (${status.joined}/${status.capacity}名)`;
@@ -495,17 +520,14 @@ export function applyDayCardState(embed, dayKey, entryLines, options = {}) {
     const spec = status.spectator;
     const isAnyReady = Boolean(status.isReady);
 
-    const highState = high.isReady ? '開催確定！' : isAnyReady ? `2部屋目まであと${high.remaining}名` : `あと${high.remaining}名`;
-    const lowState = low.isReady ? '開催確定！' : isAnyReady ? `2部屋目まであと${low.remaining}名` : `あと${low.remaining}名`;
-
     embed.fields = [
       {
-        name: `👑 上位帯ロビー (${high.joined}/10名 → ${highState})`,
+        name: formatLobbyHeader('👑', '上位帯ロビー', high, isAnyReady),
         value: renderLobbyList(high),
         inline: false,
       },
       {
-        name: `🌱 中初級帯ロビー (${low.joined}/10名 → ${lowState})`,
+        name: formatLobbyHeader('🌱', '中初級帯ロビー', low, isAnyReady),
         value: renderLobbyList(low),
         inline: false,
       },
