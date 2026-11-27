@@ -98,15 +98,15 @@ export function MentorshipCard({
               </span>
             )}
             {isMentor ? (
-              (profile.active_pupils_count || 0) >= (profile.max_pupils || 2) ? (
+              (profile.active_pupils_count || 0) >= (profile.max_pupils ?? 3) ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-100 dark:bg-primary-950/50 text-primary-800 dark:text-primary-300 border border-primary-edge-soft dark:border-primary-edge-strong flex items-center gap-1">
                   <span>🈵</span>
-                  <span>相談枠満員 ({profile.active_pupils_count}/{profile.max_pupils || 2}人)</span>
+                  <span>相談枠満員 ({profile.active_pupils_count}/{profile.max_pupils ?? 3}人)</span>
                 </span>
               ) : (profile.active_pupils_count || 0) > 0 ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-success-100 dark:bg-success-950/50 text-success-800 dark:text-success-300 border border-success-edge dark:border-success-edge-strong flex items-center gap-1">
                   <span>👥</span>
-                  <span>相談中: {profile.active_pupils_count}/{profile.max_pupils || 2}人</span>
+                  <span>相談中: {profile.active_pupils_count}/{profile.max_pupils ?? 3}人</span>
                 </span>
               ) : (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-success-50 dark:bg-success-950/50 text-success-700 dark:text-success-300 border border-success-edge-soft dark:border-success-edge-strong flex items-center gap-1">
@@ -362,9 +362,9 @@ export function MentorshipCard({
           <span className="text-xs text-primary-700 font-bold bg-primary-50 px-2.5 py-1 rounded-xl border border-primary-edge-soft">
             🤝 相談ペア結成中
           </span>
-        ) : isMentor && (profile.active_pupils_count || 0) >= (profile.max_pupils || 2) ? (
+        ) : isMentor && (profile.active_pupils_count || 0) >= (profile.max_pupils ?? 3) ? (
           <span className="text-xs text-primary-700 font-bold bg-primary-50 px-2.5 py-1 rounded-xl border border-primary-edge-soft">
-            🈵 相談枠満員 ({profile.max_pupils || 2}人)
+            🈵 相談枠満員 ({profile.max_pupils ?? 3}人)
           </span>
         ) : isPendingSent ? (
           <span className="text-xs text-primary-800 font-bold bg-primary-50 px-3 py-1.5 rounded-xl border border-primary-edge-soft flex items-center gap-1">

@@ -27,7 +27,7 @@ export interface MentorshipProfile {
   active_hours: string;
   status: 'OPEN' | 'MATCHED' | 'PAUSED';
   preferred_duration?: string; // '1_MATCH' | 'REPLAY' | '3_DAYS' | '14_DAYS' | '30_DAYS' | 'INDEFINITE'
-  max_pupils?: number; // 師匠の最大受入人数（デフォルト: 3）
+  max_pupils?: number; // 師匠の最大受入人数（デフォルト: 3, 範囲: 1〜10）
   active_pupils_count?: number; // 現在進行中の弟子数
   active_pupil_names?: string[]; // 現在進行中の弟子たちの名前
   created_at: string;
@@ -349,7 +349,7 @@ export async function POST(request: Request) {
 
     const playerName = effectivePlayerName || player?.name || 'Player';
     const finalCurrentRank = current_rank || player?.highest_rank || 'UNRANKED';
-    const finalMaxPupils = role_type === 'MENTOR' ? Math.min(Math.max(Number(max_pupils) || 3, 1), 5) : 1;
+    const finalMaxPupils = role_type === 'MENTOR' ? Math.min(Math.max(Number(max_pupils) || 3, 1), 10) : 1;
 
     // 既存のプロフィール（同一role_typeまたは代理編集対象）があるか確認
     let existing = proxyTargetProfile;

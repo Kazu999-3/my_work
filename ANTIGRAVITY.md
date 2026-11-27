@@ -588,7 +588,15 @@ KTMポータルのメニュー表示およびページアクセス権限は、�
 ### 3. 技術スタック
 - **通知**: Discord REST API v10 (`/users/@me/channels`, `/channels/{channel_id}/messages`)、フォールバックWebhook
 - **フロントエンド**: Next.js 16 (App Router), React, Tailwind CSS, Lucide Icons
-- **バックエンド/DB**: Next.js API Routes (`/api/mentorship/matches`), Supabase (`mentorship_matches`, `mentorship_profiles`)
+- **バックエンド/DB**: Next.js API Routes (`/api/mentorship/matches`, `/api/mentorship/profiles`), Supabase (`mentorship_matches`, `mentorship_profiles`)
+
+### 4. 師弟可変受入枠仕様 (Dynamic Pupil Capacity) [2026-11-27 制定]
+- **目的**: 先輩（師匠）のライフスタイルや活動ペースに合わせ、同時に指導できる弟子の人数枠（受入枠）を本人が柔軟に調整可能とする。
+- **仕様**:
+  1. **受入可能人数**: `1人` 〜 `10人`（新規登録時のデフォルト: `3人`）。
+  2. **設定箇所**: 先輩プロフィール登録・編集モーダル（`/mentorship`）にて、本人がいつでも自由に変更可能。
+  3. **自動満員制御**: アクティブな弟子数（`active_pupils_count`）が設定上限（`max_pupils`）に達した時点で自動的に「🈵 相談枠満員」となり、新規受付を自動一時停止。空きが出ると自動再開。
+  4. **データ整合性**: DBカラム `mentorship_profiles.max_pupils` を正本とし、API・UI・仲人マッチングの全箇所でデフォルト3人・可変1〜10人を共通適用。
 
 ---
 

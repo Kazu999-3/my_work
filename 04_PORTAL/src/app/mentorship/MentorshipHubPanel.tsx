@@ -704,7 +704,7 @@ export default function MentorshipHubPanel() {
     if (activeOnly && p.is_inactive) return false;
     if (recruitingOnly) {
       if (p.role_type === 'PUPIL' && p.status === 'MATCHED') return false;
-      if (p.role_type === 'MENTOR' && (p.active_pupils_count || 0) >= (p.max_pupils || 2)) return false;
+      if (p.role_type === 'MENTOR' && (p.active_pupils_count || 0) >= (p.max_pupils ?? 3)) return false;
     }
     if (laneFilter !== 'ALL' && !(p.lanes || []).includes(laneFilter)) return false;
     if (searchQuery.trim()) {
@@ -720,8 +720,8 @@ export default function MentorshipHubPanel() {
 
   const sortedFilteredProfiles = [...filteredProfiles].sort((a, b) => {
     // 1. 募集中（枠あり・未結成）カードを先頭へ
-    const aRecruiting = a.role_type === 'PUPIL' ? a.status !== 'MATCHED' : (a.active_pupils_count || 0) < (a.max_pupils || 2);
-    const bRecruiting = b.role_type === 'PUPIL' ? b.status !== 'MATCHED' : (b.active_pupils_count || 0) < (b.max_pupils || 2);
+    const aRecruiting = a.role_type === 'PUPIL' ? a.status !== 'MATCHED' : (a.active_pupils_count || 0) < (a.max_pupils ?? 3);
+    const bRecruiting = b.role_type === 'PUPIL' ? b.status !== 'MATCHED' : (b.active_pupils_count || 0) < (b.max_pupils ?? 3);
     if (aRecruiting !== bRecruiting) {
       return aRecruiting ? -1 : 1;
     }

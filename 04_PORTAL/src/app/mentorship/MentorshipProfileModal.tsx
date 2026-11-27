@@ -7,7 +7,7 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { getKtmRank, RANKS as MMR_RANKS } from '../../lib/mmr';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { DURATION_OPTIONS } from '../../lib/mentorshipConstants';
-import { Search, Plus, X, Sparkles, Volume2, Video, Swords, BookOpen, Clock, Shield, Check } from 'lucide-react';
+import { Search, Plus, X, Sparkles, Volume2, Video, Swords, BookOpen, Clock, Shield, Check, Users } from 'lucide-react';
 
 interface MentorshipProfileModalProps {
   isOpen: boolean;
@@ -174,7 +174,7 @@ export function MentorshipProfileModal({
 
       setBio(profile.bio || '');
       setActiveHours(profile.active_hours || '');
-      setMaxPupils(profile.max_pupils || 2);
+      setMaxPupils(profile.max_pupils ?? 3);
     } else {
       // 新規作成時の自動プリセット
       const userRank = user?.rank ? user.rank.toUpperCase().split(' ')[0] : 'SILVER';
@@ -188,7 +188,7 @@ export function MentorshipProfileModal({
       setSelectedTags([]);
       setBio('');
       setActiveHours('平日 21:00〜24:00 / 休日');
-      setMaxPupils(2);
+      setMaxPupils(3);
     }
   }, [user]);
 
@@ -382,7 +382,14 @@ export function MentorshipProfileModal({
                       </span>
                     ))}
                   </div>
-                  <span className="text-xs text-success-700 font-black bg-success-50 px-2 py-0.5 rounded-full border border-success-edge-soft">🟢 募集中</span>
+                  <div className="flex items-center gap-1.5">
+                    {isMentor && (
+                      <span className="text-[11px] font-black text-primary-800 bg-primary-100 px-2 py-0.5 rounded-full border border-primary-edge">
+                        受入枠: 最大 {maxPupils} 人
+                      </span>
+                    )}
+                    <span className="text-xs text-success-700 font-black bg-success-50 px-2 py-0.5 rounded-full border border-success-edge-soft">🟢 募集中</span>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -807,6 +814,48 @@ export function MentorshipProfileModal({
                   </p>
                 </div>
               </div>
+
+              {/* 先輩専用: 受入可能人数（受入枠） */}
+              {isMentor && (
+                <div className="space-y-3 p-4 rounded-2xl bg-primary-50/60 dark:bg-primary-950/20 border border-primary-edge-soft">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <label className="text-xs font-black text-foreground-subtle flex items-center gap-1.5">
+                      <Users size={16} className="text-primary-600" />
+                      同時に受け入れる弟子の人数（受入枠）
+                    </label>
+                    <span className="text-xs font-black text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/60 px-2.5 py-0.5 rounded-full border border-primary-edge">
+                      現在: 最大 {maxPupils} 人
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-muted leading-relaxed">
+                    同時に指導・相談に乗れる弟子の人数を設定できます。活動中の弟子がこの人数に達すると自動的に掲示板が「満員（新規受付一時停止）」になります。
+                  </div>
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-1">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                      const isSelected = maxPupils === num;
+                      return (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setMaxPupils(num)}
+                          className={`py-2 px-1 rounded-xl text-xs font-black transition cursor-pointer border flex flex-col items-center justify-center ${
+                            isSelected
+                              ? 'bg-primary-500 text-white border-primary-600 shadow-xs ring-2 ring-primary-500/20'
+                              : 'bg-background hover:bg-surface-subtle text-foreground border-border'
+                          }`}
+                        >
+                          <span>{num}人</span>
+                          {num === 3 && (
+                            <span className={`text-[9px] font-bold ${isSelected ? 'text-primary-100' : 'text-primary-600'}`}>
+                              標準
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* 7. ひとことメッセージ ＆ 例文テンプレート */}
               <div className="space-y-2.5">
