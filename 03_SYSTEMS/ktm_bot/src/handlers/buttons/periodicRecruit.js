@@ -4,7 +4,7 @@ import { fetchSupabase } from '../../utils/supabase.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, applyDayCardState } from '../../ui/embeds.js';
 import { parseMessageData } from '../../utils/helpers.js';
 import { getKtmRank, getRepresentativeMmr, getPlayerExperienceBadge } from '../../utils/ktmRank.js';
-import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP, RANK_JP_MAP } from '../../utils/recruitmentStatus.js';
+import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP, RANK_JP_MAP, normalizeTierPromotionPref, getNormalizedTier, BAND_BOUNDARY_MMR } from '../../utils/recruitmentStatus.js';
 import { cleanupOldReminderMessages } from '../scheduled.js';
 import { notifyAdminError } from '../../utils/alert.js';
 import { recordRecruitmentActivity } from '../../utils/recruitmentAudit.js';
@@ -88,7 +88,25 @@ function buildEntrySuffix(playerRow, def) {
   } catch (e) {
     console.warn("role_preferences parse error:", e);
   }
-  return { expBadgeStr, rankStr, lanePrefStr };
+
+  let promotionPrefStr = "";
+  if (def.key === 'sat' && playerRow) {
+    const mmr = getRepresentativeMmr(playerRow) ?? Number(playerRow.mmr);
+    let isLowBand = true;
+    if (mmr != null && Number.isFinite(Number(mmr))) {
+      isLowBand = Number(mmr) < BAND_BOUNDARY_MMR;
+    } else {
+      const tier = getKtmRank(getRepresentativeMmr(playerRow) ?? 1200);
+      const norm = getNormalizedTier(`【${tier?.name || ''}】`);
+      isLowBand = norm !== 'プラチナ';
+    }
+    const pref = normalizeTierPromotionPref(playerRow.tier_promotion_pref);
+    if (isLowBand && pref === 'never') {
+      promotionPrefStr = '（上の帯NG）';
+    }
+  }
+
+  return { expBadgeStr, rankStr, lanePrefStr, promotionPrefStr };
 }
 
 /**
@@ -116,8 +134,8 @@ async function refreshEntryLines(env, lines, def) {
     if (/フル|1戦のみ|途中参加|観戦/.test(m[2])) return l;
     const row = byId.get(m[1]);
     if (!row) return l; // 未登録の人は 🔰 のまま
-    const { expBadgeStr, rankStr, lanePrefStr } = buildEntrySuffix(row, def);
-    return l.replace(tailRe, `<@${m[1]}>${expBadgeStr}${rankStr}${lanePrefStr}`);
+    const { expBadgeStr, rankStr, lanePrefStr, promotionPrefStr } = buildEntrySuffix(row, def);
+    return l.replace(tailRe, `<@${m[1]}>${expBadgeStr}${rankStr}${lanePrefStr}${promotionPrefStr || ''}`);
   });
   return { lines: updatedLines, playerMap: byId };
 }
@@ -394,11 +412,11 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           const applyOnce = async (m) => {
             const targetEmbed = { ...m.embeds[0] };
 
-            const { expBadgeStr, rankStr: rStr, lanePrefStr: lStr } = lookupFailed
-              ? { expBadgeStr: '', rankStr: '', lanePrefStr: '' }
+            const { expBadgeStr, rankStr: rStr, lanePrefStr: lStr, promotionPrefStr: pStr } = lookupFailed
+              ? { expBadgeStr: '', rankStr: '', lanePrefStr: '', promotionPrefStr: '' }
               : buildEntrySuffix(playerRow, def);
 
-            const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rStr}${lStr}`;
+            const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rStr}${lStr}${pStr || ''}`;
 
             const curLines = readDayEntryLines(targetEmbed);
             const exLine = curLines.find((l) => l.includes(userMention));

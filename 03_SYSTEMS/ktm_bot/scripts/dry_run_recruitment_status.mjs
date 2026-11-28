@@ -13,7 +13,7 @@
 // モデルを変えたらこのスクリプトも必ず追従させること。
 
 import {
-  computeDayStatus, buildDayBanner, getDayDef,
+  computeDayStatus, buildDayBanner, getDayDef, cleanEntryLine,
   RECRUITMENT_COLORS, DAY_CAPACITY, resolveWeekendTargets, buildRecruitmentContent,
 } from '../src/utils/recruitmentStatus.js';
 import { buildDayRecruitEmbed, buildDayRecruitComponents, renderRoles } from '../src/ui/embeds.js';
@@ -644,6 +644,114 @@ if (foundBadge) {
   fail(`[AdhocBadges] 都度募集カードに参加者バッジアイコン(${foundBadge})が出力されています: \n${adhocRolesText}`);
 } else {
   console.log(`  ✓ 都度募集カードの参加者バッジ非表示検証: 👑/🔰/🌱/⏳/🎖️ が一切出力されないことを確認`);
+}
+
+// ---------------------------------------------------------------------------
+// 7. 指示文42: 合同カウント・上の帯NG表示検証
+// ---------------------------------------------------------------------------
+console.log(`7. 指示文42 (上の帯NG可視化 ＆ バナー内訳表示) 検証:`);
+
+// (1) 中初級帯の参加者行に印「（上の帯NG）」が付与されるか
+const satDefObj = getDayDef('sat');
+const sunDefObj = getDayDef('sun');
+
+const pLowNever = { discord_id: 'u_low_never', style: 'full', primary_lane: 'SUP' };
+const rowLowNever = { discord_id: 'u_low_never', mmr: 1300, tier_promotion_pref: 'never' };
+const lineLowNever = formatParticipantDisplayLine(pLowNever, rowLowNever, satDefObj);
+if (!lineLowNever.endsWith('（上の帯NG）')) {
+  fail(`[DisplayLine] 中初級帯・neverで行末に（上の帯NG）が付与されていません: ${lineLowNever}`);
+} else {
+  console.log(`  ✓ 中初級帯・neverの参加者行に「（上の帯NG）」付与: ${lineLowNever}`);
+}
+
+// cleanEntryLine を通しても消えないこと
+const cleanedLowNever = cleanEntryLine(lineLowNever);
+if (!cleanedLowNever.endsWith('（上の帯NG）')) {
+  fail(`[cleanEntryLine] cleanEntryLineにより（上の帯NG）が削除されました: ${cleanedLowNever}`);
+} else {
+  console.log(`  ✓ cleanEntryLine後も「（上の帯NG）」が保持されることを確認: ${cleanedLowNever}`);
+}
+
+// 中初級帯・fill_only の人には付与されないこと
+const pLowFill = { discord_id: 'u_low_fill', style: 'full', primary_lane: 'JG' };
+const rowLowFill = { discord_id: 'u_low_fill', mmr: 1300, tier_promotion_pref: 'fill_only' };
+const lineLowFill = formatParticipantDisplayLine(pLowFill, rowLowFill, satDefObj);
+if (lineLowFill.includes('（上の帯NG）')) {
+  fail(`[DisplayLine] 中初級帯・fill_onlyなのに（上の帯NG）が付与されています: ${lineLowFill}`);
+}
+
+// 上位帯・never の人には付与されないこと
+const pHighNever = { discord_id: 'u_high_never', style: 'full', primary_lane: 'TOP' };
+const rowHighNever = { discord_id: 'u_high_never', mmr: 1600, tier_promotion_pref: 'never' };
+const lineHighNever = formatParticipantDisplayLine(pHighNever, rowHighNever, satDefObj);
+if (lineHighNever.includes('（上の帯NG）')) {
+  fail(`[DisplayLine] 上位帯に（上の帯NG）が付与されています: ${lineHighNever}`);
+}
+
+// 日曜カードでは付与されないこと
+const lineSunLowNever = formatParticipantDisplayLine(pLowNever, rowLowNever, sunDefObj);
+if (lineSunLowNever.includes('（上の帯NG）')) {
+  fail(`[DisplayLine] 日曜カードで（上の帯NG）が付与されています: ${lineSunLowNever}`);
+}
+
+// (2) バナーの合同行の内訳表示検証
+// ケースA: 上位7名 ＋ 中初級3名（うち1名がnever）➔ 募集中、あと1名、内訳付き
+const mockInput7_3 = [
+  ...Array.from({ length: 7 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+  `- <@L_ok1> 🟢フル 【シルバー】`,
+  `- <@L_ok2> 🟢フル 【シルバー】`,
+  `- <@L_ng> 🟢フル 【シルバー】（上の帯NG）`,
+];
+const mockPlayerMap7_3 = new Map([
+  ...Array.from({ length: 7 }, (_, i) => [`H${i}`, { mmr: 1550 }]),
+  ['L_ok1', { mmr: 1300, tier_promotion_pref: 'fill_only' }],
+  ['L_ok2', { mmr: 1300, tier_promotion_pref: 'mix_ok' }],
+  ['L_ng', { mmr: 1300, tier_promotion_pref: 'never' }],
+]);
+const status7_3 = computeDayStatus(mockInput7_3, DAY_CAPACITY, 'sat', { playerMap: mockPlayerMap7_3 });
+const banner7_3 = buildDayBanner('sat', status7_3);
+const expectedSnippet7_3 = '🔥 **募集中**（合同1卓まであと1名／対象9名：上位7名＋中初級・繰上可2名）';
+if (!banner7_3.includes(expectedSnippet7_3)) {
+  fail(`[BannerMismatch] NGあり募集中バナー不正: 期待="${expectedSnippet7_3}", 実際="${banner7_3.split('\n')[0]}"`);
+} else {
+  console.log(`  ✓ 募集中（NGあり）バナー内訳表示確認: ${expectedSnippet7_3}`);
+}
+
+// ケースB: 上位8名 ＋ 中初級3名（うち1名がnever）➔ 合同1卓確定（計10名）、内訳付き
+const mockInput8_3 = [
+  ...Array.from({ length: 8 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+  `- <@L_ok1> 🟢フル 【シルバー】`,
+  `- <@L_ok2> 🟢フル 【シルバー】`,
+  `- <@L_ng> 🟢フル 【シルバー】（上の帯NG）`,
+];
+const mockPlayerMap8_3 = new Map([
+  ...Array.from({ length: 8 }, (_, i) => [`H${i}`, { mmr: 1550 }]),
+  ['L_ok1', { mmr: 1300, tier_promotion_pref: 'fill_only' }],
+  ['L_ok2', { mmr: 1300, tier_promotion_pref: 'mix_ok' }],
+  ['L_ng', { mmr: 1300, tier_promotion_pref: 'never' }],
+]);
+const status8_3 = computeDayStatus(mockInput8_3, DAY_CAPACITY, 'sat', { playerMap: mockPlayerMap8_3 });
+const banner8_3 = buildDayBanner('sat', status8_3);
+const expectedSnippet8_3 = '✅ **合同1卓 開催確定！**（計10名・上位ベース：上位8名＋中初級繰上2名 ／ 各帯10名で2部屋開催）';
+if (!banner8_3.includes(expectedSnippet8_3)) {
+  fail(`[BannerMismatch] NGあり確定時バナー不正: 期待="${expectedSnippet8_3}", 実際="${banner8_3.split('\n')[0]}"`);
+} else {
+  console.log(`  ✓ 確定時（NGあり）バナー内訳表示確認: ${expectedSnippet8_3}`);
+}
+
+// ケースC: NGなしの場合は従来どおり
+const mockInput8_2 = [
+  ...Array.from({ length: 8 }, (_, i) => `- <@H${i}> 🟢フル 【プラチナ】`),
+  `- <@L_ok1> 🟢フル 【シルバー】`,
+  `- <@L_ok2> 🟢フル 【シルバー】`,
+];
+const status8_2 = computeDayStatus(mockInput8_2, DAY_CAPACITY, 'sat', { playerMap: mockPlayerMap8_3 });
+const banner8_2 = buildDayBanner('sat', status8_2);
+const expectedSnippet8_2 = '✅ **合同1卓 開催確定！**（計10名・上位ベース ／ 各帯10名で2部屋開催）';
+if (!banner8_2.includes(expectedSnippet8_2)) {
+  fail(`[BannerMismatch] NGなし確定時バナー不正: 期待="${expectedSnippet8_2}", 実際="${banner8_2.split('\n')[0]}"`);
+} else {
+  console.log(`  ✓ 確定時（NGなし）従来どおりバナー確認: ${expectedSnippet8_2}`);
 }
 
 console.log(`${'='.repeat(70)}\n`);

@@ -790,13 +790,28 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
   } else if (combined?.mode === 'COMBINED_LOWER') {
     header = `✅ **合同1卓 開催確定！**（計${combined.match1ActiveCount}名・中初級ベース ／ 各帯10名で2部屋開催）`;
   } else if (combined?.mode === 'COMBINED_UPPER') {
-    header = `✅ **合同1卓 開催確定！**（計${combined.match1ActiveCount}名・上位ベース ／ 各帯10名で2部屋開催）`;
+    if (combined.neverLowCount > 0) {
+      header = `✅ **合同1卓 開催確定！**（計${combined.match1ActiveCount}名・上位ベース：上位${combined.highNativeM1Count}名＋中初級繰上${combined.promotableLowCount}名 ／ 各帯10名で2部屋開催）`;
+    } else {
+      header = `✅ **合同1卓 開催確定！**（計${combined.match1ActiveCount}名・上位ベース ／ 各帯10名で2部屋開催）`;
+    }
   } else if (combined?.mode === 'COMBINED_MATCH2_LOWER') {
     header = `✅ **合同1卓 第2戦から開催確定！**（計${combined.match2ActiveCount}名・中初級ベース）`;
   } else if (combined?.mode === 'COMBINED_MATCH2_UPPER') {
-    header = `✅ **合同1卓 第2戦から開催確定！**（計${combined.match2ActiveCount}名・上位ベース）`;
+    const m2Never = combined.m2?.neverLowLines?.length ?? 0;
+    if (m2Never > 0) {
+      header = `✅ **合同1卓 第2戦から開催確定！**（計${combined.match2ActiveCount}名・上位ベース：上位${combined.m2.highNativeCount}名＋中初級繰上${combined.m2.promotableLowLines.length}名）`;
+    } else {
+      header = `✅ **合同1卓 第2戦から開催確定！**（計${combined.match2ActiveCount}名・上位ベース）`;
+    }
   } else if (combined && typeof combined.bestShortfall === 'number' && status.joined > 0) {
-    header = `🔥 **募集中**（合同1卓まであと${combined.bestShortfall}名）`;
+    const rawTotal = (high?.match1Count ?? 0) + (low?.match1Count ?? 0);
+    const hasNgMismatch = combined.neverLowCount > 0 && combined.bestBase === 'upper' && rawTotal !== combined.upperBaseM1Count;
+    if (hasNgMismatch) {
+      header = `🔥 **募集中**（合同1卓まであと${combined.bestShortfall}名／対象${combined.upperBaseM1Count}名：上位${combined.highNativeM1Count}名＋中初級・繰上可${combined.promotableLowCount}名）`;
+    } else {
+      header = `🔥 **募集中**（合同1卓まであと${combined.bestShortfall}名）`;
+    }
   } else {
     header = '🔥 **募集中**';
   }

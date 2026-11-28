@@ -492,8 +492,13 @@ export async function checkCustomStatusAt2000(env) {
           : `上位 ${combined.highNativeM1Count}名＋中初級繰上 ${combined.promotableLowCount}名`;
         const attendeeIds = idsIn(combined.selectedLines);
         const excludedIds = idsIn(combined.excludedLines);
+        const excludedNames = excludedIds.map((id) => {
+          const p = summary.playerMap ? (typeof summary.playerMap.get === 'function' ? summary.playerMap.get(id) : summary.playerMap[id]) : null;
+          return p?.name || `ID:${id}`;
+        });
+        const nameSuffix = excludedNames.length > 0 ? `（${excludedNames.map((n) => `${n}さん`).join('、')}）` : '';
         const excludeNote = excludedIds.length > 0
-          ? `\nℹ️ 条件外（${isLower ? '通常上位' : '上の帯NG'}）の方 ${excludedIds.length}名 は今回は見学・次回優先枠となります。`
+          ? `\nℹ️ 条件外（${isLower ? '通常上位' : '上の帯NG'}）の方 ${excludedIds.length}名${nameSuffix} は今回は見学・次回優先枠となります。`
           : '';
         const attendeeMentions = attendeeIds.length > 0
           ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
@@ -509,6 +514,15 @@ export async function checkCustomStatusAt2000(env) {
         const isLower = combined.mode === 'COMBINED_MATCH2_LOWER';
         const baseTitle = isLower ? '中初級ベース（上位はオフレーン調整）' : '上位ベース（中初級から繰り上げ）';
         const attendeeIds = idsIn(combined.selectedLines);
+        const excludedIds = idsIn(combined.excludedLines);
+        const excludedNames = excludedIds.map((id) => {
+          const p = summary.playerMap ? (typeof summary.playerMap.get === 'function' ? summary.playerMap.get(id) : summary.playerMap[id]) : null;
+          return p?.name || `ID:${id}`;
+        });
+        const nameSuffix = excludedNames.length > 0 ? `（${excludedNames.map((n) => `${n}さん`).join('、')}）` : '';
+        const excludeNote = excludedIds.length > 0
+          ? `\nℹ️ 条件外（${isLower ? '通常上位' : '上の帯NG'}）の方 ${excludedIds.length}名${nameSuffix} は今回は見学・次回優先枠となります。`
+          : '';
         const attendeeMentions = attendeeIds.length > 0
           ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
           : '';
@@ -516,7 +530,7 @@ export async function checkCustomStatusAt2000(env) {
           type: 'MATCH2_CONFIRMED',
           action: `合同1卓 第2戦から開催確定（${isLower ? '中初級ベース' : '上位ベース'}）`,
           isReady: true,
-          content: `🎉 **【本日20:00 判定: 合同1卓 第2戦から開催確定！】**\n${def.emoji} **${def.name}** は第2戦から **${combined.match2ActiveCount}名** 揃うため、**${baseTitle}** で第2戦から開催します！開始時刻は主催者からの案内をお待ちください。${attendeeMentions}`,
+          content: `🎉 **【本日20:00 判定: 合同1卓 第2戦から開催確定！】**\n${def.emoji} **${def.name}** は第2戦から **${combined.match2ActiveCount}名** 揃うため、**${baseTitle}** で第2戦から開催します！開始時刻は主催者からの案内をお待ちください。${excludeNote}${attendeeMentions}`,
           allowed_mentions: { users: attendeeIds },
         }];
       } else {

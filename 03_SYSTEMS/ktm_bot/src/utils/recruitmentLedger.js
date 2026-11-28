@@ -7,7 +7,7 @@
 
 import { fetchSupabase } from './supabase.js';
 import { getKtmRank, getRepresentativeMmr, getPlayerExperienceBadge, getPlayerActiveMark } from './ktmRank.js';
-import { RANK_SHORT_JP_MAP, RANK_JP_MAP } from './recruitmentStatus.js';
+import { RANK_SHORT_JP_MAP, RANK_JP_MAP, normalizeTierPromotionPref, getNormalizedTier } from './recruitmentStatus.js';
 
 export const BAND_BOUNDARY_MMR = 1450;
 export const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher,tier_promotion_pref,allow_lower_support';
@@ -201,7 +201,28 @@ export function formatParticipantDisplayLine(participant, playerRow, def) {
     lanePrefStr = ` 【${p1}】`;
   }
 
-  return `- <@${discordId}>${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
+  // 指示文42: 中初級帯の参加者行に、繰り上げ拒否（tier_promotion_pref='never'）の人だけ「（上の帯NG）」を付与
+  let promotionPrefStr = '';
+  if (def.key === 'sat' && style !== 'spectator') {
+    const mmr = playerRow ? (getRepresentativeMmr(playerRow) ?? Number(playerRow.mmr)) : null;
+    let isLowBand = true;
+    if (mmr != null && Number.isFinite(Number(mmr))) {
+      isLowBand = Number(mmr) < BAND_BOUNDARY_MMR;
+    } else if (participant.rank_tier) {
+      const norm = getNormalizedTier(`【${participant.rank_tier}】`);
+      isLowBand = norm !== 'プラチナ';
+    } else if (playerRow) {
+      const tier = getKtmRank(getRepresentativeMmr(playerRow) ?? 1200);
+      const norm = getNormalizedTier(`【${tier?.name || ''}】`);
+      isLowBand = norm !== 'プラチナ';
+    }
+    const pref = normalizeTierPromotionPref(playerRow?.tier_promotion_pref ?? participant.tier_promotion_pref);
+    if (isLowBand && pref === 'never') {
+      promotionPrefStr = '（上の帯NG）';
+    }
+  }
+
+  return `- <@${discordId}>${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}${promotionPrefStr}`;
 }
 
 /**
