@@ -16,7 +16,7 @@ import {
   computeDayStatus, buildDayBanner, getDayDef,
   RECRUITMENT_COLORS, DAY_CAPACITY, resolveWeekendTargets, buildRecruitmentContent,
 } from '../src/utils/recruitmentStatus.js';
-import { buildDayRecruitEmbed, buildDayRecruitComponents } from '../src/ui/embeds.js';
+import { buildDayRecruitEmbed, buildDayRecruitComponents, renderRoles } from '../src/ui/embeds.js';
 import {
   BAND_BOUNDARY_MMR,
   determineParticipantAttributes,
@@ -339,6 +339,22 @@ for (const [dayKey, label, lines] of [['sat', '9/26(土)', sampleLines], ['sun',
   for (const f of embed.fields) {
     if (f.value.length > 1024) fail(`[${dayKey}] フィールド「${f.name}」のvalueが1024文字を超えています`);
   }
+
+  // 指示文41: 土曜カード表示の整合性検証
+  if (dayKey === 'sat') {
+    if (embed.fields[0].name !== '💎 上位帯ロビー') {
+      fail(`[sat] 上位帯ロビー見出し不正: 期待='💎 上位帯ロビー', 実際='${embed.fields[0].name}'`);
+    }
+    if (embed.fields[1].name !== '🍀 中初級帯ロビー') {
+      fail(`[sat] 中初級帯ロビー見出し不正: 期待='🍀 中初級帯ロビー', 実際='${embed.fields[1].name}'`);
+    }
+    if (!embed.description.includes('💎 **上位帯ロビー**') || !embed.description.includes('🍀 **中初級帯ロビー**')) {
+      fail(`[sat] バナーのロビーアイコン不正: description=${embed.description}`);
+    }
+    if (embed.fields[0].value.includes('第1戦から（') || embed.fields[0].value.includes('2戦目から合流（')) {
+      fail(`[sat] ロビー内小見出しに人数が残っています: ${embed.fields[0].value}`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -619,6 +635,16 @@ if (rebuiltMeta.joined[0] !== 'u_top' || rebuiltMeta.joined[1] !== 'u_mid' || re
   fail(`[RebuildAdhoc] joined のレーン順ソート不正: ${JSON.stringify(rebuiltMeta.joined)}`);
 }
 console.log(`  ✓ 都度募集メタデータ再構築: joined=${rebuiltMeta.joined.length}名, spectating=${rebuiltMeta.spectating.length}名, ソート順=${rebuiltMeta.joined.join(' -> ')}`);
+
+// 指示文41: 都度募集カードの参加者バッジ非表示検証
+const adhocRolesText = renderRoles(rebuiltMeta);
+const badgeSymbols = ['👑', '🔰', '🌱', '⏳', '🎖️', '🎖'];
+const foundBadge = badgeSymbols.find((b) => adhocRolesText.includes(b));
+if (foundBadge) {
+  fail(`[AdhocBadges] 都度募集カードに参加者バッジアイコン(${foundBadge})が出力されています: \n${adhocRolesText}`);
+} else {
+  console.log(`  ✓ 都度募集カードの参加者バッジ非表示検証: 👑/🔰/🌱/⏳/🎖️ が一切出力されないことを確認`);
+}
 
 console.log(`${'='.repeat(70)}\n`);
 

@@ -75,7 +75,8 @@ export function renderRoles(data) {
   const icons = { Top: '🛡️', Jg: '⚔️', Mid: '🧙', Adc: '🏹', Sup: '🩹' };
   let lines = [];
 
-  const getMark = (id) => (id && data.badges && data.badges[id] ? ` ${data.badges[id]}` : '');
+  // 指示文41: 都度募集カードでは参加者バッジのアイコンを一切出さない（内部データは残し表示のみ非表示）
+  const getMark = (_id) => '';
 
   if (data.mode === 'ノーマル') {
     lines.push("🟦 **希望ポジション (ROLES)**");
@@ -430,10 +431,10 @@ function renderLobbyList(lobbyStatus) {
     const pairSuffix = (l) => (isPairLine(l) ? toSuffix(l) : l);
 
     if (b.match1Lines && b.match1Lines.length > 0) {
-      sections.push(`**第1戦から（${b.match1Count}/${lobbyStatus.capacity}名）**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
+      sections.push(`**第1戦から**\n${b.match1Lines.map(pairSuffix).join('\n')}`);
     }
     if (b.match2LateLines && b.match2LateLines.length > 0) {
-      sections.push(`**2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
+      sections.push(`**2戦目から合流**\n${b.match2LateLines.map(stripLate).join('\n')}`);
     }
     if (sections.length > 0) {
       const groupedText = sections.join('\n\n');
@@ -455,22 +456,9 @@ function renderSpectatorList(spectatorStatus) {
   return formatLinesSafe(lines);
 }
 
-function formatLobbyHeader(icon, name, s, isAnyReady) {
-  const ready = s.isMatch1Ready || s.isReady;
-  const remaining = s.match1Remaining ?? s.remaining;
-  const count = s.match1Count ?? s.joined;
-  const state = ready
-    ? '開催確定！'
-    : isAnyReady
-      ? `2部屋目まであと${remaining}名`
-      : `あと${remaining}名`;
-
-  const lateCount = s.match2LateLines?.length ?? 0;
-
-  if (lateCount > 0) {
-    return `${icon} ${name} (第1戦 ${count}/10名 → ${state}／2戦目から合流 ${lateCount}名)`;
-  }
-  return `${icon} ${name} (${count}/10名 → ${state})`;
+function formatLobbyHeader(icon, name) {
+  // 指示文41: フィールド見出しはアイコン＋ロビー名だけ（人数・残数はバナーに集約）
+  return `${icon} ${name}`;
 }
 
 /**
@@ -522,12 +510,12 @@ export function applyDayCardState(embed, dayKey, entryLines, options = {}) {
 
     embed.fields = [
       {
-        name: formatLobbyHeader('👑', '上位帯ロビー', high, isAnyReady),
+        name: formatLobbyHeader('💎', '上位帯ロビー'),
         value: renderLobbyList(high),
         inline: false,
       },
       {
-        name: formatLobbyHeader('🌱', '中初級帯ロビー', low, isAnyReady),
+        name: formatLobbyHeader('🍀', '中初級帯ロビー'),
         value: renderLobbyList(low),
         inline: false,
       },

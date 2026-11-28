@@ -95,8 +95,8 @@ export async function sendEventUsersNotification(env, options = {}) {
           lines.push(`　✅ **合同1卓 開催確定済み！**（${baseLabel}・各帯10名で2部屋開催）`);
         }
         lines.push(
-          `　👑 **上位帯ロビー**: **${high.joined}/10名** → ${highState}`,
-          `　🌱 **中初級帯ロビー**: **${low.joined}/10名** → ${lowState}`,
+          `　💎 **上位帯ロビー**: **${high.joined}/10名** → ${highState}`,
+          `　🍀 **中初級帯ロビー**: **${low.joined}/10名** → ${lowState}`,
           '　🛡️ 実力五分五分に自動調整（初心者・中初級帯も安心！）'
         );
       } else {

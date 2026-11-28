@@ -816,8 +816,8 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
 
   return [
     header,
-    lobbyLine('👑', '上位帯ロビー', high),
-    lobbyLine('🌱', '中初級帯ロビー', low),
+    lobbyLine('💎', '上位帯ロビー', high),
+    lobbyLine('🍀', '中初級帯ロビー', low),
   ].join('\n');
 }
 
